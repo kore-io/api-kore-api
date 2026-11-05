@@ -1,9 +1,11 @@
 import { INestApplication } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
 import { randomInt, randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { BackofficePrismaService } from '../../src/shared/database/backoffice-prisma.service';
 import { PrismaService } from '../../src/shared/database/prisma.service';
 import { createTestApp } from '../support/create-test-app';
+import { createTestWorker } from '../support/create-test-worker';
 import { latestLoginEmail, waitForInbox } from '../support/mailpit';
 
 // Cada caso usa um IP próprio (X-Forwarded-For): o limite de auth é por IP.
@@ -12,16 +14,20 @@ const newEmail = () => `pessoa.${randomUUID()}@kore.local`;
 
 describe('Login sem senha por e-mail (Login sem senha e sessão)', () => {
   let app: INestApplication;
+  let worker: TestingModule;
   let prisma: PrismaService;
   let backoffice: BackofficePrismaService;
 
   beforeAll(async () => {
     app = await createTestApp();
+    // O e-mail do código sai pela fila: o worker é quem envia.
+    worker = await createTestWorker();
     prisma = app.get(PrismaService);
     backoffice = app.get(BackofficePrismaService);
   });
 
   afterAll(async () => {
+    await worker?.close();
     await app?.close();
   });
 

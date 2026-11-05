@@ -22,7 +22,7 @@ import { OpaqueSessionTokens } from './infrastructure/opaque-session-tokens';
 import { PrismaLoginChallengeStore } from './infrastructure/prisma-login-challenge.store';
 import { PrismaProfileDirectory } from './infrastructure/prisma-profile-directory';
 import { PrismaUserAccounts } from './infrastructure/prisma-user-accounts';
-import { SmtpLoginCodeMailer } from './infrastructure/smtp-login-code-mailer';
+import { OutboxLoginCodeMailer } from './infrastructure/outbox-login-code-mailer';
 import { PrismaSessionRepository } from './infrastructure/prisma-session.repository';
 import { PrismaUserRepository } from './infrastructure/prisma-user.repository';
 import { AuthController } from './presentation/auth.controller';
@@ -45,7 +45,7 @@ import { SessionGuard } from './presentation/session.guard';
       useFactory: (config: AppConfigService) =>
         new HmacLoginChallengeSecrets({ codeKeyBase64: config.get({ key: 'LOGIN_CODE_KEY' }) }),
     },
-    { provide: LOGIN_CODE_MAILER, useClass: SmtpLoginCodeMailer },
+    { provide: LOGIN_CODE_MAILER, useClass: OutboxLoginCodeMailer },
     { provide: USER_ACCOUNTS, useClass: PrismaUserAccounts },
     { provide: PROFILE_DIRECTORY, useClass: PrismaProfileDirectory },
     CompleteLogin,
