@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AccessModule } from './modules/access/access.module';
 import { LogsModule } from './modules/logs/logs.module';
 import { AppConfigModule } from './shared/config/app-config.module';
 import { CryptoModule } from './shared/crypto/crypto.module';
@@ -18,6 +19,7 @@ import { RedisModule } from './shared/redis/redis.module';
     CryptoModule,
     HealthModule,
     LogsModule,
+    AccessModule,
   ],
 })
 export class AppModule {}

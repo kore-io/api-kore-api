@@ -1,5 +1,6 @@
 import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 
 export const API_DOCS_PATH = 'docs';
 
@@ -22,6 +23,9 @@ export function configureApp({
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
   );
+
+  // O cookie de sessão (HttpOnly) é lido pelo SessionGuard.
+  app.use(cookieParser());
 
   app.enableShutdownHooks();
 
