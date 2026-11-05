@@ -177,13 +177,14 @@ describe('RLS por vínculo nas tabelas do casamento (banco real, usuário kore_a
       },
     );
 
-    it('sem policy de inclusão, a API não cria casamento por fora das regras', async () => {
+    it('a API não cria casamento em nome de outra pessoa (policy do cadastro)', async () => {
       await as({ userId: ana }, () =>
         expect(
           update(
-            `INSERT INTO weddings (id, slug, status, timezone, city, state, created_by_user_id, updated_at)
-             VALUES ($1, $2, 'draft', 'America/Sao_Paulo', 'Campinas', 'SP', $3, now())`,
-            [randomUUID(), `invasor-${randomUUID()}`, ana],
+            `INSERT INTO weddings (id, slug, status, timezone, city, state, created_by_user_id,
+               signup_source, updated_at)
+             VALUES ($1, $2, 'draft', 'America/Sao_Paulo', 'Campinas', 'SP', $3, 'direct', now())`,
+            [randomUUID(), `invasor-${randomUUID()}`, bia],
           ),
         ).rejects.toThrow(/row-level security/),
       );
