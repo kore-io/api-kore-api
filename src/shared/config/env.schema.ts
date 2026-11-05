@@ -45,6 +45,9 @@ export const envSchema = z
     // Origens do app que podem chamar a API com o cookie de sessão (CORS e
     // proteção contra CSRF nas escritas).
     ALLOWED_ORIGINS: originList,
+    // Quantos proxies confiáveis estão na frente da API, para o IP do rate
+    // limit e dos logs ser o do cliente (X-Forwarded-For). 0 no local.
+    TRUST_PROXY_HOPS: z.coerce.number().int().min(0).default(0),
     // E-mail aos usuários. Só SMTP por enquanto (Mailpit no local); o SES entra
     // com a infraestrutura.
     EMAIL_PROVIDER: z.enum(['smtp']),

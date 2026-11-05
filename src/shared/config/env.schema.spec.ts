@@ -20,6 +20,7 @@ describe('validateEnv', () => {
     expect(validateEnv({ config: validConfig })).toEqual({
       ...validConfig,
       ALLOWED_ORIGINS: ['http://localhost:5173', 'https://app.kore.com.br'],
+      TRUST_PROXY_HOPS: 0,
       PORT: 3000,
       SMTP_PORT: 1025,
       OTEL_EXPORTER: 'none',

@@ -13,6 +13,7 @@ async function bootstrap(): Promise<void> {
     app,
     enableDocs: !config.isProduction,
     allowedOrigins: config.get({ key: 'ALLOWED_ORIGINS' }),
+    trustProxyHops: config.get({ key: 'TRUST_PROXY_HOPS' }),
   });
   await app.listen(config.get({ key: 'PORT' }));
 }
