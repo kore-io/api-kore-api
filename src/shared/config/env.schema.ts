@@ -3,9 +3,14 @@ import { z } from 'zod';
 export const APP_ENVS = ['local', 'test', 'homolog', 'production'] as const;
 export type AppEnv = (typeof APP_ENVS)[number];
 
+const postgresUrl = z
+  .url({ protocol: /^postgres(ql)?$/ })
+  .describe('URL de conexão do Postgres (postgresql://usuario:senha@host:porta/banco)');
+
 export const envSchema = z.object({
   APP_ENV: z.enum(APP_ENVS),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
+  DATABASE_URL: postgresUrl,
 });
 
 export type Env = z.infer<typeof envSchema>;

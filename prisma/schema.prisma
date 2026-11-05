@@ -1,0 +1,12 @@
+// Fonte da verdade dos campos e tipos. O que o Prisma não expressa (RLS,
+// índices parciais, CHECK, extensões) vai em SQL manual dentro da migration.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}

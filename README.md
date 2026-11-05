@@ -29,3 +29,17 @@ pnpm lint && pnpm typecheck
 pnpm test              # unitários
 pnpm test:e2e          # ponta a ponta
 ```
+
+## Configuração e banco
+
+As variáveis ficam em `.env` (copie de `.env.example`) e são validadas na subida:
+a API não sobe com variável faltando ou inválida.
+
+```bash
+cp .env.example .env
+pnpm db:setup          # aplica as migrations e cria o usuário local kore_api
+pnpm db:migrate:dev    # nova migration (--create-only): revise o SQL antes de aplicar
+```
+
+A API conecta como `kore_api`, membro do papel `kore_app` (sujeito à RLS). As
+migrations rodam com o dono do schema (`DATABASE_MIGRATION_URL`).
