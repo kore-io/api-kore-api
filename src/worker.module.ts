@@ -3,6 +3,7 @@ import { LogsWorkerModule } from './modules/logs/logs-worker.module';
 import { ProductEventsWorkerModule } from './modules/product-events/product-events-worker.module';
 import { AppConfigModule } from './shared/config/app-config.module';
 import { DatabaseModule } from './shared/database/database.module';
+import { EmailWorkerModule } from './shared/email/email-worker.module';
 import { JobsModule } from './shared/jobs/jobs.module';
 import { ObservabilityModule } from './shared/observability/observability.module';
 
@@ -13,6 +14,7 @@ import { ObservabilityModule } from './shared/observability/observability.module
     ObservabilityModule,
     DatabaseModule,
     JobsModule,
+    EmailWorkerModule,
     LogsWorkerModule,
     ProductEventsWorkerModule,
   ],
