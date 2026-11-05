@@ -177,6 +177,36 @@
         "responses": {
           "204": {
             "description": ""
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
           }
         },
         "summary": "Sair: encerra a sessão deste aparelho (RN09).",
@@ -192,6 +222,36 @@
         "responses": {
           "204": {
             "description": ""
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
           }
         },
         "summary": "Sair de todos os aparelhos, inclusive este (RN09).",
@@ -224,6 +284,46 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RateLimitedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/TooSoonErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/TooManyCodeRequestsErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
           }
         },
         "summary": "Pede o código e o botão de acesso por e-mail (RN01 a RN04, RN06).",
@@ -253,6 +353,70 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/VerifyLoginChallengeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidCodeErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/UserBlockedErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ChallengeExpiredErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ChallengeLockedErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
             }
@@ -306,8 +470,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": ""
+          "302": {
+            "description": "Vai para o Google (ou para o provedor de desenvolvimento)."
           }
         },
         "summary": "Vai para o Google, guardando o state e o PKCE num cookie assinado.",
@@ -321,8 +485,8 @@
         "operationId": "GoogleLoginController_callback_v1",
         "parameters": [],
         "responses": {
-          "200": {
-            "description": ""
+          "302": {
+            "description": "Sucesso: APP_URL/entrar/google?step=&next=, com o cookie de sessão. Erro: APP_URL/entrar?error=google_unverified|blocked|google_failed (decisão 147)."
           }
         },
         "summary": "Volta do Google: abre a sessão e leva ao próximo passo (RN06 a RN08, RN10, RN11).",
@@ -345,6 +509,26 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
           }
         },
         "summary": "Quem está conectado; a leitura também renova a sessão (RN08).",
@@ -364,6 +548,171 @@
   "servers": [],
   "components": {
     "schemas": {
+      "RateLimitedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              429
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "RATE_LIMITED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SessionExpiredErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              401
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SESSION_EXPIRED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "OriginNotAllowedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              403
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "ValidationErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              400
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "Bad Request"
+            ]
+          },
+          "message": {
+            "description": "Um texto por campo inválido.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "TooSoonErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              429
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "TOO_SOON"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "resendAvailableAt": {
+            "type": "string",
+            "description": "Quando o \"Reenviar código\" volta (RN04).",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "resendAvailableAt"
+        ]
+      },
+      "TooManyCodeRequestsErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              429
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "TOO_MANY_REQUESTS"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "retryAfterMinutes": {
+            "type": "number",
+            "description": "\"Tente de novo em {minutos} minutos\" (RN04)."
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "retryAfterMinutes"
+        ]
+      },
       "RequestLoginChallengeBody": {
         "type": "object",
         "properties": {
@@ -406,6 +755,120 @@
         "required": [
           "email",
           "resendAvailableAt"
+        ]
+      },
+      "InvalidCodeErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              401
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "INVALID_CODE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "attemptsLeft": {
+            "type": "number",
+            "description": "Tentativas que ainda restam antes de o pedido cair (RN05)."
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "attemptsLeft"
+        ]
+      },
+      "ChallengeExpiredErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              410
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "CHALLENGE_EXPIRED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "ChallengeLockedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              410
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "CHALLENGE_LOCKED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "newCodeSent": {
+            "type": "boolean",
+            "description": "Se um código novo foi enviado sozinho (RN05)."
+          },
+          "retryAfterMinutes": {
+            "type": "number",
+            "description": "Só sem código novo: em quantos minutos pode pedir outro (decisão 150)."
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "newCodeSent"
+        ]
+      },
+      "UserBlockedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              403
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "USER_BLOCKED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
         ]
       },
       "VerifyLoginChallengeBody": {
@@ -468,9 +931,59 @@
           "next"
         ]
       },
+      "MeUserResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string"
+          },
+          "platformRole": {
+            "type": "string",
+            "enum": [
+              "none",
+              "admin",
+              "support"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "platformRole"
+        ]
+      },
       "MeResponse": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/MeUserResponse"
+          },
+          "activeProfile": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "couple",
+              "planner",
+              "seller"
+            ]
+          },
+          "authenticatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "user",
+          "activeProfile",
+          "authenticatedAt"
+        ]
       }
     }
   }

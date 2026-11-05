@@ -1,3 +1,15 @@
+import {
+  ApiErrorResponses,
+  commonErrors,
+} from '../../../shared/http/api-error-responses.decorator';
+import {
+  ChallengeExpiredErrorBody,
+  ChallengeLockedErrorBody,
+  InvalidCodeErrorBody,
+  TooManyCodeRequestsErrorBody,
+  TooSoonErrorBody,
+  UserBlockedErrorBody,
+} from './access-error.dto';
 import { Body, Controller, HttpCode, HttpStatus, Post, Req, Res } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
@@ -29,6 +41,11 @@ export class LoginController {
 
   /** Pede o código e o botão de acesso por e-mail (RN01 a RN04, RN06). */
   @Post()
+  @ApiErrorResponses(
+    ...commonErrors({ validated: true, write: true }),
+    TooSoonErrorBody,
+    TooManyCodeRequestsErrorBody,
+  )
   @HttpCode(HttpStatus.ACCEPTED)
   async request(
     @Body() body: RequestLoginChallengeBody,
@@ -50,6 +67,13 @@ export class LoginController {
 
   /** Confirma pelo código ou pelo botão e abre a sessão (RN01, RN02, RN05, RN06, RN08, RN11). */
   @Post('verify')
+  @ApiErrorResponses(
+    ...commonErrors({ validated: true, write: true }),
+    InvalidCodeErrorBody,
+    ChallengeExpiredErrorBody,
+    ChallengeLockedErrorBody,
+    UserBlockedErrorBody,
+  )
   @HttpCode(HttpStatus.OK)
   async verify(
     @Body() body: VerifyLoginChallengeBody,

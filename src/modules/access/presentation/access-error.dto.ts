@@ -1,0 +1,54 @@
+import { ApiProperty } from '@nestjs/swagger';
+
+/** Erros de regra do contexto Acesso (contratos de Login; decisões 99 e 150). */
+export class TooSoonErrorBody {
+  static readonly status = 429;
+  @ApiProperty({ enum: [429] }) statusCode: 429;
+  @ApiProperty({ enum: ['TOO_SOON'] }) error: 'TOO_SOON';
+  @ApiProperty() message: string;
+  /** Quando o "Reenviar código" volta (RN04). */
+  @ApiProperty({ format: 'date-time' }) resendAvailableAt: string;
+}
+
+export class TooManyCodeRequestsErrorBody {
+  static readonly status = 429;
+  @ApiProperty({ enum: [429] }) statusCode: 429;
+  @ApiProperty({ enum: ['TOO_MANY_REQUESTS'] }) error: 'TOO_MANY_REQUESTS';
+  @ApiProperty() message: string;
+  /** "Tente de novo em {minutos} minutos" (RN04). */
+  @ApiProperty() retryAfterMinutes: number;
+}
+
+export class InvalidCodeErrorBody {
+  static readonly status = 401;
+  @ApiProperty({ enum: [401] }) statusCode: 401;
+  @ApiProperty({ enum: ['INVALID_CODE'] }) error: 'INVALID_CODE';
+  @ApiProperty() message: string;
+  /** Tentativas que ainda restam antes de o pedido cair (RN05). */
+  @ApiProperty() attemptsLeft: number;
+}
+
+export class ChallengeExpiredErrorBody {
+  static readonly status = 410;
+  @ApiProperty({ enum: [410] }) statusCode: 410;
+  @ApiProperty({ enum: ['CHALLENGE_EXPIRED'] }) error: 'CHALLENGE_EXPIRED';
+  @ApiProperty() message: string;
+}
+
+export class ChallengeLockedErrorBody {
+  static readonly status = 410;
+  @ApiProperty({ enum: [410] }) statusCode: 410;
+  @ApiProperty({ enum: ['CHALLENGE_LOCKED'] }) error: 'CHALLENGE_LOCKED';
+  @ApiProperty() message: string;
+  /** Se um código novo foi enviado sozinho (RN05). */
+  @ApiProperty() newCodeSent: boolean;
+  /** Só sem código novo: em quantos minutos pode pedir outro (decisão 150). */
+  @ApiProperty({ required: false }) retryAfterMinutes?: number;
+}
+
+export class UserBlockedErrorBody {
+  static readonly status = 403;
+  @ApiProperty({ enum: [403] }) statusCode: 403;
+  @ApiProperty({ enum: ['USER_BLOCKED'] }) error: 'USER_BLOCKED';
+  @ApiProperty() message: string;
+}
