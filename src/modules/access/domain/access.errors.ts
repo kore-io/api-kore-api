@@ -45,10 +45,19 @@ export class LoginChallengeExpiredError extends Error {
 export class LoginChallengeLockedError extends Error {
   override name = 'LoginChallengeLockedError';
   readonly newCodeSent: boolean;
+  /** Sem código novo: em quantos minutos pode pedir outro (decisão 150). */
+  readonly retryAfterMinutes?: number;
 
-  constructor({ newCodeSent }: { newCodeSent: boolean }) {
+  constructor({
+    newCodeSent,
+    retryAfterMinutes,
+  }: {
+    newCodeSent: boolean;
+    retryAfterMinutes?: number;
+  }) {
     super();
     this.newCodeSent = newCodeSent;
+    this.retryAfterMinutes = retryAfterMinutes;
   }
 }
 

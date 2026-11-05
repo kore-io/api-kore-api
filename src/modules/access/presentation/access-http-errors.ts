@@ -68,6 +68,7 @@ export function toHttpError(error: unknown): unknown {
       error: 'CHALLENGE_LOCKED',
       message: 'Too many wrong codes.',
       newCodeSent: error.newCodeSent,
+      ...(error.retryAfterMinutes !== undefined && { retryAfterMinutes: error.retryAfterMinutes }),
     });
   }
   if (error instanceof UserBlockedError) {

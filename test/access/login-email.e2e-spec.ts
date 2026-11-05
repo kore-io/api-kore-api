@@ -182,6 +182,39 @@ describe('Login sem senha por e-mail (Login sem senha e sessão)', () => {
     });
   });
 
+  describe('Funcionalidade: Entrar sem senha (limite da RN04)', () => {
+    it('Cenário: Cinco erros sem espaço no limite (RN05), com o tempo de espera (decisão 150)', async () => {
+      const ip = uniqueIp();
+      const email = newEmail();
+      // 4 pedidos anteriores na última hora, o mais antigo há 50 minutos.
+      await prisma.loginChallenge.createMany({
+        data: [50, 40, 30, 20].map((minutes) => ({
+          email,
+          tokenHash: randomUUID(),
+          codeHash: 'x',
+          createdAt: new Date(Date.now() - minutes * 60_000),
+          expiresAt: new Date(Date.now() - (minutes - 15) * 60_000),
+          invalidatedAt: new Date(Date.now() - (minutes - 1) * 60_000),
+        })),
+      });
+      await requestCode({ email, ip }).expect(202);
+      const { code } = await latestLoginEmail({ to: email });
+      const wrong = code === '000000' ? '111111' : '000000';
+      for (let attempt = 1; attempt <= 4; attempt++) {
+        await verify({ ip, body: { email, code: wrong } }).expect(401);
+      }
+
+      const locked = await verify({ ip, body: { email, code: wrong } }).expect(410);
+
+      expect(locked.body).toMatchObject({
+        error: 'CHALLENGE_LOCKED',
+        newCodeSent: false,
+        retryAfterMinutes: 10,
+      });
+      expect(await waitForInbox({ to: email })).toHaveLength(1);
+    });
+  });
+
   describe('Funcionalidade: Primeiro acesso', () => {
     it('Cenário: E-mail sem conta vindo do link de indicação (RN06) cria a conta e registra conta_criada', async () => {
       const ip = uniqueIp();
