@@ -47,7 +47,8 @@ export interface CreatedWedding {
 /**
  * Cria o casamento em rascunho com a pessoa como dona e os dois noivos (RN02,
  * RN03, RN06, RN07 de Cadastro), aplica a indicação (RN08, RN09) e grava o
- * aceite dos Termos (RN11; decisão 166). Roda na transação da requisição.
+ * aceite dos Termos (RN11; decisão 166). A sessão de quem cria passa ao perfil
+ * de casal (decisão 171); num erro, nada muda. Roda na transação da requisição.
  */
 @Injectable()
 export class CreateWedding {
@@ -61,10 +62,12 @@ export class CreateWedding {
 
   async execute({
     userId,
+    sessionId,
     signup,
     now,
   }: {
     userId: string;
+    sessionId: string;
     signup: WeddingSignup;
     now: Date;
   }): Promise<CreatedWedding> {
@@ -88,6 +91,7 @@ export class CreateWedding {
       wedding: {
         weddingId,
         userId,
+        sessionId,
         myName: cleanText({ value: signup.myName }),
         myTitle: signup.myTitle,
         partnerName: cleanText({ value: signup.partnerName }),

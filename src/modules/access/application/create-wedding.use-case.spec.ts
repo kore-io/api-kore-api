@@ -72,7 +72,7 @@ describe('CreateWedding (POST /v1/weddings)', () => {
   it('RN03 e RN07 - cria em rascunho, com o fuso da UF, nomes aparados e origem direct', async () => {
     const { useCase, created } = setup();
 
-    const result = await useCase.execute({ userId: 'u-ana', signup, now });
+    const result = await useCase.execute({ userId: 'u-ana', sessionId: 's-ana', signup, now });
 
     expect(result).toMatchObject({
       slug: 'ana-e-marcos',
@@ -83,6 +83,7 @@ describe('CreateWedding (POST /v1/weddings)', () => {
     expect(created[0]).toMatchObject({
       weddingId: result.weddingId,
       userId: 'u-ana',
+      sessionId: 's-ana',
       myName: 'Ana Beatriz Moreira',
       city: 'Campinas',
       referrerId: null,
@@ -97,7 +98,12 @@ describe('CreateWedding (POST /v1/weddings)', () => {
     const { useCase, store } = setup();
 
     await expect(
-      useCase.execute({ userId: 'u-ana', signup: { ...signup, termsVersion: '2025-01' }, now }),
+      useCase.execute({
+        userId: 'u-ana',
+        sessionId: 's-ana',
+        signup: { ...signup, termsVersion: '2025-01' },
+        now,
+      }),
     ).rejects.toThrow(TermsVersionOutdatedError);
     expect(store.create).not.toHaveBeenCalled();
   });
@@ -105,9 +111,9 @@ describe('CreateWedding (POST /v1/weddings)', () => {
   it('RN06 - dada uma pessoa que já é dona de um casamento ativo, então ALREADY_OWNER com o casamento', async () => {
     const { useCase, store } = setup({ ownedWeddingId: 'w-existente' });
 
-    await expect(useCase.execute({ userId: 'u-ana', signup, now })).rejects.toMatchObject(
-      new AlreadyOwnerError({ weddingId: 'w-existente' }),
-    );
+    await expect(
+      useCase.execute({ userId: 'u-ana', sessionId: 's-ana', signup, now }),
+    ).rejects.toMatchObject(new AlreadyOwnerError({ weddingId: 'w-existente' }));
     expect(store.lockOwner).toHaveBeenCalledWith({ userId: 'u-ana' });
     expect(store.create).not.toHaveBeenCalled();
   });
@@ -115,7 +121,9 @@ describe('CreateWedding (POST /v1/weddings)', () => {
   it('RN05 - dado um endereço em uso, então SLUG_UNAVAILABLE com a sugestão', async () => {
     const { useCase } = setup({ taken: ['ana-e-marcos'] });
 
-    await expect(useCase.execute({ userId: 'u-ana', signup, now })).rejects.toMatchObject({
+    await expect(
+      useCase.execute({ userId: 'u-ana', sessionId: 's-ana', signup, now }),
+    ).rejects.toMatchObject({
       name: 'SlugUnavailableError',
       suggestion: 'ana-e-marcos-2026',
     });
@@ -125,16 +133,21 @@ describe('CreateWedding (POST /v1/weddings)', () => {
     const { useCase } = setup();
 
     await expect(
-      useCase.execute({ userId: 'u-ana', signup: { ...signup, slug: 'entrar' }, now }),
+      useCase.execute({
+        userId: 'u-ana',
+        sessionId: 's-ana',
+        signup: { ...signup, slug: 'entrar' },
+        now,
+      }),
     ).rejects.toThrow(SlugUnavailableError);
   });
 
   it('RN05 - dada a corrida no UNIQUE do endereço, então quem perde vê o erro com sugestão', async () => {
     const { useCase } = setup({ createResult: 'slug_taken' });
 
-    await expect(useCase.execute({ userId: 'u-ana', signup, now })).rejects.toThrow(
-      SlugUnavailableError,
-    );
+    await expect(
+      useCase.execute({ userId: 'u-ana', sessionId: 's-ana', signup, now }),
+    ).rejects.toThrow(SlugUnavailableError);
   });
 
   it('RN08 e RN09 - dado o link de um indicador ativo, então atribui, devolve o desconto e a origem vira referral_link', async () => {
@@ -142,6 +155,7 @@ describe('CreateWedding (POST /v1/weddings)', () => {
 
     const result = await useCase.execute({
       userId: 'u-ana',
+      sessionId: 's-ana',
       signup: { ...signup, referralCode: 'juliana-prado', signupSource: 'simulator' },
       now,
     });
@@ -155,6 +169,7 @@ describe('CreateWedding (POST /v1/weddings)', () => {
 
     const result = await useCase.execute({
       userId: 'u-ana',
+      sessionId: 's-ana',
       signup: { ...signup, referralCode: 'juliana-prado' },
       now,
     });
@@ -173,6 +188,7 @@ describe('CreateWedding (POST /v1/weddings)', () => {
 
       const result = await useCase.execute({
         userId,
+        sessionId: 's1',
         signup: { ...signup, referralCode: 'juliana-prado', signupSource: 'made_with_kore' },
         now,
       });

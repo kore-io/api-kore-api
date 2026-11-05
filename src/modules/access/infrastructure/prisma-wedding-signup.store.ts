@@ -85,6 +85,12 @@ export class PrismaWeddingSignupStore implements WeddingSignupStore {
       },
       select: { id: true },
     });
+    // Perfil ativo de casal na sessão de quem criou (decisão 171). Como pela
+    // RN06 a pessoa é dona de um casamento ativo só, o perfil identifica o casamento.
+    await tx.session.updateMany({
+      where: { id: wedding.sessionId, userId: wedding.userId },
+      data: { activeProfile: 'couple' },
+    });
     return 'created';
   }
 }
