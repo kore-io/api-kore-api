@@ -80,3 +80,11 @@ Toda execução de rotina fica registrada no log da aplicação (`access_ip_log.
 O backoffice e as rotinas usam a conexão `DATABASE_BACKOFFICE_URL`, que assume o
 papel `kore_backoffice` (BYPASSRLS). O log da aplicação e o log de IP real são
 só inserção para a API: o banco nega leitura, alteração e exclusão a `kore_app`.
+
+## Origens, CORS e CSRF
+
+`ALLOWED_ORIGINS` lista as origens do app (só esquema, host e porta). Elas recebem
+os cabeçalhos de CORS com credenciais, e o `OriginGuard` recusa com
+`403 ORIGIN_NOT_ALLOWED` toda escrita (POST, PUT, PATCH, DELETE) vinda de outra
+origem, ou sem `Origin` quando há cookie de sessão. Clientes fora do navegador
+(Bruno, webhooks), sem cookie de sessão, não precisam mandar `Origin`.

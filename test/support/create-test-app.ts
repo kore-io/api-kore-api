@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModuleBuilder } from '@nestjs/testing';
 import { AppModule } from '../../src/app.module';
+import { AppConfigService } from '../../src/shared/config/app-config.service';
 import { configureApp } from '../../src/shared/http/configure-app';
 
 /**
@@ -14,7 +15,11 @@ export async function createTestApp({
 } = {}): Promise<INestApplication> {
   const builder = Test.createTestingModule({ imports: [AppModule] });
   const moduleRef = await (override ? override(builder) : builder).compile();
-  const app = configureApp({ app: moduleRef.createNestApplication(), enableDocs: false });
+  const app = configureApp({
+    app: moduleRef.createNestApplication(),
+    enableDocs: false,
+    allowedOrigins: moduleRef.get(AppConfigService).get({ key: 'ALLOWED_ORIGINS' }),
+  });
   await app.init();
   return app;
 }

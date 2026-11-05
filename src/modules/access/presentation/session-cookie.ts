@@ -1,6 +1,7 @@
 import type { CookieOptions, Response } from 'express';
+import { SESSION_COOKIE } from '../../../shared/http/session-cookie-name';
 
-export const SESSION_COOKIE = 'kore_session';
+export { SESSION_COOKIE };
 
 // RN08 de Login e ADR de login sem senha: HttpOnly, Secure e SameSite=Lax
 // (Lax para o cookie ir junto quando a pessoa chega pelo link do e-mail).

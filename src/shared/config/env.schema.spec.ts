@@ -5,6 +5,7 @@ const validConfig = {
   DATABASE_URL: 'postgresql://kore_api:kore_api@localhost:5433/kore',
   DATABASE_BACKOFFICE_URL: 'postgresql://kore_backoffice_login:x@localhost:5433/kore',
   REDIS_URL: 'redis://localhost:6380',
+  ALLOWED_ORIGINS: 'http://localhost:5173, https://app.kore.com.br',
   EMAIL_PROVIDER: 'smtp',
   EMAIL_FROM: 'Kore <nao-responda@kore.local>',
   SMTP_HOST: 'localhost',
@@ -18,6 +19,7 @@ describe('validateEnv', () => {
   it('dada a configuração mínima, quando valida, então aplica os padrões', () => {
     expect(validateEnv({ config: validConfig })).toEqual({
       ...validConfig,
+      ALLOWED_ORIGINS: ['http://localhost:5173', 'https://app.kore.com.br'],
       PORT: 3000,
       SMTP_PORT: 1025,
       OTEL_EXPORTER: 'none',
@@ -65,5 +67,17 @@ describe('validateEnv', () => {
     expect(() =>
       validateEnv({ config: { ...validConfig, KMS_LOCAL_MASTER_KEY: undefined } }),
     ).toThrow(/KMS_LOCAL_MASTER_KEY: obrigatória/);
+  });
+
+  it('dada uma origem com caminho, quando valida, então recusa', () => {
+    expect(() =>
+      validateEnv({ config: { ...validConfig, ALLOWED_ORIGINS: 'https://app.kore.com.br/app' } }),
+    ).toThrow(/ALLOWED_ORIGINS/);
+  });
+
+  it('dada a lista de origens vazia, quando valida, então recusa subir', () => {
+    expect(() => validateEnv({ config: { ...validConfig, ALLOWED_ORIGINS: ' , ' } })).toThrow(
+      /ALLOWED_ORIGINS: informe pelo menos uma origem/,
+    );
   });
 });
