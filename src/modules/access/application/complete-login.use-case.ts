@@ -17,7 +17,6 @@ import { StartSession } from './start-session.use-case';
 export interface CompletedLogin {
   user: { id: string; email: string; isNew: boolean };
   next: LoginNext;
-  inviteToken?: string;
   session: { token: string; expiresAt: Date };
 }
 
@@ -41,7 +40,6 @@ export class CompleteLogin {
     method,
     providerSubject,
     origin,
-    originRef,
     ip,
     userAgent,
     now,
@@ -50,7 +48,6 @@ export class CompleteLogin {
     method: AuthMethod;
     providerSubject: string;
     origin: LoginOrigin;
-    originRef: string | null;
     ip: string | null;
     userAgent?: string;
     now: Date;
@@ -81,7 +78,7 @@ export class CompleteLogin {
     const profiles = await this.profiles.listProfiles({ userId: account.id });
     return {
       user: { id: account.id, email: account.email, isNew: created },
-      ...loginNextStep({ origin, originRef, profileCount: profiles.length }),
+      next: loginNextStep({ origin, profileCount: profiles.length }),
       session,
     };
   }
