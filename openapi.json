@@ -746,7 +746,7 @@
             }
           }
         },
-        "summary": "Cria o casamento em rascunho, com a pessoa como dona (RN02 a RN09, RN11 de Cadastro).",
+        "summary": "Cria o casamento em rascunho, com a pessoa como dona (RN02 a RN09, RN11 de\nCadastro), e passa a sessão ao perfil de casal (activeProfile couple,\ndecisão 171). Nos erros, a sessão não muda.",
         "tags": [
           "weddings"
         ]

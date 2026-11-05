@@ -3,6 +3,8 @@ import type { PartnerTitle, SignupSource } from '../../domain/wedding-signup';
 export interface NewWedding {
   weddingId: string;
   userId: string;
+  /** A sessão de quem cria: passa ao perfil de casal (decisão 171). */
+  sessionId: string;
   myName: string;
   myTitle: PartnerTitle;
   partnerName: string;

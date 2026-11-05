@@ -43,7 +43,11 @@ export class WeddingsController {
     return SlugAvailabilityResponse.from({ availability });
   }
 
-  /** Cria o casamento em rascunho, com a pessoa como dona (RN02 a RN09, RN11 de Cadastro). */
+  /**
+   * Cria o casamento em rascunho, com a pessoa como dona (RN02 a RN09, RN11 de
+   * Cadastro), e passa a sessão ao perfil de casal (activeProfile couple,
+   * decisão 171). Nos erros, a sessão não muda.
+   */
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiErrorResponses(
@@ -59,6 +63,7 @@ export class WeddingsController {
     try {
       const wedding = await this.createWedding.execute({
         userId: session.userId,
+        sessionId: session.sessionId,
         now: new Date(),
         signup: {
           myName: body.myName,

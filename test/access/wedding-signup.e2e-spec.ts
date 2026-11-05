@@ -90,6 +90,42 @@ describe('Cadastro do casal: POST /v1/weddings e GET /v1/weddings/slug-availabil
     expect(user.termsAcceptedAt).toBeInstanceOf(Date);
   });
 
+  it('decisão 171 - ao criar, a sessão de quem criou passa ao perfil de casal; as outras sessões da pessoa não mudam', async () => {
+    const { userId, cookie } = await signedInUser({ app });
+    const otherDevice = await openSession({ app, userId });
+    const me = (sessionCookie: string) =>
+      request(app.getHttpServer()).get('/v1/me').set('Cookie', sessionCookie).expect(200);
+    expect((await me(cookie)).body.activeProfile).toBeNull();
+
+    await create(cookie, body()).expect(201);
+
+    expect((await me(cookie)).body.activeProfile).toBe('couple');
+    expect((await me(otherDevice)).body.activeProfile).toBeNull();
+  });
+
+  it.each([
+    ['ALREADY_OWNER', 'already_owner'],
+    ['TERMS_VERSION_OUTDATED', 'terms'],
+    ['SLUG_UNAVAILABLE', 'slug'],
+  ])('decisão 171 - no 409 %s, a sessão não muda', async (error, scenario) => {
+    const { userId, cookie } = await signedInUser({ app });
+    let payload = body();
+    if (scenario === 'already_owner') {
+      await seedWedding({ db, ownerId: userId });
+    } else if (scenario === 'terms') {
+      payload = body({ termsVersion: '2025-01' });
+    } else {
+      const other = await signedInUser({ app });
+      await create(other.cookie, payload).expect(201);
+    }
+
+    const response = await create(cookie, payload).expect(409);
+
+    expect(response.body.error).toBe(error);
+    const sessions = await db.session.findMany({ where: { userId } });
+    expect(sessions.map((session) => session.activeProfile)).toEqual([null]);
+  });
+
   it('RN02 - a data é opcional', async () => {
     const { cookie } = await signedInUser({ app });
 
