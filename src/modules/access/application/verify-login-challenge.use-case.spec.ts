@@ -144,9 +144,23 @@ describe('VerifyLoginChallenge', () => {
 
     const error = await useCase.execute(byCode('000000')).catch((caught: unknown) => caught);
 
-    expect(error).toEqual(new LoginChallengeLockedError({ newCodeSent: false }));
+    expect(error).toEqual(
+      new LoginChallengeLockedError({ newCodeSent: false, retryAfterMinutes: 10 }),
+    );
+    expect((error as LoginChallengeLockedError).retryAfterMinutes).toBe(10);
     expect(transaction.create).not.toHaveBeenCalled();
     expect(send).not.toHaveBeenCalled();
+  });
+
+  it('decisão 150 - dado um pedido há 30 segundos, quando erra a quinta vez, então diz para tentar em 1 minuto (nunca 0)', async () => {
+    const { useCase } = build({
+      attemptsAfterFailure: 5,
+      requestTimes: [new Date(now.getTime() - 30_000)],
+    });
+
+    const error = await useCase.execute(byCode('000000')).catch((caught: unknown) => caught);
+
+    expect(error).toMatchObject({ newCodeSent: false, retryAfterMinutes: 1 });
   });
 
   it('RN04 - dado que pediu outro código, quando digita o primeiro, então não entra (o primeiro foi invalidado)', async () => {

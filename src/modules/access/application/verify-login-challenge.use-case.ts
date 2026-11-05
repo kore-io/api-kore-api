@@ -3,6 +3,7 @@ import {
   InvalidLoginCodeError,
   LoginChallengeExpiredError,
   LoginChallengeLockedError,
+  LoginRequestTooSoonError,
 } from '../domain/access.errors';
 import {
   isLoginChallengeUsable,
@@ -30,7 +31,8 @@ type CodeCheck =
   | { outcome: 'ok'; challenge: LoginChallengeRecord }
   | { outcome: 'expired' }
   | { outcome: 'wrong'; attemptsLeft: number }
-  | { outcome: 'locked'; reissued: IssuedChallenge | null };
+  | { outcome: 'locked'; reissued: IssuedChallenge; retryAfterMinutes?: undefined }
+  | { outcome: 'locked'; reissued: null; retryAfterMinutes: number };
 
 /**
  * Confirma o login pelo código ou pelo botão do e-mail (RN01, RN02 e RN05 de
@@ -128,7 +130,15 @@ export class VerifyLoginChallenge {
           requestIp: ip,
           now,
         });
-        return { outcome: 'locked', reissued: 'issued' in reissue ? reissue.issued : null };
+        if ('issued' in reissue) return { outcome: 'locked', reissued: reissue.issued };
+        // Decisão 150: sem código novo, diz em quantos minutos pode pedir outro
+        // (arredondado para cima, nunca 0).
+        const refusal = reissue.refused;
+        const retryAfterMinutes =
+          refusal instanceof LoginRequestTooSoonError
+            ? Math.max(1, Math.ceil((refusal.resendAvailableAt.getTime() - now.getTime()) / 60_000))
+            : refusal.retryAfterMinutes;
+        return { outcome: 'locked', reissued: null, retryAfterMinutes };
       },
     });
 
@@ -140,8 +150,14 @@ export class VerifyLoginChallenge {
       case 'wrong':
         throw new InvalidLoginCodeError({ attemptsLeft: check.attemptsLeft });
       case 'locked':
-        if (check.reissued) await this.mailer.send({ email, ...check.reissued });
-        throw new LoginChallengeLockedError({ newCodeSent: check.reissued !== null });
+        if (check.reissued) {
+          await this.mailer.send({ email, ...check.reissued });
+          throw new LoginChallengeLockedError({ newCodeSent: true });
+        }
+        throw new LoginChallengeLockedError({
+          newCodeSent: false,
+          retryAfterMinutes: check.retryAfterMinutes,
+        });
     }
   }
 }
