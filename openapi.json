@@ -536,6 +536,57 @@
           "me"
         ]
       }
+    },
+    "/v1/referrals/{code}": {
+      "get": {
+        "operationId": "ReferralController_referral_v1",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferralResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferralNotFoundErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Indicador do link de indicação, para o destaque do cadastro (RN08, RN09 de Cadastro).",
+        "tags": [
+          "referrals"
+        ]
+      }
     }
   },
   "info": {
@@ -983,6 +1034,63 @@
           "user",
           "activeProfile",
           "authenticatedAt"
+        ]
+      },
+      "ReferralNotFoundErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "REFERRAL_NOT_FOUND"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "ReferralResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "juliana-prado"
+          },
+          "referrerName": {
+            "type": "string",
+            "example": "Juliana Prado"
+          },
+          "kind": {
+            "enum": [
+              "planner",
+              "seller"
+            ],
+            "type": "string"
+          },
+          "discountPercent": {
+            "type": "number",
+            "nullable": true,
+            "description": "Nulo quando o indicador está com o desconto desligado (RN09).",
+            "example": 10
+          }
+        },
+        "required": [
+          "code",
+          "referrerName",
+          "kind",
+          "discountPercent"
         ]
       }
     }

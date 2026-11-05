@@ -80,3 +80,8 @@ export class WeddingNotFoundError extends Error {
 export class WeddingActionForbiddenError extends Error {
   override name = 'WeddingActionForbiddenError';
 }
+
+/** RN08 de Cadastro: código inexistente, indicador inativo ou bloqueado. */
+export class ReferralNotFoundError extends Error {
+  override name = 'ReferralNotFoundError';
+}

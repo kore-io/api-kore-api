@@ -52,3 +52,10 @@ export class UserBlockedErrorBody {
   @ApiProperty({ enum: ['USER_BLOCKED'] }) error: 'USER_BLOCKED';
   @ApiProperty() message: string;
 }
+
+export class ReferralNotFoundErrorBody {
+  static readonly status = 404;
+  @ApiProperty({ enum: [404] }) statusCode: 404;
+  @ApiProperty({ enum: ['REFERRAL_NOT_FOUND'] }) error: 'REFERRAL_NOT_FOUND';
+  @ApiProperty() message: string;
+}
