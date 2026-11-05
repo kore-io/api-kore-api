@@ -48,7 +48,7 @@ describe('Rate limit por IP (ADR do rate limit; decisão 135)', () => {
 
     expect(response.body).toEqual({
       statusCode: 429,
-      error: 'TOO_MANY_REQUESTS',
+      error: 'RATE_LIMITED',
       message: 'Too many requests.',
     });
   });

@@ -95,6 +95,6 @@ origem, ou sem `Origin` quando há cookie de sessão. Clientes fora do navegador
 Limite por IP, por minuto, com o contador no Redis (`@nestjs/throttler`): 100
 requisições no geral (`RATE_LIMIT_GENERAL_PER_MINUTE`) e 10 nas rotas de auth
 marcadas com `@AuthRateLimit()` (`RATE_LIMIT_AUTH_PER_MINUTE`), somadas entre
-elas. Acima do limite: `429 TOO_MANY_REQUESTS`. Com o Redis fora, as requisições
+elas. Acima do limite: `429 RATE_LIMITED` (o `TOO_MANY_REQUESTS` é o limite de pedidos de código por e-mail, RN04). Com o Redis fora, as requisições
 passam e o log avisa (decisão 97). Atrás de proxy, `TRUST_PROXY_HOPS` diz quantos
 saltos do `X-Forwarded-For` são confiáveis.

@@ -18,9 +18,11 @@ export class KoreThrottlerGuard extends ThrottlerGuard {
     return `${name}:${tracker}`;
   }
 
+  // RATE_LIMITED, e não TOO_MANY_REQUESTS, que é o limite por e-mail da RN04 de
+  // Login (decisão 142).
   protected override throwThrottlingException(): Promise<void> {
     throw new HttpException(
-      { statusCode: 429, error: 'TOO_MANY_REQUESTS', message: 'Too many requests.' },
+      { statusCode: 429, error: 'RATE_LIMITED', message: 'Too many requests.' },
       HttpStatus.TOO_MANY_REQUESTS,
     );
   }
