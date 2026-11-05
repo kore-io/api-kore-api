@@ -3,6 +3,7 @@ import { validateEnv } from './env.schema';
 const validConfig = {
   APP_ENV: 'local',
   DATABASE_URL: 'postgresql://kore_api:kore_api@localhost:5433/kore',
+  DATABASE_BACKOFFICE_URL: 'postgresql://kore_backoffice_login:x@localhost:5433/kore',
   REDIS_URL: 'redis://localhost:6380',
   EMAIL_PROVIDER: 'smtp',
   EMAIL_FROM: 'Kore <nao-responda@kore.local>',
