@@ -11,6 +11,8 @@ import { WeddingAuthorization } from './application/wedding-authorization.servic
 import { LOGIN_CHALLENGE_SECRETS } from './application/ports/login-challenge-secrets.port';
 import { LOGIN_CHALLENGE_STORE } from './application/ports/login-challenge-store.port';
 import { LOGIN_CODE_MAILER } from './application/ports/login-code-mailer.port';
+import { REFERRAL_DIRECTORY } from './application/ports/referral-directory.port';
+import { GetReferral } from './application/get-referral.use-case';
 import { PROFILE_DIRECTORY } from './application/ports/profile-directory.port';
 import { USER_ACCOUNTS } from './application/ports/user-accounts.port';
 import { RequestLoginChallenge } from './application/request-login-challenge.use-case';
@@ -28,6 +30,7 @@ import { HmacLoginChallengeSecrets } from './infrastructure/hmac-login-challenge
 import { OpaqueSessionTokens } from './infrastructure/opaque-session-tokens';
 import { PrismaLoginChallengeStore } from './infrastructure/prisma-login-challenge.store';
 import { PrismaMembershipReader } from './infrastructure/prisma-membership-reader';
+import { PrismaReferralDirectory } from './infrastructure/prisma-referral-directory';
 import { PrismaProfileDirectory } from './infrastructure/prisma-profile-directory';
 import { PrismaUserAccounts } from './infrastructure/prisma-user-accounts';
 import { OutboxLoginCodeMailer } from './infrastructure/outbox-login-code-mailer';
@@ -38,12 +41,19 @@ import { GoogleLoginController } from './presentation/google-login.controller';
 import { GoogleLoginCookie } from './presentation/google-login-cookie';
 import { LoginController } from './presentation/login.controller';
 import { MeController } from './presentation/me.controller';
+import { ReferralController } from './presentation/referral.controller';
 import { SessionGuard } from './presentation/session.guard';
 import { TenantTransactionInterceptor } from './presentation/tenant-transaction.interceptor';
 
 /** Contexto Acesso: sessão, login, papéis e convites de acesso. */
 @Module({
-  controllers: [AuthController, LoginController, GoogleLoginController, MeController],
+  controllers: [
+    AuthController,
+    LoginController,
+    GoogleLoginController,
+    MeController,
+    ReferralController,
+  ],
   providers: [
     { provide: SESSION_REPOSITORY, useClass: PrismaSessionRepository },
     { provide: USER_REPOSITORY, useClass: PrismaUserRepository },
@@ -62,6 +72,7 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     { provide: LOGIN_CODE_MAILER, useClass: OutboxLoginCodeMailer },
     { provide: USER_ACCOUNTS, useClass: PrismaUserAccounts },
     { provide: PROFILE_DIRECTORY, useClass: PrismaProfileDirectory },
+    { provide: REFERRAL_DIRECTORY, useClass: PrismaReferralDirectory },
     {
       provide: GOOGLE_IDENTITY_PROVIDER,
       inject: [AppConfigService],
@@ -90,6 +101,7 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     EndSession,
     EndAllSessions,
     GetMe,
+    GetReferral,
   ],
   exports: [StartSession, WeddingAuthorization],
 })

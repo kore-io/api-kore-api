@@ -13,6 +13,7 @@ import {
   LoginChallengeLockedError,
   LoginRequestLimitError,
   LoginRequestTooSoonError,
+  ReferralNotFoundError,
   SessionExpiredError,
   UserBlockedError,
   WeddingActionForbiddenError,
@@ -86,6 +87,13 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 403,
       error: 'ACTION_NOT_ALLOWED',
       message: 'Your role in this wedding does not allow this action.',
+    });
+  }
+  if (error instanceof ReferralNotFoundError) {
+    return new NotFoundException({
+      statusCode: 404,
+      error: 'REFERRAL_NOT_FOUND',
+      message: 'Referral not found.',
     });
   }
   if (error instanceof UserBlockedError) {
