@@ -66,3 +66,94 @@ enum AccessIpLogActor {
 
   @@map("access_ip_log_actor")
 }
+
+// Usuário (Glossário): casal, cerimonialista, vendedor ou Admin Kore.
+// Convidado não é User.
+model User {
+  id              String       @id @default(uuid(7)) @db.Uuid
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  email           String       @unique(map: "uq_users_email") @db.Citext
+  // Nulo até a pessoa informar o nome (cadastro do casal ou aceite de convite).
+  name            String?
+  avatarKey       String?      @map("avatar_key")
+  platformRole    PlatformRole @default(none) @map("platform_role")
+  status          UserStatus   @default(active)
+  lastLoginAt     DateTime?    @map("last_login_at") @db.Timestamptz(3)
+  termsVersion    String?      @map("terms_version")
+  termsAcceptedAt DateTime?    @map("terms_accepted_at") @db.Timestamptz(3)
+
+  authIdentities AuthIdentity[]
+  sessions       Session[]
+
+  @@map("users")
+}
+
+enum PlatformRole {
+  none
+  admin
+  support
+
+  @@map("platform_role")
+}
+
+enum UserStatus {
+  active
+  blocked
+
+  @@map("user_status")
+}
+
+// Método de login (Google ou e-mail); um usuário pode ter os dois.
+model AuthIdentity {
+  id              String       @id @default(uuid(7)) @db.Uuid
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  userId          String       @map("user_id") @db.Uuid
+  provider        AuthProvider
+  providerSubject String       @map("provider_subject")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerSubject], map: "uq_auth_identities_provider_provider_subject")
+  @@index([userId], map: "idx_auth_identities_user_id")
+  @@map("auth_identities")
+}
+
+enum AuthProvider {
+  google
+  email
+
+  @@map("auth_provider")
+}
+
+// Sessão no servidor (ADR de login sem senha): token opaco no cookie, só o
+// hash no banco; vale 7 dias a partir do último uso (RN08 de Login).
+model Session {
+  id               String       @id @default(uuid(7)) @db.Uuid
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  userId           String       @map("user_id") @db.Uuid
+  tokenHash        String       @unique(map: "uq_sessions_token_hash") @map("token_hash")
+  expiresAt        DateTime     @map("expires_at") @db.Timestamptz(3)
+  lastSeenAt       DateTime     @map("last_seen_at") @db.Timestamptz(3)
+  // Hora do login: não se renova com o uso (RN13 de Login).
+  authenticatedAt  DateTime     @map("authenticated_at") @db.Timestamptz(3)
+  activeProfile    ProfileKind? @map("active_profile")
+  supportSessionId String?      @map("support_session_id") @db.Uuid
+  userAgent        String?      @map("user_agent")
+  revokedAt        DateTime?    @map("revoked_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_sessions_user_id")
+  @@index([expiresAt], map: "idx_sessions_expires_at")
+  @@map("sessions")
+}
+
+// Perfil: o jeito de a pessoa usar o Kore (RN14 de Login).
+enum ProfileKind {
+  couple
+  planner
+  seller
+
+  @@map("profile_kind")
+}
