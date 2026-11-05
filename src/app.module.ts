@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AccessModule } from './modules/access/access.module';
 import { LogsModule } from './modules/logs/logs.module';
+import { ProductEventsModule } from './modules/product-events/product-events.module';
 import { AppConfigModule } from './shared/config/app-config.module';
 import { CryptoModule } from './shared/crypto/crypto.module';
 import { DatabaseModule } from './shared/database/database.module';
@@ -21,6 +22,7 @@ import { RedisModule } from './shared/redis/redis.module';
     CryptoModule,
     HealthModule,
     LogsModule,
+    ProductEventsModule,
     // Ordem dos guards globais: rate limit → origem (CSRF) → sessão. O rate
     // limit vem primeiro: barra o abuso antes de qualquer outra checagem.
     RateLimitModule,
