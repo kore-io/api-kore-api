@@ -1,0 +1,477 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "HealthController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The Health Check is successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    },
+                    "info": {
+                      "type": "object",
+                      "example": {
+                        "database": {
+                          "status": "up"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      },
+                      "nullable": true
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {},
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      },
+                      "nullable": true
+                    },
+                    "details": {
+                      "type": "object",
+                      "example": {
+                        "database": {
+                          "status": "up"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The Health Check is not successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "info": {
+                      "type": "object",
+                      "example": {
+                        "database": {
+                          "status": "up"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      },
+                      "nullable": true
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "redis": {
+                          "status": "down",
+                          "message": "Could not connect"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      },
+                      "nullable": true
+                    },
+                    "details": {
+                      "type": "object",
+                      "example": {
+                        "database": {
+                          "status": "up"
+                        },
+                        "redis": {
+                          "status": "down",
+                          "message": "Could not connect"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Só o Postgres decide o 503 (o host reinicia a API). O Redis aparece no\ncorpo, mas não derruba a API: sem ele, o rate limit deixa passar\n(decisões 97, item 3, e 134).",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/v1/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout_v1",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "summary": "Sair: encerra a sessão deste aparelho (RN09).",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/logout-all": {
+      "post": {
+        "operationId": "AuthController_logoutAll_v1",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "summary": "Sair de todos os aparelhos, inclusive este (RN09).",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/login-challenges": {
+      "post": {
+        "operationId": "LoginController_request_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestLoginChallengeBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestLoginChallengeResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Pede o código e o botão de acesso por e-mail (RN01 a RN04, RN06).",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/login-challenges/verify": {
+      "post": {
+        "operationId": "LoginController_verify_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyLoginChallengeBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyLoginChallengeResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Confirma pelo código ou pelo botão e abre a sessão (RN01, RN02, RN05, RN06, RN08, RN11).",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/google": {
+      "get": {
+        "operationId": "GoogleLoginController_start_v1",
+        "parameters": [
+          {
+            "name": "origin",
+            "required": false,
+            "in": "query",
+            "description": "De onde a pessoa veio (RN06); padrão none.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "invite",
+                "referral",
+                "couple_signup",
+                "planner_signup",
+                "none"
+              ]
+            }
+          },
+          {
+            "name": "originRef",
+            "required": false,
+            "in": "query",
+            "description": "Código de indicação ou token do convite. Não é guardado (decisão 142): a\norigem basta para o próximo passo, e o app guarda o resto.",
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          },
+          {
+            "name": "next",
+            "required": false,
+            "in": "query",
+            "description": "Página de volta (RN10); só caminho relativo do app (decisão 136).",
+            "schema": {
+              "maxLength": 1000,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Vai para o Google, guardando o state e o PKCE num cookie assinado.",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/google/callback": {
+      "get": {
+        "operationId": "GoogleLoginController_callback_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Volta do Google: abre a sessão e leva ao próximo passo (RN06 a RN08, RN10, RN11).",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/me": {
+      "get": {
+        "operationId": "MeController_me_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Quem está conectado; a leitura também renova a sessão (RN08).",
+        "tags": [
+          "me"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Kore API",
+    "description": "",
+    "version": "1",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "RequestLoginChallengeBody": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          },
+          "origin": {
+            "type": "string",
+            "description": "De onde a pessoa veio (RN06); padrão none.",
+            "enum": [
+              "invite",
+              "referral",
+              "couple_signup",
+              "planner_signup",
+              "none"
+            ]
+          },
+          "originRef": {
+            "type": "string",
+            "description": "Código de indicação. Com origin invite, o token do convite é descartado: o\napp o guarda e volta ao convite depois do login (decisão 142).",
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "RequestLoginChallengeResponse": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "resendAvailableAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "resendAvailableAt"
+        ]
+      },
+      "VerifyLoginChallengeBody": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^\\d{6}$"
+          },
+          "token": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 200
+          }
+        }
+      },
+      "VerifiedUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "isNew": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "isNew"
+        ]
+      },
+      "VerifyLoginChallengeResponse": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/VerifiedUser"
+          },
+          "next": {
+            "type": "string",
+            "enum": [
+              "invite",
+              "couple_signup",
+              "planner_signup",
+              "home",
+              "choose_profile"
+            ]
+          }
+        },
+        "required": [
+          "user",
+          "next"
+        ]
+      },
+      "MeResponse": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  }
+}

@@ -107,3 +107,15 @@ Com `GOOGLE_PROVIDER=dev` (só `local` e `test`), `GET /v1/auth/google` leva a u
 formulário mínimo em `/v1/auth/google/dev` que pede o e-mail e volta ao callback
 como o Google voltaria, sem credencial. Com `GOOGLE_PROVIDER=google`, informe
 `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` e `GOOGLE_REDIRECT_URI`.
+
+## OpenAPI
+
+O `openapi.json` da raiz é gerado do código (`@nestjs/swagger`) e versionado: o
+`web-kore-app` gera o client com o Orval a partir dele (decisão 149).
+
+```bash
+pnpm openapi:export   # regrava o openapi.json (build + export, sem subir servidor)
+pnpm openapi:check    # falha se o openapi.json estiver desatualizado (CI)
+```
+
+Mudou rota ou DTO: rode o `openapi:export` e faça commit do arquivo junto.
