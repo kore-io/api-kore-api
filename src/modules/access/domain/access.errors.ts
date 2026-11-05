@@ -70,3 +70,13 @@ export class UserBlockedError extends Error {
 export class GoogleEmailUnverifiedError extends Error {
   override name = 'GoogleEmailUnverifiedError';
 }
+
+/** Sem vínculo ativo: "não encontrado", para não revelar que o casamento existe (RN01 de Papéis). */
+export class WeddingNotFoundError extends Error {
+  override name = 'WeddingNotFoundError';
+}
+
+/** Com vínculo, mas o papel não permite a ação (RN02 a RN04 de Papéis). */
+export class WeddingActionForbiddenError extends Error {
+  override name = 'WeddingActionForbiddenError';
+}

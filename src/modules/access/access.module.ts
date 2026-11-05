@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { AppConfigService } from '../../shared/config/app-config.service';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthenticateSession } from './application/authenticate-session.use-case';
 import { CompleteGoogleLogin } from './application/complete-google-login.use-case';
 import { CompleteLogin } from './application/complete-login.use-case';
 import { GOOGLE_IDENTITY_PROVIDER } from './application/ports/google-identity-provider.port';
 import { StartGoogleLogin } from './application/start-google-login.use-case';
+import { MEMBERSHIP_READER } from './application/ports/membership-reader.port';
+import { WeddingAuthorization } from './application/wedding-authorization.service';
 import { LOGIN_CHALLENGE_SECRETS } from './application/ports/login-challenge-secrets.port';
 import { LOGIN_CHALLENGE_STORE } from './application/ports/login-challenge-store.port';
 import { LOGIN_CODE_MAILER } from './application/ports/login-code-mailer.port';
@@ -25,6 +27,7 @@ import { GoogleOidcProvider } from './infrastructure/google-oidc.provider';
 import { HmacLoginChallengeSecrets } from './infrastructure/hmac-login-challenge-secrets';
 import { OpaqueSessionTokens } from './infrastructure/opaque-session-tokens';
 import { PrismaLoginChallengeStore } from './infrastructure/prisma-login-challenge.store';
+import { PrismaMembershipReader } from './infrastructure/prisma-membership-reader';
 import { PrismaProfileDirectory } from './infrastructure/prisma-profile-directory';
 import { PrismaUserAccounts } from './infrastructure/prisma-user-accounts';
 import { OutboxLoginCodeMailer } from './infrastructure/outbox-login-code-mailer';
@@ -36,6 +39,7 @@ import { GoogleLoginCookie } from './presentation/google-login-cookie';
 import { LoginController } from './presentation/login.controller';
 import { MeController } from './presentation/me.controller';
 import { SessionGuard } from './presentation/session.guard';
+import { TenantTransactionInterceptor } from './presentation/tenant-transaction.interceptor';
 
 /** Contexto Acesso: sessão, login, papéis e convites de acesso. */
 @Module({
@@ -45,6 +49,9 @@ import { SessionGuard } from './presentation/session.guard';
     { provide: USER_REPOSITORY, useClass: PrismaUserRepository },
     { provide: SESSION_TOKENS, useClass: OpaqueSessionTokens },
     { provide: APP_GUARD, useClass: SessionGuard },
+    { provide: APP_INTERCEPTOR, useClass: TenantTransactionInterceptor },
+    { provide: MEMBERSHIP_READER, useClass: PrismaMembershipReader },
+    WeddingAuthorization,
     { provide: LOGIN_CHALLENGE_STORE, useClass: PrismaLoginChallengeStore },
     {
       provide: LOGIN_CHALLENGE_SECRETS,
@@ -84,6 +91,6 @@ import { SessionGuard } from './presentation/session.guard';
     EndAllSessions,
     GetMe,
   ],
-  exports: [StartSession],
+  exports: [StartSession, WeddingAuthorization],
 })
 export class AccessModule {}

@@ -1,0 +1,23 @@
+import { Injectable } from '@nestjs/common';
+import { TenantTransaction } from '../../../shared/database/tenant-transaction';
+import type { MembershipReader } from '../application/ports/membership-reader.port';
+import type { MembershipRole } from '../domain/wedding-authorization';
+
+@Injectable()
+export class PrismaMembershipReader implements MembershipReader {
+  constructor(private readonly tenant: TenantTransaction) {}
+
+  async activeRole({
+    userId,
+    weddingId,
+  }: {
+    userId: string;
+    weddingId: string;
+  }): Promise<MembershipRole | null> {
+    const membership = await this.tenant.client().membership.findFirst({
+      where: { userId, weddingId, removedAt: null },
+      select: { role: true },
+    });
+    return membership?.role ?? null;
+  }
+}
