@@ -37,7 +37,6 @@ const input = {
   method: 'email' as const,
   providerSubject: 'novo@kore.local',
   origin: 'referral' as const,
-  originRef: 'juliana-prado',
   ip: '200.1.2.3',
   now,
 };

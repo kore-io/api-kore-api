@@ -24,7 +24,10 @@ export class RequestLoginChallengeBody {
   @IsIn(LOGIN_ORIGINS)
   origin?: LoginOrigin;
 
-  /** Token do convite de acesso ou código de indicação. */
+  /**
+   * Código de indicação. Com origin invite, o token do convite é descartado: o
+   * app o guarda e volta ao convite depois do login (decisão 142).
+   */
   @IsOptional()
   @IsString()
   @MaxLength(200)
@@ -63,5 +66,4 @@ class VerifiedUser {
 export class VerifyLoginChallengeResponse {
   user: VerifiedUser;
   next: 'home' | 'choose_profile' | 'couple_signup' | 'planner_signup' | 'invite';
-  inviteToken?: string;
 }

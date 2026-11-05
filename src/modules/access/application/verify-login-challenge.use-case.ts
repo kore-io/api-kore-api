@@ -66,7 +66,6 @@ export class VerifyLoginChallenge {
       method: 'email',
       providerSubject: challenge.email.toLowerCase(),
       origin: challenge.origin,
-      originRef: challenge.originRef,
       ip,
       userAgent,
       now,

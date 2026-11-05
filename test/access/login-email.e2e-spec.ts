@@ -208,7 +208,11 @@ describe('Login sem senha por e-mail (Login sem senha e sessão)', () => {
 
       const response = await verify({ ip, body: { email, code } }).expect(200);
 
-      expect(response.body).toMatchObject({ next: 'invite', inviteToken: 'token-do-convite' });
+      expect(response.body.next).toBe('invite');
+      // O token do convite fica no aparelho; nunca vai ao banco (decisão 142).
+      expect(response.body.inviteToken).toBeUndefined();
+      const [challenge] = await prisma.loginChallenge.findMany({ where: { email } });
+      expect(challenge).toMatchObject({ origin: 'invite', originRef: null });
     });
 
     it('Cenário: Pela tela Entrar, sem origem, vale a Seleção de perfil (RN06)', async () => {
@@ -245,6 +249,21 @@ describe('Login sem senha por e-mail (Login sem senha e sessão)', () => {
       ['código com letras', { email: 'a@kore.local', code: '12ab56' }],
     ])('dado %s, quando confirma, então responde 400', async (_, body) => {
       await verify({ ip: uniqueIp(), body }).expect(400);
+    });
+
+    it('dado um pedido de convite com o token, quando grava direto no banco, então o banco recusa (decisão 142)', async () => {
+      await expect(
+        prisma.loginChallenge.create({
+          data: {
+            email: newEmail(),
+            tokenHash: randomUUID(),
+            codeHash: 'x',
+            expiresAt: new Date(),
+            origin: 'invite',
+            originRef: 'token-do-convite',
+          },
+        }),
+      ).rejects.toThrow(/chk_login_challenges_invite_without_ref/);
     });
 
     it('dado um e-mail mal formado, quando pede o código, então responde 400', async () => {

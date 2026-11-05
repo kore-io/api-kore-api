@@ -56,7 +56,8 @@ describe('RequestLoginChallenge', () => {
         codeHash: 'ch',
         expiresAt: new Date(now.getTime() + 15 * 60_000),
         origin: 'invite',
-        originRef: 'convite',
+        // O token do convite não vai ao banco (decisão 142).
+        originRef: null,
         requestIp: '1.2.3.4',
       },
     });

@@ -6,7 +6,7 @@ import {
   LOGIN_REQUEST_INTERVAL_MS,
   LOGIN_REQUEST_WINDOW_MS,
 } from '../domain/login-challenge-rules';
-import type { LoginOrigin } from '../domain/login-next-step';
+import { storableOriginRef, type LoginOrigin } from '../domain/login-next-step';
 import {
   LOGIN_CHALLENGE_SECRETS,
   type LoginChallengeSecrets,
@@ -70,7 +70,7 @@ export async function issueLoginChallengeIfAllowed({
       codeHash,
       expiresAt: new Date(now.getTime() + LOGIN_CHALLENGE_TTL_MS),
       origin,
-      originRef,
+      originRef: storableOriginRef({ origin, originRef }),
       requestIp,
     },
   });
