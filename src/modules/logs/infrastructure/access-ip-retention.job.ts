@@ -1,13 +1,13 @@
 import { InjectQueue, OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import type { Queue } from 'bullmq';
+import { upsertDailyScheduler } from '../../../shared/jobs/daily-scheduler';
 import { PurgeExpiredAccessIpLogs } from '../application/purge-expired-access-ip-logs.use-case';
 
 export const ACCESS_IP_RETENTION_QUEUE = 'access-ip-retention';
 export const ACCESS_IP_RETENTION_SCHEDULER_ID = 'purge-expired-access-ip-logs';
 // Todo dia às 4h, horário de Brasília (fora do pico).
-const DAILY_AT_4AM = { pattern: '0 4 * * *', tz: 'America/Sao_Paulo' };
-const SCHEDULE_WAIT_MS = 2_000;
+const DAILY_AT_4AM = '0 4 * * *';
 
 const logger = new Logger('AccessIpRetention');
 
@@ -37,20 +37,11 @@ export class AccessIpRetentionScheduler implements OnApplicationBootstrap {
   constructor(@InjectQueue(ACCESS_IP_RETENTION_QUEUE) private readonly queue: Queue) {}
 
   async onApplicationBootstrap(): Promise<void> {
-    this.queue.on('error', (error: Error) => logger.warn(`Fila sem Redis: ${error.name}`));
-    // Com o Redis fora, o worker sobe assim mesmo (decisão 97, item 3); o
-    // agendamento é registrado de novo na próxima subida.
-    const scheduled = this.queue
-      .upsertJobScheduler(ACCESS_IP_RETENTION_SCHEDULER_ID, DAILY_AT_4AM)
-      .then(
-        () => true,
-        () => false,
-      );
-    const waited = new Promise<boolean>((resolve) => {
-      setTimeout(() => resolve(false), SCHEDULE_WAIT_MS).unref();
+    await upsertDailyScheduler({
+      queue: this.queue,
+      schedulerId: ACCESS_IP_RETENTION_SCHEDULER_ID,
+      cronPattern: DAILY_AT_4AM,
+      logger,
     });
-    if (!(await Promise.race([scheduled, waited]))) {
-      logger.warn('Rotina de retenção do IP real não agendada: Redis indisponível.');
-    }
   }
 }
