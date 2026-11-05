@@ -4,6 +4,7 @@ import {
   GoneException,
   HttpException,
   HttpStatus,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import {
@@ -14,6 +15,8 @@ import {
   LoginRequestTooSoonError,
   SessionExpiredError,
   UserBlockedError,
+  WeddingActionForbiddenError,
+  WeddingNotFoundError,
 } from '../domain/access.errors';
 
 /** Erros de regra no formato nativo, com o código no campo error (decisão 99). */
@@ -69,6 +72,20 @@ export function toHttpError(error: unknown): unknown {
       message: 'Too many wrong codes.',
       newCodeSent: error.newCodeSent,
       ...(error.retryAfterMinutes !== undefined && { retryAfterMinutes: error.retryAfterMinutes }),
+    });
+  }
+  if (error instanceof WeddingNotFoundError) {
+    return new NotFoundException({
+      statusCode: 404,
+      error: 'WEDDING_NOT_FOUND',
+      message: 'Wedding not found.',
+    });
+  }
+  if (error instanceof WeddingActionForbiddenError) {
+    return new ForbiddenException({
+      statusCode: 403,
+      error: 'ACTION_NOT_ALLOWED',
+      message: 'Your role in this wedding does not allow this action.',
     });
   }
   if (error instanceof UserBlockedError) {
