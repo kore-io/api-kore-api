@@ -8,7 +8,7 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
-import { ApiExcludeEndpoint, ApiTags } from '@nestjs/swagger';
+import { ApiExcludeEndpoint, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { AppConfigService } from '../../../shared/config/app-config.service';
 import { Public } from '../../../shared/http/public.decorator';
@@ -58,6 +58,10 @@ export class GoogleLoginController {
 
   /** Vai para o Google, guardando o state e o PKCE num cookie assinado. */
   @Get()
+  @ApiResponse({
+    status: 302,
+    description: 'Vai para o Google (ou para o provedor de desenvolvimento).',
+  })
   start(@Query() query: StartGoogleLoginQuery, @Res() response: Response): void {
     const { authorizationUrl, attempt } = this.startLogin.execute({
       origin: query.origin ?? 'none',
@@ -69,6 +73,11 @@ export class GoogleLoginController {
 
   /** Volta do Google: abre a sessão e leva ao próximo passo (RN06 a RN08, RN10, RN11). */
   @Get('callback')
+  @ApiResponse({
+    status: 302,
+    description:
+      'Sucesso: APP_URL/entrar/google?step=&next=, com o cookie de sessão. Erro: APP_URL/entrar?error=google_unverified|blocked|google_failed (decisão 147).',
+  })
   @AuthRateLimit()
   async callback(@Req() request: Request, @Res() response: Response): Promise<void> {
     const now = new Date();

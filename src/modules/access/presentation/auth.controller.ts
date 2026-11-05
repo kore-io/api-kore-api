@@ -1,3 +1,7 @@
+import {
+  ApiErrorResponses,
+  commonErrors,
+} from '../../../shared/http/api-error-responses.decorator';
 import { Controller, HttpCode, HttpStatus, Post, Res } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
@@ -17,6 +21,7 @@ export class AuthController {
 
   /** Sair: encerra a sessão deste aparelho (RN09). */
   @Post('logout')
+  @ApiErrorResponses(...commonErrors({ session: true, write: true }))
   @HttpCode(HttpStatus.NO_CONTENT)
   async logout(
     @CurrentSession() session: AuthenticatedSession,
@@ -28,6 +33,7 @@ export class AuthController {
 
   /** Sair de todos os aparelhos, inclusive este (RN09). */
   @Post('logout-all')
+  @ApiErrorResponses(...commonErrors({ session: true, write: true }))
   @HttpCode(HttpStatus.NO_CONTENT)
   async logoutAll(
     @CurrentSession() session: AuthenticatedSession,
