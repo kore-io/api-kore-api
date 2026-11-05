@@ -15,6 +15,7 @@ describe('StartSession', () => {
     const result = await new StartSession(sessions, tokens).execute({
       userId: 'user-1',
       now,
+      authMethod: 'email',
       userAgent: 'Mozilla/5.0',
     });
 
@@ -25,6 +26,7 @@ describe('StartSession', () => {
       tokenHash: 'hash',
       now,
       expiresAt,
+      authMethod: 'email',
       userAgent: 'Mozilla/5.0',
     });
   });

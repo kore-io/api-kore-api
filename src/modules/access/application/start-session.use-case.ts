@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import type { AuthMethod } from '../domain/authenticated-session';
 import { renewedExpiry } from '../domain/session-lifetime';
 import { SESSION_REPOSITORY, type SessionRepository } from './ports/session-repository.port';
 import { SESSION_TOKENS, type SessionTokens } from './ports/session-token.port';
@@ -18,15 +19,17 @@ export class StartSession {
   async execute({
     userId,
     now,
+    authMethod,
     userAgent,
   }: {
     userId: string;
     now: Date;
+    authMethod: AuthMethod;
     userAgent?: string;
   }): Promise<{ token: string; expiresAt: Date }> {
     const { token, tokenHash } = this.tokens.generate();
     const expiresAt = renewedExpiry({ now });
-    await this.sessions.create({ userId, tokenHash, now, expiresAt, userAgent });
+    await this.sessions.create({ userId, tokenHash, now, expiresAt, authMethod, userAgent });
     return { token, expiresAt };
   }
 }

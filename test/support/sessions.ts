@@ -26,6 +26,8 @@ export async function openSession({
   app: INestApplication;
   userId: string;
 }): Promise<string> {
-  const { token } = await app.get(StartSession).execute({ userId, now: new Date() });
+  const { token } = await app
+    .get(StartSession)
+    .execute({ userId, now: new Date(), authMethod: 'email' });
   return `${SESSION_COOKIE}=${token}`;
 }
