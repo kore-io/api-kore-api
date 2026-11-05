@@ -3,22 +3,51 @@ import { z } from 'zod';
 export const APP_ENVS = ['local', 'test', 'homolog', 'production'] as const;
 export type AppEnv = (typeof APP_ENVS)[number];
 
+export const LOCAL_KEY_ENVS: readonly AppEnv[] = ['local', 'test'];
+
 const postgresUrl = z
   .url({ protocol: /^postgres(ql)?$/ })
   .describe('URL de conexão do Postgres (postgresql://usuario:senha@host:porta/banco)');
 
-export const envSchema = z.object({
-  APP_ENV: z.enum(APP_ENVS),
-  PORT: z.coerce.number().int().min(1).max(65535).default(3000),
-  DATABASE_URL: postgresUrl,
-  REDIS_URL: z.url({ protocol: /^rediss?$/ }),
-  // E-mail aos usuários. Só SMTP por enquanto (Mailpit no local); o SES entra
-  // com a infraestrutura.
-  EMAIL_PROVIDER: z.enum(['smtp']),
-  EMAIL_FROM: z.string().min(1),
-  SMTP_HOST: z.string().min(1),
-  SMTP_PORT: z.coerce.number().int().min(1).max(65535),
-});
+const base64Key32 = z
+  .base64()
+  .refine((value) => Buffer.from(value, 'base64').length === 32, 'precisa ter 32 bytes em base64');
+
+export const envSchema = z
+  .object({
+    APP_ENV: z.enum(APP_ENVS),
+    PORT: z.coerce.number().int().min(1).max(65535).default(3000),
+    DATABASE_URL: postgresUrl,
+    REDIS_URL: z.url({ protocol: /^rediss?$/ }),
+    // E-mail aos usuários. Só SMTP por enquanto (Mailpit no local); o SES entra
+    // com a infraestrutura.
+    EMAIL_PROVIDER: z.enum(['smtp']),
+    EMAIL_FROM: z.string().min(1),
+    SMTP_HOST: z.string().min(1),
+    SMTP_PORT: z.coerce.number().int().min(1).max(65535),
+    // Chave mestra da criptografia de envelope. No local e nos testes, uma chave
+    // de desenvolvimento; o AWS KMS entra com a infraestrutura.
+    KMS_PROVIDER: z.enum(['local']),
+    KMS_LOCAL_MASTER_KEY: base64Key32.optional(),
+  })
+  .superRefine((env, ctx) => {
+    if (env.KMS_PROVIDER !== 'local') return;
+    // Decisão 97, item 4: a chave de desenvolvimento só vale em local ou test.
+    if (!LOCAL_KEY_ENVS.includes(env.APP_ENV)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['KMS_PROVIDER'],
+        message: 'a chave local só é aceita com APP_ENV local ou test',
+      });
+    }
+    if (!env.KMS_LOCAL_MASTER_KEY) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['KMS_LOCAL_MASTER_KEY'],
+        message: 'obrigatória com KMS_PROVIDER=local',
+      });
+    }
+  });
 
 export type Env = z.infer<typeof envSchema>;
 
