@@ -59,3 +59,28 @@ export class ReferralNotFoundErrorBody {
   @ApiProperty({ enum: ['REFERRAL_NOT_FOUND'] }) error: 'REFERRAL_NOT_FOUND';
   @ApiProperty() message: string;
 }
+
+export class SlugUnavailableErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['SLUG_UNAVAILABLE'] }) error: 'SLUG_UNAVAILABLE';
+  @ApiProperty() message: string;
+  /** Alternativa livre, com o ano ou um número (RN05). */
+  @ApiProperty({ type: String, nullable: true }) suggestion: string | null;
+}
+
+export class AlreadyOwnerErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['ALREADY_OWNER'] }) error: 'ALREADY_OWNER';
+  @ApiProperty() message: string;
+  /** O casamento que a pessoa já tem, para o botão de abri-lo (RN06). */
+  @ApiProperty() weddingId: string;
+}
+
+export class TermsVersionOutdatedErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['TERMS_VERSION_OUTDATED'] }) error: 'TERMS_VERSION_OUTDATED';
+  @ApiProperty() message: string;
+}

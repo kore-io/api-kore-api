@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   GoneException,
   HttpException,
@@ -14,6 +15,9 @@ import {
   LoginRequestLimitError,
   LoginRequestTooSoonError,
   ReferralNotFoundError,
+  AlreadyOwnerError,
+  SlugUnavailableError,
+  TermsVersionOutdatedError,
   SessionExpiredError,
   UserBlockedError,
   WeddingActionForbiddenError,
@@ -94,6 +98,29 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 404,
       error: 'REFERRAL_NOT_FOUND',
       message: 'Referral not found.',
+    });
+  }
+  if (error instanceof SlugUnavailableError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'SLUG_UNAVAILABLE',
+      message: 'Wedding address taken or reserved.',
+      suggestion: error.suggestion,
+    });
+  }
+  if (error instanceof AlreadyOwnerError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'ALREADY_OWNER',
+      message: 'You already own an active wedding.',
+      weddingId: error.weddingId,
+    });
+  }
+  if (error instanceof TermsVersionOutdatedError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'TERMS_VERSION_OUTDATED',
+      message: 'The terms changed; accept the current version.',
     });
   }
   if (error instanceof UserBlockedError) {

@@ -587,6 +587,170 @@
           "referrals"
         ]
       }
+    },
+    "/v1/weddings/slug-availability": {
+      "get": {
+        "operationId": "WeddingsController_slugAvailability_v1",
+        "parameters": [
+          {
+            "name": "eventDate",
+            "required": false,
+            "in": "query",
+            "description": "Para a sugestão com o ano (RN05).",
+            "schema": {
+              "example": "2026-11-14",
+              "type": "string"
+            }
+          },
+          {
+            "name": "slug",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlugAvailabilityResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Confere o endereço enquanto o casal digita (RN04, RN05 de Cadastro).",
+        "tags": [
+          "weddings"
+        ]
+      }
+    },
+    "/v1/weddings": {
+      "post": {
+        "operationId": "WeddingsController_create_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWeddingBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateWeddingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/SlugUnavailableErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AlreadyOwnerErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/TermsVersionOutdatedErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cria o casamento em rascunho, com a pessoa como dona (RN02 a RN09, RN11 de Cadastro).",
+        "tags": [
+          "weddings"
+        ]
+      }
     }
   },
   "info": {
@@ -1091,6 +1255,287 @@
           "referrerName",
           "kind",
           "discountPercent"
+        ]
+      },
+      "SlugAvailabilityResponse": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "nullable": true,
+            "enum": [
+              "taken",
+              "reserved",
+              "invalid_format"
+            ],
+            "type": "string"
+          },
+          "suggestion": {
+            "type": "string",
+            "nullable": true
+          },
+          "slug": {
+            "type": "string"
+          },
+          "available": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "reason",
+          "suggestion",
+          "slug",
+          "available"
+        ]
+      },
+      "SlugUnavailableErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SLUG_UNAVAILABLE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "suggestion": {
+            "type": "string",
+            "nullable": true,
+            "description": "Alternativa livre, com o ano ou um número (RN05)."
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "suggestion"
+        ]
+      },
+      "AlreadyOwnerErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "ALREADY_OWNER"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "weddingId": {
+            "type": "string",
+            "description": "O casamento que a pessoa já tem, para o botão de abri-lo (RN06)."
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "weddingId"
+        ]
+      },
+      "TermsVersionOutdatedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "TERMS_VERSION_OUTDATED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "CreateWeddingBody": {
+        "type": "object",
+        "properties": {
+          "myTitle": {
+            "enum": [
+              "bride",
+              "groom"
+            ],
+            "type": "string"
+          },
+          "eventDate": {
+            "type": "string",
+            "description": "Opcional (RN02).",
+            "example": "2026-11-14"
+          },
+          "state": {
+            "enum": [
+              "AC",
+              "AM",
+              "RR",
+              "RO",
+              "MT",
+              "MS",
+              "PA",
+              "AP",
+              "TO",
+              "MA",
+              "PI",
+              "CE",
+              "RN",
+              "PB",
+              "PE",
+              "AL",
+              "SE",
+              "BA",
+              "GO",
+              "DF",
+              "MG",
+              "ES",
+              "RJ",
+              "SP",
+              "PR",
+              "SC",
+              "RS"
+            ],
+            "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 40,
+            "example": "ana-e-marcos"
+          },
+          "termsVersion": {
+            "type": "string",
+            "description": "A versão dos Termos que o app mostrou (RN11).",
+            "minLength": 1,
+            "maxLength": 32,
+            "example": "2026-09"
+          },
+          "signupSource": {
+            "description": "Origem do cadastro; padrão direct (decisões 135 e 166).",
+            "enum": [
+              "direct",
+              "simulator",
+              "made_with_kore"
+            ],
+            "type": "string"
+          },
+          "myName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "partnerName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "city": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "referralCode": {
+            "type": "string",
+            "description": "O link de indicação guardado no aparelho (RN08).",
+            "maxLength": 200
+          },
+          "utmSource": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "utmMedium": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "utmCampaign": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "myTitle",
+          "state",
+          "slug",
+          "termsVersion",
+          "myName",
+          "partnerName",
+          "city"
+        ]
+      },
+      "CreatedWeddingReferrer": {
+        "type": "object",
+        "properties": {
+          "discountPercent": {
+            "type": "number",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "discountPercent",
+          "name"
+        ]
+      },
+      "CreateWeddingResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft"
+            ]
+          },
+          "referrer": {
+            "nullable": true,
+            "description": "Nulo sem indicação atribuída (RN08).",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CreatedWeddingReferrer"
+              }
+            ]
+          },
+          "weddingId": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "referrer",
+          "weddingId",
+          "slug",
+          "timezone"
         ]
       }
     }

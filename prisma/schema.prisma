@@ -234,26 +234,36 @@ enum LoginOrigin {
 // RLS por vínculo (ADR de multi-tenant; decisão 153). Campos das próximas
 // fases entram com elas.
 model Wedding {
-  id              String        @id @default(uuid(7)) @db.Uuid
-  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id              String          @id @default(uuid(7)) @db.Uuid
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
   // Endereço do site; único e minúsculo (RN04 e RN05 de Cadastro).
-  slug            String        @unique(map: "uq_weddings_slug") @db.Citext
+  slug            String          @unique(map: "uq_weddings_slug") @db.Citext
   status          WeddingStatus
-  eventDate       DateTime?     @map("event_date") @db.Date
+  eventDate       DateTime?       @map("event_date") @db.Date
   // Derivado da UF (RN03 de Cadastro).
   timezone        String
   city            String
-  state           String        @db.Char(2)
-  createdByUserId String        @map("created_by_user_id") @db.Uuid
+  state           String          @db.Char(2)
+  createdByUserId String          @map("created_by_user_id") @db.Uuid
   // Atividade que zera o prazo de exclusão sem dono (RN13 de Convites; decisão 136).
-  lastActivityAt  DateTime      @default(now()) @map("last_activity_at") @db.Timestamptz(3)
+  lastActivityAt  DateTime        @default(now()) @map("last_activity_at") @db.Timestamptz(3)
+  // Indicador que trouxe o casal (RN08 de Cadastro).
+  referrerId      String?         @map("referrer_id") @db.Uuid
+  referralSource  ReferralSource? @map("referral_source")
+  // Origem do cadastro (decisões 135 e 166).
+  signupSource    SignupSource    @map("signup_source")
+  utmSource       String?         @map("utm_source")
+  utmMedium       String?         @map("utm_medium")
+  utmCampaign     String?         @map("utm_campaign")
 
   createdBy   User         @relation("WeddingCreatedBy", fields: [createdByUserId], references: [id])
+  referrer    Referrer?    @relation(fields: [referrerId], references: [id])
   partners    Partner[]
   memberships Membership[]
 
   @@index([createdByUserId], map: "idx_weddings_created_by_user_id")
+  @@index([referrerId, status], map: "idx_weddings_referrer_id_status")
   @@map("weddings")
 }
 
@@ -270,17 +280,40 @@ enum WeddingStatus {
   @@map("wedding_status")
 }
 
+// Como o casamento ficou atribuído ao indicador (Modelo de Dados).
+enum ReferralSource {
+  created_by_planner
+  created_by_seller
+  referral_link
+  invited_before_payment
+  admin_reassigned
+
+  @@map("referral_source")
+}
+
+// De onde veio o cadastro; planner entra na F6 (decisão 135).
+enum SignupSource {
+  direct
+  simulator
+  referral_link
+  planner
+  made_with_kore
+
+  @@map("signup_source")
+}
+
 // Noivo ou noiva (Glossário: Partner, sem gênero no nome).
 model Partner {
-  id          String       @id @default(uuid(7)) @db.Uuid
-  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
-  weddingId   String       @map("wedding_id") @db.Uuid
-  slot        Int          @db.SmallInt
-  displayName String       @map("display_name")
-  title       PartnerTitle
+  id          String        @id @default(uuid(7)) @db.Uuid
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  weddingId   String        @map("wedding_id") @db.Uuid
+  slot        Int           @db.SmallInt
+  displayName String        @map("display_name")
+  // Nulo até a pessoa dizer se é noivo ou noiva (decisões 93 e 167).
+  title       PartnerTitle?
   // Nulo até o noivo ter login.
-  userId      String?      @map("user_id") @db.Uuid
+  userId      String?       @map("user_id") @db.Uuid
 
   wedding Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
   user    User?   @relation(fields: [userId], references: [id])
@@ -345,9 +378,10 @@ model Referrer {
   createdByAdminUserId    String?        @map("created_by_admin_user_id") @db.Uuid
   deactivatedAt           DateTime?      @map("deactivated_at") @db.Timestamptz(3)
 
-  user           User     @relation("ReferrerUser", fields: [userId], references: [id])
-  createdByAdmin User?    @relation("ReferrerCreatedByAdmin", fields: [createdByAdminUserId], references: [id])
+  user           User      @relation("ReferrerUser", fields: [userId], references: [id])
+  createdByAdmin User?     @relation("ReferrerCreatedByAdmin", fields: [createdByAdminUserId], references: [id])
   planner        Planner?
+  weddings       Wedding[]
 
   @@index([kind, status], map: "idx_referrers_kind_status")
   @@index([createdByAdminUserId], map: "idx_referrers_created_by_admin_user_id")

@@ -12,6 +12,8 @@ export class PrismaReferralDirectory implements ReferralDirectory {
     const referrer = await this.prisma.referrer.findUnique({
       where: { referralCode: code },
       select: {
+        id: true,
+        userId: true,
         referralCode: true,
         kind: true,
         status: true,
@@ -22,6 +24,8 @@ export class PrismaReferralDirectory implements ReferralDirectory {
     });
     if (!referrer) return null;
     return {
+      referrerId: referrer.id,
+      userId: referrer.userId,
       referralCode: referrer.referralCode,
       kind: referrer.kind,
       status: referrer.status,

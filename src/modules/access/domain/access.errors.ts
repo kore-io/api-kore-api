@@ -85,3 +85,30 @@ export class WeddingActionForbiddenError extends Error {
 export class ReferralNotFoundError extends Error {
   override name = 'ReferralNotFoundError';
 }
+
+/** RN05 de Cadastro: endereço em uso ou reservado, com uma alternativa livre. */
+export class SlugUnavailableError extends Error {
+  override name = 'SlugUnavailableError';
+  readonly suggestion: string | null;
+
+  constructor({ suggestion }: { suggestion: string | null }) {
+    super();
+    this.suggestion = suggestion;
+  }
+}
+
+/** RN06 de Cadastro: a pessoa já é dona de um casamento ativo. */
+export class AlreadyOwnerError extends Error {
+  override name = 'AlreadyOwnerError';
+  readonly weddingId: string;
+
+  constructor({ weddingId }: { weddingId: string }) {
+    super();
+    this.weddingId = weddingId;
+  }
+}
+
+/** RN11 de Cadastro: o app mostrou outra versão dos Termos (decisão 166). */
+export class TermsVersionOutdatedError extends Error {
+  override name = 'TermsVersionOutdatedError';
+}

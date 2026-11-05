@@ -22,6 +22,7 @@ export async function seedWedding({
       city: 'Campinas',
       state: 'SP',
       createdByUserId: ownerId,
+      signupSource: 'direct',
       partners: {
         create: [
           { slot: 1, displayName: 'Ana', title: 'bride', userId: ownerId },

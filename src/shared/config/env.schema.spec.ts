@@ -32,6 +32,7 @@ describe('validateEnv', () => {
       SMTP_PORT: 1025,
       OTEL_EXPORTER: 'none',
       LOG_LEVEL: 'info',
+      TERMS_VERSION: '2026-09',
     });
   });
 

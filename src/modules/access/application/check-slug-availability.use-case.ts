@@ -1,0 +1,47 @@
+import { Inject, Injectable } from '@nestjs/common';
+import {
+  isValidSlugFormat,
+  RESERVED_SLUGS,
+  type SlugUnavailableReason,
+} from '../domain/wedding-signup';
+import { SLUG_REGISTRY, type SlugRegistry } from './ports/slug-registry.port';
+import { SuggestSlug } from './suggest-slug.service';
+
+export interface SlugAvailability {
+  slug: string;
+  available: boolean;
+  reason: SlugUnavailableReason | null;
+  suggestion: string | null;
+}
+
+/** Confere o endereço enquanto o casal digita (RN04 e RN05 de Cadastro). */
+@Injectable()
+export class CheckSlugAvailability {
+  constructor(
+    @Inject(SLUG_REGISTRY) private readonly slugs: SlugRegistry,
+    private readonly suggestSlug: SuggestSlug,
+  ) {}
+
+  async execute({
+    slug,
+    eventDate,
+  }: {
+    slug: string;
+    eventDate: Date | null;
+  }): Promise<SlugAvailability> {
+    if (!isValidSlugFormat({ slug }))
+      return { slug, available: false, reason: 'invalid_format', suggestion: null };
+    const reason: SlugUnavailableReason | null = RESERVED_SLUGS.has(slug)
+      ? 'reserved'
+      : (await this.slugs.isTaken({ slug }))
+        ? 'taken'
+        : null;
+    if (!reason) return { slug, available: true, reason: null, suggestion: null };
+    return {
+      slug,
+      available: false,
+      reason,
+      suggestion: await this.suggestSlug.execute({ slug, eventDate }),
+    };
+  }
+}
