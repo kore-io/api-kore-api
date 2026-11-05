@@ -14,6 +14,8 @@ const validConfig = {
   IP_HASH_KEY: 'y23SHU7SsFQYQZEEX9Pdr9F/FoCILgoWhQHBAAS44gc=',
   PRODUCT_EVENT_KEY: 'XzCeByXDR3XJNoRpPJNl4XyRC7WMhdK1MF7T2llEXOk=',
   LOGIN_CODE_KEY: 'AMUIAxq32RpneQW5IM0YNjUxG4zz+Z+GxGdUeEj0Rmc=',
+  GOOGLE_PROVIDER: 'dev',
+  OAUTH_STATE_KEY: 'nKTxWhY4lzQ+sR037TnEfHcScVZXA1kcFbG/ODTNFik=',
   APP_URL: 'http://localhost:5173',
   KMS_LOCAL_MASTER_KEY: '258+JWcuRfDrsS0xeKuTKgRV7p+kFlSMaIu3PErymmo=',
 };
@@ -84,6 +86,18 @@ describe('validateEnv', () => {
   it('dada a lista de origens vazia, quando valida, então recusa subir', () => {
     expect(() => validateEnv({ config: { ...validConfig, ALLOWED_ORIGINS: ' , ' } })).toThrow(
       /ALLOWED_ORIGINS: informe pelo menos uma origem/,
+    );
+  });
+
+  it('dado o Google de desenvolvimento fora de local ou test, quando valida, então recusa subir (decisão 147)', () => {
+    expect(() =>
+      validateEnv({ config: { ...validConfig, APP_ENV: 'production', KMS_PROVIDER: 'local' } }),
+    ).toThrow(/GOOGLE_PROVIDER: o Google de desenvolvimento/);
+  });
+
+  it('dado o Google real sem o cliente, quando valida, então diz o que falta', () => {
+    expect(() => validateEnv({ config: { ...validConfig, GOOGLE_PROVIDER: 'google' } })).toThrow(
+      /GOOGLE_CLIENT_ID: obrigatória com GOOGLE_PROVIDER=google/,
     );
   });
 });

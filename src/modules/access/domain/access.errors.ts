@@ -56,3 +56,8 @@ export class LoginChallengeLockedError extends Error {
 export class UserBlockedError extends Error {
   override name = 'UserBlockedError';
 }
+
+/** Google devolveu um e-mail não verificado: o login é recusado (Login, casos de borda). */
+export class GoogleEmailUnverifiedError extends Error {
+  override name = 'GoogleEmailUnverifiedError';
+}

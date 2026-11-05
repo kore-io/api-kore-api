@@ -69,6 +69,15 @@ export const envSchema = z
     PRODUCT_EVENT_KEY: base64Key32,
     // Chave do HMAC do código de login de 6 números (decisão 139).
     LOGIN_CODE_KEY: base64Key32,
+    // Login pelo Google (decisão 147): `dev` simula a volta sem credencial (só em
+    // local e test); `google` usa o OIDC real com o cliente abaixo.
+    GOOGLE_PROVIDER: z.enum(['dev', 'google']),
+    GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+    GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+    // URL do callback da API registrada no Google (…/v1/auth/google/callback).
+    GOOGLE_REDIRECT_URI: z.url({ protocol: /^https?$/ }).optional(),
+    // Chave do HMAC do cookie do state e do PKCE do Google (decisão 147).
+    OAUTH_STATE_KEY: base64Key32,
     // Observabilidade: console no local; o OTLP do SigNoz entra com a infraestrutura.
     OTEL_EXPORTER: z.enum(OTEL_EXPORTERS).default('none'),
     LOG_LEVEL: z
@@ -76,6 +85,28 @@ export const envSchema = z
       .default('info'),
   })
   .superRefine((env, ctx) => {
+    if (env.GOOGLE_PROVIDER === 'dev' && !LOCAL_KEY_ENVS.includes(env.APP_ENV)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['GOOGLE_PROVIDER'],
+        message: 'o Google de desenvolvimento só é aceito com APP_ENV local ou test',
+      });
+    }
+    if (env.GOOGLE_PROVIDER === 'google') {
+      for (const key of [
+        'GOOGLE_CLIENT_ID',
+        'GOOGLE_CLIENT_SECRET',
+        'GOOGLE_REDIRECT_URI',
+      ] as const) {
+        if (!env[key]) {
+          ctx.addIssue({
+            code: 'custom',
+            path: [key],
+            message: 'obrigatória com GOOGLE_PROVIDER=google',
+          });
+        }
+      }
+    }
     if (env.KMS_PROVIDER !== 'local') return;
     // Decisão 97, item 4: a chave de desenvolvimento só vale em local ou test.
     if (!LOCAL_KEY_ENVS.includes(env.APP_ENV)) {
