@@ -63,6 +63,8 @@ export const envSchema = z
     KMS_LOCAL_MASTER_KEY: base64Key32.optional(),
     // Chave do HMAC do IP no log da aplicação (o IP real fica só no log de IP real).
     IP_HASH_KEY: base64Key32,
+    // Chave do HMAC que pseudonimiza o casamento nos eventos de produto (decisão 135).
+    PRODUCT_EVENT_KEY: base64Key32,
     // Observabilidade: console no local; o OTLP do SigNoz entra com a infraestrutura.
     OTEL_EXPORTER: z.enum(OTEL_EXPORTERS).default('none'),
     LOG_LEVEL: z

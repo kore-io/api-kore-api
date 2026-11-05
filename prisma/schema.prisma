@@ -157,3 +157,29 @@ enum ProfileKind {
 
   @@map("profile_kind")
 }
+
+// Evento de produto (Parecer pré-código; decisões 135 e 138): métrica própria
+// no Postgres, sem ferramenta de terceiros. O casamento entra só
+// pseudonimizado (weddingRef = HMAC do weddingId). Só inserção para a API;
+// retenção de 18 meses.
+model ProductEvent {
+  id         String           @id @default(uuid(7)) @db.Uuid
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  name       ProductEventName
+  occurredAt DateTime         @map("occurred_at") @db.Timestamptz(3)
+  weddingRef String?          @map("wedding_ref")
+  props      Json?
+
+  @@index([occurredAt], map: "idx_product_events_occurred_at")
+  @@index([name, occurredAt], map: "idx_product_events_name_occurred_at")
+  @@map("product_events")
+}
+
+// Só os nomes da lista do Parecer; cada fase acrescenta os seus por migration.
+enum ProductEventName {
+  conta_criada
+  cerim_link_gerado
+  casal_aceitou
+
+  @@map("product_event_name")
+}
