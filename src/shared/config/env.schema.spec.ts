@@ -10,6 +10,7 @@ const validConfig = {
   SMTP_HOST: 'localhost',
   SMTP_PORT: '1025',
   KMS_PROVIDER: 'local',
+  IP_HASH_KEY: 'y23SHU7SsFQYQZEEX9Pdr9F/FoCILgoWhQHBAAS44gc=',
   KMS_LOCAL_MASTER_KEY: '258+JWcuRfDrsS0xeKuTKgRV7p+kFlSMaIu3PErymmo=',
 };
 

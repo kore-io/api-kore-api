@@ -33,6 +33,8 @@ export const envSchema = z
     // de desenvolvimento; o AWS KMS entra com a infraestrutura.
     KMS_PROVIDER: z.enum(['local']),
     KMS_LOCAL_MASTER_KEY: base64Key32.optional(),
+    // Chave do HMAC do IP no log da aplicação (o IP real fica só no log de IP real).
+    IP_HASH_KEY: base64Key32,
     // Observabilidade: console no local; o OTLP do SigNoz entra com a infraestrutura.
     OTEL_EXPORTER: z.enum(OTEL_EXPORTERS).default('none'),
     LOG_LEVEL: z

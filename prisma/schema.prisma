@@ -10,3 +10,59 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// Log da aplicação (Glossário): registro técnico de ações, inclusive as
+// sensíveis. Só inserção, sem RLS de casamento, fora do expurgo do casamento.
+// weddingId e actorUserId ficam sem FK de propósito: o log sobrevive ao
+// expurgo do casamento e à exclusão da conta.
+model ApplicationLog {
+  id               String              @id @default(uuid(7)) @db.Uuid
+  createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  weddingId        String?             @map("wedding_id") @db.Uuid
+  actorKind        ApplicationLogActor @map("actor_kind")
+  actorUserId      String?             @map("actor_user_id") @db.Uuid
+  supportSessionId String?             @map("support_session_id") @db.Uuid
+  action           String
+  entityType       String?             @map("entity_type")
+  entityId         String?             @map("entity_id")
+  data             Json?
+  ipHash           String?             @map("ip_hash")
+
+  @@index([weddingId, createdAt(sort: Desc)], map: "idx_application_logs_wedding_id_created_at")
+  @@index([actorUserId, createdAt(sort: Desc)], map: "idx_application_logs_actor_user_id_created_at")
+  @@index([action, createdAt(sort: Desc)], map: "idx_application_logs_action_created_at")
+  @@map("application_logs")
+}
+
+enum ApplicationLogActor {
+  user
+  party
+  admin
+  system
+
+  @@map("application_log_actor")
+}
+
+// Log de IP real (decisão 116; Marco Civil, art. 15): guarda o IP real por
+// 6 meses, separado do log da aplicação e do casamento. Só inserção; a rotina
+// de retenção apaga o que passou do prazo.
+model AccessIpLog {
+  id          String           @id @default(uuid(7)) @db.Uuid
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  occurredAt  DateTime         @map("occurred_at") @db.Timestamptz(3)
+  ip          String           @db.Inet
+  actorKind   AccessIpLogActor @map("actor_kind")
+  actorUserId String?          @map("actor_user_id") @db.Uuid
+  partyId     String?          @map("party_id") @db.Uuid
+  action      String
+
+  @@index([occurredAt], map: "idx_access_ip_logs_occurred_at")
+  @@map("access_ip_logs")
+}
+
+enum AccessIpLogActor {
+  user
+  party
+
+  @@map("access_ip_log_actor")
+}
