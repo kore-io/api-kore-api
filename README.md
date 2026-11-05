@@ -70,14 +70,15 @@ As rotinas agendadas e as filas (BullMQ, no mesmo Redis) rodam num processo
 separado da API (`src/worker.ts`; na imagem: `node dist/worker`). Cada rotina
 tem um agendamento com id fixo, registrado na subida do worker.
 
-| Rotina                           | Quando                    | O que faz                                                      |
-| -------------------------------- | ------------------------- | -------------------------------------------------------------- |
-| `purge-expired-access-ip-logs`   | todo dia, 4h (Brasília)   | apaga o IP real com mais de 6 meses (decisão 116)              |
-| `purge-expired-application-logs` | todo dia, 4h30 (Brasília) | apaga o log da aplicação com mais de 5 anos (decisão 137)      |
-| `purge-expired-product-events`   | todo dia, 5h (Brasília)   | apaga os eventos de produto com mais de 18 meses (decisão 135) |
+| Rotina                           | Quando                    | O que faz                                                                                     |
+| -------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------- |
+| `purge-expired-access-ip-logs`   | todo dia, 4h (Brasília)   | apaga o IP real com mais de 6 meses (decisão 116)                                             |
+| `purge-expired-application-logs` | todo dia, 4h30 (Brasília) | apaga o log da aplicação com mais de 5 anos (decisão 137)                                     |
+| `purge-expired-product-events`   | todo dia, 5h (Brasília)   | apaga os eventos de produto com mais de 18 meses (decisão 135)                                |
+| `purge-ended-access`             | todo dia, 5h30 (Brasília) | apaga sessões vencidas ou encerradas e pedidos de login com mais de 1 hora (a janela da RN04) |
 
 Toda execução de rotina fica registrada no log da aplicação (`access_ip_log.purged`,
-`application_log.purged`, `product_event.purged`).
+`application_log.purged`, `product_event.purged`, `access_cleanup.purged`).
 
 O backoffice e as rotinas usam a conexão `DATABASE_BACKOFFICE_URL`, que assume o
 papel `kore_backoffice` (BYPASSRLS). O log da aplicação e o log de IP real são
