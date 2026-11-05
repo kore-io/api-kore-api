@@ -24,6 +24,30 @@ export default tseslint.config(
     },
   },
   {
+    // A conexão com BYPASSRLS só pode ser usada pelo backoffice e pelas rotinas
+    // (ADR de multi-tenant, item 5); em rota de produto vale o PrismaService.
+    files: ['src/**/*.ts'],
+    ignores: [
+      'src/shared/database/**',
+      'src/**/infrastructure/backoffice/**',
+      'src/**/*-worker.module.ts',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/backoffice-prisma.service'],
+              message:
+                'BackofficePrismaService (BYPASSRLS) só em infrastructure/backoffice/ e nos módulos do worker.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // supertest devolve `body` como any; nos testes isso é aceitável.
     files: ['test/**/*.ts', '**/*.spec.ts'],
     rules: {

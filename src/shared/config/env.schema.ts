@@ -19,6 +19,9 @@ export const envSchema = z
     APP_ENV: z.enum(APP_ENVS),
     PORT: z.coerce.number().int().min(1).max(65535).default(3000),
     DATABASE_URL: postgresUrl,
+    // Backoffice e rotinas agendadas: conexão que assume o papel kore_backoffice
+    // (BYPASSRLS); todo acesso é registrado no log da aplicação (ADR de multi-tenant).
+    DATABASE_BACKOFFICE_URL: postgresUrl,
     REDIS_URL: z.url({ protocol: /^rediss?$/ }),
     // E-mail aos usuários. Só SMTP por enquanto (Mailpit no local); o SES entra
     // com a infraestrutura.
@@ -30,6 +33,8 @@ export const envSchema = z
     // de desenvolvimento; o AWS KMS entra com a infraestrutura.
     KMS_PROVIDER: z.enum(['local']),
     KMS_LOCAL_MASTER_KEY: base64Key32.optional(),
+    // Chave do HMAC do IP no log da aplicação (o IP real fica só no log de IP real).
+    IP_HASH_KEY: base64Key32,
     // Observabilidade: console no local; o OTLP do SigNoz entra com a infraestrutura.
     OTEL_EXPORTER: z.enum(OTEL_EXPORTERS).default('none'),
     LOG_LEVEL: z
