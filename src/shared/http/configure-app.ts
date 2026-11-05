@@ -1,4 +1,5 @@
 import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 
@@ -12,11 +13,19 @@ export function configureApp({
   app,
   enableDocs,
   allowedOrigins,
+  trustProxyHops,
 }: {
   app: INestApplication;
   enableDocs: boolean;
   allowedOrigins: readonly string[];
+  trustProxyHops: number;
 }): INestApplication {
+  // Atrás de proxy (Railway), o IP do cliente vem no X-Forwarded-For; só os
+  // saltos confiáveis contam, para o cliente não forjar o IP do rate limit.
+  if (trustProxyHops > 0) {
+    (app as NestExpressApplication).set('trust proxy', trustProxyHops);
+  }
+
   // Rotas de produto sob /v1; rotas de infraestrutura (ex.: /health) usam
   // VERSION_NEUTRAL e ficam fora do prefixo (decisão 97).
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });

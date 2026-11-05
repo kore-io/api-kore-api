@@ -30,6 +30,7 @@ describe('configureApp', () => {
       app: moduleRef.createNestApplication(),
       enableDocs: true,
       allowedOrigins: [APP_ORIGIN],
+      trustProxyHops: 0,
     });
     await app.init();
   });

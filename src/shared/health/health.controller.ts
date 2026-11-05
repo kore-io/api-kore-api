@@ -1,12 +1,15 @@
 import { Controller, Get, ServiceUnavailableException, VERSION_NEUTRAL } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { HealthCheck, HealthCheckResult, HealthCheckService } from '@nestjs/terminus';
+import { SkipThrottle } from '@nestjs/throttler';
 import { Public } from '../http/public.decorator';
 import { DatabaseHealthIndicator, RedisHealthIndicator } from './health.indicators';
 
 // Rota de infraestrutura: fica fora do /v1 (decisão 97, item 2).
 @ApiTags('health')
 @Public()
+// O host chama o health a cada poucos segundos: fora do rate limit.
+@SkipThrottle({ general: true, auth: true })
 @Controller({ path: 'health', version: VERSION_NEUTRAL })
 export class HealthController {
   constructor(

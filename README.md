@@ -88,3 +88,12 @@ os cabeçalhos de CORS com credenciais, e o `OriginGuard` recusa com
 `403 ORIGIN_NOT_ALLOWED` toda escrita (POST, PUT, PATCH, DELETE) vinda de outra
 origem, ou sem `Origin` quando há cookie de sessão. Clientes fora do navegador
 (Bruno, webhooks), sem cookie de sessão, não precisam mandar `Origin`.
+
+## Rate limit
+
+Limite por IP, por minuto, com o contador no Redis (`@nestjs/throttler`): 100
+requisições no geral (`RATE_LIMIT_GENERAL_PER_MINUTE`) e 10 nas rotas de auth
+marcadas com `@AuthRateLimit()` (`RATE_LIMIT_AUTH_PER_MINUTE`), somadas entre
+elas. Acima do limite: `429 TOO_MANY_REQUESTS`. Com o Redis fora, as requisições
+passam e o log avisa (decisão 97). Atrás de proxy, `TRUST_PROXY_HOPS` diz quantos
+saltos do `X-Forwarded-For` são confiáveis.
