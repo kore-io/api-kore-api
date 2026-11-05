@@ -40,3 +40,47 @@ export async function seedWedding({
   });
   return { weddingId: wedding.id };
 }
+
+/**
+ * Casamento criado pelo indicador para o casal (Novo casamento, F6): rascunho
+ * sem dono, com o indicador como colaborador e atribuído a ele.
+ */
+export async function seedReferrerWedding({
+  db,
+  referrerUserId,
+  referrerKind = 'planner',
+  status = 'draft',
+}: {
+  db: BackofficePrismaService;
+  referrerUserId: string;
+  referrerKind?: 'planner' | 'seller';
+  status?: 'draft' | 'awaiting_couple';
+}): Promise<{ weddingId: string }> {
+  const referrer = await db.referrer.findUniqueOrThrow({
+    where: { userId: referrerUserId },
+    select: { id: true },
+  });
+  const wedding = await db.wedding.create({
+    data: {
+      slug: `casamento-${randomUUID()}`,
+      status,
+      eventDate: new Date('2027-03-20T00:00:00Z'),
+      timezone: 'America/Sao_Paulo',
+      city: 'Valinhos',
+      state: 'SP',
+      createdByUserId: referrerUserId,
+      referrerId: referrer.id,
+      referralSource: referrerKind === 'planner' ? 'created_by_planner' : 'created_by_seller',
+      signupSource: referrerKind === 'planner' ? 'planner' : 'direct',
+      partners: {
+        create: [
+          { slot: 1, displayName: 'Fernanda Alves' },
+          { slot: 2, displayName: 'João Lima' },
+        ],
+      },
+      memberships: { create: [{ userId: referrerUserId, role: 'collaborator' }] },
+    },
+    select: { id: true },
+  });
+  return { weddingId: wedding.id };
+}

@@ -112,3 +112,33 @@ export class AlreadyOwnerError extends Error {
 export class TermsVersionOutdatedError extends Error {
   override name = 'TermsVersionOutdatedError';
 }
+
+/** RN02 de Convites: o casamento já tem 2 donos. */
+export class OwnersFullError extends Error {
+  override name = 'OwnersFullError';
+}
+
+/** RN02 de Convites: o casamento já tem cerimonialista. */
+export class PlannerAlreadyError extends Error {
+  override name = 'PlannerAlreadyError';
+}
+
+/** Decisão 170(4): o casal já tem 2 convites por e-mail pendentes. */
+export class CoupleInvitationsFullError extends Error {
+  override name = 'CoupleInvitationsFullError';
+}
+
+/** RN01 e RN14 de Convites: e-mails fora do que o tipo aceita (400 nativo). */
+export class InvalidInvitationRecipientsError extends Error {
+  override name = 'InvalidInvitationRecipientsError';
+}
+
+/** RN05 de Convites: o convite já foi aceito, recusado, cancelado, substituído ou venceu. */
+export class InvitationNotPendingError extends Error {
+  override name = 'InvitationNotPendingError';
+}
+
+/** O convite não existe neste casamento (ou a pessoa não o vê). */
+export class InvitationNotFoundError extends Error {
+  override name = 'InvitationNotFoundError';
+}
