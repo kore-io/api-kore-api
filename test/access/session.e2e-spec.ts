@@ -5,6 +5,7 @@ import { createTestApp } from '../support/create-test-app';
 import { openSession, signedInUser } from '../support/sessions';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const APP_ORIGIN = 'http://localhost:5173';
 
 describe('Sessão (Login sem senha e sessão)', () => {
   let app: INestApplication;
@@ -88,7 +89,11 @@ describe('Sessão (Login sem senha e sessão)', () => {
       const { userId, cookie: phone } = await signedInUser({ app });
       const computer = await openSession({ app, userId });
 
-      await request(app.getHttpServer()).post('/v1/auth/logout').set('Cookie', phone).expect(204);
+      await request(app.getHttpServer())
+        .post('/v1/auth/logout')
+        .set('Cookie', phone)
+        .set('Origin', APP_ORIGIN)
+        .expect(204);
 
       await me(phone).expect(401);
       await me(computer).expect(200);
@@ -101,6 +106,7 @@ describe('Sessão (Login sem senha e sessão)', () => {
       const response = await request(app.getHttpServer())
         .post('/v1/auth/logout-all')
         .set('Cookie', computer)
+        .set('Origin', APP_ORIGIN)
         .expect(204);
 
       expect(response.headers['set-cookie']?.[0]).toMatch(/kore_session=;/);

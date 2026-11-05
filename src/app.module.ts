@@ -6,6 +6,7 @@ import { CryptoModule } from './shared/crypto/crypto.module';
 import { DatabaseModule } from './shared/database/database.module';
 import { EmailModule } from './shared/email/email.module';
 import { HealthModule } from './shared/health/health.module';
+import { HttpSecurityModule } from './shared/http/http-security.module';
 import { ObservabilityModule } from './shared/observability/observability.module';
 import { RedisModule } from './shared/redis/redis.module';
 
@@ -19,6 +20,7 @@ import { RedisModule } from './shared/redis/redis.module';
     CryptoModule,
     HealthModule,
     LogsModule,
+    HttpSecurityModule,
     AccessModule,
   ],
 })
