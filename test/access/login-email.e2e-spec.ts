@@ -4,7 +4,7 @@ import request from 'supertest';
 import { BackofficePrismaService } from '../../src/shared/database/backoffice-prisma.service';
 import { PrismaService } from '../../src/shared/database/prisma.service';
 import { createTestApp } from '../support/create-test-app';
-import { inbox, latestLoginEmail } from '../support/mailpit';
+import { latestLoginEmail, waitForInbox } from '../support/mailpit';
 
 // Cada caso usa um IP próprio (X-Forwarded-For): o limite de auth é por IP.
 const uniqueIp = () => `10.${randomInt(255)}.${randomInt(255)}.${randomInt(1, 255)}`;
@@ -115,8 +115,8 @@ describe('Login sem senha por e-mail (Login sem senha e sessão)', () => {
 
       expect(Object.keys(forExisting.body)).toEqual(Object.keys(forUnknown.body));
       expect(forUnknown.body.email).toBe(unknown);
-      expect(await inbox({ to: existing })).toHaveLength(1);
-      expect(await inbox({ to: unknown })).toHaveLength(1);
+      expect(await waitForInbox({ to: existing })).toHaveLength(1);
+      expect(await waitForInbox({ to: unknown })).toHaveLength(1);
     });
 
     it('Cenário: Pedido repetido antes de 60 segundos (RN04)', async () => {
@@ -170,8 +170,8 @@ describe('Login sem senha por e-mail (Login sem senha e sessão)', () => {
       const locked = await verify({ ip, body: { email, code: wrong } }).expect(410);
 
       expect(locked.body).toMatchObject({ error: 'CHALLENGE_LOCKED', newCodeSent: true });
-      expect(await inbox({ to: email })).toHaveLength(2);
-      const fresh = await latestLoginEmail({ to: email });
+      expect(await waitForInbox({ to: email, count: 2 })).toHaveLength(2);
+      const fresh = await latestLoginEmail({ to: email, count: 2 });
       await verify({ ip: uniqueIp(), body: { email, code: fresh.code } }).expect(200);
     });
   });

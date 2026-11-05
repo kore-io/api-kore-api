@@ -1,8 +1,12 @@
 const MAILPIT_API_URL = process.env.MAILPIT_API_URL ?? 'http://localhost:8025';
+const WAIT_TIMEOUT_MS = 5_000;
+const WAIT_INTERVAL_MS = 100;
 
-interface MailpitSummary {
+export interface MailpitSummary {
   ID: string;
   Subject: string;
+  From: { Address: string; Name: string };
+  To: { Address: string }[];
 }
 
 /** Os e-mails recebidos por um endereço, do mais novo para o mais antigo. */
@@ -14,14 +18,37 @@ export async function inbox({ to }: { to: string }): Promise<MailpitSummary[]> {
   return messages;
 }
 
-/** O código e o token do e-mail de login mais recente para o endereço. */
-export async function latestLoginEmail({
+/**
+ * Espera a caixa ter pelo menos `count` e-mails: o envio e a indexação do
+ * Mailpit não são instantâneos (e, com a fila, o envio é assíncrono).
+ */
+export async function waitForInbox({
   to,
+  count = 1,
 }: {
   to: string;
+  count?: number;
+}): Promise<MailpitSummary[]> {
+  const deadline = Date.now() + WAIT_TIMEOUT_MS;
+  for (;;) {
+    const messages = await inbox({ to });
+    if (messages.length >= count) return messages;
+    if (Date.now() > deadline) {
+      throw new Error(`Esperava ${count} e-mail(s) para ${to}, chegaram ${messages.length}.`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, WAIT_INTERVAL_MS));
+  }
+}
+
+/** O código e o token do e-mail de login mais recente (o `count`-ésimo) para o endereço. */
+export async function latestLoginEmail({
+  to,
+  count = 1,
+}: {
+  to: string;
+  count?: number;
 }): Promise<{ subject: string; code: string; token: string; text: string }> {
-  const [latest] = await inbox({ to });
-  if (!latest) throw new Error(`Nenhum e-mail para ${to}.`);
+  const [latest] = await waitForInbox({ to, count });
   const response = await fetch(`${MAILPIT_API_URL}/api/v1/message/${latest.ID}`);
   const { Text } = (await response.json()) as { Text: string };
   const code = /(\d{3}) (\d{3})/.exec(Text);
