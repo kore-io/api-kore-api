@@ -18,6 +18,11 @@ import { CreateWedding } from './application/create-wedding.use-case';
 import { SuggestSlug } from './application/suggest-slug.service';
 import { SLUG_REGISTRY } from './application/ports/slug-registry.port';
 import { TERMS_VERSION } from './application/ports/terms-version.port';
+import { ACCESS_INVITATION_STORE } from './application/ports/access-invitation-store.port';
+import { INVITATION_MAILER } from './application/ports/invitation-mailer.port';
+import { INVITATION_TOKENS } from './application/ports/invitation-tokens.port';
+import { SendAccessInvitations } from './application/send-access-invitations.use-case';
+import { CancelAccessInvitation } from './application/cancel-access-invitation.use-case';
 import { WEDDING_SIGNUP_STORE } from './application/ports/wedding-signup-store.port';
 import { PROFILE_DIRECTORY } from './application/ports/profile-directory.port';
 import { USER_ACCOUNTS } from './application/ports/user-accounts.port';
@@ -38,6 +43,8 @@ import { PrismaLoginChallengeStore } from './infrastructure/prisma-login-challen
 import { PrismaMembershipReader } from './infrastructure/prisma-membership-reader';
 import { PrismaReferralDirectory } from './infrastructure/prisma-referral-directory';
 import { PrismaSlugRegistry } from './infrastructure/prisma-slug-registry';
+import { PrismaAccessInvitationStore } from './infrastructure/prisma-access-invitation.store';
+import { OutboxInvitationMailer } from './infrastructure/outbox-invitation-mailer';
 import { PrismaWeddingSignupStore } from './infrastructure/prisma-wedding-signup.store';
 import { PrismaProfileDirectory } from './infrastructure/prisma-profile-directory';
 import { PrismaUserAccounts } from './infrastructure/prisma-user-accounts';
@@ -51,6 +58,7 @@ import { LoginController } from './presentation/login.controller';
 import { MeController } from './presentation/me.controller';
 import { ReferralController } from './presentation/referral.controller';
 import { WeddingsController } from './presentation/weddings.controller';
+import { AccessInvitationsController } from './presentation/access-invitations.controller';
 import { SessionGuard } from './presentation/session.guard';
 import { TenantTransactionInterceptor } from './presentation/tenant-transaction.interceptor';
 
@@ -63,6 +71,7 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     MeController,
     ReferralController,
     WeddingsController,
+    AccessInvitationsController,
   ],
   providers: [
     { provide: SESSION_REPOSITORY, useClass: PrismaSessionRepository },
@@ -85,6 +94,10 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     { provide: REFERRAL_DIRECTORY, useClass: PrismaReferralDirectory },
     { provide: SLUG_REGISTRY, useClass: PrismaSlugRegistry },
     { provide: WEDDING_SIGNUP_STORE, useClass: PrismaWeddingSignupStore },
+    { provide: ACCESS_INVITATION_STORE, useClass: PrismaAccessInvitationStore },
+    { provide: INVITATION_MAILER, useClass: OutboxInvitationMailer },
+    // Mesmo gerador opaco da sessão: 256 bits, SHA-256 no banco.
+    { provide: INVITATION_TOKENS, useClass: OpaqueSessionTokens },
     {
       provide: TERMS_VERSION,
       inject: [AppConfigService],
@@ -122,6 +135,8 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     SuggestSlug,
     CheckSlugAvailability,
     CreateWedding,
+    SendAccessInvitations,
+    CancelAccessInvitation,
   ],
   exports: [StartSession, WeddingAuthorization],
 })

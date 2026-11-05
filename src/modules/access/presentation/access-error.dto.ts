@@ -84,3 +84,45 @@ export class TermsVersionOutdatedErrorBody {
   @ApiProperty({ enum: ['TERMS_VERSION_OUTDATED'] }) error: 'TERMS_VERSION_OUTDATED';
   @ApiProperty() message: string;
 }
+
+export class ActionNotAllowedErrorBody {
+  static readonly status = 403;
+  @ApiProperty({ enum: [403] }) statusCode: 403;
+  @ApiProperty({ enum: ['ACTION_NOT_ALLOWED'] }) error: 'ACTION_NOT_ALLOWED';
+  @ApiProperty() message: string;
+}
+
+export class WeddingNotFoundErrorBody {
+  static readonly status = 404;
+  @ApiProperty({ enum: [404] }) statusCode: 404;
+  @ApiProperty({ enum: ['WEDDING_NOT_FOUND'] }) error: 'WEDDING_NOT_FOUND';
+  @ApiProperty() message: string;
+}
+
+export class InvitationNotFoundErrorBody {
+  static readonly status = 404;
+  @ApiProperty({ enum: [404] }) statusCode: 404;
+  @ApiProperty({ enum: ['INVITATION_NOT_FOUND'] }) error: 'INVITATION_NOT_FOUND';
+  @ApiProperty() message: string;
+}
+
+export class OwnersFullErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['OWNERS_FULL'] }) error: 'OWNERS_FULL';
+  @ApiProperty() message: string;
+}
+
+export class PlannerAlreadyErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['PLANNER_ALREADY'] }) error: 'PLANNER_ALREADY';
+  @ApiProperty() message: string;
+}
+
+export class NotPendingErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['NOT_PENDING'] }) error: 'NOT_PENDING';
+  @ApiProperty() message: string;
+}

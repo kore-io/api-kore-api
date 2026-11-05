@@ -15,6 +15,11 @@ import {
   LoginRequestLimitError,
   LoginRequestTooSoonError,
   ReferralNotFoundError,
+  OwnersFullError,
+  PlannerAlreadyError,
+  InvalidInvitationRecipientsError,
+  InvitationNotPendingError,
+  InvitationNotFoundError,
   AlreadyOwnerError,
   SlugUnavailableError,
   TermsVersionOutdatedError,
@@ -121,6 +126,41 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 409,
       error: 'TERMS_VERSION_OUTDATED',
       message: 'The terms changed; accept the current version.',
+    });
+  }
+  if (error instanceof OwnersFullError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'OWNERS_FULL',
+      message: 'The wedding already has two owners.',
+    });
+  }
+  if (error instanceof PlannerAlreadyError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'PLANNER_ALREADY',
+      message: 'The wedding already has a planner.',
+    });
+  }
+  if (error instanceof InvitationNotPendingError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'NOT_PENDING',
+      message: 'The invitation is no longer pending.',
+    });
+  }
+  if (error instanceof InvitationNotFoundError) {
+    return new NotFoundException({
+      statusCode: 404,
+      error: 'INVITATION_NOT_FOUND',
+      message: 'Invitation not found.',
+    });
+  }
+  if (error instanceof InvalidInvitationRecipientsError) {
+    return new BadRequestException({
+      statusCode: 400,
+      error: 'Bad Request',
+      message: ['emails must have one address, or up to two (or none) only for kind couple'],
     });
   }
   if (error instanceof UserBlockedError) {

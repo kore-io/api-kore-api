@@ -13,7 +13,7 @@ export function escapeHtml({ text }: { text: string }): string {
 }
 
 export interface EmailBlock {
-  kind: 'paragraph' | 'highlight' | 'button';
+  kind: 'paragraph' | 'highlight' | 'button' | 'quote';
   text: string;
   href?: string;
 }
@@ -33,6 +33,9 @@ export function renderEmailHtml({
       const text = escapeHtml({ text: block.text });
       if (block.kind === 'highlight') {
         return `<p style="font-size:32px;letter-spacing:4px;font-weight:bold;margin:24px 0">${text}</p>`;
+      }
+      if (block.kind === 'quote') {
+        return `<blockquote style="margin:0 0 16px;padding:0 0 0 16px;border-left:3px solid ${EMAIL_THEME.mutedText};font-style:italic">${text}</blockquote>`;
       }
       if (block.kind === 'button') {
         const href = escapeHtml({ text: block.href ?? '' });
