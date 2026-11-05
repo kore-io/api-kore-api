@@ -27,8 +27,13 @@ pnpm install
 pnpm start:dev         # API em http://localhost:3000, Swagger em /docs
 pnpm lint && pnpm typecheck
 pnpm test              # unitários
-pnpm test:e2e          # ponta a ponta
+pnpm test:e2e          # ponta a ponta, com banco real (precisa do docker compose no ar)
 ```
+
+Os e2e usam o banco `kore_test` no mesmo Postgres do compose (`.env.test`): o
+`globalSetup` cria o banco, aplica as migrations e o usuário da API. Os scripts
+de teste ligam `--experimental-vm-modules` porque o runtime do Prisma 7 carrega o
+query compiler (wasm) por import dinâmico.
 
 ## Configuração e banco
 
