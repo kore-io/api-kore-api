@@ -83,17 +83,19 @@ model User {
   termsVersion    String?      @map("terms_version")
   termsAcceptedAt DateTime?    @map("terms_accepted_at") @db.Timestamptz(3)
 
-  authIdentities          AuthIdentity[]
-  sessions                Session[]
-  weddingsCreated         Wedding[]            @relation("WeddingCreatedBy")
-  partners                Partner[]
-  memberships             Membership[]         @relation("MembershipUser")
-  membershipsRemoved      Membership[]         @relation("MembershipRemovedBy")
-  referrer                Referrer?            @relation("ReferrerUser")
-  referrersCreated        Referrer[]           @relation("ReferrerCreatedByAdmin")
-  organizationsCreated    Organization[]       @relation("OrganizationCreatedBy")
-  organizationMembers     OrganizationMember[]
-  referralSettingsUpdated ReferralSettings[]
+  authIdentities            AuthIdentity[]
+  sessions                  Session[]
+  weddingsCreated           Wedding[]            @relation("WeddingCreatedBy")
+  partners                  Partner[]
+  memberships               Membership[]         @relation("MembershipUser")
+  accessInvitationsSent     AccessInvitation[]   @relation("AccessInvitationInvitedBy")
+  accessInvitationsAccepted AccessInvitation[]   @relation("AccessInvitationAcceptedBy")
+  membershipsRemoved        Membership[]         @relation("MembershipRemovedBy")
+  referrer                  Referrer?            @relation("ReferrerUser")
+  referrersCreated          Referrer[]           @relation("ReferrerCreatedByAdmin")
+  organizationsCreated      Organization[]       @relation("OrganizationCreatedBy")
+  organizationMembers       OrganizationMember[]
+  referralSettingsUpdated   ReferralSettings[]
 
   @@map("users")
 }
@@ -257,10 +259,11 @@ model Wedding {
   utmMedium       String?         @map("utm_medium")
   utmCampaign     String?         @map("utm_campaign")
 
-  createdBy   User         @relation("WeddingCreatedBy", fields: [createdByUserId], references: [id])
-  referrer    Referrer?    @relation(fields: [referrerId], references: [id])
-  partners    Partner[]
-  memberships Membership[]
+  createdBy         User               @relation("WeddingCreatedBy", fields: [createdByUserId], references: [id])
+  referrer          Referrer?          @relation(fields: [referrerId], references: [id])
+  partners          Partner[]
+  memberships       Membership[]
+  accessInvitations AccessInvitation[]
 
   @@index([createdByUserId], map: "idx_weddings_created_by_user_id")
   @@index([referrerId, status], map: "idx_weddings_referrer_id_status")
@@ -474,4 +477,47 @@ model ReferralSettings {
   updatedBy User? @relation(fields: [updatedByUserId], references: [id])
 
   @@map("referral_settings")
+}
+
+// Convite de acesso (Glossário): do parceiro, do casal ou do cerimonialista.
+// Diferente do convite do casamento, que vai aos convidados. Guardamos só o
+// hash do token (RN03 de Convites). Pendente = sem aceite, recusa,
+// cancelamento nem substituição; o vencido continua pendente até o reenvio.
+model AccessInvitation {
+  id               String               @id @default(uuid(7)) @db.Uuid
+  createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  weddingId        String               @map("wedding_id") @db.Uuid
+  kind             AccessInvitationKind
+  // Nulo só no convite do casal por link, sem e-mail (RN14; decisão 102).
+  email            String?              @db.Citext
+  // O papel que o aceite concede.
+  role             MembershipRole
+  tokenHash        String               @unique(map: "uq_access_invitations_token_hash") @map("token_hash")
+  invitedByUserId  String               @map("invited_by_user_id") @db.Uuid
+  expiresAt        DateTime             @map("expires_at") @db.Timestamptz(3)
+  acceptedAt       DateTime?            @map("accepted_at") @db.Timestamptz(3)
+  acceptedByUserId String?              @map("accepted_by_user_id") @db.Uuid
+  // Quando a conta que aceitou tem outro e-mail (RN07).
+  acceptedForEmail String?              @map("accepted_for_email") @db.Citext
+  declinedAt       DateTime?            @map("declined_at") @db.Timestamptz(3)
+  revokedAt        DateTime?            @map("revoked_at") @db.Timestamptz(3)
+  // Reenvio, Convidar outro e-mail ou Gerar novo link (RN04).
+  supersededAt     DateTime?            @map("superseded_at") @db.Timestamptz(3)
+
+  wedding    Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  invitedBy  User    @relation("AccessInvitationInvitedBy", fields: [invitedByUserId], references: [id])
+  acceptedBy User?   @relation("AccessInvitationAcceptedBy", fields: [acceptedByUserId], references: [id])
+
+  @@index([weddingId], map: "idx_access_invitations_wedding_id")
+  @@index([invitedByUserId], map: "idx_access_invitations_invited_by_user_id")
+  @@index([acceptedByUserId], map: "idx_access_invitations_accepted_by_user_id")
+  @@map("access_invitations")
+}
+
+enum AccessInvitationKind {
+  partner
+  couple
+  planner
+
+  @@map("access_invitation_kind")
 }
