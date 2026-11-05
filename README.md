@@ -25,6 +25,7 @@ Node 24 (`.nvmrc`) e pnpm 10.
 ```bash
 pnpm install
 pnpm start:dev         # API em http://localhost:3000, Swagger em /docs, health em /health
+pnpm start:worker:dev  # worker das filas e rotinas (BullMQ), processo separado da API
 pnpm lint && pnpm typecheck
 pnpm test              # unitários
 pnpm test:e2e          # ponta a ponta, com banco real (precisa do docker compose no ar)
@@ -61,3 +62,17 @@ Observabilidade: OpenTelemetry com exportador de console (`OTEL_EXPORTER=console
 e logs do `pino` com `traceId`. Só sai o que está na lista fechada
 (`src/shared/observability/allowed-attributes.ts`): método, molde da rota, status e
 IDs; URL real, query, cabeçalhos, SQL e dado pessoal são descartados.
+
+## Worker e rotinas
+
+As rotinas agendadas e as filas (BullMQ, no mesmo Redis) rodam num processo
+separado da API (`src/worker.ts`; na imagem: `node dist/worker`). Cada rotina
+tem um agendamento com id fixo, registrado na subida do worker.
+
+| Rotina                         | Quando                  | O que faz                                         |
+| ------------------------------ | ----------------------- | ------------------------------------------------- |
+| `purge-expired-access-ip-logs` | todo dia, 4h (Brasília) | apaga o IP real com mais de 6 meses (decisão 116) |
+
+O backoffice e as rotinas usam a conexão `DATABASE_BACKOFFICE_URL`, que assume o
+papel `kore_backoffice` (BYPASSRLS). O log da aplicação e o log de IP real são
+só inserção para a API: o banco nega leitura, alteração e exclusão a `kore_app`.

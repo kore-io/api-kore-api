@@ -24,9 +24,13 @@
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev --create-only",
     "db:users": "node scripts/db/create-local-users.mts",
-    "db:setup": "pnpm db:migrate && pnpm db:users"
+    "db:setup": "pnpm db:migrate && pnpm db:users",
+    "start:worker": "nest start --entryFile worker",
+    "start:worker:dev": "nest start --watch --entryFile worker",
+    "start:worker:prod": "node dist/worker"
   },
   "dependencies": {
+    "@nestjs/bullmq": "^11.0.5",
     "@nestjs/common": "^11.2.8",
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.2.8",
@@ -41,6 +45,7 @@
     "@opentelemetry/semantic-conventions": "^1.44.0",
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
+    "bullmq": "^6.7.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "ioredis": "^6.0.0",
