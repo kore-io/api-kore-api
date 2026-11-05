@@ -24,7 +24,7 @@ Node 24 (`.nvmrc`) e pnpm 10.
 
 ```bash
 pnpm install
-pnpm start:dev         # API em http://localhost:3000, Swagger em /docs
+pnpm start:dev         # API em http://localhost:3000, Swagger em /docs, health em /health
 pnpm lint && pnpm typecheck
 pnpm test              # unitários
 pnpm test:e2e          # ponta a ponta, com banco real (precisa do docker compose no ar)
