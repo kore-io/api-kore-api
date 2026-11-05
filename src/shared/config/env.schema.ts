@@ -45,6 +45,8 @@ export const envSchema = z
     // Origens do app que podem chamar a API com o cookie de sessão (CORS e
     // proteção contra CSRF nas escritas).
     ALLOWED_ORIGINS: originList,
+    // Endereço do app, para os links dos e-mails (botão de acesso, convites).
+    APP_URL: z.url({ protocol: /^https?$/ }),
     // Rate limit por IP, por minuto (decisão 135, Q4).
     RATE_LIMIT_GENERAL_PER_MINUTE: z.coerce.number().int().min(1).default(100),
     RATE_LIMIT_AUTH_PER_MINUTE: z.coerce.number().int().min(1).default(10),
@@ -65,6 +67,8 @@ export const envSchema = z
     IP_HASH_KEY: base64Key32,
     // Chave do HMAC que pseudonimiza o casamento nos eventos de produto (decisão 135).
     PRODUCT_EVENT_KEY: base64Key32,
+    // Chave do HMAC do código de login de 6 números (decisão 139).
+    LOGIN_CODE_KEY: base64Key32,
     // Observabilidade: console no local; o OTLP do SigNoz entra com a infraestrutura.
     OTEL_EXPORTER: z.enum(OTEL_EXPORTERS).default('none'),
     LOG_LEVEL: z
