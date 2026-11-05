@@ -83,12 +83,17 @@ model User {
   termsVersion    String?      @map("terms_version")
   termsAcceptedAt DateTime?    @map("terms_accepted_at") @db.Timestamptz(3)
 
-  authIdentities     AuthIdentity[]
-  sessions           Session[]
-  weddingsCreated    Wedding[]      @relation("WeddingCreatedBy")
-  partners           Partner[]
-  memberships        Membership[]   @relation("MembershipUser")
-  membershipsRemoved Membership[]   @relation("MembershipRemovedBy")
+  authIdentities          AuthIdentity[]
+  sessions                Session[]
+  weddingsCreated         Wedding[]            @relation("WeddingCreatedBy")
+  partners                Partner[]
+  memberships             Membership[]         @relation("MembershipUser")
+  membershipsRemoved      Membership[]         @relation("MembershipRemovedBy")
+  referrer                Referrer?            @relation("ReferrerUser")
+  referrersCreated        Referrer[]           @relation("ReferrerCreatedByAdmin")
+  organizationsCreated    Organization[]       @relation("OrganizationCreatedBy")
+  organizationMembers     OrganizationMember[]
+  referralSettingsUpdated ReferralSettings[]
 
   @@map("users")
 }
@@ -318,4 +323,121 @@ enum MembershipRole {
   collaborator
 
   @@map("membership_role")
+}
+
+// Indicador (Glossário): cerimonialista ou vendedor que traz casamentos pelo
+// link de indicação. Dono da atribuição, da comissão e do repasse. Os campos
+// fiscais (taxId*) entram com o repasse (Payout).
+model Referrer {
+  id                      String         @id @default(uuid(7)) @db.Uuid
+  createdAt               DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt               DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  userId                  String         @unique(map: "uq_referrers_user_id") @map("user_id") @db.Uuid
+  kind                    ReferrerKind
+  // O link de indicação (/i/{código}); único sem diferenciar maiúsculas.
+  referralCode            String         @unique(map: "uq_referrers_referral_code") @map("referral_code") @db.Citext
+  // Percentual da comissão; nasce com o padrão do ReferralSettings.
+  ratePercent             Int            @map("rate_percent") @db.SmallInt
+  // Desconto de indicação para o casal (RN09 de Cadastro).
+  referralDiscountEnabled Boolean        @default(true) @map("referral_discount_enabled")
+  status                  ReferrerStatus @default(active)
+  // Só no vendedor, que o Admin cadastra.
+  createdByAdminUserId    String?        @map("created_by_admin_user_id") @db.Uuid
+  deactivatedAt           DateTime?      @map("deactivated_at") @db.Timestamptz(3)
+
+  user           User     @relation("ReferrerUser", fields: [userId], references: [id])
+  createdByAdmin User?    @relation("ReferrerCreatedByAdmin", fields: [createdByAdminUserId], references: [id])
+  planner        Planner?
+
+  @@index([kind, status], map: "idx_referrers_kind_status")
+  @@index([createdByAdminUserId], map: "idx_referrers_created_by_admin_user_id")
+  @@map("referrers")
+}
+
+enum ReferrerKind {
+  planner
+  seller
+
+  @@map("referrer_kind")
+}
+
+enum ReferrerStatus {
+  active
+  blocked
+  inactive
+
+  @@map("referrer_status")
+}
+
+// Cerimonialista (Glossário): só o que é dele; a comissão fica no Referrer.
+model Planner {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  referrerId String   @unique(map: "uq_planners_referrer_id") @map("referrer_id") @db.Uuid
+  // Nome na assinatura do site e no destaque da indicação.
+  creditName String   @map("credit_name")
+  phone      String?
+  whatsapp   String?
+  cities     String[] @default([])
+
+  referrer Referrer @relation(fields: [referrerId], references: [id], onDelete: Cascade)
+
+  @@map("planners")
+}
+
+// Assessoria (Glossário), mínima (decisão 113): 1 membro no lançamento; a
+// conta com vários usuários entra antes da Fase 9.
+model Organization {
+  id              String   @id @default(uuid(7)) @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  name            String
+  createdByUserId String   @map("created_by_user_id") @db.Uuid
+
+  createdBy User                 @relation("OrganizationCreatedBy", fields: [createdByUserId], references: [id])
+  members   OrganizationMember[]
+
+  @@index([createdByUserId], map: "idx_organizations_created_by_user_id")
+  @@map("organizations")
+}
+
+// Membro da assessoria. event_staff existe só no modelo, sem tela (decisão 113).
+model OrganizationMember {
+  id             String                 @id @default(uuid(7)) @db.Uuid
+  createdAt      DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  organizationId String                 @map("organization_id") @db.Uuid
+  userId         String                 @map("user_id") @db.Uuid
+  role           OrganizationMemberRole
+  removedAt      DateTime?              @map("removed_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "idx_organization_members_user_id")
+  @@map("organization_members")
+}
+
+enum OrganizationMemberRole {
+  owner
+  member
+  event_staff
+
+  @@map("organization_member_role")
+}
+
+// Configurações da indicação: uma linha só, editável só pelo Admin; vale
+// para os pagamentos novos.
+model ReferralSettings {
+  id                      String   @id @default(uuid(7)) @db.Uuid
+  createdAt               DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt               DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  defaultRatePercent      Int      @map("default_rate_percent") @db.SmallInt
+  referralDiscountPercent Int      @map("referral_discount_percent") @db.SmallInt
+  commissionHoldDays      Int      @map("commission_hold_days") @db.SmallInt
+  payoutMinCents          Int      @map("payout_min_cents")
+  updatedByUserId         String?  @map("updated_by_user_id") @db.Uuid
+
+  updatedBy User? @relation(fields: [updatedByUserId], references: [id])
+
+  @@map("referral_settings")
 }
