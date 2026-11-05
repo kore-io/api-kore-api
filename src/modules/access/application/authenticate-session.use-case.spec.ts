@@ -14,6 +14,7 @@ function buildRecord(overrides: Partial<SessionRecord> = {}): SessionRecord {
     expiresAt: new Date(now.getTime() + DAY_MS),
     lastSeenAt: ago(6 * DAY_MS),
     authenticatedAt: ago(6 * DAY_MS),
+    authMethod: 'email',
     activeProfile: null,
     revokedAt: null,
     userStatus: 'active',
@@ -49,6 +50,7 @@ describe('AuthenticateSession', () => {
         sessionId: 'session-1',
         userId: 'user-1',
         authenticatedAt: ago(6 * DAY_MS),
+        authMethod: 'email',
         activeProfile: null,
       });
     });

@@ -54,6 +54,8 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-argument': 'off',
+      // expect(mock.metodo) com jest.fn() não perde o this.
+      '@typescript-eslint/unbound-method': 'off',
     },
   },
 );

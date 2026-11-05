@@ -1,4 +1,4 @@
-import type { ProfileKind } from '../../domain/authenticated-session';
+import type { AuthMethod, ProfileKind } from '../../domain/authenticated-session';
 
 export interface SessionRecord {
   id: string;
@@ -6,6 +6,7 @@ export interface SessionRecord {
   expiresAt: Date;
   lastSeenAt: Date;
   authenticatedAt: Date;
+  authMethod: AuthMethod;
   activeProfile: ProfileKind | null;
   revokedAt: Date | null;
   userStatus: 'active' | 'blocked';
@@ -17,12 +18,14 @@ export interface SessionRepository {
     tokenHash,
     now,
     expiresAt,
+    authMethod,
     userAgent,
   }: {
     userId: string;
     tokenHash: string;
     now: Date;
     expiresAt: Date;
+    authMethod: AuthMethod;
     userAgent?: string;
   }): Promise<{ id: string }>;
   findByTokenHash({ tokenHash }: { tokenHash: string }): Promise<SessionRecord | null>;

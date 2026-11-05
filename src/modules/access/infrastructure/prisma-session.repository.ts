@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
+import type { AuthMethod } from '../domain/authenticated-session';
 import type {
   SessionRecord,
   SessionRepository,
@@ -14,16 +15,26 @@ export class PrismaSessionRepository implements SessionRepository {
     tokenHash,
     now,
     expiresAt,
+    authMethod,
     userAgent,
   }: {
     userId: string;
     tokenHash: string;
     now: Date;
     expiresAt: Date;
+    authMethod: AuthMethod;
     userAgent?: string;
   }): Promise<{ id: string }> {
     return this.prisma.session.create({
-      data: { userId, tokenHash, expiresAt, lastSeenAt: now, authenticatedAt: now, userAgent },
+      data: {
+        userId,
+        tokenHash,
+        expiresAt,
+        lastSeenAt: now,
+        authenticatedAt: now,
+        authMethod,
+        userAgent,
+      },
       select: { id: true },
     });
   }
@@ -40,6 +51,7 @@ export class PrismaSessionRepository implements SessionRepository {
       expiresAt: session.expiresAt,
       lastSeenAt: session.lastSeenAt,
       authenticatedAt: session.authenticatedAt,
+      authMethod: session.authMethod,
       activeProfile: session.activeProfile,
       revokedAt: session.revokedAt,
       userStatus: session.user.status,
