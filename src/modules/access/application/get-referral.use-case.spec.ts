@@ -20,6 +20,8 @@ describe('GetReferral (GET /v1/referrals/{code})', () => {
 
   it('RN08 - dado o indicador inativo, então responde igual a código inexistente', async () => {
     const referrer: ReferrerRecord = {
+      referrerId: 'r2',
+      userId: 'u-lucas',
       referralCode: 'lucas',
       kind: 'seller',
       status: 'inactive',
@@ -34,6 +36,8 @@ describe('GetReferral (GET /v1/referrals/{code})', () => {
 
   it('RN09 - dado o indicador ativo, então devolve o desconto vigente das configurações', async () => {
     const referrer: ReferrerRecord = {
+      referrerId: 'r2',
+      userId: 'u-lucas',
       referralCode: 'lucas',
       kind: 'seller',
       status: 'active',

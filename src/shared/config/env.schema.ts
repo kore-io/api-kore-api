@@ -78,6 +78,8 @@ export const envSchema = z
     GOOGLE_REDIRECT_URI: z.url({ protocol: /^https?$/ }).optional(),
     // Chave do HMAC do cookie do state e do PKCE do Google (decisão 147).
     OAUTH_STATE_KEY: base64Key32,
+    // Versão vigente dos Termos e da Política (RN11 de Cadastro; decisão 166).
+    TERMS_VERSION: z.string().min(1).default('2026-09'),
     // Observabilidade: console no local; o OTLP do SigNoz entra com a infraestrutura.
     OTEL_EXPORTER: z.enum(OTEL_EXPORTERS).default('none'),
     LOG_LEVEL: z

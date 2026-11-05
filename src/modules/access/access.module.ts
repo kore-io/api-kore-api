@@ -13,6 +13,12 @@ import { LOGIN_CHALLENGE_STORE } from './application/ports/login-challenge-store
 import { LOGIN_CODE_MAILER } from './application/ports/login-code-mailer.port';
 import { REFERRAL_DIRECTORY } from './application/ports/referral-directory.port';
 import { GetReferral } from './application/get-referral.use-case';
+import { CheckSlugAvailability } from './application/check-slug-availability.use-case';
+import { CreateWedding } from './application/create-wedding.use-case';
+import { SuggestSlug } from './application/suggest-slug.service';
+import { SLUG_REGISTRY } from './application/ports/slug-registry.port';
+import { TERMS_VERSION } from './application/ports/terms-version.port';
+import { WEDDING_SIGNUP_STORE } from './application/ports/wedding-signup-store.port';
 import { PROFILE_DIRECTORY } from './application/ports/profile-directory.port';
 import { USER_ACCOUNTS } from './application/ports/user-accounts.port';
 import { RequestLoginChallenge } from './application/request-login-challenge.use-case';
@@ -31,6 +37,8 @@ import { OpaqueSessionTokens } from './infrastructure/opaque-session-tokens';
 import { PrismaLoginChallengeStore } from './infrastructure/prisma-login-challenge.store';
 import { PrismaMembershipReader } from './infrastructure/prisma-membership-reader';
 import { PrismaReferralDirectory } from './infrastructure/prisma-referral-directory';
+import { PrismaSlugRegistry } from './infrastructure/prisma-slug-registry';
+import { PrismaWeddingSignupStore } from './infrastructure/prisma-wedding-signup.store';
 import { PrismaProfileDirectory } from './infrastructure/prisma-profile-directory';
 import { PrismaUserAccounts } from './infrastructure/prisma-user-accounts';
 import { OutboxLoginCodeMailer } from './infrastructure/outbox-login-code-mailer';
@@ -42,6 +50,7 @@ import { GoogleLoginCookie } from './presentation/google-login-cookie';
 import { LoginController } from './presentation/login.controller';
 import { MeController } from './presentation/me.controller';
 import { ReferralController } from './presentation/referral.controller';
+import { WeddingsController } from './presentation/weddings.controller';
 import { SessionGuard } from './presentation/session.guard';
 import { TenantTransactionInterceptor } from './presentation/tenant-transaction.interceptor';
 
@@ -53,6 +62,7 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     GoogleLoginController,
     MeController,
     ReferralController,
+    WeddingsController,
   ],
   providers: [
     { provide: SESSION_REPOSITORY, useClass: PrismaSessionRepository },
@@ -73,6 +83,13 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     { provide: USER_ACCOUNTS, useClass: PrismaUserAccounts },
     { provide: PROFILE_DIRECTORY, useClass: PrismaProfileDirectory },
     { provide: REFERRAL_DIRECTORY, useClass: PrismaReferralDirectory },
+    { provide: SLUG_REGISTRY, useClass: PrismaSlugRegistry },
+    { provide: WEDDING_SIGNUP_STORE, useClass: PrismaWeddingSignupStore },
+    {
+      provide: TERMS_VERSION,
+      inject: [AppConfigService],
+      useFactory: (config: AppConfigService) => config.get({ key: 'TERMS_VERSION' }),
+    },
     {
       provide: GOOGLE_IDENTITY_PROVIDER,
       inject: [AppConfigService],
@@ -102,6 +119,9 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     EndAllSessions,
     GetMe,
     GetReferral,
+    SuggestSlug,
+    CheckSlugAvailability,
+    CreateWedding,
   ],
   exports: [StartSession, WeddingAuthorization],
 })

@@ -1,6 +1,8 @@
 import { toReferral, type ReferrerRecord } from './referral';
 
 const juliana: ReferrerRecord = {
+  referrerId: 'r1',
+  userId: 'u-juliana',
   referralCode: 'juliana-prado',
   kind: 'planner',
   status: 'active',

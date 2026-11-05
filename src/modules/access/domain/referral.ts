@@ -4,6 +4,9 @@ export type AccountStatus = 'active' | 'blocked';
 
 /** O indicador de um link de indicação, como está guardado. */
 export interface ReferrerRecord {
+  referrerId: string;
+  /** A conta do indicador: ela não se atribui o próprio casamento (RN08). */
+  userId: string;
   referralCode: string;
   kind: ReferrerKind;
   status: ReferrerStatus;
