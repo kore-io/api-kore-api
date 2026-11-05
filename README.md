@@ -52,11 +52,12 @@ migrations rodam com o dono do schema (`DATABASE_MIGRATION_URL`).
 
 ## Adaptadores locais
 
-| Porta (`application/`) | Adaptador local (`infrastructure/`)          | Depois, com a infra |
-| ---------------------- | -------------------------------------------- | ------------------- |
-| `EmailSender`          | SMTP no Mailpit                              | Amazon SES          |
-| `KeyManagement`        | chave mestra local (só `local`/`test`)       | AWS KMS             |
-| `FieldCipher`          | envelope AES-256-GCM sobre o `KeyManagement` | —                   |
+| Porta (`application/`) | Adaptador local (`infrastructure/`)                                            | Depois, com a infra |
+| ---------------------- | ------------------------------------------------------------------------------ | ------------------- |
+| `EmailOutbox`          | fila BullMQ (`emails-login`, prioritária, e `emails`); sem Redis, envio direto | —                   |
+| `EmailSender`          | SMTP no Mailpit (usado pelo worker)                                            | Amazon SES          |
+| `KeyManagement`        | chave mestra local (só `local`/`test`)                                         | AWS KMS             |
+| `FieldCipher`          | envelope AES-256-GCM sobre o `KeyManagement`                                   | —                   |
 
 Observabilidade: OpenTelemetry com exportador de console (`OTEL_EXPORTER=console`)
 e logs do `pino` com `traceId`. Só sai o que está na lista fechada
