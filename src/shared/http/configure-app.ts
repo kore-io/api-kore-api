@@ -11,9 +11,11 @@ export const API_DOCS_PATH = 'docs';
 export function configureApp({
   app,
   enableDocs,
+  allowedOrigins,
 }: {
   app: INestApplication;
   enableDocs: boolean;
+  allowedOrigins: readonly string[];
 }): INestApplication {
   // Rotas de produto sob /v1; rotas de infraestrutura (ex.: /health) usam
   // VERSION_NEUTRAL e ficam fora do prefixo (decisão 97).
@@ -23,6 +25,10 @@ export function configureApp({
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
   );
+
+  // O app chama a API de outra origem com o cookie de sessão: só as origens da
+  // lista recebem os cabeçalhos de CORS (a mesma lista do OriginGuard).
+  app.enableCors({ origin: [...allowedOrigins], credentials: true });
 
   // O cookie de sessão (HttpOnly) é lido pelo SessionGuard.
   app.use(cookieParser());

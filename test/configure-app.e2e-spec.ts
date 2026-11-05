@@ -17,6 +17,8 @@ class EchoController {
   }
 }
 
+const APP_ORIGIN = 'https://app.kore.com.br';
+
 describe('configureApp', () => {
   let app: INestApplication;
 
@@ -24,7 +26,11 @@ describe('configureApp', () => {
     const moduleRef = await Test.createTestingModule({
       controllers: [EchoController],
     }).compile();
-    app = configureApp({ app: moduleRef.createNestApplication(), enableDocs: true });
+    app = configureApp({
+      app: moduleRef.createNestApplication(),
+      enableDocs: true,
+      allowedOrigins: [APP_ORIGIN],
+    });
     await app.init();
   });
 
@@ -65,5 +71,25 @@ describe('configureApp', () => {
     const response = await request(app.getHttpServer()).get('/docs-json').expect(200);
 
     expect(response.body.openapi).toMatch(/^3\./);
+  });
+
+  it('dada uma origem da lista, quando faz o preflight, então libera o CORS com credenciais', async () => {
+    const response = await request(app.getHttpServer())
+      .options('/v1/echo')
+      .set('Origin', APP_ORIGIN)
+      .set('Access-Control-Request-Method', 'POST')
+      .expect(204);
+
+    expect(response.headers['access-control-allow-origin']).toBe(APP_ORIGIN);
+    expect(response.headers['access-control-allow-credentials']).toBe('true');
+  });
+
+  it('dada uma origem fora da lista, quando faz o preflight, então não libera o CORS', async () => {
+    const response = await request(app.getHttpServer())
+      .options('/v1/echo')
+      .set('Origin', 'https://evil.example')
+      .set('Access-Control-Request-Method', 'POST');
+
+    expect(response.headers['access-control-allow-origin']).toBeUndefined();
   });
 });

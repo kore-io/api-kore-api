@@ -10,6 +10,25 @@ const postgresUrl = z
   .url({ protocol: /^postgres(ql)?$/ })
   .describe('URL de conexão do Postgres (postgresql://usuario:senha@host:porta/banco)');
 
+// Lista de origens separadas por vírgula, cada uma só esquema, host e porta.
+const originList = z
+  .string()
+  .transform((value) =>
+    value
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+  )
+  .pipe(
+    z
+      .array(
+        z
+          .url({ protocol: /^https?$/ })
+          .refine((origin) => new URL(origin).origin === origin, 'use só esquema, host e porta'),
+      )
+      .min(1, 'informe pelo menos uma origem'),
+  );
+
 const base64Key32 = z
   .base64()
   .refine((value) => Buffer.from(value, 'base64').length === 32, 'precisa ter 32 bytes em base64');
@@ -23,6 +42,9 @@ export const envSchema = z
     // (BYPASSRLS); todo acesso é registrado no log da aplicação (ADR de multi-tenant).
     DATABASE_BACKOFFICE_URL: postgresUrl,
     REDIS_URL: z.url({ protocol: /^rediss?$/ }),
+    // Origens do app que podem chamar a API com o cookie de sessão (CORS e
+    // proteção contra CSRF nas escritas).
+    ALLOWED_ORIGINS: originList,
     // E-mail aos usuários. Só SMTP por enquanto (Mailpit no local); o SES entra
     // com a infraestrutura.
     EMAIL_PROVIDER: z.enum(['smtp']),
