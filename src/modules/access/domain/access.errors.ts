@@ -123,6 +123,11 @@ export class PlannerAlreadyError extends Error {
   override name = 'PlannerAlreadyError';
 }
 
+/** Decisão 170(4): o casal já tem 2 convites por e-mail pendentes. */
+export class CoupleInvitationsFullError extends Error {
+  override name = 'CoupleInvitationsFullError';
+}
+
 /** RN01 e RN14 de Convites: e-mails fora do que o tipo aceita (400 nativo). */
 export class InvalidInvitationRecipientsError extends Error {
   override name = 'InvalidInvitationRecipientsError';

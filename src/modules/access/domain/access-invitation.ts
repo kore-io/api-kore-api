@@ -68,6 +68,23 @@ export function sendRefusal({
   return null;
 }
 
+/** Até 2 convites do casal por e-mail pendentes por casamento (Modelo de Dados; decisão 170). */
+export const MAX_PENDING_COUPLE_EMAIL_INVITATIONS = 2;
+
+/**
+ * Decisão 170(4): contam os convites do casal por e-mail ainda pendentes e não
+ * vencidos que o envio não substitui, mais os novos; o link sem e-mail não conta.
+ */
+export function coupleInvitationsFull({
+  remainingActive,
+  adding,
+}: {
+  remainingActive: number;
+  adding: number;
+}): boolean {
+  return remainingActive + adding > MAX_PENDING_COUPLE_EMAIL_INVITATIONS;
+}
+
 /** RN05: quem enviou, ou um dono, cancela. */
 export function canCancel({
   invitedByUserId,

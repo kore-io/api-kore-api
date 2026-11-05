@@ -1,10 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { AFTER_COMMIT, type AfterCommit } from '../../../shared/database/after-commit.port';
 import { uuidV7 } from '../../../shared/ids/uuid-v7';
 import {
   PRODUCT_EVENT_RECORDER,
   type ProductEventRecorder,
 } from '../../product-events/application/ports/product-event-recorder.port';
 import {
+  coupleInvitationsFull,
   invitationExpiresAt,
   recipientsAllowed,
   roleGrantedBy,
@@ -12,6 +14,7 @@ import {
   type AccessInvitationKind,
 } from '../domain/access-invitation';
 import {
+  CoupleInvitationsFullError,
   InvalidInvitationRecipientsError,
   OwnersFullError,
   PlannerAlreadyError,
@@ -47,9 +50,10 @@ const ACTION_BY_KIND: Record<AccessInvitationKind, WeddingAction> = {
 
 /**
  * Envia ou reenvia convites de acesso (RN01 a RN04 e RN14 de Convites).
- * Reenviar ao mesmo e-mail, Convidar outro e-mail (casal) e Gerar novo link
- * substituem o pendente anterior, cujo link deixa de valer. Roda na transação
- * da requisição; os e-mails e o evento saem depois de tudo gravado.
+ * Reenviar a um e-mail e Gerar novo link substituem o pendente daquele e-mail
+ * ou o link, cujo link deixa de valer; "Convidar outro e-mail" é cancelar o
+ * antigo e enviar o novo (decisão 170). Roda na transação da requisição; os
+ * e-mails e o evento saem só depois do commit (decisão 170).
  */
 @Injectable()
 export class SendAccessInvitations {
@@ -59,6 +63,7 @@ export class SendAccessInvitations {
     @Inject(INVITATION_TOKENS) private readonly tokens: InvitationTokens,
     @Inject(INVITATION_MAILER) private readonly mailer: InvitationMailer,
     @Inject(PRODUCT_EVENT_RECORDER) private readonly productEvents: ProductEventRecorder,
+    @Inject(AFTER_COMMIT) private readonly afterCommit: AfterCommit,
   ) {}
 
   async execute({
@@ -94,6 +99,17 @@ export class SendAccessInvitations {
 
     const pending = await this.store.listPending({ weddingId });
     const replaced = pending.filter((invitation) => replaces({ kind, recipients, invitation }));
+    if (kind === 'couple' && recipients.length) {
+      const remainingActive = pending.filter(
+        (invitation) =>
+          invitation.kind === 'couple' &&
+          invitation.email !== null &&
+          invitation.expiresAt > now &&
+          !replaced.includes(invitation),
+      ).length;
+      if (coupleInvitationsFull({ remainingActive, adding: recipients.length }))
+        throw new CoupleInvitationsFullError();
+    }
     await this.store.supersede({ invitationIds: replaced.map(({ id }) => id), now });
 
     const expiresAt = invitationExpiresAt({ now });
@@ -120,16 +136,19 @@ export class SendAccessInvitations {
 
     const inviter = await this.store.loadInviter({ weddingId, userId });
     for (const { invitation, token, resent } of created) {
-      if (!invitation.email) continue;
-      await this.mailer.send({
-        email: { kind, to: invitation.email, token, resent, message, wedding, inviter },
-      });
+      const to = invitation.email;
+      if (!to) continue;
+      this.afterCommit.schedule(() =>
+        this.mailer.send({ email: { kind, to, token, resent, message, wedding, inviter } }),
+      );
     }
     if (kind === 'couple' && !recipients.length && inviter.referrerKind === 'planner') {
-      await this.productEvents.record({
-        event: { name: 'cerim_link_gerado', weddingId },
-        occurredAt: now,
-      });
+      this.afterCommit.schedule(() =>
+        this.productEvents.record({
+          event: { name: 'cerim_link_gerado', weddingId },
+          occurredAt: now,
+        }),
+      );
     }
 
     return created.map(({ invitation, token, resent }) => ({
@@ -144,8 +163,8 @@ export class SendAccessInvitations {
 }
 
 /**
- * RN04: o mesmo e-mail tem um pendente só; no do casal, Convidar outro e-mail
- * substitui os convites por e-mail anteriores, e Gerar novo link, o link.
+ * RN04 (decisão 170): o envio substitui só o pendente de cada e-mail listado;
+ * sem e-mail (RN14), o link do casal pendente.
  */
 function replaces({
   kind,
@@ -156,7 +175,6 @@ function replaces({
   recipients: string[];
   invitation: PendingInvitation;
 }): boolean {
-  if (invitation.email && recipients.includes(invitation.email.toLowerCase())) return true;
-  if (kind !== 'couple' || invitation.kind !== 'couple') return false;
-  return recipients.length ? invitation.email !== null : invitation.email === null;
+  if (invitation.email) return recipients.includes(invitation.email.toLowerCase());
+  return kind === 'couple' && !recipients.length && invitation.kind === 'couple';
 }

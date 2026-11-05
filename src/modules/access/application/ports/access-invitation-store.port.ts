@@ -25,6 +25,7 @@ export interface PendingInvitation {
   id: string;
   kind: AccessInvitationKind;
   email: string | null;
+  expiresAt: Date;
 }
 
 export interface NewAccessInvitation {

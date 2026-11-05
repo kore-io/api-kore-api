@@ -16,6 +16,7 @@ import {
   LoginRequestTooSoonError,
   ReferralNotFoundError,
   OwnersFullError,
+  CoupleInvitationsFullError,
   PlannerAlreadyError,
   InvalidInvitationRecipientsError,
   InvitationNotPendingError,
@@ -140,6 +141,13 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 409,
       error: 'PLANNER_ALREADY',
       message: 'The wedding already has a planner.',
+    });
+  }
+  if (error instanceof CoupleInvitationsFullError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'COUPLE_INVITATIONS_FULL',
+      message: 'The couple already has two pending invitations; cancel one first.',
     });
   }
   if (error instanceof InvitationNotPendingError) {

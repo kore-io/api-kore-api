@@ -88,7 +88,7 @@ export class PrismaAccessInvitationStore implements AccessInvitationStore {
   listPending({ weddingId }: { weddingId: string }): Promise<PendingInvitation[]> {
     return this.tenant.client().accessInvitation.findMany({
       where: { weddingId, ...PENDING },
-      select: { id: true, kind: true, email: true },
+      select: { id: true, kind: true, email: true, expiresAt: true },
     });
   }
 

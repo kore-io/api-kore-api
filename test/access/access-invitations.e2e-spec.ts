@@ -192,11 +192,14 @@ describe('Convites de acesso: envio e cancelamento (banco real, Mailpit)', () =>
     await send(ana.cookie, weddingId, body).expect(400);
   });
 
-  it('RN02 e RN04 - o cerimonialista que criou convida o casal (e-mail 3), o casamento fica aguardando o casal, e Convidar outro e-mail substitui', async () => {
+  it('RN02 e RN04 (decisão 170) - o cerimonialista convida o casal (e-mail 3) e o casamento fica aguardando; reenviar a um e-mail mantém o outro, e Convidar outro e-mail é cancelar e enviar (limite de 2, decisão 170(4))', async () => {
     const { cookie, weddingId } = await plannerWedding();
     const [fernanda, joao, outra] = [email('fernanda'), email('joao'), email('outra')];
 
-    await send(cookie, weddingId, { kind: 'couple', emails: [fernanda, joao] }).expect(201);
+    const first = await send(cookie, weddingId, {
+      kind: 'couple',
+      emails: [fernanda, joao],
+    }).expect(201);
 
     expect((await db.wedding.findUniqueOrThrow({ where: { id: weddingId } })).status).toBe(
       'awaiting_couple',
@@ -205,12 +208,30 @@ describe('Convites de acesso: envio e cancelamento (banco real, Mailpit)', () =>
     expect(message?.Subject).toBe('Prado Assessoria preparou o site do casamento de vocês');
     await waitForInbox({ to: joao });
 
+    const resent = await send(cookie, weddingId, { kind: 'couple', emails: [fernanda] }).expect(
+      201,
+    );
+    expect(resent.body.invitations[0].resent).toBe(true);
+    const pendingEmails = async () =>
+      (
+        await db.accessInvitation.findMany({
+          where: { weddingId, supersededAt: null, revokedAt: null },
+          orderBy: { email: 'asc' },
+        })
+      ).map((invitation) => invitation.email);
+    expect(await pendingEmails()).toEqual([fernanda, joao].sort());
+
+    // Decisão 170(4): com 2 pendentes não vencidos, um terceiro e-mail espera um cancelamento.
+    const full = await send(cookie, weddingId, { kind: 'couple', emails: [outra] }).expect(409);
+    expect(full.body.error).toBe('COUPLE_INVITATIONS_FULL');
+
+    const joaoInvitation = (first.body.invitations as { id: string; email: string }[]).find(
+      (invitation) => invitation.email === joao,
+    );
+    await cancel(cookie, weddingId, joaoInvitation?.id ?? '').expect(204);
     await send(cookie, weddingId, { kind: 'couple', emails: [outra] }).expect(201);
 
-    const pending = await db.accessInvitation.findMany({
-      where: { weddingId, supersededAt: null, revokedAt: null },
-    });
-    expect(pending.map((invitation) => invitation.email)).toEqual([outra]);
+    expect(await pendingEmails()).toEqual([fernanda, outra].sort());
   });
 
   it('RN14 - o link do casal sem e-mail: URL só na resposta, Gerar novo link invalida o anterior, e registra cerim_link_gerado', async () => {

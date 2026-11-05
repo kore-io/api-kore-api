@@ -19,6 +19,7 @@ import type { AuthenticatedSession } from '../domain/authenticated-session';
 import { InvitationNotFoundError } from '../domain/access.errors';
 import {
   ActionNotAllowedErrorBody,
+  CoupleInvitationsFullErrorBody,
   InvitationNotFoundErrorBody,
   NotPendingErrorBody,
   OwnersFullErrorBody,
@@ -46,6 +47,7 @@ export class AccessInvitationsController {
     WeddingNotFoundErrorBody,
     OwnersFullErrorBody,
     PlannerAlreadyErrorBody,
+    CoupleInvitationsFullErrorBody,
   )
   async send(
     @CurrentSession() session: AuthenticatedSession,

@@ -844,6 +844,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/PlannerAlreadyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CoupleInvitationsFullErrorBody"
                     }
                   ]
                 }
@@ -1837,6 +1840,31 @@
             "type": "string",
             "enum": [
               "PLANNER_ALREADY"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "CoupleInvitationsFullErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "COUPLE_INVITATIONS_FULL"
             ]
           },
           "message": {

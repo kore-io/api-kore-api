@@ -120,6 +120,13 @@ export class PlannerAlreadyErrorBody {
   @ApiProperty() message: string;
 }
 
+export class CoupleInvitationsFullErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['COUPLE_INVITATIONS_FULL'] }) error: 'COUPLE_INVITATIONS_FULL';
+  @ApiProperty() message: string;
+}
+
 export class NotPendingErrorBody {
   static readonly status = 409;
   @ApiProperty({ enum: [409] }) statusCode: 409;

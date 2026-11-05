@@ -1,5 +1,6 @@
 import type { ProductEventRecorder } from '../../product-events/application/ports/product-event-recorder.port';
 import {
+  CoupleInvitationsFullError,
   InvalidInvitationRecipientsError,
   OwnersFullError,
   WeddingActionForbiddenError,
@@ -85,21 +86,38 @@ function setup({
     hash: ({ token }: { token: string }) => `h-${token}`,
   };
   const productEvents: ProductEventRecorder = { record: jest.fn().mockResolvedValue(undefined) };
+  // Depois do commit (decisão 170): o teste roda as tarefas quando quiser.
+  const scheduled: (() => Promise<void>)[] = [];
+  const afterCommit = { schedule: (work: () => Promise<void>) => void scheduled.push(work) };
+  const commit = async () => {
+    for (const work of scheduled.splice(0)) await work();
+  };
   const authorization = {
     require: jest.fn().mockResolvedValue(role),
   } as unknown as WeddingAuthorization;
-  const useCase = new SendAccessInvitations(authorization, store, tokens, mailer, productEvents);
-  return { useCase, store, inserted, superseded, emails, productEvents, authorization };
+  const useCase = new SendAccessInvitations(
+    authorization,
+    store,
+    tokens,
+    mailer,
+    productEvents,
+    afterCommit,
+  );
+  return { useCase, store, inserted, superseded, emails, productEvents, authorization, commit };
 }
 
 const now = new Date('2026-11-06T12:00:00Z');
+const future = new Date('2026-12-01T00:00:00Z');
+const past = new Date('2026-11-01T00:00:00Z');
 const base = { userId: 'u-ana', weddingId: 'w1', message: null, now };
 
 describe('SendAccessInvitations (POST /v1/weddings/{weddingId}/access-invitations)', () => {
   it('RN01 e RN03 - o dono convida o parceiro: dono, 30 dias, token só em hash, e-mail enviado', async () => {
-    const { useCase, inserted, emails, store } = setup();
+    const { useCase, inserted, emails, store, commit } = setup();
 
     const [sent] = await useCase.execute({ ...base, kind: 'partner', emails: ['Marcos@X.com'] });
+    expect(emails).toEqual([]); // decisão 170: nada sai antes do commit
+    await commit();
 
     expect(inserted).toEqual([
       expect.objectContaining({
@@ -120,11 +138,12 @@ describe('SendAccessInvitations (POST /v1/weddings/{weddingId}/access-invitation
   });
 
   it('RN04 - reenviar ao mesmo e-mail substitui o pendente e avisa que o link anterior caiu', async () => {
-    const { useCase, superseded, emails } = setup({
-      pending: [{ id: 'old', kind: 'partner', email: 'marcos@x.com' }],
+    const { useCase, superseded, emails, commit } = setup({
+      pending: [{ id: 'old', kind: 'partner', email: 'marcos@x.com', expiresAt: future }],
     });
 
     const [sent] = await useCase.execute({ ...base, kind: 'partner', emails: ['marcos@x.com'] });
+    await commit();
 
     expect(superseded).toEqual(['old']);
     expect(sent?.resent).toBe(true);
@@ -156,14 +175,15 @@ describe('SendAccessInvitations (POST /v1/weddings/{weddingId}/access-invitation
     );
   });
 
-  it('RN04 - no do casal, Convidar outro e-mail substitui os convites por e-mail, e o casamento fica aguardando o casal', async () => {
+  it('RN04 (decisão 170) - no do casal, o envio substitui só o pendente dos e-mails listados, e o casamento fica aguardando o casal', async () => {
     const { useCase, superseded, inserted, store } = setup({
       wedding: plannerWedding,
       inviter: juliana,
       role: 'collaborator',
       pending: [
-        { id: 'email-velho', kind: 'couple', email: 'ana@x.com' },
-        { id: 'link', kind: 'couple', email: null },
+        { id: 'fernanda-velho', kind: 'couple', email: 'fernanda@x.com', expiresAt: future },
+        { id: 'joao-pendente', kind: 'couple', email: 'joao@x.com', expiresAt: future },
+        { id: 'link', kind: 'couple', email: null, expiresAt: future },
       ],
     });
 
@@ -171,23 +191,74 @@ describe('SendAccessInvitations (POST /v1/weddings/{weddingId}/access-invitation
       ...base,
       userId: 'u-juliana',
       kind: 'couple',
-      emails: ['fernanda@x.com', 'joao@x.com'],
+      emails: ['fernanda@x.com'],
     });
 
-    expect(superseded).toEqual(['email-velho']);
-    expect(inserted.map(({ email }) => email)).toEqual(['fernanda@x.com', 'joao@x.com']);
-    expect(sent.every(({ resent }) => !resent)).toBe(true);
+    expect(superseded).toEqual(['fernanda-velho']);
+    expect(inserted.map(({ email }) => email)).toEqual(['fernanda@x.com']);
+    expect(sent[0]?.resent).toBe(true);
     expect(store.markAwaitingCouple).toHaveBeenCalledWith({ weddingId: 'w1' });
   });
 
+  it('decisão 170(4) - com 2 convites do casal pendentes e não vencidos, um terceiro e-mail dá COUPLE_INVITATIONS_FULL', async () => {
+    const { useCase, store } = setup({
+      wedding: plannerWedding,
+      inviter: juliana,
+      role: 'collaborator',
+      pending: [
+        { id: 'f', kind: 'couple', email: 'fernanda@x.com', expiresAt: future },
+        { id: 'j', kind: 'couple', email: 'joao@x.com', expiresAt: future },
+        { id: 'link', kind: 'couple', email: null, expiresAt: future },
+      ],
+    });
+
+    await expect(
+      useCase.execute({ ...base, userId: 'u-juliana', kind: 'couple', emails: ['outra@x.com'] }),
+    ).rejects.toThrow(CoupleInvitationsFullError);
+    expect(store.supersede).not.toHaveBeenCalled();
+  });
+
+  it('decisão 170(4) - o vencido não conta, e reenviar a um dos dois pendentes passa', async () => {
+    const pending = [
+      { id: 'f', kind: 'couple' as const, email: 'fernanda@x.com', expiresAt: future },
+      { id: 'j', kind: 'couple' as const, email: 'joao@x.com', expiresAt: past },
+    ];
+    const other = setup({
+      wedding: plannerWedding,
+      inviter: juliana,
+      role: 'collaborator',
+      pending,
+    });
+    await other.useCase.execute({
+      ...base,
+      userId: 'u-juliana',
+      kind: 'couple',
+      emails: ['outra@x.com'],
+    });
+
+    const resend = setup({
+      wedding: plannerWedding,
+      inviter: juliana,
+      role: 'collaborator',
+      pending,
+    });
+    await resend.useCase.execute({
+      ...base,
+      userId: 'u-juliana',
+      kind: 'couple',
+      emails: ['joao@x.com', 'fernanda@x.com'],
+    });
+    expect(resend.superseded.sort()).toEqual(['f', 'j']);
+  });
+
   it('RN14 - o link do casal sem e-mail devolve a URL, não manda e-mail, substitui o link anterior e registra cerim_link_gerado', async () => {
-    const { useCase, superseded, emails, productEvents } = setup({
+    const { useCase, superseded, emails, productEvents, commit } = setup({
       wedding: { ...plannerWedding, status: 'awaiting_couple' },
       inviter: juliana,
       role: 'collaborator',
       pending: [
-        { id: 'link-velho', kind: 'couple', email: null },
-        { id: 'email', kind: 'couple', email: 'ana@x.com' },
+        { id: 'link-velho', kind: 'couple', email: null, expiresAt: future },
+        { id: 'email', kind: 'couple', email: 'ana@x.com', expiresAt: future },
       ],
     });
 
@@ -197,6 +268,8 @@ describe('SendAccessInvitations (POST /v1/weddings/{weddingId}/access-invitation
       kind: 'couple',
       emails: [],
     });
+    expect(productEvents.record).not.toHaveBeenCalled(); // só depois do commit (decisão 170)
+    await commit();
 
     expect(sent).toMatchObject({ email: null, resent: true, url: 'http://app/convite/t1' });
     expect(superseded).toEqual(['link-velho']);
@@ -208,13 +281,14 @@ describe('SendAccessInvitations (POST /v1/weddings/{weddingId}/access-invitation
   });
 
   it('RN14 - o link gerado pelo vendedor não registra cerim_link_gerado', async () => {
-    const { useCase, productEvents } = setup({
+    const { useCase, productEvents, commit } = setup({
       wedding: plannerWedding,
       inviter: { ...juliana, referrerKind: 'seller', creditName: null },
       role: 'collaborator',
     });
 
     await useCase.execute({ ...base, userId: 'u-juliana', kind: 'couple', emails: [] });
+    await commit();
 
     expect(productEvents.record).not.toHaveBeenCalled();
   });
