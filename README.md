@@ -48,3 +48,16 @@ pnpm db:migrate:dev    # nova migration (--create-only): revise o SQL antes de a
 
 A API conecta como `kore_api`, membro do papel `kore_app` (sujeito à RLS). As
 migrations rodam com o dono do schema (`DATABASE_MIGRATION_URL`).
+
+## Adaptadores locais
+
+| Porta (`application/`) | Adaptador local (`infrastructure/`)          | Depois, com a infra |
+| ---------------------- | -------------------------------------------- | ------------------- |
+| `EmailSender`          | SMTP no Mailpit                              | Amazon SES          |
+| `KeyManagement`        | chave mestra local (só `local`/`test`)       | AWS KMS             |
+| `FieldCipher`          | envelope AES-256-GCM sobre o `KeyManagement` | —                   |
+
+Observabilidade: OpenTelemetry com exportador de console (`OTEL_EXPORTER=console`)
+e logs do `pino` com `traceId`. Só sai o que está na lista fechada
+(`src/shared/observability/allowed-attributes.ts`): método, molde da rota, status e
+IDs; URL real, query, cabeçalhos, SQL e dado pessoal são descartados.
