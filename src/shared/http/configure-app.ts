@@ -1,6 +1,6 @@
 import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { DocumentBuilder, type OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 
 export const API_DOCS_PATH = 'docs';
@@ -45,12 +45,16 @@ export function configureApp({
   app.enableShutdownHooks();
 
   if (enableDocs) {
-    const document = SwaggerModule.createDocument(
-      app,
-      new DocumentBuilder().setTitle('Kore API').setVersion('1').build(),
-    );
-    SwaggerModule.setup(API_DOCS_PATH, app, document);
+    SwaggerModule.setup(API_DOCS_PATH, app, buildOpenApiDocument({ app }));
   }
 
   return app;
+}
+
+/** O documento OpenAPI gerado do código (ADR do Swagger), servido em /docs e exportado. */
+export function buildOpenApiDocument({ app }: { app: INestApplication }): OpenAPIObject {
+  return SwaggerModule.createDocument(
+    app,
+    new DocumentBuilder().setTitle('Kore API').setVersion('1').build(),
+  );
 }

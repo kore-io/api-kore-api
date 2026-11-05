@@ -27,7 +27,9 @@
     "db:setup": "pnpm db:migrate && pnpm db:users",
     "start:worker": "nest start --entryFile worker",
     "start:worker:dev": "nest start --watch --entryFile worker",
-    "start:worker:prod": "node dist/worker"
+    "start:worker:prod": "node dist/worker",
+    "openapi:export": "nest build && node --env-file=.env.example dist/openapi-export",
+    "openapi:check": "nest build && node --env-file=.env.example dist/openapi-export --check"
   },
   "dependencies": {
     "@nestjs/bullmq": "^11.0.5",
