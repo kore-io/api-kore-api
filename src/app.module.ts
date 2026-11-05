@@ -4,9 +4,18 @@ import { CryptoModule } from './shared/crypto/crypto.module';
 import { DatabaseModule } from './shared/database/database.module';
 import { EmailModule } from './shared/email/email.module';
 import { HealthModule } from './shared/health/health.module';
+import { ObservabilityModule } from './shared/observability/observability.module';
 import { RedisModule } from './shared/redis/redis.module';
 
 @Module({
-  imports: [AppConfigModule, DatabaseModule, RedisModule, EmailModule, CryptoModule, HealthModule],
+  imports: [
+    AppConfigModule,
+    ObservabilityModule,
+    DatabaseModule,
+    RedisModule,
+    EmailModule,
+    CryptoModule,
+    HealthModule,
+  ],
 })
 export class AppModule {}

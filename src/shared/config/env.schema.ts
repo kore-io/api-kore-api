@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { OTEL_EXPORTERS } from '../observability/otel-exporters';
 
 export const APP_ENVS = ['local', 'test', 'homolog', 'production'] as const;
 export type AppEnv = (typeof APP_ENVS)[number];
@@ -29,6 +30,11 @@ export const envSchema = z
     // de desenvolvimento; o AWS KMS entra com a infraestrutura.
     KMS_PROVIDER: z.enum(['local']),
     KMS_LOCAL_MASTER_KEY: base64Key32.optional(),
+    // Observabilidade: console no local; o OTLP do SigNoz entra com a infraestrutura.
+    OTEL_EXPORTER: z.enum(OTEL_EXPORTERS).default('none'),
+    LOG_LEVEL: z
+      .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
+      .default('info'),
   })
   .superRefine((env, ctx) => {
     if (env.KMS_PROVIDER !== 'local') return;

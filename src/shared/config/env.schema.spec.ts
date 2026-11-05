@@ -18,6 +18,8 @@ describe('validateEnv', () => {
       ...validConfig,
       PORT: 3000,
       SMTP_PORT: 1025,
+      OTEL_EXPORTER: 'none',
+      LOG_LEVEL: 'info',
     });
   });
 
