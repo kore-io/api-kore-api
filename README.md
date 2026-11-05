@@ -100,3 +100,10 @@ marcadas com `@AuthRateLimit()` (`RATE_LIMIT_AUTH_PER_MINUTE`), somadas entre
 elas. Acima do limite: `429 RATE_LIMITED` (o `TOO_MANY_REQUESTS` é o limite de pedidos de código por e-mail, RN04). Com o Redis fora, as requisições
 passam e o log avisa (decisão 97). Atrás de proxy, `TRUST_PROXY_HOPS` diz quantos
 saltos do `X-Forwarded-For` são confiáveis.
+
+## Login pelo Google no local
+
+Com `GOOGLE_PROVIDER=dev` (só `local` e `test`), `GET /v1/auth/google` leva a um
+formulário mínimo em `/v1/auth/google/dev` que pede o e-mail e volta ao callback
+como o Google voltaria, sem credencial. Com `GOOGLE_PROVIDER=google`, informe
+`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` e `GOOGLE_REDIRECT_URI`.
