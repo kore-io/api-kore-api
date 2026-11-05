@@ -52,5 +52,7 @@ import { PrismaApplicationLogWriter } from './infrastructure/prisma-application-
     ApplicationLogRetentionProcessor,
     ApplicationLogRetentionScheduler,
   ],
+  // Outras rotinas do worker registram a execução pelo mesmo writer.
+  exports: [APPLICATION_LOG_WRITER],
 })
 export class LogsWorkerModule {}
