@@ -4,11 +4,19 @@ const validConfig = {
   APP_ENV: 'local',
   DATABASE_URL: 'postgresql://kore_api:kore_api@localhost:5433/kore',
   REDIS_URL: 'redis://localhost:6380',
+  EMAIL_PROVIDER: 'smtp',
+  EMAIL_FROM: 'Kore <nao-responda@kore.local>',
+  SMTP_HOST: 'localhost',
+  SMTP_PORT: '1025',
 };
 
 describe('validateEnv', () => {
   it('dada a configuração mínima, quando valida, então aplica os padrões', () => {
-    expect(validateEnv({ config: validConfig })).toEqual({ ...validConfig, PORT: 3000 });
+    expect(validateEnv({ config: validConfig })).toEqual({
+      ...validConfig,
+      PORT: 3000,
+      SMTP_PORT: 1025,
+    });
   });
 
   it('dado um APP_ENV fora da lista, quando valida, então recusa subir', () => {

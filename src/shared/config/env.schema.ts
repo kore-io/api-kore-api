@@ -12,6 +12,12 @@ export const envSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   DATABASE_URL: postgresUrl,
   REDIS_URL: z.url({ protocol: /^rediss?$/ }),
+  // E-mail aos usuários. Só SMTP por enquanto (Mailpit no local); o SES entra
+  // com a infraestrutura.
+  EMAIL_PROVIDER: z.enum(['smtp']),
+  EMAIL_FROM: z.string().min(1),
+  SMTP_HOST: z.string().min(1),
+  SMTP_PORT: z.coerce.number().int().min(1).max(65535),
 });
 
 export type Env = z.infer<typeof envSchema>;
