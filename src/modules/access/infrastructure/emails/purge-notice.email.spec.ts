@@ -1,6 +1,8 @@
 import { purgeNoticeEmail } from './purge-notice.email';
 
 const notice = {
+  weddingId: 'w1',
+  noticeSentAt: new Date('2026-11-14T15:00:00Z'),
   to: 'juliana@x.com',
   creatorName: 'Juliana',
   partnerNames: ['Fernanda', 'João'] as [string, string],

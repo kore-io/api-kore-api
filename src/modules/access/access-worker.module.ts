@@ -24,6 +24,7 @@ import {
   OwnerlessPurgeScheduler,
 } from './infrastructure/ownerless-purge.job';
 import { OutboxPurgeNoticeMailer } from './infrastructure/outbox-purge-notice-mailer';
+import { PurgeNoticeGiveUpHandler } from './infrastructure/purge-notice-give-up.handler';
 
 /** Rotinas do contexto Acesso, do lado do worker. */
 @Module({
@@ -46,6 +47,7 @@ import { OutboxPurgeNoticeMailer } from './infrastructure/outbox-purge-notice-ma
     PurgeOwnerlessWeddings,
     OwnerlessPurgeProcessor,
     OwnerlessPurgeScheduler,
+    PurgeNoticeGiveUpHandler,
   ],
 })
 export class AccessWorkerModule {}

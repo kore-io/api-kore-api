@@ -27,6 +27,18 @@ export interface OwnerlessWeddings {
     now: Date;
   }): Promise<boolean>;
   /**
+   * O e-mail 6 não saiu (fila e envio direto fora, ou o worker desistiu): desfaz
+   * a marca daquele aviso e registra no log, para a rotina tentar de novo
+   * (decisão 180(8)). false se a marca já mudou.
+   */
+  clearNotice({
+    weddingId,
+    noticeSentAt,
+  }: {
+    weddingId: string;
+    noticeSentAt: Date;
+  }): Promise<boolean>;
+  /**
    * Apaga convites, vínculos e noivos e deixa a lápide (id, status purged,
    * purgedAt, indicador, createdAt), com o registro no log, na mesma transação.
    */

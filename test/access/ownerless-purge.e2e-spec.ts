@@ -3,6 +3,7 @@ import type { TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { PurgeOwnerlessWeddings } from '../../src/modules/access/application/purge-ownerless-weddings.use-case';
+import { EmailDeliveryFailures } from '../../src/shared/email/application/email-delivery-failures';
 import { BackofficePrismaService } from '../../src/shared/database/backoffice-prisma.service';
 import { createTestApp } from '../support/create-test-app';
 import { createTestWorker } from '../support/create-test-worker';
@@ -130,6 +131,28 @@ describe('Expurgo do casamento sem dono (RN13 de Convites; decisões 136 e 180; 
     expect((await db.wedding.findUniqueOrThrow({ where: { id: weddingId } })).status).toBe(
       'purged',
     );
+  });
+
+  it('decisão 180(8) - se o worker desistir do e-mail 6, a marca do aviso é desfeita e registrada', async () => {
+    const lastActivityAt = new Date('2016-01-10T12:00:00Z');
+    const { weddingId } = await ownerlessWedding({ lastActivityAt });
+    const now = new Date(new Date('2016-07-10T12:00:00Z').getTime() - 30 * day);
+    await purge.execute({ now });
+    expect(
+      (await db.wedding.findUniqueOrThrow({ where: { id: weddingId } })).purgeNoticeSentAt,
+    ).toEqual(now);
+
+    // O processador da fila avisa assim depois da última tentativa (testado no unitário dele).
+    await worker.get(EmailDeliveryFailures).gaveUp({
+      tag: { kind: 'purge_notice', data: { weddingId, noticeSentAt: now.toISOString() } },
+    });
+
+    expect(
+      (await db.wedding.findUniqueOrThrow({ where: { id: weddingId } })).purgeNoticeSentAt,
+    ).toBeNull();
+    await db.applicationLog.findFirstOrThrow({
+      where: { action: 'wedding.purge_notice_failed', weddingId },
+    });
   });
 
   it('RN13 - casamento com dono nunca entra, mesmo parado', async () => {

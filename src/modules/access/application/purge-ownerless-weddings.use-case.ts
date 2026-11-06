@@ -13,7 +13,8 @@ import { PURGE_NOTICE_MAILER, type PurgeNoticeMailer } from './ports/purge-notic
 /**
  * Rotina diária do casamento sem dono (RN13 de Convites; decisões 102, 136 e
  * 180): avisa o indicador 30 dias antes e expurga quando o prazo do aviso
- * venceu. O e-mail sai depois de o aviso estar gravado.
+ * venceu. O e-mail sai depois de o aviso estar gravado; se não sair, a marca é
+ * desfeita e a rotina tenta de novo no dia seguinte (decisão 180(8)).
  */
 @Injectable()
 export class PurgeOwnerlessWeddings {
@@ -39,17 +40,26 @@ export class PurgeOwnerlessWeddings {
       };
       if (step === 'purge' && (await this.weddings.purge(seen))) purged++;
       if (step !== 'notice' || !(await this.weddings.markNoticeSent(seen))) continue;
-      notices++;
-      if (!wedding.creator) continue;
-      await this.mailer.send({
-        notice: {
-          to: wedding.creator.email,
-          creatorName: firstName({ name: wedding.creator.name ?? '' }),
-          partnerNames: wedding.partnerNames,
-          status: wedding.status,
-          purgeDate: promisedPurgeDate({ lastActivityAt: wedding.lastActivityAt, now }),
-        },
-      });
+      if (!wedding.creator) {
+        notices++;
+        continue;
+      }
+      try {
+        await this.mailer.send({
+          notice: {
+            weddingId: wedding.weddingId,
+            noticeSentAt: now,
+            to: wedding.creator.email,
+            creatorName: firstName({ name: wedding.creator.name ?? '' }),
+            partnerNames: wedding.partnerNames,
+            status: wedding.status,
+            purgeDate: promisedPurgeDate({ lastActivityAt: wedding.lastActivityAt, now }),
+          },
+        });
+        notices++;
+      } catch {
+        await this.weddings.clearNotice({ weddingId: wedding.weddingId, noticeSentAt: now });
+      }
     }
     return { notices, purged };
   }

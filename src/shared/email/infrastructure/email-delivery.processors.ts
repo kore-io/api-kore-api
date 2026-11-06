@@ -1,5 +1,7 @@
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject, Logger } from '@nestjs/common';
+import { EmailDeliveryFailures } from '../application/email-delivery-failures';
+import type { EmailTag } from '../application/email-outbox.port';
 import type { Job } from 'bullmq';
 import {
   EMAIL_SENDER,
@@ -12,20 +14,31 @@ const logger = new Logger('EmailDelivery');
 
 /** Envia pelo SMTP o e-mail que entrou na fila. */
 abstract class EmailDeliveryProcessor extends WorkerHost {
-  constructor(@Inject(EMAIL_SENDER) private readonly sender: EmailSender) {
+  constructor(
+    @Inject(EMAIL_SENDER) private readonly sender: EmailSender,
+    private readonly failures: EmailDeliveryFailures,
+  ) {
     super();
   }
 
-  async process(job: Job<{ message: EmailMessage }>): Promise<void> {
+  async process(job: Job<{ message: EmailMessage; tag?: EmailTag }>): Promise<void> {
     await this.sender.send({ message: job.data.message });
   }
 
   // Só o tipo do erro: a mensagem do SMTP pode trazer o e-mail do destinatário.
   @OnWorkerEvent('failed')
-  onFailed(job: Job | undefined, error: Error): void {
+  async onFailed(job: Job<{ tag?: EmailTag }> | undefined, error: Error): Promise<void> {
     logger.warn(
       `Envio de e-mail falhou (job ${job?.id ?? '?'}, tentativa ${job?.attemptsMade ?? 0}): ${error.name}`,
     );
+    // Desistiu de vez: quem etiquetou o e-mail fica sabendo (decisão 180(8)).
+    const tag = job?.data.tag;
+    if (!job || !tag || job.attemptsMade < (job.opts.attempts ?? 1)) return;
+    try {
+      await this.failures.gaveUp({ tag });
+    } catch (handlerError) {
+      logger.warn(`Aviso de desistência falhou (${tag.kind}): ${(handlerError as Error).name}`);
+    }
   }
 
   // Sem ouvinte de 'error', o worker derruba o processo quando o Redis cai.

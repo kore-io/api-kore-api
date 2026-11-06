@@ -1,4 +1,7 @@
 export interface PurgeNotice {
+  /** Para desfazer a marca se o worker desistir do e-mail (decisão 180(8)). */
+  weddingId: string;
+  noticeSentAt: Date;
   to: string;
   /** Primeiro nome de quem criou ("Olá, {Juliana}."). */
   creatorName: string;

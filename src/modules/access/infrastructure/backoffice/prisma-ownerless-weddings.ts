@@ -8,6 +8,7 @@ import type {
 
 export const PURGE_NOTICE_SENT_ACTION = 'wedding.purge_notice_sent';
 export const OWNERLESS_PURGED_ACTION = 'wedding.purged';
+export const PURGE_NOTICE_FAILED_ACTION = 'wedding.purge_notice_failed';
 
 const OWNERLESS_STATUSES = ['awaiting_couple', 'draft'] as const;
 const NO_ACTIVE_OWNER: Prisma.WeddingWhereInput = {
@@ -80,6 +81,32 @@ export class PrismaOwnerlessWeddings implements OwnerlessWeddings {
       await tx.applicationLog.create({
         data: {
           action: PURGE_NOTICE_SENT_ACTION,
+          actorKind: 'system',
+          weddingId,
+          entityType: 'wedding',
+          entityId: weddingId,
+        },
+      });
+      return true;
+    });
+  }
+
+  clearNotice({
+    weddingId,
+    noticeSentAt,
+  }: {
+    weddingId: string;
+    noticeSentAt: Date;
+  }): Promise<boolean> {
+    return this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.wedding.updateMany({
+        where: { id: weddingId, purgeNoticeSentAt: noticeSentAt },
+        data: { purgeNoticeSentAt: null },
+      });
+      if (count !== 1) return false;
+      await tx.applicationLog.create({
+        data: {
+          action: PURGE_NOTICE_FAILED_ACTION,
           actorKind: 'system',
           weddingId,
           entityType: 'wedding',
