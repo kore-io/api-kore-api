@@ -472,6 +472,16 @@
         "responses": {
           "302": {
             "description": "Vai para o Google (ou para o provedor de desenvolvimento)."
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            }
           }
         },
         "summary": "Vai para o Google, guardando o state e o PKCE num cookie assinado.",
