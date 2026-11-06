@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '../../../generated/prisma/client';
+import { postgresErrorCode } from '../../../shared/database/postgres-error';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { TenantTransaction } from '../../../shared/database/tenant-transaction';
 import type {
@@ -32,13 +32,13 @@ function toSnapshot(raw: Json): InvitationSnapshot {
   };
 }
 
-/** As barreiras da função accept_access_invitation, pela mensagem do RAISE. */
-const REFUSALS: [string, AcceptRefusal][] = [
-  ['invitation not pending', 'not_pending'],
-  ['owners full', 'owners_full'],
-  ['partner taken', 'partner_taken'],
-  ['planner already', 'planner_already'],
-];
+/** As barreiras da função accept_access_invitation, pelo SQLSTATE (migration invitation_barrier_codes). */
+const REFUSALS: Record<string, AcceptRefusal> = {
+  KA001: 'not_pending',
+  KA002: 'owners_full',
+  KA003: 'partner_taken',
+  KA004: 'planner_already',
+};
 
 /**
  * Pelas funções SECURITY DEFINER da migration invitation_acceptance (decisão
@@ -103,10 +103,8 @@ export class PrismaInvitationAcceptanceStore implements InvitationAcceptanceStor
           ${partnerTitle}::partner_title, ${acceptedForEmail}::citext)`;
       return { weddingId: row.wedding_id, attributed: row.attributed };
     } catch (error) {
-      const message =
-        error instanceof Prisma.PrismaClientKnownRequestError ? JSON.stringify(error.meta) : '';
-      const refusal = REFUSALS.find(([text]) => message.includes(text));
-      if (refusal) return refusal[1];
+      const refusal = REFUSALS[postgresErrorCode({ error }) ?? ''];
+      if (refusal) return refusal;
       throw error;
     }
   }
