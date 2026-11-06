@@ -31,6 +31,7 @@ function buildUseCase({ record }: { record: SessionRecord | null }) {
     renew,
     revoke,
     revokeAllForUser: jest.fn(),
+    setActiveProfile: jest.fn(),
   };
   const tokens: SessionTokens = { generate: jest.fn(), hash: ({ token }) => `hash:${token}` };
   return { useCase: new AuthenticateSession(sessions, tokens), renew, revoke };

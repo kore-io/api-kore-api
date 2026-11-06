@@ -170,3 +170,31 @@ export class InvitationNotDeclinableErrorBody {
   @ApiProperty({ enum: ['INVITATION_NOT_DECLINABLE'] }) error: 'INVITATION_NOT_DECLINABLE';
   @ApiProperty() message: string;
 }
+
+export class ProfileNotOwnedErrorBody {
+  static readonly status = 403;
+  @ApiProperty({ enum: [403] }) statusCode: 403;
+  @ApiProperty({ enum: ['PROFILE_NOT_OWNED'] }) error: 'PROFILE_NOT_OWNED';
+  @ApiProperty() message: string;
+}
+
+export class CannotRemoveOwnerErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['CANNOT_REMOVE_OWNER'] }) error: 'CANNOT_REMOVE_OWNER';
+  @ApiProperty() message: string;
+}
+
+export class LastOwnerErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['LAST_OWNER'] }) error: 'LAST_OWNER';
+  @ApiProperty() message: string;
+}
+
+export class MembershipNotFoundErrorBody {
+  static readonly status = 404;
+  @ApiProperty({ enum: [404] }) statusCode: 404;
+  @ApiProperty({ enum: ['MEMBERSHIP_NOT_FOUND'] }) error: 'MEMBERSHIP_NOT_FOUND';
+  @ApiProperty() message: string;
+}

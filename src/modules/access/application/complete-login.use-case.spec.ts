@@ -15,7 +15,10 @@ function build({ account, created }: { account: UserAccount; created: boolean })
     ensureIdentity: jest.fn().mockResolvedValue(undefined),
     recordLogin: jest.fn().mockResolvedValue(undefined),
   };
-  const profiles: ProfileDirectory = { listProfiles: jest.fn().mockResolvedValue([]) };
+  const profiles: ProfileDirectory = {
+    listProfiles: jest.fn().mockResolvedValue([]),
+    overview: jest.fn(),
+  };
   const ipLog = { record: jest.fn().mockResolvedValue(undefined) } satisfies AccessIpLogWriter;
   const productEvents = {
     record: jest.fn().mockResolvedValue(undefined),

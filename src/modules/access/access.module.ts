@@ -38,6 +38,10 @@ import { VerifyLoginChallenge } from './application/verify-login-challenge.use-c
 import { EndAllSessions } from './application/end-all-sessions.use-case';
 import { EndSession } from './application/end-session.use-case';
 import { GetMe } from './application/get-me.use-case';
+import { SetActiveProfile } from './application/set-active-profile.use-case';
+import { ListWeddingMembers } from './application/list-wedding-members.use-case';
+import { RemoveMembership } from './application/remove-membership.use-case';
+import { WEDDING_MEMBERS_STORE } from './application/ports/wedding-members-store.port';
 import { SESSION_REPOSITORY } from './application/ports/session-repository.port';
 import { SESSION_TOKENS } from './application/ports/session-token.port';
 import { USER_REPOSITORY } from './application/ports/user-repository.port';
@@ -54,6 +58,7 @@ import { PrismaAccessInvitationStore } from './infrastructure/prisma-access-invi
 import { OutboxInvitationMailer } from './infrastructure/outbox-invitation-mailer';
 import { PrismaInvitationAcceptanceStore } from './infrastructure/prisma-invitation-acceptance.store';
 import { PrismaPlannerProfiles } from './infrastructure/prisma-planner-profiles';
+import { PrismaWeddingMembersStore } from './infrastructure/prisma-wedding-members.store';
 import { PrismaUserAccountNames } from './infrastructure/prisma-user-account-names';
 import { OutboxDeclineNoticeMailer } from './infrastructure/outbox-decline-notice-mailer';
 import { PrismaWeddingSignupStore } from './infrastructure/prisma-wedding-signup.store';
@@ -71,6 +76,7 @@ import { ReferralController } from './presentation/referral.controller';
 import { WeddingsController } from './presentation/weddings.controller';
 import { AccessInvitationsController } from './presentation/access-invitations.controller';
 import { InvitationAcceptanceController } from './presentation/invitation-acceptance.controller';
+import { WeddingMembersController } from './presentation/wedding-members.controller';
 import { SessionGuard } from './presentation/session.guard';
 import { TenantTransactionInterceptor } from './presentation/tenant-transaction.interceptor';
 
@@ -85,6 +91,7 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     WeddingsController,
     AccessInvitationsController,
     InvitationAcceptanceController,
+    WeddingMembersController,
   ],
   providers: [
     { provide: SESSION_REPOSITORY, useClass: PrismaSessionRepository },
@@ -111,6 +118,7 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     { provide: INVITATION_MAILER, useClass: OutboxInvitationMailer },
     { provide: INVITATION_ACCEPTANCE_STORE, useClass: PrismaInvitationAcceptanceStore },
     { provide: PLANNER_PROFILES, useClass: PrismaPlannerProfiles },
+    { provide: WEDDING_MEMBERS_STORE, useClass: PrismaWeddingMembersStore },
     { provide: USER_ACCOUNT_NAMES, useClass: PrismaUserAccountNames },
     { provide: DECLINE_NOTICE_MAILER, useClass: OutboxDeclineNoticeMailer },
     // Mesmo gerador opaco da sessão: 256 bits, SHA-256 no banco.
@@ -148,6 +156,9 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     EndSession,
     EndAllSessions,
     GetMe,
+    SetActiveProfile,
+    ListWeddingMembers,
+    RemoveMembership,
     GetReferral,
     SuggestSlug,
     CheckSlugAvailability,

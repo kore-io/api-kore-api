@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { PrismaService } from '../../shared/database/prisma.service';
+import { TenantTransaction } from '../../shared/database/tenant-transaction';
 import { ACCESS_IP_LOG_WRITER } from './application/ports/access-ip-log-writer.port';
 import { APPLICATION_LOG_WRITER } from './application/ports/application-log-writer.port';
 import { IpHasher } from './infrastructure/ip-hasher';
@@ -18,9 +19,12 @@ import { PrismaApplicationLogWriter } from './infrastructure/prisma-application-
     ipHasherProvider,
     {
       provide: APPLICATION_LOG_WRITER,
-      inject: [PrismaService, IpHasher],
-      useFactory: (client: PrismaService, ipHasher: IpHasher) =>
-        new PrismaApplicationLogWriter({ client, ipHasher }),
+      inject: [PrismaService, TenantTransaction, IpHasher],
+      useFactory: (prisma: PrismaService, tenant: TenantTransaction, ipHasher: IpHasher) =>
+        new PrismaApplicationLogWriter({
+          client: () => tenant.optionalClient() ?? prisma,
+          ipHasher,
+        }),
     },
     { provide: ACCESS_IP_LOG_WRITER, useClass: PrismaAccessIpLogWriter },
   ],

@@ -531,7 +531,86 @@
             }
           }
         },
-        "summary": "Quem está conectado; a leitura também renova a sessão (RN08).",
+        "summary": "Quem está conectado, os perfis e os vínculos; a leitura também renova a sessão (RN08, RN14).",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/v1/me/active-profile": {
+      "post": {
+        "operationId": "MeController_chooseProfile_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetActiveProfileBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetActiveProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Escolhe o perfil ativo da sessão, sem novo login (RN14, RN16 de Login).",
         "tags": [
           "me"
         ]
@@ -1200,6 +1279,170 @@
           "access-invitations"
         ]
       }
+    },
+    "/v1/weddings/{weddingId}/memberships": {
+      "get": {
+        "operationId": "WeddingMembersController_list_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingMembersResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Quem tem acesso e os convites pendentes, para Colaboradores (RN02, RN05 de Papéis).",
+        "tags": [
+          "memberships"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/memberships/{id}": {
+      "delete": {
+        "operationId": "WeddingMembersController_remove_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MembershipNotFoundErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/CannotRemoveOwnerErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LastOwnerErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Remove o colaborador ou encerra o próprio vínculo (RN06, RN07, RN10 de Papéis).",
+        "tags": [
+          "memberships"
+        ]
+      }
     }
   },
   "info": {
@@ -1595,58 +1838,242 @@
           "next"
         ]
       },
+      "MeMembershipResponse": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "enum": [
+              "owner",
+              "collaborator"
+            ],
+            "type": "string"
+          },
+          "eventDate": {
+            "type": "string",
+            "nullable": true,
+            "example": "2027-03-20"
+          },
+          "weddingId": {
+            "type": "string"
+          },
+          "weddingName": {
+            "type": "string",
+            "description": "\"Ana & Marcos\" (decisão 163)."
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "eventDate",
+          "weddingId",
+          "weddingName",
+          "city",
+          "state"
+        ]
+      },
+      "MePlannerResponse": {
+        "type": "object",
+        "properties": {
+          "organization": {
+            "type": "string",
+            "example": "Prado Assessoria"
+          },
+          "weddingsCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "organization",
+          "weddingsCount"
+        ]
+      },
+      "MeReferrerResponse": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "planner",
+              "seller"
+            ],
+            "type": "string"
+          },
+          "referralCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "referralCode"
+        ]
+      },
       "MeUserResponse": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
           "name": {
             "type": "string",
             "nullable": true
           },
-          "email": {
-            "type": "string"
-          },
           "platformRole": {
-            "type": "string",
             "enum": [
               "none",
               "admin",
               "support"
-            ]
+            ],
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
           }
         },
         "required": [
-          "id",
           "name",
-          "email",
-          "platformRole"
+          "platformRole",
+          "id",
+          "email"
         ]
       },
       "MeResponse": {
         "type": "object",
         "properties": {
-          "user": {
-            "$ref": "#/components/schemas/MeUserResponse"
+          "memberships": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeMembershipResponse"
+            }
+          },
+          "planner": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MePlannerResponse"
+              }
+            ]
+          },
+          "profiles": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "couple",
+                "planner",
+                "seller"
+              ]
+            }
           },
           "activeProfile": {
-            "type": "string",
             "nullable": true,
             "enum": [
               "couple",
               "planner",
               "seller"
+            ],
+            "type": "string"
+          },
+          "lastProfileOnDevice": {
+            "nullable": true,
+            "enum": [
+              "couple",
+              "planner",
+              "seller"
+            ],
+            "type": "string"
+          },
+          "referrer": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MeReferrerResponse"
+              }
             ]
+          },
+          "user": {
+            "$ref": "#/components/schemas/MeUserResponse"
           },
           "authenticatedAt": {
             "type": "string"
           }
         },
         "required": [
-          "user",
+          "memberships",
+          "planner",
+          "profiles",
           "activeProfile",
+          "lastProfileOnDevice",
+          "referrer",
+          "user",
           "authenticatedAt"
+        ]
+      },
+      "ProfileNotOwnedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              403
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PROFILE_NOT_OWNED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SetActiveProfileBody": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "enum": [
+              "couple",
+              "planner",
+              "seller"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "profile"
+        ]
+      },
+      "SetActiveProfileResponse": {
+        "type": "object",
+        "properties": {
+          "activeProfile": {
+            "enum": [
+              "couple",
+              "planner",
+              "seller"
+            ],
+            "type": "string"
+          },
+          "home": {
+            "type": "string",
+            "example": "/app"
+          }
+        },
+        "required": [
+          "activeProfile",
+          "home"
         ]
       },
       "ReferralNotFoundErrorBody": {
@@ -2551,6 +2978,165 @@
             "type": "string",
             "enum": [
               "INVITATION_NOT_DECLINABLE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "WeddingMemberResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "enum": [
+              "owner",
+              "collaborator"
+            ],
+            "type": "string"
+          },
+          "kind": {
+            "description": "Só no colaborador (decisão 177, item 8).",
+            "enum": [
+              "planner",
+              "seller"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "role",
+          "id"
+        ]
+      },
+      "PendingInvitationResponse": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nulo no link do casal sem e-mail (decisão 177, item 8)."
+          },
+          "kind": {
+            "enum": [
+              "partner",
+              "couple",
+              "planner"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "Vencido continua pendente até o reenvio; o app mostra \"venceu\"."
+          }
+        },
+        "required": [
+          "email",
+          "kind",
+          "id",
+          "expiresAt"
+        ]
+      },
+      "WeddingMembersResponse": {
+        "type": "object",
+        "properties": {
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeddingMemberResponse"
+            }
+          },
+          "pendingInvitations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PendingInvitationResponse"
+            }
+          }
+        },
+        "required": [
+          "members",
+          "pendingInvitations"
+        ]
+      },
+      "MembershipNotFoundErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "MEMBERSHIP_NOT_FOUND"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "CannotRemoveOwnerErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "CANNOT_REMOVE_OWNER"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "LastOwnerErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "LAST_OWNER"
             ]
           },
           "message": {

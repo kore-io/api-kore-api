@@ -19,6 +19,10 @@ import {
   InvitationInvalidError,
   EmailMismatchError,
   AlreadyMemberError,
+  ProfileNotOwnedError,
+  CannotRemoveOwnerError,
+  LastOwnerError,
+  MembershipNotFoundError,
   SellerCannotBePlannerError,
   InvitationNotDeclinableError,
   AcceptanceDetailsMissingError,
@@ -218,6 +222,34 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 400,
       error: 'Bad Request',
       message: [`${error.field} is required to accept this invitation`],
+    });
+  }
+  if (error instanceof CannotRemoveOwnerError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'CANNOT_REMOVE_OWNER',
+      message: 'An owner cannot remove the other owner.',
+    });
+  }
+  if (error instanceof LastOwnerError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'LAST_OWNER',
+      message: 'The last owner cannot leave the wedding.',
+    });
+  }
+  if (error instanceof MembershipNotFoundError) {
+    return new NotFoundException({
+      statusCode: 404,
+      error: 'MEMBERSHIP_NOT_FOUND',
+      message: 'Membership not found.',
+    });
+  }
+  if (error instanceof ProfileNotOwnedError) {
+    return new ForbiddenException({
+      statusCode: 403,
+      error: 'PROFILE_NOT_OWNED',
+      message: 'This account does not have that profile.',
     });
   }
   if (error instanceof UserBlockedError) {

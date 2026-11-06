@@ -184,3 +184,23 @@ export class AcceptanceDetailsMissingError extends Error {
     this.field = field;
   }
 }
+
+/** RN14 de Login: a conta não tem esse perfil. */
+export class ProfileNotOwnedError extends Error {
+  override name = 'ProfileNotOwnedError';
+}
+
+/** RN07 de Papéis: um dono não remove o outro. */
+export class CannotRemoveOwnerError extends Error {
+  override name = 'CannotRemoveOwnerError';
+}
+
+/** RN07 de Papéis: o último dono não sai (só exclui o site). */
+export class LastOwnerError extends Error {
+  override name = 'LastOwnerError';
+}
+
+/** O vínculo não existe neste casamento, ou já foi encerrado. */
+export class MembershipNotFoundError extends Error {
+  override name = 'MembershipNotFoundError';
+}

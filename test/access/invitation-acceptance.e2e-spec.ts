@@ -239,6 +239,40 @@ describe('Convites de acesso: ler, aceitar e recusar (banco real; decisões 168 
       await accept(token, marcos.cookie, { myTitle: 'groom' }).expect(410);
     });
 
+    it('decisão 178 - quem vira dono passa ao perfil de casal na sessão; um erro e o aceite de cerimonialista não mexem na sessão', async () => {
+      const { ana, weddingId } = await anaWedding();
+      const me = async (cookie: string) =>
+        (await request(app.getHttpServer()).get('/v1/me').set('Cookie', cookie).expect(200)).body
+          .activeProfile as string | null;
+      const marcos = await signedInUser({ app });
+      const partner = await seedInvitation({
+        db,
+        weddingId,
+        kind: 'partner',
+        email: 'outro@kore.local',
+        invitedByUserId: ana.userId,
+      });
+
+      await accept(partner.token, marcos.cookie, { myTitle: 'groom' }).expect(409);
+      expect(await me(marcos.cookie)).toBeNull();
+      await accept(partner.token, marcos.cookie, {
+        myTitle: 'groom',
+        confirmOtherAccount: true,
+      }).expect(200);
+      expect(await me(marcos.cookie)).toBe('couple');
+
+      const rita = await signedInUser({ app, name: 'Rita' });
+      const planner = await seedInvitation({
+        db,
+        weddingId,
+        kind: 'planner',
+        email: (await db.user.findUniqueOrThrow({ where: { id: rita.userId } })).email,
+        invitedByUserId: ana.userId,
+      });
+      await accept(planner.token, rita.cookie).expect(200);
+      expect(await me(rita.cookie)).toBeNull();
+    });
+
     it('RN07 - outra conta: 409 EMAIL_MISMATCH; confirmando, vale para a conta da sessão', async () => {
       const { ana, weddingId } = await anaWedding();
       const { token, invitationId } = await seedInvitation({
