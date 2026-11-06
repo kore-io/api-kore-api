@@ -142,3 +142,40 @@ export class InvitationNotPendingError extends Error {
 export class InvitationNotFoundError extends Error {
   override name = 'InvitationNotFoundError';
 }
+
+/** RN03 e RN12 de Convites: o link já não vale (410, só com o motivo). */
+export class InvitationInvalidError extends Error {
+  override name = 'InvitationInvalidError';
+  readonly reason: 'expired' | 'used' | 'revoked' | 'superseded';
+
+  constructor({ reason }: { reason: 'expired' | 'used' | 'revoked' | 'superseded' }) {
+    super();
+    this.reason = reason;
+  }
+}
+
+/** RN07 de Convites: a sessão é de outro e-mail, e a pessoa não confirmou. */
+export class EmailMismatchError extends Error {
+  override name = 'EmailMismatchError';
+}
+
+/** Decisão 172, item 3: a pessoa já tem vínculo com este casamento. */
+export class AlreadyMemberError extends Error {
+  override name = 'AlreadyMemberError';
+}
+
+/** RN11 de Convites; decisão 136, item 8: o link sem e-mail não tem Recusar. */
+export class InvitationNotDeclinableError extends Error {
+  override name = 'InvitationNotDeclinableError';
+}
+
+/** Decisões 168 e 172: falta um dado do aceite (quem é você, noivo ou noiva, ou o nome). */
+export class AcceptanceDetailsMissingError extends Error {
+  override name = 'AcceptanceDetailsMissingError';
+  readonly field: string;
+
+  constructor({ field }: { field: string }) {
+    super();
+    this.field = field;
+  }
+}

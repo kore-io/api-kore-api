@@ -16,6 +16,11 @@ import {
   LoginRequestTooSoonError,
   ReferralNotFoundError,
   OwnersFullError,
+  InvitationInvalidError,
+  EmailMismatchError,
+  AlreadyMemberError,
+  InvitationNotDeclinableError,
+  AcceptanceDetailsMissingError,
   CoupleInvitationsFullError,
   PlannerAlreadyError,
   InvalidInvitationRecipientsError,
@@ -169,6 +174,42 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 400,
       error: 'Bad Request',
       message: ['emails must have one address, or up to two (or none) only for kind couple'],
+    });
+  }
+  if (error instanceof InvitationInvalidError) {
+    return new GoneException({
+      statusCode: 410,
+      error: 'INVITATION_INVALID',
+      message: 'Invitation is no longer valid.',
+      reason: error.reason,
+    });
+  }
+  if (error instanceof EmailMismatchError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'EMAIL_MISMATCH',
+      message: 'The invitation was sent to another e-mail.',
+    });
+  }
+  if (error instanceof AlreadyMemberError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'ALREADY_MEMBER',
+      message: 'You are already in this wedding.',
+    });
+  }
+  if (error instanceof InvitationNotDeclinableError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'INVITATION_NOT_DECLINABLE',
+      message: 'A link without e-mail cannot be declined.',
+    });
+  }
+  if (error instanceof AcceptanceDetailsMissingError) {
+    return new BadRequestException({
+      statusCode: 400,
+      error: 'Bad Request',
+      message: [`${error.field} is required to accept this invitation`],
     });
   }
   if (error instanceof UserBlockedError) {

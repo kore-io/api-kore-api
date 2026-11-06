@@ -23,6 +23,13 @@ import { INVITATION_MAILER } from './application/ports/invitation-mailer.port';
 import { INVITATION_TOKENS } from './application/ports/invitation-tokens.port';
 import { SendAccessInvitations } from './application/send-access-invitations.use-case';
 import { CancelAccessInvitation } from './application/cancel-access-invitation.use-case';
+import { GetAccessInvitation } from './application/get-access-invitation.use-case';
+import { AcceptAccessInvitation } from './application/accept-access-invitation.use-case';
+import { DeclineAccessInvitation } from './application/decline-access-invitation.use-case';
+import { INVITATION_ACCEPTANCE_STORE } from './application/ports/invitation-acceptance-store.port';
+import { PLANNER_PROFILES } from './application/ports/planner-profiles.port';
+import { USER_ACCOUNT_NAMES } from './application/ports/user-account-names.port';
+import { DECLINE_NOTICE_MAILER } from './application/ports/decline-notice-mailer.port';
 import { WEDDING_SIGNUP_STORE } from './application/ports/wedding-signup-store.port';
 import { PROFILE_DIRECTORY } from './application/ports/profile-directory.port';
 import { USER_ACCOUNTS } from './application/ports/user-accounts.port';
@@ -45,6 +52,10 @@ import { PrismaReferralDirectory } from './infrastructure/prisma-referral-direct
 import { PrismaSlugRegistry } from './infrastructure/prisma-slug-registry';
 import { PrismaAccessInvitationStore } from './infrastructure/prisma-access-invitation.store';
 import { OutboxInvitationMailer } from './infrastructure/outbox-invitation-mailer';
+import { PrismaInvitationAcceptanceStore } from './infrastructure/prisma-invitation-acceptance.store';
+import { PrismaPlannerProfiles } from './infrastructure/prisma-planner-profiles';
+import { PrismaUserAccountNames } from './infrastructure/prisma-user-account-names';
+import { OutboxDeclineNoticeMailer } from './infrastructure/outbox-decline-notice-mailer';
 import { PrismaWeddingSignupStore } from './infrastructure/prisma-wedding-signup.store';
 import { PrismaProfileDirectory } from './infrastructure/prisma-profile-directory';
 import { PrismaUserAccounts } from './infrastructure/prisma-user-accounts';
@@ -59,6 +70,7 @@ import { MeController } from './presentation/me.controller';
 import { ReferralController } from './presentation/referral.controller';
 import { WeddingsController } from './presentation/weddings.controller';
 import { AccessInvitationsController } from './presentation/access-invitations.controller';
+import { InvitationAcceptanceController } from './presentation/invitation-acceptance.controller';
 import { SessionGuard } from './presentation/session.guard';
 import { TenantTransactionInterceptor } from './presentation/tenant-transaction.interceptor';
 
@@ -72,6 +84,7 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     ReferralController,
     WeddingsController,
     AccessInvitationsController,
+    InvitationAcceptanceController,
   ],
   providers: [
     { provide: SESSION_REPOSITORY, useClass: PrismaSessionRepository },
@@ -96,6 +109,10 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     { provide: WEDDING_SIGNUP_STORE, useClass: PrismaWeddingSignupStore },
     { provide: ACCESS_INVITATION_STORE, useClass: PrismaAccessInvitationStore },
     { provide: INVITATION_MAILER, useClass: OutboxInvitationMailer },
+    { provide: INVITATION_ACCEPTANCE_STORE, useClass: PrismaInvitationAcceptanceStore },
+    { provide: PLANNER_PROFILES, useClass: PrismaPlannerProfiles },
+    { provide: USER_ACCOUNT_NAMES, useClass: PrismaUserAccountNames },
+    { provide: DECLINE_NOTICE_MAILER, useClass: OutboxDeclineNoticeMailer },
     // Mesmo gerador opaco da sessão: 256 bits, SHA-256 no banco.
     { provide: INVITATION_TOKENS, useClass: OpaqueSessionTokens },
     {
@@ -137,6 +154,9 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     CreateWedding,
     SendAccessInvitations,
     CancelAccessInvitation,
+    GetAccessInvitation,
+    AcceptAccessInvitation,
+    DeclineAccessInvitation,
   ],
   exports: [StartSession, WeddingAuthorization],
 })

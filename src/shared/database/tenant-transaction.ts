@@ -63,6 +63,11 @@ export class TenantTransaction implements AfterCommit {
     return this.request().tx;
   }
 
+  /** A transação da requisição, quando há uma (rota pública não tem). */
+  optionalClient(): Prisma.TransactionClient | undefined {
+    return this.current.getStore()?.tx;
+  }
+
   schedule(work: () => Promise<void>): void {
     this.request().afterCommit.push(work);
   }
