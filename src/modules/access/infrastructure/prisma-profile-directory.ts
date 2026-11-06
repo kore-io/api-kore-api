@@ -10,6 +10,7 @@ import type {
 import type { ProfileKind } from '../domain/authenticated-session';
 import { coupleNames, type InvitationPartner } from '../domain/invitation-acceptance';
 import { profilesOf } from '../domain/profiles';
+import { liveWeddingField } from './live-wedding-field';
 
 /**
  * Perfis e vínculos da pessoa, lidos com a RLS como ela (a própria pessoa vê os
@@ -76,8 +77,8 @@ export class PrismaProfileDirectory implements ProfileDirectory {
       role,
       weddingName: coupleNames({ partners: wedding.partners as InvitationPartner[] }),
       eventDate: wedding.eventDate,
-      city: wedding.city,
-      state: wedding.state,
+      city: liveWeddingField({ value: wedding.city, field: 'city' }),
+      state: liveWeddingField({ value: wedding.state, field: 'state' }),
     }));
     const profiles = profilesOf({
       ownsActiveWedding: summaries.some((membership) => membership.role === 'owner'),

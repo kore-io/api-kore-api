@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { liveWeddingField } from './live-wedding-field';
 import { TenantTransaction } from '../../../shared/database/tenant-transaction';
 import type {
   AccessInvitationStore,
@@ -46,7 +47,10 @@ export class PrismaAccessInvitationStore implements AccessInvitationStore {
       wedding.partners.find((partner) => partner.slot === slot)?.displayName ?? '';
     return {
       status: wedding.status,
-      createdByUserId: wedding.createdByUserId,
+      createdByUserId: liveWeddingField({
+        value: wedding.createdByUserId,
+        field: 'createdByUserId',
+      }),
       createdByReferrer:
         wedding.referralSource === 'created_by_planner' ||
         wedding.referralSource === 'created_by_seller',
@@ -54,8 +58,8 @@ export class PrismaAccessInvitationStore implements AccessInvitationStore {
       activeCollaborators: count('collaborator'),
       partnerNames: [name(1), name(2)],
       eventDate: wedding.eventDate,
-      city: wedding.city,
-      state: wedding.state,
+      city: liveWeddingField({ value: wedding.city, field: 'city' }),
+      state: liveWeddingField({ value: wedding.state, field: 'state' }),
     };
   }
 
@@ -114,7 +118,8 @@ export class PrismaAccessInvitationStore implements AccessInvitationStore {
   async touchActivity({ weddingId, now }: { weddingId: string; now: Date }): Promise<void> {
     await this.tenant.client().wedding.updateMany({
       where: { id: weddingId },
-      data: { lastActivityAt: now },
+      // Atividade nova zera o aviso de exclusão (decisão 180).
+      data: { lastActivityAt: now, purgeNoticeSentAt: null },
     });
   }
 

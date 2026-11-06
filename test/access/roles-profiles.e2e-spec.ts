@@ -99,7 +99,10 @@ describe('Papéis e perfis: /me, perfil ativo e colaboradores (banco real; decis
       });
       const cookie = await openSession({ app, userId });
       const purged = await seedWedding({ db, ownerId: userId });
-      await db.wedding.update({ where: { id: purged.weddingId }, data: { status: 'purged' } });
+      await db.wedding.update({
+        where: { id: purged.weddingId },
+        data: { status: 'purged', purgedAt: new Date() },
+      });
 
       const response = await me(cookie).expect(200);
 
