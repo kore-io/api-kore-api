@@ -33,7 +33,12 @@ describe('Sessão (Login sem senha e sessão)', () => {
 
       expect(response.body).toEqual({
         user: { id: userId, name: 'Ana Beatriz Moreira', email, platformRole: 'none' },
+        memberships: [],
+        planner: null,
+        profiles: [],
         activeProfile: null,
+        lastProfileOnDevice: null,
+        referrer: null,
         authenticatedAt: expect.any(String),
       });
     });
