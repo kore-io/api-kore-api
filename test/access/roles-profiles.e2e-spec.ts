@@ -262,6 +262,28 @@ describe('Papéis e perfis: /me, perfil ativo e colaboradores (banco real; decis
       );
     });
 
+    it('decisão 179 - o dono que sai deixa a outra sessão dele em couple no banco, mas o /me devolve activeProfile null', async () => {
+      const ana = await signedInUser({ app });
+      const { weddingId } = await seedWedding({ db, ownerId: ana.userId });
+      const marcos = await signedInUser({ app });
+      await db.membership.create({ data: { weddingId, userId: marcos.userId, role: 'owner' } });
+      const otherDevice = await openSession({ app, userId: marcos.userId });
+      await choose(otherDevice, 'couple').expect(200);
+      await choose(marcos.cookie, 'couple').expect(200);
+
+      await remove(
+        marcos.cookie,
+        weddingId,
+        (await membershipOf(weddingId, marcos.userId)).id,
+      ).expect(204);
+
+      const body = (await me(otherDevice).expect(200)).body as {
+        profiles: string[];
+        activeProfile: string | null;
+      };
+      expect(body).toMatchObject({ profiles: [], activeProfile: null });
+    });
+
     it('vínculo de outro casamento ou id inválido: 404 MEMBERSHIP_NOT_FOUND', async () => {
       const a = await signedInUser({ app });
       const b = await signedInUser({ app });

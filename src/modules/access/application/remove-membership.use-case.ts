@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AFTER_COMMIT, type AfterCommit } from '../../../shared/database/after-commit.port';
 import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,
@@ -19,8 +18,9 @@ import { WeddingAuthorization } from './wedding-authorization.service';
 
 /**
  * Encerra um vínculo e corta o acesso na hora (RN06, RN07 e RN10 de Papéis). O
- * registro no log da aplicação sai depois do commit (decisão 170); o aviso ao
- * casal quando o cerimonialista sai fica para Notificações (decisão 177, item 9).
+ * registro no log da aplicação vai na mesma transação da remoção: os dois valem
+ * juntos ou nenhum (decisão 179). O aviso ao casal quando o cerimonialista sai
+ * fica para Notificações (decisão 177, item 9).
  */
 @Injectable()
 export class RemoveMembership {
@@ -28,7 +28,6 @@ export class RemoveMembership {
     private readonly authorization: WeddingAuthorization,
     @Inject(WEDDING_MEMBERS_STORE) private readonly store: WeddingMembersStore,
     @Inject(APPLICATION_LOG_WRITER) private readonly log: ApplicationLogWriter,
-    @Inject(AFTER_COMMIT) private readonly afterCommit: AfterCommit,
   ) {}
 
   async execute({
@@ -64,19 +63,17 @@ export class RemoveMembership {
     const leaving = target.userId === userId;
     if (leaving && target.role === 'owner') await this.store.releasePartnerLogin({ weddingId });
 
-    this.afterCommit.schedule(() =>
-      this.log.record({
-        entry: {
-          action: leaving ? 'membership.left' : 'membership.removed',
-          actorKind: 'user',
-          actorUserId: userId,
-          weddingId,
-          entityType: 'membership',
-          entityId: membershipId,
-          data: { membershipId, role: target.role },
-          ...(ip ? { ip } : {}),
-        },
-      }),
-    );
+    await this.log.record({
+      entry: {
+        action: leaving ? 'membership.left' : 'membership.removed',
+        actorKind: 'user',
+        actorUserId: userId,
+        weddingId,
+        entityType: 'membership',
+        entityId: membershipId,
+        data: { membershipId, role: target.role },
+        ...(ip ? { ip } : {}),
+      },
+    });
   }
 }

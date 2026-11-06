@@ -41,7 +41,7 @@ import { PrismaApplicationLogWriter } from './infrastructure/prisma-application-
       provide: APPLICATION_LOG_WRITER,
       inject: [BackofficePrismaService, IpHasher],
       useFactory: (client: BackofficePrismaService, ipHasher: IpHasher) =>
-        new PrismaApplicationLogWriter({ client, ipHasher }),
+        new PrismaApplicationLogWriter({ client: () => client, ipHasher }),
     },
     { provide: ACCESS_IP_LOG_RETENTION, useClass: PrismaAccessIpLogRetention },
     PurgeExpiredAccessIpLogs,

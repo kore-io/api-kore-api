@@ -35,4 +35,21 @@ describe('GetMe (GET /v1/me)', () => {
       (await getMe().execute({ session, lastProfileOnDevice: 'planner' })).lastProfileOnDevice,
     ).toBeNull();
   });
+
+  it('decisão 179 - perfil ativo que a conta já não tem vale como nenhum', async () => {
+    const me = await getMe().execute({
+      session: { ...session, activeProfile: 'planner' },
+      lastProfileOnDevice: null,
+    });
+
+    expect(me.activeProfile).toBeNull();
+    expect(
+      (
+        await getMe().execute({
+          session: { ...session, activeProfile: 'couple' },
+          lastProfileOnDevice: null,
+        })
+      ).activeProfile,
+    ).toBe('couple');
+  });
 });

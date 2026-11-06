@@ -42,7 +42,12 @@ export class GetMe {
     return {
       user,
       ...overview,
-      activeProfile: session.activeProfile,
+      // Perfil que a conta já não tem (ex.: dono que saiu, noutro aparelho) vale
+      // como nenhum; a sessão no banco não muda (decisão 179).
+      activeProfile:
+        session.activeProfile && overview.profiles.includes(session.activeProfile)
+          ? session.activeProfile
+          : null,
       lastProfileOnDevice:
         lastProfileOnDevice && overview.profiles.includes(lastProfileOnDevice)
           ? lastProfileOnDevice

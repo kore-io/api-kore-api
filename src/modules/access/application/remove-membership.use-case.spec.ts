@@ -24,19 +24,16 @@ function setup({ members, role }: { members: WeddingMember[]; role: 'owner' | 'c
     releasePartnerLogin: jest.fn().mockResolvedValue(undefined),
   } satisfies WeddingMembersStore;
   const log: ApplicationLogWriter = { record: jest.fn().mockResolvedValue(undefined) };
-  const scheduled: (() => Promise<void>)[] = [];
   const authorization = {
     require: jest.fn().mockResolvedValue(role),
   } as unknown as WeddingAuthorization;
-  const useCase = new RemoveMembership(authorization, store, log, {
-    schedule: (work) => void scheduled.push(work),
-  });
-  return { useCase, store, log, scheduled };
+  const useCase = new RemoveMembership(authorization, store, log);
+  return { useCase, store, log };
 }
 
 describe('RemoveMembership (DELETE /v1/weddings/{weddingId}/memberships/{id})', () => {
-  it('RN06 e RN10 - o dono remove a cerimonialista; o log sai depois do commit', async () => {
-    const { useCase, store, log, scheduled } = setup({ members: [ana, juliana], role: 'owner' });
+  it('RN06 e RN10 - o dono remove a cerimonialista, com o log na mesma transação (decisão 179)', async () => {
+    const { useCase, store, log } = setup({ members: [ana, juliana], role: 'owner' });
 
     await useCase.execute({
       userId: 'u-ana',
@@ -52,8 +49,6 @@ describe('RemoveMembership (DELETE /v1/weddings/{weddingId}/memberships/{id})', 
       now,
     });
     expect(store.releasePartnerLogin).not.toHaveBeenCalled();
-    expect(log.record).not.toHaveBeenCalled();
-    await scheduled[0]?.();
     expect(log.record).toHaveBeenCalledWith({
       entry: expect.objectContaining({
         action: 'membership.removed',
@@ -67,7 +62,7 @@ describe('RemoveMembership (DELETE /v1/weddings/{weddingId}/memberships/{id})', 
   });
 
   it('RN07 e decisão 177 (10) - o dono que sai (com outro dono) solta o login do noivo e registra membership.left', async () => {
-    const { useCase, store, log, scheduled } = setup({ members: [ana, marcos], role: 'owner' });
+    const { useCase, store, log } = setup({ members: [ana, marcos], role: 'owner' });
 
     await useCase.execute({
       userId: 'u-marcos',
@@ -78,7 +73,6 @@ describe('RemoveMembership (DELETE /v1/weddings/{weddingId}/memberships/{id})', 
     });
 
     expect(store.releasePartnerLogin).toHaveBeenCalledWith({ weddingId: 'w1' });
-    await scheduled[0]?.();
     expect(log.record).toHaveBeenCalledWith({
       entry: expect.objectContaining({ action: 'membership.left' }),
     });
