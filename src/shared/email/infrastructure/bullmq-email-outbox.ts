@@ -1,7 +1,7 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { Queue } from 'bullmq';
-import type { EmailOutbox, EmailPriority } from '../application/email-outbox.port';
+import type { EmailOutbox, EmailPriority, EmailTag } from '../application/email-outbox.port';
 import {
   EMAIL_SENDER,
   type EmailMessage,
@@ -37,11 +37,13 @@ export class BullmqEmailOutbox implements EmailOutbox {
   async enqueue({
     message,
     priority,
+    tag,
   }: {
     message: EmailMessage;
     priority: EmailPriority;
+    tag?: EmailTag;
   }): Promise<void> {
-    const queued = await this.addWithTimeout({ queue: this.queues[priority], message });
+    const queued = await this.addWithTimeout({ queue: this.queues[priority], message, tag });
     if (queued) return;
     this.logger.warn(`Fila de e-mail indisponível (${priority}); envio direto.`);
     await this.sender.send({ message });
@@ -50,14 +52,18 @@ export class BullmqEmailOutbox implements EmailOutbox {
   private async addWithTimeout({
     queue,
     message,
+    tag,
   }: {
     queue: Queue;
     message: EmailMessage;
+    tag?: EmailTag;
   }): Promise<boolean> {
-    const added = queue.add(DELIVER_EMAIL_JOB, { message }, EMAIL_JOB_OPTIONS).then(
-      () => true,
-      () => false,
-    );
+    const added = queue
+      .add(DELIVER_EMAIL_JOB, { message, ...(tag && { tag }) }, EMAIL_JOB_OPTIONS)
+      .then(
+        () => true,
+        () => false,
+      );
     const waited = new Promise<boolean>((resolve) => {
       setTimeout(() => resolve(false), ENQUEUE_WAIT_MS).unref();
     });

@@ -42,6 +42,7 @@ import { SetActiveProfile } from './application/set-active-profile.use-case';
 import { ListWeddingMembers } from './application/list-wedding-members.use-case';
 import { RemoveMembership } from './application/remove-membership.use-case';
 import { WEDDING_MEMBERS_STORE } from './application/ports/wedding-members-store.port';
+import { WEDDING_ACTIVITY } from './application/ports/wedding-activity.port';
 import { SESSION_REPOSITORY } from './application/ports/session-repository.port';
 import { SESSION_TOKENS } from './application/ports/session-token.port';
 import { USER_REPOSITORY } from './application/ports/user-repository.port';
@@ -59,6 +60,7 @@ import { OutboxInvitationMailer } from './infrastructure/outbox-invitation-maile
 import { PrismaInvitationAcceptanceStore } from './infrastructure/prisma-invitation-acceptance.store';
 import { PrismaPlannerProfiles } from './infrastructure/prisma-planner-profiles';
 import { PrismaWeddingMembersStore } from './infrastructure/prisma-wedding-members.store';
+import { PrismaWeddingActivity } from './infrastructure/prisma-wedding-activity';
 import { PrismaUserAccountNames } from './infrastructure/prisma-user-account-names';
 import { OutboxDeclineNoticeMailer } from './infrastructure/outbox-decline-notice-mailer';
 import { PrismaWeddingSignupStore } from './infrastructure/prisma-wedding-signup.store';
@@ -119,6 +121,7 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     { provide: INVITATION_ACCEPTANCE_STORE, useClass: PrismaInvitationAcceptanceStore },
     { provide: PLANNER_PROFILES, useClass: PrismaPlannerProfiles },
     { provide: WEDDING_MEMBERS_STORE, useClass: PrismaWeddingMembersStore },
+    { provide: WEDDING_ACTIVITY, useClass: PrismaWeddingActivity },
     { provide: USER_ACCOUNT_NAMES, useClass: PrismaUserAccountNames },
     { provide: DECLINE_NOTICE_MAILER, useClass: OutboxDeclineNoticeMailer },
     // Mesmo gerador opaco da sessão: 256 bits, SHA-256 no banco.
