@@ -13,6 +13,7 @@ import {
 } from './accept-access-invitation.use-case';
 import type { InvitationAcceptanceStore } from './ports/invitation-acceptance-store.port';
 import type { PlannerProfiles } from './ports/planner-profiles.port';
+import type { SessionRepository } from './ports/session-repository.port';
 import type { UserAccountNames } from './ports/user-account-names.port';
 import type { UserRepository } from './ports/user-repository.port';
 import type { WeddingSignupStore } from './ports/wedding-signup-store.port';
@@ -93,6 +94,9 @@ function setup({
   } satisfies PlannerProfiles;
   const productEvents: ProductEventRecorder = { record: jest.fn().mockResolvedValue(undefined) };
   const scheduled: (() => Promise<void>)[] = [];
+  const sessions = {
+    setActiveProfile: jest.fn().mockResolvedValue(undefined),
+  } as unknown as SessionRepository;
   const useCase = new AcceptAccessInvitation(
     store,
     owners,
@@ -102,15 +106,22 @@ function setup({
     profiles,
     productEvents,
     { schedule: (work) => void scheduled.push(work) },
+    sessions,
   );
-  return { useCase, store, owners, names, profiles, productEvents, scheduled };
+  return { useCase, store, owners, names, profiles, productEvents, scheduled, sessions };
 }
 
 describe('AcceptAccessInvitation (POST /v1/access-invitations/{token}/accept)', () => {
   it('RN09 - primeiro aceite do casal: grava pelo banco, passa ao casal, tira o vendedor e agenda casal_aceitou', async () => {
-    const { useCase, store, owners, productEvents, scheduled } = setup();
+    const { useCase, store, owners, productEvents, scheduled, sessions } = setup();
 
-    const result = await useCase.execute({ token: 't', userId: 'u-f', acceptance, now });
+    const result = await useCase.execute({
+      token: 't',
+      userId: 'u-f',
+      sessionId: 's1',
+      acceptance,
+      now,
+    });
 
     expect(owners.lockOwner).toHaveBeenCalledWith({ userId: 'u-f' });
     expect(store.lockWedding).toHaveBeenCalledWith({ weddingId: 'w1' });
@@ -126,6 +137,12 @@ describe('AcceptAccessInvitation (POST /v1/access-invitations/{token}/accept)', 
       weddingId: 'w1',
       sellerUserId: 'u-lucas',
       now,
+    });
+    // Decisão 178: quem vira dono passa ao perfil de casal na sessão.
+    expect(sessions.setActiveProfile).toHaveBeenCalledWith({
+      sessionId: 's1',
+      userId: 'u-f',
+      profile: 'couple',
     });
     expect(result).toEqual({
       weddingId: 'w1',
@@ -145,7 +162,7 @@ describe('AcceptAccessInvitation (POST /v1/access-invitations/{token}/accept)', 
     const { useCase, store } = setup({ invitation: { ...coupleLink, expiresAt: now } });
 
     await expect(
-      useCase.execute({ token: 't', userId: 'u-f', acceptance, now }),
+      useCase.execute({ token: 't', userId: 'u-f', sessionId: 's1', acceptance, now }),
     ).rejects.toMatchObject(new InvitationInvalidError({ reason: 'expired' }));
     expect(store.accept).not.toHaveBeenCalled();
   });
@@ -153,16 +170,16 @@ describe('AcceptAccessInvitation (POST /v1/access-invitations/{token}/accept)', 
   it('RN07 - convite por e-mail com a sessão de outro e-mail, sem confirmar: EMAIL_MISMATCH', async () => {
     const { useCase } = setup({ invitation: { ...coupleLink, email: 'outra@x.com' } });
 
-    await expect(useCase.execute({ token: 't', userId: 'u-f', acceptance, now })).rejects.toThrow(
-      EmailMismatchError,
-    );
+    await expect(
+      useCase.execute({ token: 't', userId: 'u-f', sessionId: 's1', acceptance, now }),
+    ).rejects.toThrow(EmailMismatchError);
   });
 
   it('RN08 - quem já é dona de outro casamento: ALREADY_OWNER com ele', async () => {
     const { useCase } = setup({ ownedWeddingId: 'w-dela' });
 
     await expect(
-      useCase.execute({ token: 't', userId: 'u-f', acceptance, now }),
+      useCase.execute({ token: 't', userId: 'u-f', sessionId: 's1', acceptance, now }),
     ).rejects.toMatchObject(new AlreadyOwnerError({ weddingId: 'w-dela' }));
   });
 
@@ -183,6 +200,7 @@ describe('AcceptAccessInvitation (POST /v1/access-invitations/{token}/accept)', 
       useCase.execute({
         token: 't',
         userId: 'u-j',
+        sessionId: 's1',
         acceptance: { ...acceptance, name: null },
         now,
       }),
@@ -206,6 +224,7 @@ describe('AcceptAccessInvitation (POST /v1/access-invitations/{token}/accept)', 
     await useCase.execute({
       token: 't',
       userId: 'u-j',
+      sessionId: 's1',
       acceptance: { ...acceptance, name: ' Juliana  Prado ' },
       now,
     });
@@ -232,9 +251,9 @@ describe('AcceptAccessInvitation (POST /v1/access-invitations/{token}/accept)', 
       referrerKind: 'seller',
     });
 
-    await expect(useCase.execute({ token: 't', userId: 'u-f', acceptance, now })).rejects.toThrow(
-      SellerCannotBePlannerError,
-    );
+    await expect(
+      useCase.execute({ token: 't', userId: 'u-f', sessionId: 's1', acceptance, now }),
+    ).rejects.toThrow(SellerCannotBePlannerError);
     expect(profiles.createMinimal).not.toHaveBeenCalled();
     expect(store.accept).not.toHaveBeenCalled();
   });

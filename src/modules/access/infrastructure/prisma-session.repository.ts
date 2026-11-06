@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
-import type { AuthMethod } from '../domain/authenticated-session';
+import { TenantTransaction } from '../../../shared/database/tenant-transaction';
+import type { AuthMethod, ProfileKind } from '../domain/authenticated-session';
 import type {
   SessionRecord,
   SessionRepository,
@@ -8,7 +9,10 @@ import type {
 
 @Injectable()
 export class PrismaSessionRepository implements SessionRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tenant: TenantTransaction,
+  ) {}
 
   async create({
     userId,
@@ -84,6 +88,21 @@ export class PrismaSessionRepository implements SessionRepository {
     await this.prisma.session.updateMany({
       where: { userId, revokedAt: null },
       data: { revokedAt: now },
+    });
+  }
+
+  async setActiveProfile({
+    sessionId,
+    userId,
+    profile,
+  }: {
+    sessionId: string;
+    userId: string;
+    profile: ProfileKind;
+  }): Promise<void> {
+    await (this.tenant.optionalClient() ?? this.prisma).session.updateMany({
+      where: { id: sessionId, userId },
+      data: { activeProfile: profile },
     });
   }
 }

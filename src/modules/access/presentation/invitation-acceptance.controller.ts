@@ -80,6 +80,7 @@ export class InvitationAcceptanceController {
       const accepted = await this.acceptInvitation.execute({
         token,
         userId: session.userId,
+        sessionId: session.sessionId,
         now: new Date(),
         acceptance: {
           confirmOtherAccount: body.confirmOtherAccount ?? false,

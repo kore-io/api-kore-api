@@ -26,6 +26,7 @@ import {
 import { INVITATION_TOKENS, type InvitationTokens } from './ports/invitation-tokens.port';
 import { PLANNER_PROFILES, type PlannerProfiles } from './ports/planner-profiles.port';
 import { USER_ACCOUNT_NAMES, type UserAccountNames } from './ports/user-account-names.port';
+import { SESSION_REPOSITORY, type SessionRepository } from './ports/session-repository.port';
 import { USER_REPOSITORY, type UserRepository } from './ports/user-repository.port';
 import { WEDDING_SIGNUP_STORE, type WeddingSignupStore } from './ports/wedding-signup-store.port';
 
@@ -62,16 +63,19 @@ export class AcceptAccessInvitation {
     @Inject(PLANNER_PROFILES) private readonly plannerProfiles: PlannerProfiles,
     @Inject(PRODUCT_EVENT_RECORDER) private readonly productEvents: ProductEventRecorder,
     @Inject(AFTER_COMMIT) private readonly afterCommit: AfterCommit,
+    @Inject(SESSION_REPOSITORY) private readonly sessions: SessionRepository,
   ) {}
 
   async execute({
     token,
     userId,
+    sessionId,
     acceptance,
     now,
   }: {
     token: string;
     userId: string;
+    sessionId: string;
     acceptance: InvitationAcceptance;
     now: Date;
   }): Promise<AcceptedInvitation> {
@@ -128,6 +132,10 @@ export class AcceptAccessInvitation {
     if (result === 'not_pending') throw new InvitationInvalidError({ reason: 'used' });
     if (result === 'owners_full' || result === 'partner_taken') throw new OwnersFullError();
     if (result === 'planner_already') throw new PlannerAlreadyError();
+
+    // Decisão 178: quem vira dono passa ao perfil de casal nesta sessão, como no cadastro (171).
+    if (invitation.role === 'owner')
+      await this.sessions.setActiveProfile({ sessionId, userId, profile: 'couple' });
 
     let weddingStatus = wedding.status;
     if (invitation.kind === 'couple' && wedding.activeOwners === 0) {
