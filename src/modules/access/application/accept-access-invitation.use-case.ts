@@ -91,9 +91,8 @@ export class AcceptAccessInvitation {
     if (mismatch && !acceptance.confirmOtherAccount) throw new EmailMismatchError();
 
     const { weddingId, wedding } = invitation;
-    const currentRole = await this.store.activeRole({ userId, weddingId });
-    if (currentRole === 'owner') throw new AlreadyOwnerError({ weddingId });
-    if (currentRole) throw new AlreadyMemberError();
+    // Decisão 172(3) revista: quem já tem vínculo neste casamento, dono ou não.
+    if (await this.store.activeRole({ userId, weddingId })) throw new AlreadyMemberError();
 
     if (invitation.role === 'owner') {
       const ownedWeddingId = await this.owners.findActiveOwnedWeddingId({ userId });

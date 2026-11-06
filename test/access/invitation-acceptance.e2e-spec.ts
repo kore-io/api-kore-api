@@ -284,6 +284,24 @@ describe('Convites de acesso: ler, aceitar e recusar (banco real; decisões 168 
       expect(response.body).toMatchObject({ error: 'ALREADY_OWNER', weddingId: own.weddingId });
     });
 
+    it('decisão 172 (3) revista - a dona deste casamento abrindo o convite dele: 409 ALREADY_MEMBER', async () => {
+      const { ana, weddingId } = await anaWedding();
+      const { token } = await seedInvitation({
+        db,
+        weddingId,
+        kind: 'partner',
+        email: `${randomUUID()}@kore.local`,
+        invitedByUserId: ana.userId,
+      });
+
+      const response = await accept(token, ana.cookie, {
+        myTitle: 'groom',
+        confirmOtherAccount: true,
+      }).expect(409);
+
+      expect(response.body.error).toBe('ALREADY_MEMBER');
+    });
+
     it('decisão 172 (3) - quem já tem vínculo neste casamento: 409 ALREADY_MEMBER', async () => {
       const { ana, weddingId } = await anaWedding();
       const juliana = await signedInUser({ app });
