@@ -965,6 +965,241 @@
           "access-invitations"
         ]
       }
+    },
+    "/v1/access-invitations/{token}": {
+      "get": {
+        "operationId": "InvitationAcceptanceController_read_v1",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessInvitationResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationInvalidErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mostra o casamento e quem convidou antes do aceite (RN06, RN07, RN12 de Convites).",
+        "tags": [
+          "access-invitations"
+        ]
+      }
+    },
+    "/v1/access-invitations/{token}/accept": {
+      "post": {
+        "operationId": "InvitationAcceptanceController_accept_v1",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptAccessInvitationBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptAccessInvitationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/EmailMismatchErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AlreadyOwnerErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AlreadyMemberErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/OwnersFullErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PlannerAlreadyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SellerCannotBePlannerErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationInvalidErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Aceita com a conta da sessão (RN07 a RN10, RN14 de Convites; decisões 168 e 172).",
+        "tags": [
+          "access-invitations"
+        ]
+      }
+    },
+    "/v1/access-invitations/{token}/decline": {
+      "post": {
+        "operationId": "InvitationAcceptanceController_decline_v1",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationNotDeclinableErrorBody"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationInvalidErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Recusa sem login: o link é a credencial (RN11; decisão 136).",
+        "tags": [
+          "access-invitations"
+        ]
+      }
     }
   },
   "info": {
@@ -1997,6 +2232,325 @@
             "type": "string",
             "enum": [
               "NOT_PENDING"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "InvitationInvalidErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              410
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "INVITATION_INVALID"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "reason": {
+            "enum": [
+              "expired",
+              "used",
+              "revoked",
+              "superseded"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "reason"
+        ]
+      },
+      "InvitationReferrerResponse": {
+        "type": "object",
+        "properties": {
+          "discountPercent": {
+            "type": "number",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "discountPercent",
+          "name"
+        ]
+      },
+      "InvitedByResponse": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "enum": [
+              "owner",
+              "planner",
+              "seller"
+            ],
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "name"
+        ]
+      },
+      "InvitationWeddingResponse": {
+        "type": "object",
+        "properties": {
+          "names": {
+            "type": "string",
+            "example": "Ana & Marcos"
+          },
+          "eventDate": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-11-14"
+          },
+          "partnerNames": {
+            "description": "Todo convite do casal, para \"Quem é você?\" (decisão 173).",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "partnerTitleNeeded": {
+            "type": "boolean",
+            "description": "Só no do parceiro: a tela pergunta noivo ou noiva (decisão 173)."
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "names",
+          "eventDate",
+          "city",
+          "state"
+        ]
+      },
+      "AccessInvitationResponse": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "partner",
+              "couple",
+              "planner"
+            ],
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "sitePreview": {
+            "description": "Só no do casal; nulo até a fase da Aparência (decisão 168).",
+            "type": "object",
+            "nullable": true
+          },
+          "referrer": {
+            "nullable": true,
+            "description": "Só no do casal.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/InvitationReferrerResponse"
+              }
+            ]
+          },
+          "invitedBy": {
+            "$ref": "#/components/schemas/InvitedByResponse"
+          },
+          "wedding": {
+            "$ref": "#/components/schemas/InvitationWeddingResponse"
+          },
+          "sessionEmailMismatch": {
+            "type": "boolean"
+          },
+          "needsName": {
+            "type": "boolean",
+            "description": "Do cerimonialista, com sessão de conta sem nome: o aceite pede o nome (decisão 173)."
+          }
+        },
+        "required": [
+          "kind",
+          "email",
+          "invitedBy",
+          "wedding",
+          "sessionEmailMismatch",
+          "needsName"
+        ]
+      },
+      "EmailMismatchErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "EMAIL_MISMATCH"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "AlreadyMemberErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "ALREADY_MEMBER"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SellerCannotBePlannerErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SELLER_CANNOT_BE_PLANNER"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "AcceptAccessInvitationBody": {
+        "type": "object",
+        "properties": {
+          "partnerIndex": {
+            "description": "\"Quem é você?\" no convite do casal (RN14; decisão 172): 1 ou 2.",
+            "enum": [
+              1,
+              2
+            ],
+            "type": "number"
+          },
+          "myTitle": {
+            "description": "No do casal, e no do parceiro quando o noivo ainda não tem título (decisão 172).",
+            "enum": [
+              "bride",
+              "groom"
+            ],
+            "type": "string"
+          },
+          "confirmOtherAccount": {
+            "type": "boolean",
+            "description": "A pessoa confirmou a tela Outra conta (RN07)."
+          },
+          "name": {
+            "type": "string",
+            "description": "Só no do cerimonialista, quando a conta ainda não tem nome (decisão 168).",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        }
+      },
+      "AcceptAccessInvitationResponse": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "enum": [
+              "owner",
+              "collaborator"
+            ],
+            "type": "string"
+          },
+          "weddingId": {
+            "type": "string"
+          },
+          "weddingStatus": {
+            "type": "string"
+          },
+          "attributedToMe": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "role",
+          "weddingId",
+          "weddingStatus",
+          "attributedToMe"
+        ]
+      },
+      "InvitationNotDeclinableErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "INVITATION_NOT_DECLINABLE"
             ]
           },
           "message": {

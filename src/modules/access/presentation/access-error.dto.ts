@@ -133,3 +133,40 @@ export class NotPendingErrorBody {
   @ApiProperty({ enum: ['NOT_PENDING'] }) error: 'NOT_PENDING';
   @ApiProperty() message: string;
 }
+
+export class InvitationInvalidErrorBody {
+  static readonly status = 410;
+  @ApiProperty({ enum: [410] }) statusCode: 410;
+  @ApiProperty({ enum: ['INVITATION_INVALID'] }) error: 'INVITATION_INVALID';
+  @ApiProperty() message: string;
+  @ApiProperty({ enum: ['expired', 'used', 'revoked', 'superseded'] })
+  reason: 'expired' | 'used' | 'revoked' | 'superseded';
+}
+
+export class EmailMismatchErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['EMAIL_MISMATCH'] }) error: 'EMAIL_MISMATCH';
+  @ApiProperty() message: string;
+}
+
+export class AlreadyMemberErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['ALREADY_MEMBER'] }) error: 'ALREADY_MEMBER';
+  @ApiProperty() message: string;
+}
+
+export class SellerCannotBePlannerErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['SELLER_CANNOT_BE_PLANNER'] }) error: 'SELLER_CANNOT_BE_PLANNER';
+  @ApiProperty() message: string;
+}
+
+export class InvitationNotDeclinableErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['INVITATION_NOT_DECLINABLE'] }) error: 'INVITATION_NOT_DECLINABLE';
+  @ApiProperty() message: string;
+}
