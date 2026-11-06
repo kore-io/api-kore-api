@@ -45,7 +45,12 @@ a API não sobe com variável faltando ou inválida.
 cp .env.example .env
 pnpm db:setup          # aplica as migrations e cria o usuário local kore_api
 pnpm db:migrate:dev    # nova migration (--create-only): revise o SQL antes de aplicar
+pnpm db:seed           # Dados de exemplo do Kore (local, test e homolog; recusa produção)
 ```
+
+O `db:seed` é idempotente e imprime os links dos convites de acesso pendentes
+para o E2E do app. Em local e test os tokens são fixos (`/convite/seed-…`); em
+homologação, novos a cada execução. Todo e-mail é `@exemplo.kore.local`.
 
 A API conecta como `kore_api`, membro do papel `kore_app` (sujeito à RLS). As
 migrations rodam com o dono do schema (`DATABASE_MIGRATION_URL`).

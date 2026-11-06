@@ -31,6 +31,8 @@ export default tseslint.config(
       'src/shared/database/**',
       'src/**/infrastructure/backoffice/**',
       'src/**/*-worker.module.ts',
+      // O seed dos dados de exemplo (pnpm db:seed) atravessa os casamentos, como as rotinas.
+      'src/seed.ts',
     ],
     rules: {
       'no-restricted-imports': [
@@ -40,7 +42,7 @@ export default tseslint.config(
             {
               group: ['**/backoffice-prisma.service'],
               message:
-                'BackofficePrismaService (BYPASSRLS) só em infrastructure/backoffice/ e nos módulos do worker.',
+                'BackofficePrismaService (BYPASSRLS) só em infrastructure/backoffice/, nos módulos do worker e no seed.',
             },
           ],
         },
