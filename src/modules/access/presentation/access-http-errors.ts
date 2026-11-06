@@ -19,6 +19,7 @@ import {
   InvitationInvalidError,
   EmailMismatchError,
   AlreadyMemberError,
+  SellerCannotBePlannerError,
   InvitationNotDeclinableError,
   AcceptanceDetailsMissingError,
   CoupleInvitationsFullError,
@@ -196,6 +197,13 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 409,
       error: 'ALREADY_MEMBER',
       message: 'You are already in this wedding.',
+    });
+  }
+  if (error instanceof SellerCannotBePlannerError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'SELLER_CANNOT_BE_PLANNER',
+      message: 'A seller account cannot accept a planner invitation.',
     });
   }
   if (error instanceof InvitationNotDeclinableError) {

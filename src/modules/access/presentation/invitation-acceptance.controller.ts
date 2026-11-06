@@ -17,6 +17,7 @@ import {
   InvitationNotDeclinableErrorBody,
   OwnersFullErrorBody,
   PlannerAlreadyErrorBody,
+  SellerCannotBePlannerErrorBody,
 } from './access-error.dto';
 import { toHttpError } from './access-http-errors';
 import type { AuthenticatedRequest } from './authenticated-request';
@@ -67,6 +68,7 @@ export class InvitationAcceptanceController {
     AlreadyMemberErrorBody,
     OwnersFullErrorBody,
     PlannerAlreadyErrorBody,
+    SellerCannotBePlannerErrorBody,
     InvitationInvalidErrorBody,
   )
   async accept(

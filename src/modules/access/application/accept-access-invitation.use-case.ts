@@ -13,6 +13,7 @@ import {
   InvitationInvalidError,
   OwnersFullError,
   PlannerAlreadyError,
+  SellerCannotBePlannerError,
   SessionExpiredError,
 } from '../domain/access.errors';
 import { emailDiffers, invalidReason, partnerChoice } from '../domain/invitation-acceptance';
@@ -161,7 +162,9 @@ export class AcceptAccessInvitation {
     acceptance: InvitationAcceptance;
     now: Date;
   }): Promise<void> {
-    if (await this.plannerProfiles.hasReferrer({ userId })) return;
+    const referrerKind = await this.plannerProfiles.referrerKind({ userId });
+    if (referrerKind === 'planner') return;
+    if (referrerKind === 'seller') throw new SellerCannotBePlannerError();
     const name = user.name ?? (acceptance.name ? cleanText({ value: acceptance.name }) : null);
     if (!name) throw new AcceptanceDetailsMissingError({ field: 'name' });
     if (!user.name) await this.accountNames.setName({ userId, name });

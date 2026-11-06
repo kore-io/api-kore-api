@@ -164,6 +164,11 @@ export class AlreadyMemberError extends Error {
   override name = 'AlreadyMemberError';
 }
 
+/** Decisão 175: o vendedor não aceita convite de cerimonialista (um perfil de indicador por pessoa). */
+export class SellerCannotBePlannerError extends Error {
+  override name = 'SellerCannotBePlannerError';
+}
+
 /** RN11 de Convites; decisão 136, item 8: o link sem e-mail não tem Recusar. */
 export class InvitationNotDeclinableError extends Error {
   override name = 'InvitationNotDeclinableError';

@@ -4,6 +4,7 @@ import {
   AlreadyOwnerError,
   EmailMismatchError,
   InvitationInvalidError,
+  SellerCannotBePlannerError,
 } from '../domain/access.errors';
 import type { InvitationSnapshot } from '../domain/invitation-acceptance';
 import {
@@ -64,12 +65,12 @@ function setup({
   invitation = coupleLink,
   user = { id: 'u-f', name: 'Fernanda', email: 'f@x.com', platformRole: 'none' as const },
   ownedWeddingId = null,
-  hasReferrer = false,
+  referrerKind = null,
 }: {
   invitation?: InvitationSnapshot;
   user?: { id: string; name: string | null; email: string; platformRole: 'none' };
   ownedWeddingId?: string | null;
-  hasReferrer?: boolean;
+  referrerKind?: 'planner' | 'seller' | null;
 } = {}) {
   const store = {
     findByToken: jest.fn().mockResolvedValue(invitation),
@@ -87,7 +88,7 @@ function setup({
   const users = { findProfileById: jest.fn().mockResolvedValue(user) } satisfies UserRepository;
   const names = { setName: jest.fn(), nameByEmail: jest.fn() } satisfies UserAccountNames;
   const profiles = {
-    hasReferrer: jest.fn().mockResolvedValue(hasReferrer),
+    referrerKind: jest.fn().mockResolvedValue(referrerKind),
     createMinimal: jest.fn().mockResolvedValue(undefined),
   } satisfies PlannerProfiles;
   const productEvents: ProductEventRecorder = { record: jest.fn().mockResolvedValue(undefined) };
@@ -217,5 +218,24 @@ describe('AcceptAccessInvitation (POST /v1/access-invitations/{token}/accept)', 
     });
     expect(store.accept).toHaveBeenCalledWith(expect.objectContaining({ partnerSlot: null }));
     expect(store.handOverToCouple).not.toHaveBeenCalled();
+  });
+
+  it('decisão 175 - quem tem perfil de vendedor não aceita convite de cerimonialista', async () => {
+    const { useCase, store, profiles } = setup({
+      invitation: {
+        ...coupleLink,
+        kind: 'planner',
+        role: 'collaborator',
+        email: 'f@x.com',
+        wedding: { ...coupleLink.wedding, activeCollaborators: 0, activeOwners: 1 },
+      },
+      referrerKind: 'seller',
+    });
+
+    await expect(useCase.execute({ token: 't', userId: 'u-f', acceptance, now })).rejects.toThrow(
+      SellerCannotBePlannerError,
+    );
+    expect(profiles.createMinimal).not.toHaveBeenCalled();
+    expect(store.accept).not.toHaveBeenCalled();
   });
 });

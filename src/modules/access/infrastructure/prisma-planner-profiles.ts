@@ -20,8 +20,12 @@ export class PrismaPlannerProfiles implements PlannerProfiles {
     return this.tenant.optionalClient() ?? this.prisma;
   }
 
-  async hasReferrer({ userId }: { userId: string }): Promise<boolean> {
-    return (await this.db().referrer.count({ where: { userId } })) > 0;
+  async referrerKind({ userId }: { userId: string }): Promise<'planner' | 'seller' | null> {
+    const referrer = await this.db().referrer.findUnique({
+      where: { userId },
+      select: { kind: true },
+    });
+    return referrer?.kind ?? null;
   }
 
   async createMinimal({

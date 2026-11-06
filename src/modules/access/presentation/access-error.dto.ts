@@ -157,6 +157,13 @@ export class AlreadyMemberErrorBody {
   @ApiProperty() message: string;
 }
 
+export class SellerCannotBePlannerErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['SELLER_CANNOT_BE_PLANNER'] }) error: 'SELLER_CANNOT_BE_PLANNER';
+  @ApiProperty() message: string;
+}
+
 export class InvitationNotDeclinableErrorBody {
   static readonly status = 409;
   @ApiProperty({ enum: [409] }) statusCode: 409;

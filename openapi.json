@@ -1101,6 +1101,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/PlannerAlreadyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SellerCannotBePlannerErrorBody"
                     }
                   ]
                 }
@@ -2440,6 +2443,31 @@
             "type": "string",
             "enum": [
               "ALREADY_MEMBER"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SellerCannotBePlannerErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SELLER_CANNOT_BE_PLANNER"
             ]
           },
           "message": {

@@ -9,7 +9,7 @@ import { seedInvitation } from '../support/invitations';
 import { waitForInbox } from '../support/mailpit';
 import { seedReferrer } from '../support/referrers';
 import { SESSION_COOKIE } from '../../src/modules/access/presentation/session-cookie';
-import { signedInUser } from '../support/sessions';
+import { openSession, signedInUser } from '../support/sessions';
 import { seedReferrerWedding, seedWedding } from '../support/weddings';
 
 const APP_ORIGIN = 'http://localhost:5173';
@@ -457,6 +457,23 @@ describe('Convites de acesso: ler, aceitar e recusar (banco real; decisões 168 
       expect((await db.wedding.findUniqueOrThrow({ where: { id: weddingId } })).referrerId).toBe(
         otherReferrer.id,
       );
+    });
+
+    it('decisão 175 - quem tem perfil de vendedor: 409 SELLER_CANNOT_BE_PLANNER, sem vínculo', async () => {
+      const { ana, weddingId } = await anaWedding();
+      const { userId } = await seedReferrer({ db, kind: 'seller', name: 'Lucas Lima' });
+      const cookie = await openSession({ app, userId });
+      const email = (await db.user.findUniqueOrThrow({ where: { id: userId } })).email;
+      const { token } = await seedInvitation({
+        db,
+        weddingId,
+        kind: 'planner',
+        email,
+        invitedByUserId: ana.userId,
+      });
+
+      expect((await accept(token, cookie).expect(409)).body.error).toBe('SELLER_CANNOT_BE_PLANNER');
+      expect(await db.membership.count({ where: { weddingId, userId } })).toBe(0);
     });
 
     it('RN10 - casamento que já tem cerimonialista: 409 PLANNER_ALREADY', async () => {
