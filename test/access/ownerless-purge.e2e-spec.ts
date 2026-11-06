@@ -35,13 +35,15 @@ describe('Expurgo do casamento sem dono (RN13 de Convites; decisões 136 e 180; 
   });
 
   // Cada caso numa data própria e distante, para não pegar casamentos dos outros testes.
-  async function ownerlessWedding({ lastActivityAt }: { lastActivityAt: Date }) {
+  async function ownerlessWedding({
+    lastActivityAt,
+    status = 'awaiting_couple',
+  }: {
+    lastActivityAt: Date;
+    status?: 'draft' | 'awaiting_couple';
+  }) {
     const { userId } = await seedReferrer({ db, kind: 'planner', name: 'Juliana Prado' });
-    const { weddingId } = await seedReferrerWedding({
-      db,
-      referrerUserId: userId,
-      status: 'awaiting_couple',
-    });
+    const { weddingId } = await seedReferrerWedding({ db, referrerUserId: userId, status });
     await db.wedding.update({ where: { id: weddingId }, data: { lastActivityAt } });
     const creator = await db.user.findUniqueOrThrow({ where: { id: userId } });
     return { weddingId, referrerUserId: userId, creator };
@@ -153,6 +155,33 @@ describe('Expurgo do casamento sem dono (RN13 de Convites; decisões 136 e 180; 
     await db.applicationLog.findFirstOrThrow({
       where: { action: 'wedding.purge_notice_failed', weddingId },
     });
+  });
+
+  it('RN13 (decisão 102) - rascunho sem dono também expira: aviso aos 30 dias e exclusão aos 6 meses', async () => {
+    const lastActivityAt = new Date('2015-01-10T12:00:00Z');
+    const purgeDate = new Date('2015-07-10T12:00:00Z');
+    const { weddingId, creator } = await ownerlessWedding({ lastActivityAt, status: 'draft' });
+    const noticeAt = new Date(purgeDate.getTime() - 30 * day);
+
+    await purge.execute({ now: noticeAt });
+
+    const noticed = await db.wedding.findUniqueOrThrow({ where: { id: weddingId } });
+    expect(noticed).toMatchObject({ status: 'draft', purgeNoticeSentAt: noticeAt });
+    const [message] = await waitForInbox({ to: creator.email });
+    expect(message?.Subject).toBe('O casamento de Fernanda e João será excluído em 30 dias');
+
+    await purge.execute({ now: new Date(purgeDate.getTime() - 1000) });
+    expect((await db.wedding.findUniqueOrThrow({ where: { id: weddingId } })).status).toBe('draft');
+    await purge.execute({ now: purgeDate });
+
+    expect(await db.wedding.findUniqueOrThrow({ where: { id: weddingId } })).toMatchObject({
+      status: 'purged',
+      purgedAt: purgeDate,
+    });
+    const log = await db.applicationLog.findFirstOrThrow({
+      where: { action: 'wedding.purged', weddingId },
+    });
+    expect(log.data).toEqual({ reason: 'ownerless_inactive', status: 'draft' });
   });
 
   it('RN13 - casamento com dono nunca entra, mesmo parado', async () => {
