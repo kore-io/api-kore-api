@@ -11,8 +11,10 @@ import {
 import { ApiExcludeEndpoint, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { AppConfigService } from '../../../shared/config/app-config.service';
-import { ValidationErrorBody } from '../../../shared/http/api-error.dto';
-import { ApiErrorResponses } from '../../../shared/http/api-error-responses.decorator';
+import {
+  ApiErrorResponses,
+  commonErrors,
+} from '../../../shared/http/api-error-responses.decorator';
 import { Public } from '../../../shared/http/public.decorator';
 import { AuthRateLimit } from '../../../shared/rate-limit/rate-limits';
 import { CompleteGoogleLogin } from '../application/complete-google-login.use-case';
@@ -64,7 +66,7 @@ export class GoogleLoginController {
     status: 302,
     description: 'Vai para o Google (ou para o provedor de desenvolvimento).',
   })
-  @ApiErrorResponses(ValidationErrorBody)
+  @ApiErrorResponses(...commonErrors({ validated: true }))
   start(@Query() query: StartGoogleLoginQuery, @Res() response: Response): void {
     const { authorizationUrl, attempt } = this.startLogin.execute({
       origin: query.origin ?? 'none',
@@ -81,6 +83,7 @@ export class GoogleLoginController {
     description:
       'Sucesso: APP_URL/entrar/google?step=&next=, com o cookie de sessão. Erro: APP_URL/entrar?error=google_unverified|blocked|google_failed (decisão 147).',
   })
+  @ApiErrorResponses(...commonErrors({}))
   @AuthRateLimit()
   async callback(@Req() request: Request, @Res() response: Response): Promise<void> {
     const now = new Date();
