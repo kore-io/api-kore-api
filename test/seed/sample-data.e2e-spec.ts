@@ -146,6 +146,58 @@ describe('Dados de exemplo do Kore (seed da Fase 0; banco real)', () => {
     await run(); // volta aos tokens fixos para os outros casos
   });
 
+  describe('decisão 181(6) - código de indicação do seed nas mãos de outra conta', () => {
+    /** Tira o lucas-andrade do vendedor de exemplo e o dá a uma conta de verdade. */
+    async function strangerHoldsSellerCode() {
+      await run();
+      const lucas = await db.user.findUniqueOrThrow({
+        where: { email: `lucas.andrade@${SAMPLE_EMAIL_DOMAIN}` },
+      });
+      await db.referrer.update({
+        where: { userId: lucas.id },
+        data: { referralCode: `lucas-provisorio-${Date.now()}` },
+      });
+      const stranger = await db.user.create({
+        data: { email: `vendedor.${Date.now()}@kore.local`, name: 'Lucas Andrade' },
+      });
+      await db.referrer.create({
+        data: {
+          userId: stranger.id,
+          kind: 'seller',
+          referralCode: 'lucas-andrade',
+          ratePercent: 20,
+        },
+      });
+      return { lucasId: lucas.id, strangerId: stranger.id };
+    }
+    const codeOf = async (userId: string) =>
+      (await db.referrer.findUniqueOrThrow({ where: { userId } })).referralCode;
+
+    it('em local e test, o seed toma o código e a outra conta passa ao próximo sufixo', async () => {
+      const { lucasId, strangerId } = await strangerHoldsSellerCode();
+
+      await run();
+
+      expect(await codeOf(lucasId)).toBe('lucas-andrade');
+      expect(await codeOf(strangerId)).toMatch(/^lucas-andrade-\d+$/);
+    });
+
+    it('em homologação, recusa e não muda nada', async () => {
+      const { lucasId, strangerId } = await strangerHoldsSellerCode();
+
+      try {
+        await expect(
+          seedSampleData({ db, appEnv: 'homolog', appUrl, now: new Date() }),
+        ).rejects.toThrow(/lucas-andrade.*não é de exemplo/);
+        expect(await codeOf(strangerId)).toBe('lucas-andrade');
+        expect(await codeOf(lucasId)).not.toBe('lucas-andrade');
+      } finally {
+        await db.referrer.delete({ where: { userId: strangerId } });
+        await run();
+      }
+    });
+  });
+
   it('decisão 181 - recusa produção', async () => {
     await expect(
       seedSampleData({ db, appEnv: 'production', appUrl, now: new Date() }),

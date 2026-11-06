@@ -54,7 +54,7 @@ export async function seedSampleData({
   return db.$transaction(
     async (tx) => {
       const users = await upsertAccounts({ tx });
-      const referrers = await upsertReferrers({ tx, users });
+      const referrers = await upsertReferrers({ tx, users, appEnv });
       const weddings = new Map<string, string>();
       for (const wedding of SAMPLE_WEDDINGS) {
         weddings.set(
@@ -105,25 +105,34 @@ async function upsertAccounts({ tx }: { tx: Tx }): Promise<Map<string, string>> 
 }
 
 /**
- * O seed é dono dos códigos de indicação dele (juliana-prado, lucas-andrade): se
- * outra conta tiver o código (ex.: alguém que aceitou um convite de
- * cerimonialista com o nome "Juliana Prado"), essa conta passa ao próximo
- * sufixo livre, como na regra do perfil mínimo (decisão 135, item 6).
+ * Os códigos de indicação do seed (juliana-prado, lucas-andrade) nas mãos de
+ * OUTRA conta (decisão 181(6)): em local e test, o seed toma o código e a outra
+ * conta passa ao próximo sufixo livre, com aviso na saída (no banco de teste, o
+ * aceite de um convite de cerimonialista de "Juliana Prado" gera juliana-prado);
+ * em homologação, recusa, como a trava do endereço: o link que a pessoa
+ * compartilhou não para de funcionar sem aviso.
  */
 async function reserveReferralCode({
   tx,
   referralCode,
   userId,
+  appEnv,
 }: {
   tx: Tx;
   referralCode: string;
   userId: string;
+  appEnv: string;
 }): Promise<void> {
   const holder = await tx.referrer.findUnique({
     where: { referralCode },
     select: { id: true, userId: true },
   });
   if (!holder || holder.userId === userId) return;
+  if (!FIXED_TOKEN_ENVS.includes(appEnv)) {
+    throw new Error(
+      `O código de indicação ${referralCode} é de uma conta que não é de exemplo; o seed não o toma em ${appEnv}.`,
+    );
+  }
   for (let n = 2; ; n++) {
     const candidate = `${referralCode}-${n}`;
     if (await tx.referrer.findUnique({ where: { referralCode: candidate }, select: { id: true } }))
@@ -144,15 +153,22 @@ const accountOf = (users: Map<string, string>, key: string): string => {
 async function upsertReferrers({
   tx,
   users,
+  appEnv,
 }: {
   tx: Tx;
   users: Map<string, string>;
+  appEnv: string;
 }): Promise<{ planner: string }> {
   const { defaultRatePercent } = await tx.referralSettings.findFirstOrThrow({
     select: { defaultRatePercent: true },
   });
   const julianaId = accountOf(users, SAMPLE_PLANNER.account);
-  await reserveReferralCode({ tx, referralCode: SAMPLE_PLANNER.referralCode, userId: julianaId });
+  await reserveReferralCode({
+    tx,
+    referralCode: SAMPLE_PLANNER.referralCode,
+    userId: julianaId,
+    appEnv,
+  });
   const planner = await tx.referrer.upsert({
     where: { userId: julianaId },
     create: {
@@ -188,7 +204,12 @@ async function upsertReferrers({
   }
 
   const lucasId = accountOf(users, SAMPLE_SELLER.account);
-  await reserveReferralCode({ tx, referralCode: SAMPLE_SELLER.referralCode, userId: lucasId });
+  await reserveReferralCode({
+    tx,
+    referralCode: SAMPLE_SELLER.referralCode,
+    userId: lucasId,
+    appEnv,
+  });
   await tx.referrer.upsert({
     where: { userId: lucasId },
     create: {
