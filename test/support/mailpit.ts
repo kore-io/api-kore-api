@@ -1,5 +1,7 @@
 const MAILPIT_API_URL = process.env.MAILPIT_API_URL ?? 'http://localhost:8025';
-const WAIT_TIMEOUT_MS = 5_000;
+// Logo depois de o worker subir (e no CI, com o banco recém-criado), a primeira
+// entrega pode passar de 5 s; o caso tem 20 s (testTimeout do e2e).
+const WAIT_TIMEOUT_MS = 10_000;
 const WAIT_INTERVAL_MS = 100;
 
 export interface MailpitSummary {
