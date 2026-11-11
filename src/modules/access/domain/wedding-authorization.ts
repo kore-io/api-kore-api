@@ -18,7 +18,9 @@ export type WeddingAction =
   /** Exportar a lista (Exportação RN07): qualquer vínculo (186(4)). */
   | 'export_guests'
   /** Mandar para a lixeira quem já respondeu (Lixeira RN07): só o dono (184(15)). */
-  | 'trash_responded';
+  | 'trash_responded'
+  /** Editar o site e enviar imagens (Dados básicos RN04; F2): qualquer vínculo. */
+  | 'manage_site';
 
 const OWNER_ONLY: ReadonlySet<WeddingAction> = new Set([
   'invite_partner',

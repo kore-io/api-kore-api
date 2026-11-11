@@ -14,7 +14,7 @@ import {
   ApiErrorResponses,
   commonErrors,
 } from '../../../shared/http/api-error-responses.decorator';
-import { GuestImportRateLimitGuard } from '../../../shared/rate-limit/guest-import-rate-limit.guard';
+import { GuestImportRateLimitGuard } from '../../../shared/rate-limit/user-rate-limit.guard';
 import type { AuthenticatedSession } from '../../access/domain/authenticated-session';
 import {
   ActionNotAllowedErrorBody,

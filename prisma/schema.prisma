@@ -96,6 +96,7 @@ model User {
   organizationsCreated      Organization[]       @relation("OrganizationCreatedBy")
   organizationMembers       OrganizationMember[]
   referralSettingsUpdated   ReferralSettings[]
+  siteImagesUploaded        SiteImage[]          @relation("SiteImageUploadedBy")
 
   @@map("users")
 }
@@ -277,6 +278,7 @@ model Wedding {
   partyTags         PartyTag[]
   guestTags         GuestTag[]
   stats             WeddingStats?
+  siteImages        SiteImage[]
 
   @@index([createdByUserId], map: "idx_weddings_created_by_user_id")
   @@index([referrerId, status], map: "idx_weddings_referrer_id_status")
@@ -714,4 +716,45 @@ model WeddingStats {
 
   @@index([rsvpPercent], map: "idx_wedding_stats_rsvp_percent")
   @@map("wedding_stats")
+}
+
+// Imagem do site (Imagens do site): capa, Nossa história e Dress code. Nasce
+// em `uploading` na autorização de envio e fica `ready` depois do
+// processamento. As chaves não levam o weddingId (RN06): o original fica em
+// `site/<id>/original` no bucket privado; as versões, em `site/<id>/…` no público.
+model SiteImage {
+  id               String          @id @default(uuid(7)) @db.Uuid
+  createdAt        DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+  weddingId        String          @map("wedding_id") @db.Uuid
+  status           SiteImageStatus @default(uploading)
+  // A versão servida (display.jpg, até 2560 px).
+  storageKey       String          @map("storage_key")
+  thumbKey         String?         @map("thumb_key")
+  ogKey            String?         @map("og_key")
+  // O tamanho pedido na autorização; o da versão servida depois do processamento.
+  sizeBytes        Int             @map("size_bytes")
+  width            Int?
+  height           Int?
+  uploadedByUserId String?         @map("uploaded_by_user_id") @db.Uuid
+  readyAt          DateTime?       @map("ready_at") @db.Timestamptz(3)
+  // Fora de uso desde (RN08): readyAt na confirmação, nulo em uso, now() ao sair.
+  unusedSince      DateTime?       @map("unused_since") @db.Timestamptz(3)
+
+  wedding    Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  uploadedBy User?   @relation("SiteImageUploadedBy", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([weddingId, id], map: "uq_site_images_wedding_id_id")
+  @@index([weddingId, status], map: "idx_site_images_wedding_id_status")
+  @@index([status, unusedSince], map: "idx_site_images_status_unused_since")
+  @@map("site_images")
+}
+
+enum SiteImageStatus {
+  uploading
+  processing
+  ready
+  failed
+
+  @@map("site_image_status")
 }

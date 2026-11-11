@@ -3756,6 +3756,114 @@
           "guests"
         ]
       }
+    },
+    "/v1/weddings/{weddingId}/site-images/upload-authorizations": {
+      "post": {
+        "operationId": "SiteImagesController_authorize_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteImageUploadAuthorizationBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteImageUploadAuthorizationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteImageLimitErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Autorização de envio direto ao armazenamento (Imagens do site RN04 e RN07).",
+        "tags": [
+          "site-images"
+        ]
+      }
     }
   },
   "info": {
@@ -7383,6 +7491,106 @@
           "statusCode",
           "error",
           "message"
+        ]
+      },
+      "SiteImageLimitErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SITE_IMAGE_LIMIT"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SiteImageUploadAuthorizationBody": {
+        "type": "object",
+        "properties": {
+          "contentType": {
+            "type": "string",
+            "description": "O app sempre envia JPEG (RN03).",
+            "enum": [
+              "image/jpeg"
+            ],
+            "example": "image/jpeg"
+          },
+          "sizeBytes": {
+            "type": "number",
+            "description": "De 1 byte a 4 MB (RN03).",
+            "minimum": 1,
+            "maximum": 4194304,
+            "example": 1048576
+          }
+        },
+        "required": [
+          "contentType",
+          "sizeBytes"
+        ]
+      },
+      "SiteImageUploadHeaders": {
+        "type": "object",
+        "properties": {
+          "Content-Type": {
+            "type": "string",
+            "example": "image/jpeg"
+          },
+          "Content-Length": {
+            "type": "string",
+            "description": "Informativo: o navegador tira o tamanho do Blob e não deixa definir este cabeçalho.",
+            "example": "1048576"
+          }
+        },
+        "required": [
+          "Content-Type",
+          "Content-Length"
+        ]
+      },
+      "SiteImageUploadAuthorizationResponse": {
+        "type": "object",
+        "properties": {
+          "imageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "uploadUrl": {
+            "type": "string",
+            "description": "PUT pré-assinado do original, no bucket privado, válido por 5 minutos (RN04)."
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "PUT"
+            ]
+          },
+          "headers": {
+            "$ref": "#/components/schemas/SiteImageUploadHeaders"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "imageId",
+          "uploadUrl",
+          "method",
+          "headers",
+          "expiresAt"
         ]
       }
     }

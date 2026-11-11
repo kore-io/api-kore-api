@@ -29,7 +29,7 @@ import {
 import { SPREADSHEET_READER } from './application/ports/spreadsheet-reader.port';
 import { ExceljsSpreadsheetReader } from './infrastructure/exceljs-spreadsheet-reader';
 import { SpreadsheetUploadGuard } from './presentation/spreadsheet-upload.guard';
-import { GuestImportRateLimitGuard } from '../../shared/rate-limit/guest-import-rate-limit.guard';
+import { GuestImportRateLimitGuard } from '../../shared/rate-limit/user-rate-limit.guard';
 import { TRASH_STORE } from './application/ports/trash-store.port';
 import { PrismaTrashStore } from './infrastructure/prisma-trash.store';
 import {
