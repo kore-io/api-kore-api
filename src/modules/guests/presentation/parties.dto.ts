@@ -32,6 +32,7 @@ import {
   type RsvpStatus,
   type TagColor,
 } from '../domain/party';
+import { OptionalNotNull } from '../../../shared/http/optional-not-null';
 
 /** Nome sem espaços nas pontas (RN04). */
 const trim = ({ value }: { value: unknown }): unknown =>
@@ -82,17 +83,17 @@ export class CreatePartyBody {
   guests: CreatePartyGuestBody[];
 
   /** Posição do contato em guests; omitido, o primeiro com telefone ou e-mail (RN06). */
-  @IsOptional() @IsInt() @Min(0) contactIndex?: number;
+  @OptionalNotNull() @IsInt() @Min(0) contactIndex?: number;
 
   /** Vagas de acompanhante (RN07). */
   @ApiProperty({ required: false, minimum: 0, maximum: PLUS_ONE_SLOTS_MAX, default: 0 })
-  @IsOptional()
+  @OptionalNotNull()
   @IsInt()
   @Min(0)
   @Max(PLUS_ONE_SLOTS_MAX)
   plusOneSlots?: number;
 
-  @IsOptional()
+  @OptionalNotNull()
   @IsArray()
   @ArrayMaxSize(TAGS_MAX)
   @IsUUID('all', { each: true })
@@ -115,11 +116,11 @@ const normalizeEmailToNull = ({ value }: { value: unknown }): unknown =>
 
 export class UpdatePartyGuestBody {
   /** Com id, edita o convidado com nome deste grupo; sem id, cria um novo (pendente). */
-  @IsOptional() @IsUUID() id?: string;
+  @OptionalNotNull() @IsUUID() id?: string;
 
   /** Obrigatório no convidado novo; não aceita null. */
   @ApiProperty({ required: false, type: String })
-  @IsOptional()
+  @OptionalNotNull()
   @Transform(trim)
   @IsString()
   @IsNotEmpty()
@@ -148,7 +149,7 @@ export class UpdatePartyGuestBody {
   email?: string | null;
 
   /** A lista completa das tags do convidado (substitui a anterior; Tags RN07). */
-  @IsOptional()
+  @OptionalNotNull()
   @IsArray()
   @ArrayMaxSize(TAGS_MAX)
   @IsUUID('all', { each: true })
@@ -157,7 +158,7 @@ export class UpdatePartyGuestBody {
 
 /** Editar grupo (RN09): todos os campos opcionais; os que não vêm não mudam. */
 export class UpdatePartyBody {
-  @IsOptional()
+  @OptionalNotNull()
   @Transform(trim)
   @IsString()
   @IsNotEmpty()
@@ -166,7 +167,7 @@ export class UpdatePartyBody {
 
   /** Os editados (com id) e os novos (sem id). Não tira convidado: tirar é a lixeira. */
   @ApiProperty({ type: [UpdatePartyGuestBody], required: false })
-  @IsOptional()
+  @OptionalNotNull()
   @IsArray()
   @ArrayMaxSize(GUESTS_PER_PARTY_MAX)
   @ValidateNested({ each: true })
@@ -174,17 +175,17 @@ export class UpdatePartyBody {
   guests?: UpdatePartyGuestBody[];
 
   /** Convidado com nome do grupo, com telefone ou e-mail (RN06). */
-  @IsOptional() @IsUUID() contactGuestId?: string;
+  @OptionalNotNull() @IsUUID() contactGuestId?: string;
 
   @ApiProperty({ required: false, minimum: 0, maximum: PLUS_ONE_SLOTS_MAX })
-  @IsOptional()
+  @OptionalNotNull()
   @IsInt()
   @Min(0)
   @Max(PLUS_ONE_SLOTS_MAX)
   plusOneSlots?: number;
 
   /** A lista completa das tags do grupo (substitui a anterior). */
-  @IsOptional()
+  @OptionalNotNull()
   @IsArray()
   @ArrayMaxSize(TAGS_MAX)
   @IsUUID('all', { each: true })

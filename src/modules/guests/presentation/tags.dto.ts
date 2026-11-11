@@ -10,8 +10,8 @@ import {
   IsString,
   IsUUID,
   MaxLength,
-  ValidateIf,
 } from 'class-validator';
+import { OptionalNotNull } from '../../../shared/http/optional-not-null';
 import { TAG_COLORS, TAG_NAME_MAX, type TagColor } from '../domain/party';
 
 /** Nome sem espaços nas pontas (RN02). */
@@ -38,9 +38,8 @@ export class CreateTagBody {
 
 export class UpdateTagBody {
   @ApiProperty({ maxLength: TAG_NAME_MAX, required: false })
-  // Ausente não muda; null não é aceito (o nome é obrigatório). @IsOptional
-  // deixaria o null passar.
-  @ValidateIf((_, value) => value !== undefined)
+  /** Ausente não muda; null não é aceito (o nome é obrigatório). */
+  @OptionalNotNull()
   @Transform(trim)
   @IsString()
   @IsNotEmpty()
