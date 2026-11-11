@@ -179,34 +179,34 @@
             "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Sair: encerra a sessão deste aparelho (RN09).",
@@ -224,34 +224,34 @@
             "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Sair de todos os aparelhos, inclusive este (RN09).",
@@ -286,27 +286,26 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -323,7 +322,8 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Pede o código e o botão de acesso por e-mail (RN01 a RN04, RN06).",
@@ -358,27 +358,26 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InvalidCodeErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -392,10 +391,10 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "410": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -409,17 +408,18 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Confirma pelo código ou pelo botão e abre a sessão (RN01, RN02, RN05, RN06, RN08, RN11).",
@@ -474,24 +474,24 @@
             "description": "Vai para o Google (ou para o provedor de desenvolvimento)."
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Vai para o Google, guardando o state e o PKCE num cookie assinado.",
@@ -509,14 +509,14 @@
             "description": "Sucesso: APP_URL/entrar/google?step=&next=, com o cookie de sessão. Erro: APP_URL/entrar?error=google_unverified|blocked|google_failed (decisão 147)."
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Volta do Google: abre a sessão e leva ao próximo passo (RN06 a RN08, RN10, RN11).",
@@ -541,24 +541,24 @@
             }
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Quem está conectado, os perfis e os vínculos; a leitura também renova a sessão (RN08, RN14).",
@@ -593,27 +593,26 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -627,17 +626,18 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Escolhe o perfil ativo da sessão, sem novo login (RN14, RN16 de Login).",
@@ -671,24 +671,24 @@
             }
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ReferralNotFoundErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Indicador do link de indicação, para o destaque do cadastro (RN08, RN09 de Cadastro).",
@@ -743,34 +743,34 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Confere o endereço enquanto o casal digita (RN04, RN05 de Cadastro).",
@@ -805,37 +805,36 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "409": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -852,17 +851,18 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Cria o casamento em rascunho, com a pessoa como dona (RN02 a RN09, RN11 de\nCadastro), e passa a sessão ao perfil de casal (activeProfile couple,\ndecisão 171). Nos erros, a sessão não muda.",
@@ -906,27 +906,26 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -940,20 +939,20 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "409": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -970,17 +969,18 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Envia ou reenvia convites de acesso, ou gera o link do casal (RN01 a RN04, RN14 de Convites).",
@@ -1015,17 +1015,16 @@
             "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -1039,10 +1038,10 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -1056,27 +1055,28 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "409": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/NotPendingErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Cancela um convite pendente (RN05 de Convites).",
@@ -1110,24 +1110,24 @@
             }
           },
           "410": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InvitationInvalidErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Mostra o casamento e quem convidou antes do aceite (RN06, RN07, RN12 de Convites).",
@@ -1171,37 +1171,36 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "409": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -1227,27 +1226,28 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "410": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InvitationInvalidErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Aceita com a conta da sessão (RN07 a RN10, RN14 de Convites; decisões 168 e 172).",
@@ -1274,44 +1274,44 @@
             "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "409": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InvitationNotDeclinableErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "410": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InvitationInvalidErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Recusa sem login: o link é a credencial (RN11; decisão 136).",
@@ -1345,34 +1345,34 @@
             }
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Quem tem acesso e os convites pendentes, para Colaboradores (RN02, RN05 de Papéis).",
@@ -1407,17 +1407,16 @@
             "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -1431,10 +1430,10 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -1448,10 +1447,10 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "409": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -1465,17 +1464,18 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Remove o colaborador ou encerra o próprio vínculo (RN06, RN07, RN10 de Papéis).",
@@ -1519,27 +1519,26 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -1553,27 +1552,28 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Seleção múltipla, Mover para a lixeira (Lixeira RN06 e RN07).",
@@ -1615,17 +1615,16 @@
             }
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -1642,10 +1641,10 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -1659,17 +1658,18 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Mover o grupo para a lixeira, com os convidados dele (Lixeira RN03 e RN07).",
@@ -1709,17 +1709,16 @@
             }
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -1733,17 +1732,18 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Painel do grupo e Editar grupo (Grupos RN14).",
@@ -1793,27 +1793,26 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -1827,10 +1826,10 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -1844,27 +1843,28 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "409": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PlusOnesInUseErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Editar grupo (Grupos RN09): não tira convidado; vale a última gravação.",
@@ -1964,44 +1964,44 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Grupos e convidados, a lista (Grupos RN13).",
@@ -2043,27 +2043,26 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -2077,27 +2076,28 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Novo grupo, com os convidados, as vagas, as tags e a observação (Grupos RN03).",
@@ -2139,17 +2139,16 @@
             }
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -2163,10 +2162,10 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -2180,17 +2179,18 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Regenerar link: o antigo para na hora (Grupos RN12).",
@@ -2232,17 +2232,16 @@
             }
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -2259,10 +2258,10 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -2276,10 +2275,10 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "409": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -2293,17 +2292,18 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Mover o convidado para a lixeira (Lixeira RN04 e RN07).",
@@ -2355,27 +2355,26 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -2389,10 +2388,10 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -2406,10 +2405,10 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "409": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -2423,17 +2422,18 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Mover de grupo: mantém a resposta e as tags (Grupos RN10).",
@@ -2475,17 +2475,16 @@
             }
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -2499,10 +2498,10 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -2516,17 +2515,18 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Excluir a tag: vai para a lixeira, com os vínculos guardados (Lixeira RN05).",
@@ -2576,27 +2576,26 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -2610,10 +2609,10 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -2627,27 +2626,28 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "409": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TagNameTakenErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Editar tag: renomear e trocar a cor (Tags RN06).",
@@ -2681,34 +2681,34 @@
             }
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Tela Tags, Novo grupo e filtro da lista (Tags RN04, RN05).",
@@ -2750,27 +2750,26 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -2784,20 +2783,20 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "409": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -2811,17 +2810,18 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Criar tag (Tags RN01 a RN03).",
@@ -2873,27 +2873,26 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -2907,10 +2906,10 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -2924,17 +2923,18 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Seleção múltipla, Adicionar tag: só grupos (Tags RN08).",
@@ -2968,34 +2968,34 @@
             }
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "A tela Lixeira: todo item ainda não expurgado (Lixeira RN08).",
@@ -3039,27 +3039,26 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -3073,10 +3072,10 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -3090,10 +3089,10 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "409": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -3107,17 +3106,18 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Restaurar um item como estava (Lixeira RN09).",
@@ -3161,27 +3161,26 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -3195,47 +3194,48 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "413": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/FileTooLargeErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "422": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SpreadsheetRefusedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "A planilha, prévia: nada é gravado e o arquivo não é guardado (Importação RN03 a RN09).",
@@ -3279,27 +3279,26 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -3313,57 +3312,58 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "409": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/NothingToImportErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "413": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/FileTooLargeErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "422": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SpreadsheetRefusedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "A planilha, importar: valida de novo e grava só as linhas válidas (RN01, RN09 e RN14).",
@@ -3407,27 +3407,26 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -3441,37 +3440,38 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "422": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TooManyGuestsErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Colar a lista, prévia: nada é gravado (Importação RN10 e RN11).",
@@ -3515,27 +3515,26 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -3549,20 +3548,20 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "422": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -3576,17 +3575,18 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Colar a lista, importar: valida de novo e cria tudo numa transação (RN12 e RN14).",
@@ -3634,29 +3634,6 @@
             }
           },
           {
-            "name": "columns",
-            "required": true,
-            "in": "query",
-            "description": "Separadas por vírgula: name, party, ageGroup, dietaryRestriction, rsvp, phone, tags",
-            "schema": {
-              "minItems": 1,
-              "example": "name,party,ageGroup,dietaryRestriction,rsvp",
-              "type": "string",
-              "items": {
-                "type": "string",
-                "enum": [
-                  "name",
-                  "party",
-                  "ageGroup",
-                  "dietaryRestriction",
-                  "rsvp",
-                  "phone",
-                  "tags"
-                ]
-              }
-            }
-          },
-          {
             "name": "tag",
             "required": false,
             "in": "query",
@@ -3664,6 +3641,17 @@
             "schema": {
               "format": "uuid",
               "type": "string"
+            }
+          },
+          {
+            "name": "columns",
+            "required": true,
+            "in": "query",
+            "description": "Uma ou mais, separadas por vírgula: name, party, ageGroup, dietaryRestriction, rsvp, phone, tags.",
+            "schema": {
+              "type": "string",
+              "pattern": "^(name|party|ageGroup|dietaryRestriction|rsvp|phone|tags)(,(name|party|ageGroup|dietaryRestriction|rsvp|phone|tags))*$",
+              "example": "name,party,ageGroup,dietaryRestriction,rsvp"
             }
           }
         ],
@@ -3686,79 +3674,54 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
-              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationErrorBody"
-                }
-              },
-              "application/pdf": {
+              "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
-              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
-                "schema": {
-                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
-                }
-              },
-              "application/pdf": {
+              "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
-              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
-                "schema": {
-                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
-                }
-              },
-              "application/pdf": {
+              "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "409": {
-            "description": "",
             "content": {
-              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
-                "schema": {
-                  "$ref": "#/components/schemas/NothingToExportErrorBody"
-                }
-              },
-              "application/pdf": {
+              "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/NothingToExportErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
-              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
-                "schema": {
-                  "$ref": "#/components/schemas/RateLimitedErrorBody"
-                }
-              },
-              "application/pdf": {
+              "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Exportar: o arquivo na hora, sem cache (Exportação RN01 a RN10).",
@@ -3802,27 +3765,26 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -3836,10 +3798,10 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -3853,10 +3815,10 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "409": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -3870,27 +3832,28 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "422": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteImageInvalidErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Confirma o envio e processa na hora (Imagens do site RN05): 201 com a\nimagem pronta; 200 quando ela já estava pronta (confirmação repetida). O\nprocessamento fica fora da transação do banco (@OwnTransactions).",
@@ -3934,27 +3897,26 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -3968,37 +3930,38 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "409": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteImageLimitErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Autorização de envio direto ao armazenamento (Imagens do site RN04 e RN07).",
@@ -4058,27 +4021,26 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -4092,10 +4054,10 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -4109,17 +4071,18 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Grava uma seção inteira: ligada, título e conteúdo (Seções RN04 a RN13).",
@@ -4163,27 +4126,26 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -4197,37 +4159,38 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "422": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ContrastTooLowErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Grava a Aparência inteira, com o guarda-corpo de contraste (Aparência RN01 a RN07).",
@@ -4261,44 +4224,44 @@
             }
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Tudo o que o Editor mostra, numa chamada (Dados básicos RN11).",
@@ -4340,27 +4303,26 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -4377,10 +4339,10 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -4394,10 +4356,10 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "409": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -4411,17 +4373,18 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Grava os Dados básicos; só o enviado muda (Dados básicos RN02 a RN10).",
@@ -4465,44 +4428,44 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PreviewInvalidErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Troca o token da prévia pelo cookie da prévia, de 30 minutos fixos\n(Pré-visualização RN03 e RN04). O site chama uma vez só por carregamento.",
@@ -4544,54 +4507,54 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PreviewRequiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SitePartyNotFoundErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Troca o modo da prévia pela barra, sem estender os 30 minutos (Pré-visualização RN06).",
@@ -4635,34 +4598,34 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PreviewRequiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Os grupos para o Select da barra da prévia, até 100 (Pré-visualização RN06; decisão 203).",
@@ -4696,7 +4659,6 @@
             }
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -4710,17 +4672,18 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "O site, com o recorte do visitante feito no servidor (RN05). Nenhum cache\npode guardar a resposta: a de um grupo não pode chegar a um visitante (RN03).",
@@ -4764,27 +4727,26 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -4801,17 +4763,18 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Troca o token do link do grupo pelo cookie assinado do grupo (RN06;\nADR-36). A página tira o token do endereço depois. Limite `party_link`:\n20 falhas por minuto por IP.",
@@ -4845,24 +4808,24 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "Cacheada 5 minutos, sem purga na F2 (decisão 207, item 10); sem dado de grupo.",
@@ -4906,27 +4869,26 @@
             }
           },
           "400": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "401": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "403": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -4940,10 +4902,10 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "404": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -4957,27 +4919,28 @@
                   ]
                 }
               }
-            }
+            },
+            "description": ""
           },
           "409": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteSlugMissingErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           },
           "429": {
-            "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "summary": "O token da prévia e a `url` do site com ele; vale 5 minutos e uma vez só.",

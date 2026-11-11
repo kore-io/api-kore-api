@@ -12,7 +12,9 @@ type ErrorBody = Type<unknown> & { status: number };
 /**
  * Documenta as respostas de erro de uma rota, agrupadas por status: quando um
  * status tem mais de um código (ex.: 429 TOO_SOON e RATE_LIMITED), o schema é
- * um oneOf, e o campo error distingue (decisão 149).
+ * um oneOf, e o campo error distingue (decisão 149). O erro é sempre JSON, mesmo
+ * numa rota que responde um arquivo (a exportação): sem o content explícito,
+ * o Swagger o publicaria sob os tipos do @ApiProduces.
  */
 export function ApiErrorResponses(...errors: ErrorBody[]): MethodDecorator & ClassDecorator {
   const byStatus = new Map<number, ErrorBody[]>();
@@ -23,10 +25,14 @@ export function ApiErrorResponses(...errors: ErrorBody[]): MethodDecorator & Cla
     ...[...byStatus].map(([status, bodies]) =>
       ApiResponse({
         status,
-        schema:
-          bodies.length === 1
-            ? { $ref: getSchemaPath(bodies[0]) }
-            : { oneOf: bodies.map((body) => ({ $ref: getSchemaPath(body) })) },
+        content: {
+          'application/json': {
+            schema:
+              bodies.length === 1
+                ? { $ref: getSchemaPath(bodies[0]) }
+                : { oneOf: bodies.map((body) => ({ $ref: getSchemaPath(body) })) },
+          },
+        },
       }),
     ),
   );

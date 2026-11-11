@@ -54,17 +54,22 @@ const COLUMN_WIDTHS: Record<ExportColumn, number> = {
 const KEEP_TOGETHER_MAX = 10;
 
 export interface Group {
+  partyId: string;
   name: string;
   guests: ExportGuest[];
 }
 
-/** Os convidados agrupados, na ordem em que vieram (RN03). */
+/**
+ * Os convidados agrupados, na ordem em que vieram (RN03), pelo id do grupo: o
+ * nome não é único (decisão 184(12)), e dois "Família Silva" lado a lado são
+ * dois blocos, cada um com a regra dos 10 (RN01).
+ */
 export function groupsOf(guests: readonly ExportGuest[]): Group[] {
   const groups: Group[] = [];
   for (const guest of guests) {
     const last = groups.at(-1);
-    if (last && last.name === guest.party) last.guests.push(guest);
-    else groups.push({ name: guest.party, guests: [guest] });
+    if (last && last.partyId === guest.partyId) last.guests.push(guest);
+    else groups.push({ partyId: guest.partyId, name: guest.party, guests: [guest] });
   }
   return groups;
 }
