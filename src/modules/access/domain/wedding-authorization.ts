@@ -44,3 +44,23 @@ export function roleAllows({
   if (role === 'owner') return true;
   return !OWNER_ONLY.has(action);
 }
+
+/**
+ * Mudar a data, a UF e o endereço do site (Dados básicos RN04; decisão 207,
+ * item 13): o dono, ou o colaborador com perfil de indicador `seller` num
+ * casamento sem dono ativo (decisões 31 e 65). Fica fora do `roleAllows`
+ * porque depende do perfil de indicador e do casamento, não só do papel: o
+ * vendedor e a cerimonialista são os dois `collaborator`.
+ */
+export function canManageSiteIdentity({
+  role,
+  referrerKind,
+  hasActiveOwner,
+}: {
+  role: MembershipRole;
+  referrerKind: 'planner' | 'seller' | null;
+  hasActiveOwner: boolean;
+}): boolean {
+  if (role === 'owner') return true;
+  return referrerKind === 'seller' && !hasActiveOwner;
+}

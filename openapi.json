@@ -712,6 +712,16 @@
             }
           },
           {
+            "name": "weddingId",
+            "required": false,
+            "in": "query",
+            "description": "Editor do site: o endereço atual deste casamento volta como livre (Dados básicos RN06).",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
             "name": "slug",
             "required": true,
             "in": "query",
@@ -3994,6 +4004,200 @@
         "summary": "Autorização de envio direto ao armazenamento (Imagens do site RN04 e RN07).",
         "tags": [
           "site-images"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/site": {
+      "get": {
+        "operationId": "SiteController_get_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteEditorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Tudo o que o Editor mostra, numa chamada (Dados básicos RN11).",
+        "tags": [
+          "site"
+        ]
+      },
+      "patch": {
+        "operationId": "SiteController_patch_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSiteBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteEditorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteFieldNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteImageNotFoundErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/SiteSlugLockedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteSlugUnavailableErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Grava os Dados básicos; só o enviado muda (Dados básicos RN02 a RN10).",
+        "tags": [
+          "site"
         ]
       }
     }
@@ -7879,6 +8083,440 @@
           "headers",
           "expiresAt"
         ]
+      },
+      "SitePartnerResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "nullable": true,
+            "enum": [
+              "bride",
+              "groom"
+            ],
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "name"
+        ]
+      },
+      "SiteImageRefResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "url": {
+            "type": "string"
+          },
+          "thumbUrl": {
+            "type": "string"
+          },
+          "width": {
+            "type": "number"
+          },
+          "height": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "thumbUrl",
+          "width",
+          "height"
+        ]
+      },
+      "SiteAppearanceResponse": {
+        "type": "object",
+        "properties": {
+          "starterPaletteKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "fontPairKey": {
+            "type": "string"
+          },
+          "primaryColor": {
+            "type": "string"
+          },
+          "accentColor": {
+            "type": "string"
+          },
+          "backgroundMode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "starterPaletteKey",
+          "fontPairKey",
+          "primaryColor",
+          "accentColor",
+          "backgroundMode"
+        ]
+      },
+      "SiteSectionResponse": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "story",
+              "countdown",
+              "ceremony",
+              "lodging",
+              "dress_code",
+              "faq"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "content": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "O conteúdo do tipo (PUT …/site/sections/{type}), com as imagens no lugar dos ids."
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "empty": {
+            "type": "boolean",
+            "description": "Ligada e vazia não aparece no site (Seções RN03)."
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "content",
+          "enabled",
+          "empty"
+        ]
+      },
+      "SiteEditableResponse": {
+        "type": "object",
+        "properties": {
+          "names": {
+            "type": "boolean"
+          },
+          "eventDate": {
+            "type": "boolean",
+            "description": "`manage_site_identity` (RN04)."
+          },
+          "state": {
+            "type": "boolean"
+          },
+          "slug": {
+            "type": "boolean",
+            "description": "Também false depois de publicado (RN05)."
+          }
+        },
+        "required": [
+          "names",
+          "eventDate",
+          "state",
+          "slug"
+        ]
+      },
+      "SiteEditorResponse": {
+        "type": "object",
+        "properties": {
+          "publishedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "siteUpdatedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "partners": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SitePartnerResponse"
+            }
+          },
+          "eventDate": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-11-14"
+          },
+          "city": {
+            "type": "string",
+            "nullable": true
+          },
+          "state": {
+            "type": "string",
+            "nullable": true
+          },
+          "timezone": {
+            "type": "string",
+            "nullable": true
+          },
+          "slug": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nulo quando o casamento ainda não tem endereço (decisão 196)."
+          },
+          "contactWhatsapp": {
+            "type": "string",
+            "nullable": true
+          },
+          "contactEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "cover": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteImageRefResponse"
+              }
+            ]
+          },
+          "appearance": {
+            "$ref": "#/components/schemas/SiteAppearanceResponse"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteSectionResponse"
+            }
+          },
+          "editable": {
+            "$ref": "#/components/schemas/SiteEditableResponse"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "publishedAt",
+          "siteUpdatedAt",
+          "partners",
+          "eventDate",
+          "city",
+          "state",
+          "timezone",
+          "slug",
+          "contactWhatsapp",
+          "contactEmail",
+          "cover",
+          "appearance",
+          "sections",
+          "editable",
+          "status"
+        ]
+      },
+      "SiteFieldNotAllowedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              403
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "FIELD_NOT_ALLOWED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "eventDate",
+                "state",
+                "slug"
+              ]
+            }
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "fields"
+        ]
+      },
+      "SiteSlugLockedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SLUG_LOCKED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SiteSlugUnavailableErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SLUG_UNAVAILABLE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "reason": {
+            "enum": [
+              "taken",
+              "reserved"
+            ],
+            "type": "string"
+          },
+          "suggestion": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "reason",
+          "suggestion"
+        ]
+      },
+      "SitePartnerBody": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "Até 80, obrigatório (RN02 e RN03).",
+            "maxLength": 80
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "UpdateSiteBody": {
+        "type": "object",
+        "properties": {
+          "partners": {
+            "minItems": 1,
+            "maxItems": 2,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SitePartnerBody"
+            }
+          },
+          "eventDate": {
+            "type": "string",
+            "nullable": true,
+            "description": "`AAAA-MM-DD`, ou null sem data (RN02).",
+            "example": "2026-11-14"
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "state": {
+            "enum": [
+              "AC",
+              "AM",
+              "RR",
+              "RO",
+              "MT",
+              "MS",
+              "PA",
+              "AP",
+              "TO",
+              "MA",
+              "PI",
+              "CE",
+              "RN",
+              "PB",
+              "PE",
+              "AL",
+              "SE",
+              "BA",
+              "GO",
+              "DF",
+              "MG",
+              "ES",
+              "RJ",
+              "SP",
+              "PR",
+              "SC",
+              "RS"
+            ],
+            "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Em minúsculas antes de validar; o formato e a disponibilidade vêm no caso de uso (RN06).",
+            "maxLength": 200,
+            "example": "ana-e-marcos"
+          },
+          "contactWhatsapp": {
+            "type": "string",
+            "nullable": true,
+            "description": "O parser de telefone da F1; gravado em E.164; null apaga (RN08).",
+            "maxLength": 40
+          },
+          "contactEmail": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 254,
+            "format": "email"
+          },
+          "coverImageId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Imagem `ready` deste casamento, ou null para tirar a capa (RN09).",
+            "format": "uuid"
+          }
+        }
       },
       "SpreadsheetTemplateHeaders": {
         "type": "string",

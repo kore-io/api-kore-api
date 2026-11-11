@@ -174,6 +174,6 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     AcceptAccessInvitation,
     DeclineAccessInvitation,
   ],
-  exports: [StartSession, WeddingAuthorization, WeddingScope],
+  exports: [StartSession, WeddingAuthorization, WeddingScope, CheckSlugAvailability],
 })
 export class AccessModule {}

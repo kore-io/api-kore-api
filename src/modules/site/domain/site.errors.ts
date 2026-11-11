@@ -25,3 +25,52 @@ export class SiteImageUploadMissingError extends Error {
 export class SiteImageInvalidError extends Error {
   override name = 'SiteImageInvalidError';
 }
+
+export interface SiteFieldIssue {
+  path: string;
+  code: string;
+  params: Record<string, unknown>;
+}
+
+/** Campos que o DTO não valida sozinho (WhatsApp, Partner, formato do endereço): 400. */
+export class SiteFieldsInvalidError extends Error {
+  override name = 'SiteFieldsInvalidError';
+  readonly issues: readonly SiteFieldIssue[];
+
+  constructor({ issues }: { issues: readonly SiteFieldIssue[] }) {
+    super();
+    this.issues = issues;
+  }
+}
+
+/**
+ * Sem `manage_site_identity`, a data, a UF ou o endereço chegaram diferentes
+ * do atual (403 FIELD_NOT_ALLOWED; Dados básicos RN04).
+ */
+export class SiteFieldNotAllowedError extends Error {
+  override name = 'SiteFieldNotAllowedError';
+  readonly fields: readonly string[];
+
+  constructor({ fields }: { fields: readonly string[] }) {
+    super();
+    this.fields = fields;
+  }
+}
+
+/** O site já foi publicado: o endereço não muda (409 SLUG_LOCKED; Dados básicos RN05). */
+export class SiteSlugLockedError extends Error {
+  override name = 'SiteSlugLockedError';
+}
+
+/** Endereço em uso ou reservado (409 SLUG_UNAVAILABLE; Dados básicos RN06). */
+export class SiteSlugUnavailableError extends Error {
+  override name = 'SiteSlugUnavailableError';
+  readonly reason: 'taken' | 'reserved';
+  readonly suggestion: string | null;
+
+  constructor({ reason, suggestion }: { reason: 'taken' | 'reserved'; suggestion: string | null }) {
+    super();
+    this.reason = reason;
+    this.suggestion = suggestion;
+  }
+}

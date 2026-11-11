@@ -1,6 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsIn, IsISO8601, IsOptional, IsString, Length, Matches, MaxLength } from 'class-validator';
+import {
+  IsIn,
+  IsISO8601,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Length,
+  Matches,
+  MaxLength,
+} from 'class-validator';
 import type { CreatedWedding } from '../application/create-wedding.use-case';
 import type { SlugAvailability } from '../application/check-slug-availability.use-case';
 import {
@@ -80,8 +89,12 @@ export class CreateWeddingResponse {
   }
 }
 
+/** O endereço vai para minúsculas antes de validar (Dados básicos RN06; decisão 207). */
+export const lowercaseSlug = ({ value }: { value: unknown }): unknown =>
+  typeof value === 'string' ? value.trim().toLowerCase() : value;
+
 export class SlugAvailabilityQuery {
-  @IsString() @MaxLength(200) slug: string;
+  @Transform(lowercaseSlug) @IsString() @MaxLength(200) slug: string;
 
   /** Para a sugestão com o ano (RN05). */
   @ApiProperty({ required: false, example: '2026-11-14' })
@@ -89,6 +102,12 @@ export class SlugAvailabilityQuery {
   @Matches(DATE_ONLY)
   @IsISO8601({ strict: true })
   eventDate?: string;
+
+  /** Editor do site: o endereço atual deste casamento volta como livre (Dados básicos RN06). */
+  @ApiProperty({ required: false, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  weddingId?: string;
 }
 
 export class SlugAvailabilityResponse {

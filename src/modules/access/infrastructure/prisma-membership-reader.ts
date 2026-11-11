@@ -20,4 +20,11 @@ export class PrismaMembershipReader implements MembershipReader {
     });
     return membership?.role ?? null;
   }
+
+  async hasActiveOwner({ weddingId }: { weddingId: string }): Promise<boolean> {
+    const owners = await this.tenant.client().membership.count({
+      where: { weddingId, role: 'owner', removedAt: null },
+    });
+    return owners > 0;
+  }
 }

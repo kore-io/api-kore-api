@@ -39,6 +39,7 @@ export class WeddingsController {
     const availability = await this.checkSlugAvailability.execute({
       slug: query.slug,
       eventDate: toDate(query.eventDate),
+      weddingId: query.weddingId,
     });
     return SlugAvailabilityResponse.from({ availability });
   }

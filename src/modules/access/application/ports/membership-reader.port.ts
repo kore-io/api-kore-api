@@ -9,6 +9,9 @@ export interface MembershipReader {
     userId: string;
     weddingId: string;
   }): Promise<MembershipRole | null>;
+
+  /** Se o casamento tem algum vínculo `owner` ativo (decisões 31, 65 e 180). */
+  hasActiveOwner({ weddingId }: { weddingId: string }): Promise<boolean>;
 }
 
 export const MEMBERSHIP_READER = Symbol('MembershipReader');

@@ -2,8 +2,11 @@ import { CheckSlugAvailability } from './check-slug-availability.use-case';
 import type { SlugRegistry } from './ports/slug-registry.port';
 import { SuggestSlug } from './suggest-slug.service';
 
-function checkWith({ taken }: { taken: string[] }) {
-  const registry: SlugRegistry = { isTaken: ({ slug }) => Promise.resolve(taken.includes(slug)) };
+function checkWith({ taken, current = {} }: { taken: string[]; current?: Record<string, string> }) {
+  const registry: SlugRegistry = {
+    isTaken: ({ slug }) => Promise.resolve(taken.includes(slug)),
+    currentSlugOf: ({ weddingId }) => Promise.resolve(current[weddingId] ?? null),
+  };
   return new CheckSlugAvailability(registry, new SuggestSlug(registry));
 }
 
@@ -61,5 +64,17 @@ describe('CheckSlugAvailability (GET /v1/weddings/slug-availability)', () => {
       reason: 'invalid_format',
       suggestion: null,
     });
+  });
+
+  it('Dados básicos RN06 - com o weddingId, o endereço atual do próprio casamento volta livre; de outro casamento, não', async () => {
+    const check = checkWith({ taken: ['ana-e-marcos'], current: { w1: 'ana-e-marcos' } });
+
+    await expect(
+      check.execute({ slug: 'ana-e-marcos', eventDate, weddingId: 'w1' }),
+    ).resolves.toMatchObject({ available: true, reason: null });
+    // Sem vínculo, o casamento não é lido (RLS) e o weddingId é ignorado.
+    await expect(
+      check.execute({ slug: 'ana-e-marcos', eventDate, weddingId: 'w2' }),
+    ).resolves.toMatchObject({ available: false, reason: 'taken' });
   });
 });
