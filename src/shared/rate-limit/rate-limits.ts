@@ -34,3 +34,12 @@ export const GUEST_IMPORT_PER_MINUTE = 20;
 /** Imagens do site (S4 RN07): 30 por minuto por usuário, autorização e confirmação somadas. */
 export const SITE_IMAGE_THROTTLER = 'site_image';
 export const SITE_IMAGE_PER_MINUTE = 30;
+
+/**
+ * Link do grupo (Site público RN06; ADR-36, item 4; decisão 207, item 7): 20
+ * falhas por minuto por IP no POST party-session. Contam só as falhas, para
+ * um convite aberto por muita gente atrás do mesmo IP (CGNAT) não bloquear o
+ * convidado de verdade.
+ */
+export const PARTY_LINK_THROTTLER = 'party_link';
+export const PARTY_LINK_FAILURES_PER_MINUTE = 20;

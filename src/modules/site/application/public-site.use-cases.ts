@@ -7,8 +7,10 @@ import { BACKGROUND_MODES, evaluateAppearance, type BackgroundMode } from '../do
 import { DRAFT_SITE_STATUSES, coupleNames } from '../domain/public-site';
 import { isSectionEmpty, sectionImageIds, type SectionContent } from '../domain/site-sections';
 import { SiteDraftError, SiteNotFoundError } from '../domain/site.errors';
+import { PARTY_COOKIES, type PartyCookies } from './ports/party-cookies.port';
 import {
   PUBLIC_SITE_READER,
+  type PartySiteView,
   type PublicSiteImage,
   type PublicSiteReader,
   type PublicSiteRow,
@@ -44,31 +46,65 @@ export interface PublicSiteView {
     backgroundMode: string;
   };
   cover: { url: string; width: number; height: number } | null;
-  viewer: { kind: 'visitor'; party: null; preview: null };
-  contact: null;
+  viewer:
+    | { kind: 'visitor'; party: null; preview: null }
+    | { kind: 'party'; party: { name: string }; preview: null };
+  /** Só para o grupo identificado (RN05 e RN10). */
+  contact: { whatsapp: string | null; email: string | null } | null;
   sections: PublicSection[];
+}
+
+export interface PublicSiteRead {
+  view: PublicSiteView;
+  /** O cookie do grupo que não vale mais, para apagar (RN06). */
+  staleCookie: string | null;
 }
 
 type LiveSite = PublicSiteRow & { live: true };
 
 /**
- * GET /v1/sites/{slug} (Site público RN04 e RN05), como visitante: o recorte é
- * do servidor (a função do banco não devolve locais nem contato). Rascunho é
- * SITE_DRAFT sem dado nenhum; endereço que não existe ou casamento fora do ar,
- * SITE_NOT_FOUND. O grupo identificado (PR do link do grupo) e a prévia vêm depois.
+ * GET /v1/sites/{slug} (Site público RN04 a RN06): o recorte é do servidor. O
+ * visitante lê pela função do banco que não devolve locais nem contato; o
+ * grupo identificado (cookie assinado, conferido a cada leitura) recebe também
+ * os locais, o contato e o nome do grupo. Cookie que não vale mais (versão do
+ * link, lixeira, outro casamento) é apagado e a leitura segue como visitante.
+ * Rascunho é SITE_DRAFT sem dado nenhum; endereço que não existe ou casamento
+ * fora do ar, SITE_NOT_FOUND. A prévia vem depois.
  */
 @Injectable()
 export class GetPublicSite {
   constructor(
     @Inject(PUBLIC_SITE_READER) private readonly reader: PublicSiteReader,
+    @Inject(PARTY_COOKIES) private readonly partyCookies: PartyCookies,
     @Inject(OBJECT_STORAGE) private readonly storage: ObjectStorage,
   ) {}
 
-  async execute({ slug }: { slug: string }): Promise<PublicSiteView> {
+  async execute({
+    slug,
+    cookies,
+  }: {
+    slug: string;
+    cookies: Record<string, string | undefined>;
+  }): Promise<PublicSiteRead> {
     const site = await this.reader.bySlug({ slug });
     if (site && !site.live && DRAFT_SITE_STATUSES.includes(site.status)) throw new SiteDraftError();
     if (!site || !site.live) throw new SiteNotFoundError();
 
+    const cookieName = this.partyCookies.name({ weddingId: site.weddingId });
+    const cookie = cookies[cookieName];
+    const claims = cookie
+      ? this.partyCookies.verify({ weddingId: site.weddingId, value: cookie })
+      : null;
+    const party = claims
+      ? await this.reader.partyView({ weddingId: site.weddingId, ...claims })
+      : null;
+    return {
+      view: this.view({ site, party }),
+      staleCookie: cookie && !party ? cookieName : null,
+    };
+  }
+
+  private view({ site, party }: { site: LiveSite; party: PartySiteView | null }): PublicSiteView {
     const images = new Map(site.images.map((image) => [image.id, image]));
     const image = (id: string | null): PublicImage | null => {
       const found = id ? images.get(id) : undefined;
@@ -99,9 +135,11 @@ export class GetPublicSite {
         backgroundMode,
       },
       cover: cover && { url: cover.url, width: cover.width, height: cover.height },
-      viewer: { kind: 'visitor', party: null, preview: null },
-      contact: null,
-      sections: this.visitorSections({ site, image }),
+      viewer: party
+        ? { kind: 'party', party: { name: party.partyName }, preview: null }
+        : { kind: 'visitor', party: null, preview: null },
+      contact: party ? { whatsapp: party.contactWhatsapp, email: party.contactEmail } : null,
+      sections: this.sections({ site, image, party }),
     };
   }
 
@@ -109,12 +147,14 @@ export class GetPublicSite {
    * Só as ligadas e com conteúdo, na ordem fixa (Seções RN01 e RN03; Site
    * público RN10). No site, a contagem fica no topo, junto dos nomes.
    */
-  private visitorSections({
+  private sections({
     site,
     image,
+    party,
   }: {
     site: LiveSite;
     image: (id: string | null) => PublicImage | null;
+    party: PartySiteView | null;
   }): PublicSection[] {
     const ready = new Set(site.images.map((item) => item.id));
     const ordered = [
@@ -124,8 +164,13 @@ export class GetPublicSite {
     return ordered.flatMap(({ type, title, content }): PublicSection[] => {
       // A contagem some sem data (Seções RN06).
       if (type === 'countdown') return site.eventDate ? [{ type }] : [];
-      if (type === 'ceremony')
-        return Number(content.venueCount) > 0 ? [{ type, title, locked: true }] : [];
+      if (type === 'ceremony') {
+        if (Number(content.venueCount) === 0) return [];
+        // Só o grupo vê os locais, as datas, os horários e os endereços (RN05).
+        return party
+          ? [{ type, title, locked: false, content: { venues: party.venues } }]
+          : [{ type, title, locked: true }];
+      }
       if (isSectionEmpty({ type, content, readyImageIds: ready })) return [];
       return [{ type, title, content: this.visitorContent({ type, content, image }) }];
     });

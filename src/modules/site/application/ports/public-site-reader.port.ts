@@ -35,9 +35,43 @@ export type PublicSiteRow =
       images: PublicSiteImage[];
     };
 
-/** A leitura pública pelo endereço, sem sessão (Site público RN05). */
+export interface PartyByToken {
+  weddingId: string;
+  slug: string | null;
+  status: string;
+  partyId: string;
+  partyName: string;
+  linkVersion: number;
+}
+
+/** O que só o grupo identificado vê (RN05), lido depois de conferir o grupo do cookie. */
+export interface PartySiteView {
+  partyName: string;
+  contactWhatsapp: string | null;
+  contactEmail: string | null;
+  venues: Record<string, unknown>[];
+}
+
+/** A leitura pública pelo endereço, sem sessão (Site público RN05 e RN06). */
 export interface PublicSiteReader {
   bySlug({ slug }: { slug: string }): Promise<PublicSiteRow | null>;
+
+  /** O grupo do token do link, fora da lixeira (RN06). */
+  partyByToken({ token }: { token: string }): Promise<PartyByToken | null>;
+
+  /**
+   * O que é só do grupo, se o grupo do cookie ainda vale: do casamento, fora da
+   * lixeira, com a mesma versão do link e o casamento no ar (ADR-36, item 2).
+   */
+  partyView({
+    weddingId,
+    partyId,
+    linkVersion,
+  }: {
+    weddingId: string;
+    partyId: string;
+    linkVersion: number;
+  }): Promise<PartySiteView | null>;
 }
 
 export const PUBLIC_SITE_READER = Symbol('PublicSiteReader');

@@ -80,6 +80,9 @@ export const envSchema = z
     GOOGLE_REDIRECT_URI: z.url({ protocol: /^https?$/ }).optional(),
     // Chave do HMAC do cookie do state e do PKCE do Google (decisão 147).
     OAUTH_STATE_KEY: base64Key32,
+    // Chave do HMAC do cookie do grupo, kore_party_<weddingId> (Site público
+    // RN06 e RN08; ADR-36).
+    PARTY_COOKIE_KEY: base64Key32,
     // Versão vigente dos Termos e da Política (RN11 de Cadastro; decisão 166).
     TERMS_VERSION: z.string().min(1).default('2026-09'),
     // Armazenamento compatível com S3 (Imagens do site, RN06): MinIO no local,

@@ -1,12 +1,16 @@
 import {
   ConflictException,
   ForbiddenException,
+  HttpException,
+  HttpStatus,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { toHttpError as toAccessHttpError } from '../../access/presentation/access-http-errors';
 import { validationError } from '../../../shared/http/validation-errors';
 import {
+  PartyLinkRateLimitedError,
+  SiteLinkInvalidError,
   SiteDraftError,
   SiteNotFoundError,
   ContrastTooLowError,
@@ -26,6 +30,19 @@ import {
  * WEDDING_NOT_FOUND e 403 ACTION_NOT_ALLOWED) seguem o mapa do Acesso.
  */
 export function toHttpError(error: unknown): unknown {
+  if (error instanceof SiteLinkInvalidError) {
+    return new NotFoundException({
+      statusCode: 404,
+      error: 'LINK_INVALID',
+      message: 'This link no longer works.',
+    });
+  }
+  if (error instanceof PartyLinkRateLimitedError) {
+    return new HttpException(
+      { statusCode: 429, error: 'RATE_LIMITED', message: 'Too many requests.' },
+      HttpStatus.TOO_MANY_REQUESTS,
+    );
+  }
   if (error instanceof SiteNotFoundError) {
     return new NotFoundException({
       statusCode: 404,

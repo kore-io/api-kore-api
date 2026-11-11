@@ -4488,6 +4488,97 @@
         ]
       }
     },
+    "/v1/sites/{slug}/party-session": {
+      "post": {
+        "operationId": "PublicSiteController_partySession_v1",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PartySessionBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartySessionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/SiteLinkInvalidErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteDraftErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteNotFoundErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Troca o token do link do grupo pelo cookie assinado do grupo (RN06;\nADR-36). A página tira o token do endereço depois. Limite `party_link`:\n20 falhas por minuto por IP.",
+        "tags": [
+          "sites"
+        ]
+      }
+    },
     "/v1/public/sites/{slug}/preview": {
       "get": {
         "operationId": "SiteLinkPreviewController_preview_v1",
@@ -9341,6 +9432,71 @@
           "city",
           "state",
           "timezone"
+        ]
+      },
+      "SiteLinkInvalidErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "LINK_INVALID"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PartySessionBody": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{22}$",
+            "example": "q3Xv8LmN2pRtY7wK1cZb4A"
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "PartySessionPartyResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "PartySessionResponse": {
+        "type": "object",
+        "properties": {
+          "party": {
+            "$ref": "#/components/schemas/PartySessionPartyResponse"
+          },
+          "slug": {
+            "type": "string",
+            "description": "O endereço do casamento do token: se for outro, o site vai para ele (RN06)."
+          }
+        },
+        "required": [
+          "party",
+          "slug"
         ]
       },
       "LinkPreviewImageResponse": {

@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Matches } from 'class-validator';
 
 class PublicAppearanceResponse {
   fontPairKey: string;
@@ -80,4 +81,21 @@ export class SiteLinkPreviewResponse {
   /** A og.jpg da capa (1200 × 630); nula sem capa. */
   @ApiProperty({ type: LinkPreviewImageResponse, nullable: true })
   image: LinkPreviewImageResponse | null;
+}
+
+/** O token do link do grupo: 22 caracteres base64url (Grupos RN11). */
+export class PartySessionBody {
+  @ApiProperty({ example: 'q3Xv8LmN2pRtY7wK1cZb4A' })
+  @Matches(/^[A-Za-z0-9_-]{22}$/)
+  token: string;
+}
+
+class PartySessionPartyResponse {
+  name: string;
+}
+
+export class PartySessionResponse {
+  /** O endereço do casamento do token: se for outro, o site vai para ele (RN06). */
+  slug: string;
+  @ApiProperty({ type: PartySessionPartyResponse }) party: PartySessionPartyResponse;
 }
