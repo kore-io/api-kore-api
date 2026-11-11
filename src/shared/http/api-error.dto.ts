@@ -1,11 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 /**
- * Corpos de erro transversais, no formato nativo do NestJS com o código no
- * campo error (decisão 99). Documentados no OpenAPI para o Orval tipar os
- * erros no app (decisão 149). Cada classe guarda o status em `status`.
- */
-/**
  * Uma falha de validação (decisão 190): o caminho do campo, o código (a regra
  * do class-validator em maiúsculas, ou o código do domínio, ex.:
  * PHONE_TOO_SHORT) e os parâmetros (ex.: { max: 80 }). O app monta o texto.
@@ -17,6 +12,11 @@ export class FieldErrorBody {
   params: Record<string, unknown>;
 }
 
+/**
+ * Corpos de erro transversais, no formato nativo do NestJS com o código no
+ * campo error (decisão 99). Documentados no OpenAPI para o Orval tipar os
+ * erros no app (decisão 149). Cada classe guarda o status em `status`.
+ */
 export class ValidationErrorBody {
   static readonly status = 400;
   @ApiProperty({ enum: [400] }) statusCode: 400;

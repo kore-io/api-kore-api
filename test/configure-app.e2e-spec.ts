@@ -1,12 +1,25 @@
 import { Body, Controller, INestApplication, Post } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsOptional, IsString, MaxLength, ValidateNested } from 'class-validator';
 import request from 'supertest';
 import { configureApp } from '../src/shared/http/configure-app';
 
+class EchoGuestDto {
+  @IsString()
+  @MaxLength(80)
+  name: string;
+}
+
 class EchoDto {
   @IsString()
+  @MaxLength(80)
   name: string;
+
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => EchoGuestDto)
+  guests?: EchoGuestDto[];
 }
 
 @Controller('echo')
@@ -66,8 +79,28 @@ describe('configureApp', () => {
       .send({ name: 42 })
       .expect(400);
 
-    expect(response.body.message).toEqual(['name must be a string']);
-    expect(response.body.errors).toEqual([{ path: 'name', code: 'IS_STRING', params: {} }]);
+    // Um número não é texto e também não passa no @MaxLength: as duas falhas aparecem.
+    expect(response.body.message).toEqual([
+      'name must be shorter than or equal to 80 characters',
+      'name must be a string',
+    ]);
+    expect(response.body.errors).toEqual([
+      { path: 'name', code: 'MAX_LENGTH', params: { max: 80 } },
+      { path: 'name', code: 'IS_STRING', params: {} },
+    ]);
+  });
+
+  it('dado um texto acima do limite num campo aninhado, quando chama a rota, então errors traz o caminho com índice e o limite em params (decisão 190)', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/v1/echo')
+      .send({ name: 'a'.repeat(81), guests: [{ name: 'Célia' }, { name: 'b'.repeat(81) }] })
+      .expect(400);
+
+    expect(response.body.errors).toEqual([
+      { path: 'name', code: 'MAX_LENGTH', params: { max: 80 } },
+      { path: 'guests.1.name', code: 'MAX_LENGTH', params: { max: 80 } },
+    ]);
+    expect(JSON.stringify(response.body)).not.toContain('b'.repeat(81));
   });
 
   it('dado o Swagger ligado, quando pede o documento, então devolve o OpenAPI', async () => {

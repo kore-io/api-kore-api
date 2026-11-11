@@ -39,6 +39,9 @@ export function configureApp({
       forbidNonWhitelisted: true,
       transform: true,
       exceptionFactory: validationExceptionFactory,
+      // O Nest tira o target do erro por padrão, e os params saem dos
+      // metadados da classe dele; o valor enviado fica fora (dado pessoal).
+      validationError: { target: true, value: false },
     }),
   );
 

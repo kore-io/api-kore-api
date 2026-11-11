@@ -34,6 +34,10 @@ class PartyDto {
   @ValidateNested({ each: true })
   @Type(() => GuestDto)
   guests: GuestDto[];
+
+  @IsOptional()
+  @MaxLength(40, { each: true })
+  tags?: string[];
 }
 
 function bodyOf(plain: object): Record<string, unknown> {
@@ -96,6 +100,22 @@ describe('validationExceptionFactory (decisão 190)', () => {
       message: ['property admin should not exist'],
       errors: [{ path: 'admin', code: 'WHITELIST_VALIDATION', params: {} }],
     });
+  });
+});
+
+describe('validationExceptionFactory com regra each', () => {
+  it('dada uma regra each: true numa lista de textos, quando um item falha, então o path é o da lista, sem índice (o class-validator não informa qual item)', () => {
+    const errors = validateSync(
+      plainToInstance(PartyDto, {
+        name: 'Família Moreira',
+        ageGroup: 'adult',
+        guests: [{ name: 'Célia' }],
+        tags: ['Padrinhos', 'x'.repeat(41)],
+      }),
+    );
+    const body = validationExceptionFactory(errors).getResponse() as Record<string, unknown>;
+
+    expect(body.errors).toEqual([{ path: 'tags', code: 'MAX_LENGTH', params: { max: 40 } }]);
   });
 });
 
