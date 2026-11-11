@@ -100,6 +100,26 @@ describe('Dados de exemplo do Kore (seed da Fase 0; banco real)', () => {
     });
   });
 
+  it('Lixeira (F1) - Ana vê a lixeira de exemplo: o grupo com 4 convidados, o convidado sozinho e a tag, dentro do prazo', async () => {
+    await run();
+    const ana = await db.user.findUniqueOrThrow({
+      where: { email: `ana.moreira@${SAMPLE_EMAIL_DOMAIN}` },
+    });
+    const wedding = await db.wedding.findUniqueOrThrow({ where: { slug: 'ana-e-marcos' } });
+    const cookie = await openSession({ app, userId: ana.id });
+
+    const response = await request(app.getHttpServer())
+      .get(`/v1/weddings/${wedding.id}/trash`)
+      .set('Cookie', cookie)
+      .expect(200);
+
+    expect(response.body.data).toMatchObject([
+      { type: 'party', name: 'Amigos do vôlei', guests: 4 },
+      { type: 'guest', name: 'Bruno Lima', partyName: 'Família Rocha' },
+      { type: 'tag', name: 'Vizinhos', guests: 2 },
+    ]);
+  });
+
   it('decisão 181 - nenhum e-mail do seed sai do domínio de exemplo', async () => {
     await run();
 

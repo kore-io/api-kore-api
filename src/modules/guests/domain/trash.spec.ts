@@ -1,4 +1,4 @@
-import { purgeAt } from './trash';
+import { isPurgeDue, purgeAt } from './trash';
 
 describe('purgeAt (Lixeira RN10; decisão 186, item 15)', () => {
   it('RN10 - removido em 06/11, purgeAt 06/12', () => {
@@ -25,5 +25,28 @@ describe('purgeAt (Lixeira RN10; decisão 186, item 15)', () => {
     expect(purgeAt({ deletedAt: new Date('2026-12-15T12:00:00Z'), timezone: null })).toBe(
       '2027-01-14',
     );
+  });
+});
+
+describe('isPurgeDue (Lixeira RN10)', () => {
+  const deletedAt = new Date('2026-11-06T14:00:00Z'); // purgeAt 06/12
+
+  it('RN10 - no dia purgeAt ainda restaura; no dia seguinte, apaga', () => {
+    expect(
+      isPurgeDue({ deletedAt, timezone: null, now: new Date('2026-12-06T23:00:00-03:00') }),
+    ).toBe(false);
+    expect(
+      isPurgeDue({ deletedAt, timezone: null, now: new Date('2026-12-07T00:30:00-03:00') }),
+    ).toBe(true);
+  });
+
+  it('RN10 - a data é a do fuso do casamento: 02h de 07/12 em UTC ainda é 06/12 em Brasília', () => {
+    expect(
+      isPurgeDue({
+        deletedAt,
+        timezone: 'America/Sao_Paulo',
+        now: new Date('2026-12-07T02:00:00Z'),
+      }),
+    ).toBe(false);
   });
 });

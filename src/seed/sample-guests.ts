@@ -140,3 +140,19 @@ export const SAMPLE_PARTIES: SampleParty[] = [
     deliveryStatus: 'not_sent',
   },
 ];
+
+/**
+ * A lixeira de exemplo ("Grupos e pessoas extras": grupo Amigos do vôlei,
+ * convidado Bruno Lima da Família Rocha e tag Vizinhos; o presente vem na F7).
+ * A nota usa 21/09, 18/09 e 15/09, que já passaram dos 30 dias: o expurgo
+ * diário os apagaria. O seed grava há 5, 8 e 11 dias, na mesma ordem.
+ */
+export const SAMPLE_TRASH = {
+  party: {
+    name: 'Amigos do vôlei',
+    guests: ['Rita Souza', 'Caio Lima', 'Duda Alves', 'Igor Ramos'],
+    daysAgo: 5,
+  },
+  guest: { name: 'Bruno Lima', party: 'Família Rocha', daysAgo: 8 },
+  tag: { name: 'Vizinhos', daysAgo: 11 },
+} as const;

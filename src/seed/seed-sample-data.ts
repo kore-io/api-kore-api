@@ -16,7 +16,7 @@ import {
   SAMPLE_WEDDINGS,
   type SampleWedding,
 } from './sample-data';
-import { SAMPLE_GUESTS_WEDDING, SAMPLE_PARTIES, SAMPLE_TAGS } from './sample-guests';
+import { SAMPLE_GUESTS_WEDDING, SAMPLE_PARTIES, SAMPLE_TAGS, SAMPLE_TRASH } from './sample-guests';
 
 /** O seed roda em local, test e homologação; nunca em produção (decisão 181). */
 export const SEED_ALLOWED_ENVS = ['local', 'test', 'homolog'] as const;
@@ -486,5 +486,77 @@ async function upsertGuests({
         data: { weddingId, partyId, tagId: tagIds.get(party.tag) as string },
       });
   }
+  await upsertTrash({ tx, weddingId, now });
   await recomputeWeddingStats({ db: tx, weddingId });
+}
+
+/**
+ * A lixeira de exemplo (Lixeira RN08), idempotente pelo nome: o grupo com os
+ * convidados do lote, o convidado que foi sozinho e a tag (com o vínculo
+ * guardado com a Família Rocha). Fica fora dos números do casamento.
+ */
+async function upsertTrash({
+  tx,
+  weddingId,
+  now,
+}: {
+  tx: Tx;
+  weddingId: string;
+  now: Date;
+}): Promise<void> {
+  const ago = (days: number) => new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+  const { party, guest, tag } = SAMPLE_TRASH;
+
+  if (
+    !(await tx.party.findFirst({ where: { weddingId, name: party.name }, select: { id: true } }))
+  ) {
+    const deletedAt = ago(party.daysAgo);
+    const partyId = uuidV7({ now: deletedAt.getTime() });
+    const trashBatchId = uuidV7({ now: deletedAt.getTime() });
+    await tx.party.create({
+      data: {
+        id: partyId,
+        weddingId,
+        name: party.name,
+        linkToken: randomBytes(16).toString('base64url'),
+        deletedAt,
+      },
+    });
+    await tx.guest.createMany({
+      data: party.guests.map((name, index) => ({
+        id: uuidV7({ now: deletedAt.getTime() + index + 1 }),
+        weddingId,
+        partyId,
+        name,
+        ageGroup: 'adult' as const,
+        joinedPartyAt: deletedAt,
+        deletedAt,
+        trashBatchId,
+      })),
+    });
+  }
+
+  const rocha = await tx.party.findFirst({
+    where: { weddingId, name: guest.party, deletedAt: null },
+    select: { id: true },
+  });
+  if (rocha && !(await tx.guest.findFirst({ where: { partyId: rocha.id, name: guest.name } })))
+    await tx.guest.create({
+      data: {
+        weddingId,
+        partyId: rocha.id,
+        name: guest.name,
+        ageGroup: 'adult',
+        deletedAt: ago(guest.daysAgo),
+      },
+    });
+
+  if (!(await tx.tag.findFirst({ where: { weddingId, name: tag.name }, select: { id: true } }))) {
+    const vizinhos = await tx.tag.create({
+      data: { weddingId, name: tag.name, deletedAt: ago(tag.daysAgo) },
+      select: { id: true },
+    });
+    if (rocha)
+      await tx.partyTag.create({ data: { weddingId, partyId: rocha.id, tagId: vizinhos.id } });
+  }
 }
