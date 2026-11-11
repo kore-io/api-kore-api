@@ -8,6 +8,7 @@ import { SharpSiteImageProcessor } from './infrastructure/sharp-site-image.proce
 import { SITE_READER } from './application/ports/site-reader.port';
 import { SITE_STORE } from './application/ports/site-store.port';
 import { GetSiteEditor, SiteEditorViews } from './application/site-editor-view';
+import { UpdateSiteAppearance } from './application/update-site-appearance.use-case';
 import { UpdateSiteBasics } from './application/update-site-basics.use-case';
 import { PrismaSiteReader } from './infrastructure/prisma-site.reader';
 import { PrismaSiteStore } from './infrastructure/prisma-site.store';
@@ -30,6 +31,7 @@ import { SiteImagesController } from './presentation/site-images.controller';
     SiteEditorViews,
     GetSiteEditor,
     UpdateSiteBasics,
+    UpdateSiteAppearance,
     SiteImageRateLimitGuard,
   ],
 })

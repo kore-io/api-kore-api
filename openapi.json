@@ -4007,6 +4007,114 @@
         ]
       }
     },
+    "/v1/weddings/{weddingId}/site/appearance": {
+      "put": {
+        "operationId": "SiteController_appearance_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSiteAppearanceBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteAppearanceResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContrastTooLowErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Grava a Aparência inteira, com o guarda-corpo de contraste (Aparência RN01 a RN07).",
+        "tags": [
+          "site"
+        ]
+      }
+    },
     "/v1/weddings/{weddingId}/site": {
       "get": {
         "operationId": "SiteController_get_v1",
@@ -8084,6 +8192,180 @@
           "expiresAt"
         ]
       },
+      "ContrastTooLowErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "CONTRAST_TOO_LOW"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "check": {
+            "enum": [
+              "primary_foreground",
+              "primary_background"
+            ],
+            "type": "string"
+          },
+          "ratio": {
+            "type": "number",
+            "description": "A razão medida, com duas casas para baixo."
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "check",
+          "ratio"
+        ]
+      },
+      "UpdateSiteAppearanceBody": {
+        "type": "object",
+        "properties": {
+          "fontPairKey": {
+            "enum": [
+              "romantico",
+              "classico",
+              "leve",
+              "moderno"
+            ],
+            "type": "string"
+          },
+          "starterPaletteKey": {
+            "nullable": true,
+            "description": "Null é \"cor própria\"; se não bater com as cores, o servidor grava null (RN07).",
+            "enum": [
+              "terracota",
+              "salvia",
+              "rose",
+              "marfim",
+              "marinho",
+              "areia",
+              "por-do-sol",
+              "grafite",
+              "noite"
+            ],
+            "type": "string"
+          },
+          "primaryColor": {
+            "type": "string",
+            "description": "`#RRGGBB`, sem diferenciar maiúsculas; gravada em maiúsculas (RN06).",
+            "example": "#A94F37"
+          },
+          "accentColor": {
+            "type": "string",
+            "example": "#7A8B69"
+          },
+          "backgroundMode": {
+            "enum": [
+              "light",
+              "cream",
+              "dark"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "fontPairKey",
+          "starterPaletteKey",
+          "primaryColor",
+          "accentColor",
+          "backgroundMode"
+        ]
+      },
+      "AppearanceWarning": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "ACCENT_LOW_CONTRAST"
+            ]
+          },
+          "ratio": {
+            "type": "number",
+            "description": "A razão do destaque sobre o fundo, com duas casas para baixo."
+          }
+        },
+        "required": [
+          "code",
+          "ratio"
+        ]
+      },
+      "SiteAppearanceResponse": {
+        "type": "object",
+        "properties": {
+          "fontPairKey": {
+            "enum": [
+              "romantico",
+              "classico",
+              "leve",
+              "moderno"
+            ],
+            "type": "string"
+          },
+          "starterPaletteKey": {
+            "nullable": true,
+            "enum": [
+              "terracota",
+              "salvia",
+              "rose",
+              "marfim",
+              "marinho",
+              "areia",
+              "por-do-sol",
+              "grafite",
+              "noite"
+            ],
+            "type": "string"
+          },
+          "backgroundMode": {
+            "enum": [
+              "light",
+              "cream",
+              "dark"
+            ],
+            "type": "string"
+          },
+          "warnings": {
+            "description": "Avisos que não bloqueiam (RN04).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AppearanceWarning"
+            }
+          },
+          "primaryColor": {
+            "type": "string"
+          },
+          "primaryForeground": {
+            "type": "string",
+            "description": "#FFFFFF ou #1F1F1F, o que tiver mais contraste com a primária (RN04 e RN09)."
+          },
+          "accentColor": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "fontPairKey",
+          "starterPaletteKey",
+          "backgroundMode",
+          "warnings",
+          "primaryColor",
+          "primaryForeground",
+          "accentColor"
+        ]
+      },
       "SitePartnerResponse": {
         "type": "object",
         "properties": {
@@ -8137,7 +8419,7 @@
           "height"
         ]
       },
-      "SiteAppearanceResponse": {
+      "SiteEditorAppearanceResponse": {
         "type": "object",
         "properties": {
           "starterPaletteKey": {
@@ -8288,7 +8570,7 @@
             ]
           },
           "appearance": {
-            "$ref": "#/components/schemas/SiteAppearanceResponse"
+            "$ref": "#/components/schemas/SiteEditorAppearanceResponse"
           },
           "sections": {
             "type": "array",

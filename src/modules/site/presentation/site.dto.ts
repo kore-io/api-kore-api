@@ -119,7 +119,7 @@ export class SiteImageRefResponse {
   height: number;
 }
 
-class SiteAppearanceResponse {
+class SiteEditorAppearanceResponse {
   fontPairKey: string;
   @ApiProperty({ type: String, nullable: true }) starterPaletteKey: string | null;
   primaryColor: string;
@@ -161,7 +161,7 @@ export class SiteEditorResponse {
   @ApiProperty({ type: String, nullable: true }) contactWhatsapp: string | null;
   @ApiProperty({ type: String, nullable: true }) contactEmail: string | null;
   @ApiProperty({ type: SiteImageRefResponse, nullable: true }) cover: SiteImageRefResponse | null;
-  @ApiProperty({ type: SiteAppearanceResponse }) appearance: SiteAppearanceResponse;
+  @ApiProperty({ type: SiteEditorAppearanceResponse }) appearance: SiteEditorAppearanceResponse;
   @ApiProperty({ type: [SiteSectionResponse] }) sections: SiteSectionResponse[];
   @ApiProperty({ type: SiteEditableResponse }) editable: SiteEditableResponse;
 
