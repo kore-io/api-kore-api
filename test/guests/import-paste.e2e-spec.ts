@@ -64,6 +64,7 @@ describe('Importação: Colar a lista (banco real)', () => {
             name: 'Família Moreira',
             guests: [{ name: 'Jorge' }, { name: 'Célia' }, { name: 'Pedro' }],
             warnings: [],
+            duplicatesRemoved: 0,
           },
           {
             line: 2,
@@ -71,6 +72,7 @@ describe('Importação: Colar a lista (banco real)', () => {
             name: 'Carla Nunes',
             guests: [{ name: 'Carla Nunes' }, { name: null }, { name: null }],
             warnings: [],
+            duplicatesRemoved: 0,
           },
           {
             line: 3,
@@ -78,6 +80,7 @@ describe('Importação: Colar a lista (banco real)', () => {
             name: 'Rafael e Bianca',
             guests: [{ name: 'Rafael' }, { name: 'Bianca' }],
             warnings: [],
+            duplicatesRemoved: 0,
           },
           {
             line: 4,
@@ -85,11 +88,39 @@ describe('Importação: Colar a lista (banco real)', () => {
             name: 'Márcia Rocha',
             guests: [{ name: 'Márcia Rocha' }],
             warnings: [],
+            duplicatesRemoved: 0,
           },
         ],
         droppedLines: [],
       });
       expect(await db.party.count({ where: { weddingId } })).toBe(0);
+    });
+
+    it('RN14 (decisão 210(4)) - cada grupo diz quantos nomes repetidos saíram: "Jorge, jorge, JORGE" dá 2', async () => {
+      const { ana, weddingId } = await anaWedding();
+
+      const response = await preview(
+        ana.cookie,
+        weddingId,
+        'Família Moreira: Jorge, jorge, JORGE, Célia\nRafael e Bianca',
+      ).expect(200);
+
+      expect(
+        (
+          response.body.groups as {
+            guests: unknown[];
+            warnings: string[];
+            duplicatesRemoved: number;
+          }[]
+        ).map(({ guests, warnings, duplicatesRemoved }) => ({
+          guests: guests.length,
+          warnings,
+          duplicatesRemoved,
+        })),
+      ).toEqual([
+        { guests: 2, warnings: ['DUPLICATE_REMOVED'], duplicatesRemoved: 2 },
+        { guests: 2, warnings: [], duplicatesRemoved: 0 },
+      ]);
     });
 
     it('RN07 - avisa o grupo com o nome de um grupo ativo (sem diferenciar maiúsculas, acentos e espaços); na lixeira não conta', async () => {

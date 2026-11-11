@@ -79,6 +79,11 @@ describe('Lista colada (Importação RN10 e RN11)', () => {
     ]);
   });
 
+  it('RN14 (decisão 210(4)) - conta cada nome repetido que saiu do grupo, e zero sem repetição', () => {
+    const { groups } = parsePastedList({ text: 'Jorge, jorge, JORGE\nAna e Ana\nRafael e Bianca' });
+    expect(groups.map((group) => group.duplicatesRemoved)).toEqual([2, 1, 0]);
+  });
+
   it('RN11 - nome de pessoa ou de grupo acima de 80 avisa TOO_LONG e fica para corrigir', () => {
     expect(names(`${'G'.repeat(81)}: Ana`)[0].warnings).toEqual(['TOO_LONG']);
     expect(names(`Grupo: ${'a'.repeat(81)}`)[0].warnings).toEqual(['TOO_LONG']);

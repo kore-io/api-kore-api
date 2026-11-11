@@ -49,6 +49,11 @@ export class PastedGroupResponse {
   @ApiProperty({ type: [PastedGuestResponse] }) guests: PastedGuestResponse[];
   @ApiProperty({ type: 'array', items: { type: 'string', enum: PASTE_WARNINGS } })
   warnings: string[];
+  /**
+   * Quantos nomes repetidos saíram do grupo ("Jorge, jorge, JORGE" dá 2); o app
+   * os soma ao removedInPreview (RN14; decisão 210(4)).
+   */
+  @ApiProperty({ type: 'integer', minimum: 0 }) duplicatesRemoved: number;
 }
 
 export class PastePreviewResponse {
