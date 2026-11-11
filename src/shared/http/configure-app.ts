@@ -2,6 +2,7 @@ import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, type OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
+import { validationExceptionFactory } from './validation-errors';
 
 export const API_DOCS_PATH = 'docs';
 
@@ -30,9 +31,15 @@ export function configureApp({
   // VERSION_NEUTRAL e ficam fora do prefixo (decisão 97).
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
 
-  // Campo inesperado é 400, no formato nativo do NestJS (decisões 97 e 99).
+  // Campo inesperado é 400, no formato nativo do NestJS (decisões 97 e 99),
+  // com errors[{ path, code, params }] ao lado para o app montar o texto (190).
   app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      exceptionFactory: validationExceptionFactory,
+    }),
   );
 
   // O app chama a API de outra origem com o cookie de sessão: só as origens da

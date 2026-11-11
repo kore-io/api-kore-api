@@ -1560,6 +1560,31 @@
           "message"
         ]
       },
+      "FieldErrorBody": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "example": "guests.1.phone"
+          },
+          "code": {
+            "type": "string",
+            "example": "PHONE_TOO_SHORT"
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": true,
+            "example": {
+              "n": 8
+            }
+          }
+        },
+        "required": [
+          "path",
+          "code",
+          "params"
+        ]
+      },
       "ValidationErrorBody": {
         "type": "object",
         "properties": {
@@ -1576,17 +1601,25 @@
             ]
           },
           "message": {
-            "description": "Um texto por campo inválido.",
+            "description": "Um texto por falha, só para quem desenvolve (decisão 189, item 1).",
             "type": "array",
             "items": {
               "type": "string"
+            }
+          },
+          "errors": {
+            "description": "Uma entrada por falha, para o app montar o texto pelo perfil ativo.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorBody"
             }
           }
         },
         "required": [
           "statusCode",
           "error",
-          "message"
+          "message",
+          "errors"
         ]
       },
       "TooSoonErrorBody": {

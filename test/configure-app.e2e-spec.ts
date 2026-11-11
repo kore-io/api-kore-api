@@ -46,7 +46,7 @@ describe('configureApp', () => {
       .expect(201, { name: 'Ana' });
   });
 
-  it('dado um campo inesperado no corpo, quando chama a rota, então responde 400 no formato nativo (decisão 97)', async () => {
+  it('dado um campo inesperado no corpo, quando chama a rota, então responde 400 no formato nativo com errors (decisões 97 e 190)', async () => {
     const response = await request(app.getHttpServer())
       .post('/v1/echo')
       .send({ name: 'Ana', admin: true })
@@ -56,6 +56,7 @@ describe('configureApp', () => {
       statusCode: 400,
       error: 'Bad Request',
       message: ['property admin should not exist'],
+      errors: [{ path: 'admin', code: 'WHITELIST_VALIDATION', params: {} }],
     });
   });
 
@@ -66,6 +67,7 @@ describe('configureApp', () => {
       .expect(400);
 
     expect(response.body.message).toEqual(['name must be a string']);
+    expect(response.body.errors).toEqual([{ path: 'name', code: 'IS_STRING', params: {} }]);
   });
 
   it('dado o Swagger ligado, quando pede o documento, então devolve o OpenAPI', async () => {
