@@ -435,9 +435,9 @@ describe('Convites de acesso: ler, aceitar e recusar (banco real; decisões 168 
         invitedByUserId: ana.userId,
       });
 
-      expect((await accept(token, juliana.cookie).expect(400)).body.message).toEqual([
-        'name is required to accept this invitation',
-      ]);
+      const missing = (await accept(token, juliana.cookie).expect(400)).body;
+      expect(missing.message).toEqual(['name is required to accept this invitation']);
+      expect(missing.errors).toEqual([{ path: 'name', code: 'IS_NOT_EMPTY', params: {} }]);
       const response = await accept(token, juliana.cookie, { name: ' Juliana  Prado ' }).expect(
         200,
       );

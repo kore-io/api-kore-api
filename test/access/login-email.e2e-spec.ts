@@ -290,6 +290,16 @@ describe('Login sem senha por e-mail (Login sem senha e sessão)', () => {
       await verify({ ip: uniqueIp(), body }).expect(400);
     });
 
+    it('dado um corpo sem e-mail e código nem token, quando confirma, então o 400 traz errors com o código da falha (decisão 190)', async () => {
+      const response = await verify({ ip: uniqueIp(), body: { email: 'a@kore.local' } }).expect(
+        400,
+      );
+
+      expect(response.body.errors).toEqual([
+        { path: '', code: 'EMAIL_AND_CODE_OR_TOKEN', params: {} },
+      ]);
+    });
+
     it('dado um pedido de convite com o token, quando grava direto no banco, então o banco recusa (decisão 142)', async () => {
       await expect(
         prisma.loginChallenge.create({

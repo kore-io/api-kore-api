@@ -39,6 +39,7 @@ import {
   WeddingActionForbiddenError,
   WeddingNotFoundError,
 } from '../domain/access.errors';
+import { validationError } from '../../../shared/http/validation-errors';
 
 /** Erros de regra no formato nativo, com o código no campo error (decisão 99). */
 export function toHttpError(error: unknown): unknown {
@@ -175,9 +176,10 @@ export function toHttpError(error: unknown): unknown {
     });
   }
   if (error instanceof InvalidInvitationRecipientsError) {
-    return new BadRequestException({
-      statusCode: 400,
-      error: 'Bad Request',
+    // Mais de um e-mail fora do tipo couple: o mesmo código que o
+    // @ArrayMaxSize daria (decisão 190).
+    return validationError({
+      errors: [{ path: 'emails', code: 'ARRAY_MAX_SIZE', params: { max: 1 } }],
       message: ['emails must have one address, or up to two (or none) only for kind couple'],
     });
   }
@@ -218,9 +220,8 @@ export function toHttpError(error: unknown): unknown {
     });
   }
   if (error instanceof AcceptanceDetailsMissingError) {
-    return new BadRequestException({
-      statusCode: 400,
-      error: 'Bad Request',
+    return validationError({
+      errors: [{ path: error.field, code: 'IS_NOT_EMPTY', params: {} }],
       message: [`${error.field} is required to accept this invitation`],
     });
   }
@@ -264,9 +265,9 @@ export function toHttpError(error: unknown): unknown {
 
 /** Corpo do verify sem um dos dois jeitos válidos: 400 nativo (decisão 99). */
 export function invalidVerifyBody(): BadRequestException {
-  return new BadRequestException({
-    statusCode: 400,
-    error: 'Bad Request',
+  // A falha é do corpo inteiro, não de um campo: path vazio (decisão 190).
+  return validationError({
+    errors: [{ path: '', code: 'EMAIL_AND_CODE_OR_TOKEN', params: {} }],
     message: ['send either email and code, or token'],
   });
 }

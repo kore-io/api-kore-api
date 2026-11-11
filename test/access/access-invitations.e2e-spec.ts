@@ -192,6 +192,19 @@ describe('Convites de acesso: envio e cancelamento (banco real, Mailpit)', () =>
     await send(ana.cookie, weddingId, body).expect(400);
   });
 
+  it('RN01 - dois e-mails no parceiro: o 400 aponta emails com ARRAY_MAX_SIZE (decisão 190)', async () => {
+    const { ana, weddingId } = await coupleWedding();
+
+    const response = await send(ana.cookie, weddingId, {
+      kind: 'partner',
+      emails: ['a@kore.local', 'b@kore.local'],
+    }).expect(400);
+
+    expect(response.body.errors).toEqual([
+      { path: 'emails', code: 'ARRAY_MAX_SIZE', params: { max: 1 } },
+    ]);
+  });
+
   it('RN02 e RN04 (decisão 170) - o cerimonialista convida o casal (e-mail 3) e o casamento fica aguardando; reenviar a um e-mail mantém o outro, e Convidar outro e-mail é cancelar e enviar (limite de 2, decisão 170(4))', async () => {
     const { cookie, weddingId } = await plannerWedding();
     const [fernanda, joao, outra] = [email('fernanda'), email('joao'), email('outra')];
