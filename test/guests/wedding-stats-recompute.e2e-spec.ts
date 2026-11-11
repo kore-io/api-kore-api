@@ -5,9 +5,14 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import {
   WEDDING_STATS_RECOMPUTE_QUEUE,
   WEDDING_STATS_RECOMPUTE_SCHEDULER_ID,
-  WeddingStatsRecomputeProcessor,
 } from '../../src/modules/guests/infrastructure/wedding-stats-recompute.job';
-import { recomputeWeddingStats } from '../../src/modules/guests/infrastructure/backoffice/wedding-stats-recompute';
+import { WEDDING_STATS_RECOMPUTE } from '../../src/modules/guests/application/ports/wedding-stats-recompute.port';
+import { RecomputeWeddingStats } from '../../src/modules/guests/application/recompute-wedding-stats.use-case';
+import { PrismaWeddingStatsRecompute } from '../../src/modules/guests/infrastructure/backoffice/prisma-wedding-stats-recompute';
+import {
+  findDivergentWeddingIds,
+  recomputeWeddingStats,
+} from '../../src/modules/guests/infrastructure/backoffice/wedding-stats-recompute';
 import { BackofficePrismaService } from '../../src/shared/database/backoffice-prisma.service';
 import { createTestWorker } from '../support/create-test-worker';
 import { seedWedding } from '../support/weddings';
@@ -68,7 +73,8 @@ describe('Recálculo noturno dos números do casamento (worker)', () => {
     // A linha diz outra coisa (ex.: uma escrita que falhou no meio).
     await db.weddingStats.update({ where: { weddingId }, data: { guestsTotal: 3, pending: 0 } });
 
-    await worker.get(WeddingStatsRecomputeProcessor).process();
+    // Só este casamento: o kore_test tem os casamentos de todas as suítes.
+    await worker.get(RecomputeWeddingStats).execute({ now: new Date(), weddingId });
 
     const stats = await db.weddingStats.findUniqueOrThrow({ where: { weddingId } });
     expect(stats).toMatchObject({
@@ -88,7 +94,7 @@ describe('Recálculo noturno dos números do casamento (worker)', () => {
       take: 1,
     });
     expect(log).toMatchObject({ actorKind: 'system' });
-    expect((log.data as { corrected: number }).corrected).toBeGreaterThanOrEqual(1);
+    expect(log.data).toMatchObject({ corrected: 1, skipped: 0, durationMs: expect.any(Number) });
   });
 
   it('RN16 - o recálculo espera a escrita em andamento e não perde o incremento dela', async () => {
@@ -138,5 +144,56 @@ describe('Recálculo noturno dos números do casamento (worker)', () => {
       pending: 2,
       partiesPending: 1,
     });
+  });
+
+  it('RN16 - uma escrita presa além do lock_timeout não segura a rotina: o casamento fica para a próxima noite', async () => {
+    const { id: ownerId } = await db.user.create({
+      data: { email: `recalculo.${randomUUID()}@kore.local` },
+    });
+    const { weddingId } = await seedWedding({ db, ownerId });
+    await db.weddingStats.update({ where: { weddingId }, data: { guestsTotal: 9 } });
+    const recompute = worker.get<PrismaWeddingStatsRecompute>(WEDDING_STATS_RECOMPUTE);
+    recompute.lockTimeoutMs = 100;
+
+    let release: () => void = () => undefined;
+    const holds = new Promise<void>((resolve) => (release = resolve));
+    let locked: () => void = () => undefined;
+    const lockTaken = new Promise<void>((resolve) => (locked = resolve));
+    const writer = db.$transaction(
+      async (tx) => {
+        await tx.$queryRaw`SELECT 1 FROM wedding_stats WHERE wedding_id = ${weddingId}::uuid FOR UPDATE`;
+        locked();
+        await holds;
+      },
+      { timeout: 10_000 },
+    );
+    try {
+      await lockTaken;
+      await expect(recompute.recompute({ weddingId })).resolves.toEqual({
+        corrected: 0,
+        skipped: 1,
+      });
+    } finally {
+      release();
+      await writer;
+      recompute.lockTimeoutMs = 5_000;
+    }
+    expect((await db.weddingStats.findUniqueOrThrow({ where: { weddingId } })).guestsTotal).toBe(9);
+  });
+
+  it('RN16 - a rotina só abre transação para quem diverge: uma leitura acha os casamentos divergentes', async () => {
+    const owner = async () =>
+      (await db.user.create({ data: { email: `recalculo.${randomUUID()}@kore.local` } })).id;
+    const divergent = (await seedWedding({ db, ownerId: await owner() })).weddingId;
+    const correct = (await seedWedding({ db, ownerId: await owner() })).weddingId;
+    await db.weddingStats.update({ where: { weddingId: divergent }, data: { pending: 3 } });
+
+    const started = Date.now();
+    const ids = await findDivergentWeddingIds({ db });
+
+    expect(ids).toContain(divergent);
+    expect(ids).not.toContain(correct);
+    // Uma leitura só, mesmo com os milhares de casamentos do kore_test.
+    expect(Date.now() - started).toBeLessThan(5_000);
   });
 });
