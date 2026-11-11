@@ -19,6 +19,12 @@ const validConfig = {
   APP_URL: 'http://localhost:5173',
   SITE_URL: 'http://localhost:5173',
   KMS_LOCAL_MASTER_KEY: '258+JWcuRfDrsS0xeKuTKgRV7p+kFlSMaIu3PErymmo=',
+  STORAGE_ENDPOINT: 'http://localhost:9000',
+  STORAGE_ACCESS_KEY_ID: 'kore',
+  STORAGE_SECRET_ACCESS_KEY: 'kore-minio-local',
+  STORAGE_PRIVATE_BUCKET: 'kore-private',
+  STORAGE_PUBLIC_BUCKET: 'kore-public',
+  STORAGE_PUBLIC_URL: 'http://localhost:9000/kore-public',
 };
 
 describe('validateEnv', () => {
@@ -34,6 +40,8 @@ describe('validateEnv', () => {
       OTEL_EXPORTER: 'none',
       LOG_LEVEL: 'info',
       TERMS_VERSION: '2026-09',
+      STORAGE_REGION: 'auto',
+      STORAGE_FORCE_PATH_STYLE: false,
     });
   });
 
@@ -101,5 +109,12 @@ describe('validateEnv', () => {
     expect(() => validateEnv({ config: { ...validConfig, GOOGLE_PROVIDER: 'google' } })).toThrow(
       /GOOGLE_CLIENT_ID: obrigatória com GOOGLE_PROVIDER=google/,
     );
+  });
+
+  it('dado o path-style do MinIO ligado, quando valida, então vira booleano', () => {
+    expect(
+      validateEnv({ config: { ...validConfig, STORAGE_FORCE_PATH_STYLE: 'true' } })
+        .STORAGE_FORCE_PATH_STYLE,
+    ).toBe(true);
   });
 });

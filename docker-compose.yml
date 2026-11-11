@@ -43,6 +43,9 @@ services:
     environment:
       MINIO_ROOT_USER: kore
       MINIO_ROOT_PASSWORD: kore-minio-local
+      # CORS do PUT pré-assinado (Imagens do site): o MinIO não tem CORS por
+      # bucket, então a origem do app fica no servidor. No R2, é regra do bucket.
+      MINIO_API_CORS_ALLOW_ORIGIN: http://localhost:5173
     ports:
       - '9000:9000'
       - '9001:9001'
