@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AccessModule } from './modules/access/access.module';
+import { GuestsModule } from './modules/guests/guests.module';
 import { LogsModule } from './modules/logs/logs.module';
 import { ProductEventsModule } from './modules/product-events/product-events.module';
 import { AppConfigModule } from './shared/config/app-config.module';
@@ -31,6 +32,7 @@ import { RedisModule } from './shared/redis/redis.module';
     RateLimitModule,
     HttpSecurityModule,
     AccessModule,
+    GuestsModule,
   ],
 })
 export class AppModule {}
