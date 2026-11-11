@@ -193,6 +193,9 @@ enum ProductEventName {
   conta_criada
   cerim_link_gerado
   casal_aceitou
+  // F1: Importação RN14 e Exportação RN08.
+  importacao
+  exportacao_buffet
 
   @@map("product_event_name")
 }
@@ -268,6 +271,12 @@ model Wedding {
   partners          Partner[]
   memberships       Membership[]
   accessInvitations AccessInvitation[]
+  parties           Party[]
+  guests            Guest[]
+  tags              Tag[]
+  partyTags         PartyTag[]
+  guestTags         GuestTag[]
+  stats             WeddingStats?
 
   @@index([createdByUserId], map: "idx_weddings_created_by_user_id")
   @@index([referrerId, status], map: "idx_weddings_referrer_id_status")
@@ -524,4 +533,181 @@ enum AccessInvitationKind {
   planner
 
   @@map("access_invitation_kind")
+}
+
+// Grupo (Glossário): a unidade de envio e de resposta (Grupos e convidados
+// RN01). O nome não é único. Lixeira por deletedAt (Lixeira RN03).
+// O contato (contactGuestId) tem FK composta (id, contact_guest_id) →
+// guests(party_id, id), DEFERRABLE, em SQL manual na migration: o Prisma não
+// expressa, e é ela que garante que o contato é do mesmo grupo (Modelo de
+// Dados, invariante 12.2). Não declarar a relação aqui.
+model Party {
+  id                String              @id @default(uuid(7)) @db.Uuid
+  createdAt         DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  weddingId         String              @map("wedding_id") @db.Uuid
+  name              String
+  internalNote      String?             @map("internal_note")
+  // Link do grupo: token de 128 bits (RN11); a versão sobe a cada regeneração (RN12).
+  linkToken         String              @unique(map: "uq_parties_link_token") @map("link_token")
+  linkVersion       Int                 @default(1) @map("link_version")
+  linkRegeneratedAt DateTime?           @map("link_regenerated_at") @db.Timestamptz(3)
+  contactGuestId    String?             @map("contact_guest_id") @db.Uuid
+  // Igual ao número de Guest isPlusOne ativos do grupo (RN07).
+  plusOneSlots      Int                 @default(0) @map("plus_one_slots")
+  deliveryStatus    PartyDeliveryStatus @default(not_sent) @map("delivery_status")
+  respondedAt       DateTime?           @map("responded_at") @db.Timestamptz(3)
+  deletedAt         DateTime?           @map("deleted_at") @db.Timestamptz(3)
+
+  wedding Wedding    @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  guests  Guest[]
+  tags    PartyTag[]
+
+  @@unique([weddingId, id], map: "uq_parties_wedding_id_id")
+  @@map("parties")
+}
+
+enum PartyDeliveryStatus {
+  not_sent
+  sent
+  viewed
+  responded
+
+  @@map("party_delivery_status")
+}
+
+// Convidado (Glossário). Vaga de acompanhante = Guest isPlusOne sem nome (RN07).
+// A ordem no grupo é joinedPartyAt, id (RN17). trashBatchId marca quem foi
+// para a lixeira junto com o grupo (Lixeira RN03).
+model Guest {
+  id                 String         @id @default(uuid(7)) @db.Uuid
+  createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  weddingId          String         @map("wedding_id") @db.Uuid
+  partyId            String         @map("party_id") @db.Uuid
+  // Nulo só na vaga de acompanhante vazia.
+  name               String?
+  email              String?        @db.Citext
+  // E.164 (RN04).
+  phone              String?
+  ageGroup           GuestAgeGroup? @map("age_group")
+  dietaryRestriction String?        @map("dietary_restriction")
+  isPlusOne          Boolean        @default(false) @map("is_plus_one")
+  rsvpStatus         RsvpStatus     @default(pending) @map("rsvp_status")
+  respondedAt        DateTime?      @map("responded_at") @db.Timestamptz(3)
+  joinedPartyAt      DateTime       @default(now()) @map("joined_party_at") @db.Timestamptz(3)
+  trashBatchId       String?        @map("trash_batch_id") @db.Uuid
+  deletedAt          DateTime?      @map("deleted_at") @db.Timestamptz(3)
+
+  wedding Wedding    @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  party   Party      @relation(fields: [weddingId, partyId], references: [weddingId, id], onDelete: Cascade)
+  tags    GuestTag[]
+
+  @@unique([weddingId, id], map: "uq_guests_wedding_id_id")
+  @@unique([partyId, id], map: "uq_guests_party_id_id")
+  @@index([weddingId, partyId], map: "idx_guests_wedding_id_party_id")
+  @@map("guests")
+}
+
+enum GuestAgeGroup {
+  adult
+  child
+  baby
+
+  @@map("guest_age_group")
+}
+
+enum RsvpStatus {
+  pending
+  confirmed
+  declined
+
+  @@map("rsvp_status")
+}
+
+// Tag (Glossário): até 10 ativas por casamento, nome único entre as ativas sem
+// diferenciar maiúsculas (índice parcial em SQL manual; Tags RN01 e RN02).
+model Tag {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  weddingId String    @map("wedding_id") @db.Uuid
+  name      String
+  color     TagColor?
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  wedding Wedding    @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  parties PartyTag[]
+  guests  GuestTag[]
+
+  @@unique([weddingId, id], map: "uq_tags_wedding_id_id")
+  @@map("tags")
+}
+
+// Nomes de token das cores de tag do Design System (decisões 191(1) e 192(4)).
+enum TagColor {
+  wine
+  champagne
+  green
+  amber
+  red
+  blue
+
+  @@map("tag_color")
+}
+
+// Tag do grupo. Fica guardada com a tag na lixeira, para a restauração (Lixeira RN05).
+model PartyTag {
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  weddingId String   @map("wedding_id") @db.Uuid
+  partyId   String   @map("party_id") @db.Uuid
+  tagId     String   @map("tag_id") @db.Uuid
+
+  wedding Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  party   Party   @relation(fields: [weddingId, partyId], references: [weddingId, id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [weddingId, tagId], references: [weddingId, id], onDelete: Cascade)
+
+  @@id([partyId, tagId], map: "party_tags_pkey")
+  @@index([tagId], map: "idx_party_tags_tag_id")
+  @@index([weddingId], map: "idx_party_tags_wedding_id")
+  @@map("party_tags")
+}
+
+// Tag do convidado (na F1, só pela planilha; decisão 185(3)).
+model GuestTag {
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  weddingId String   @map("wedding_id") @db.Uuid
+  guestId   String   @map("guest_id") @db.Uuid
+  tagId     String   @map("tag_id") @db.Uuid
+
+  wedding Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  guest   Guest   @relation(fields: [weddingId, guestId], references: [weddingId, id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [weddingId, tagId], references: [weddingId, id], onDelete: Cascade)
+
+  @@id([guestId, tagId], map: "guest_tags_pkey")
+  @@index([tagId], map: "idx_guest_tags_tag_id")
+  @@index([weddingId], map: "idx_guest_tags_wedding_id")
+  @@map("guest_tags")
+}
+
+// Números do casamento (Grupos RN16; Modelo de Dados, invariante 12): contam os
+// Guest ativos, vagas incluídas. Uma linha por casamento, criada pelo gatilho
+// do cadastro. rsvpPercent é coluna gerada no banco (SQL manual): nunca gravar.
+model WeddingStats {
+  weddingId         String   @id @map("wedding_id") @db.Uuid
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  guestsTotal       Int      @default(0) @map("guests_total")
+  confirmed         Int      @default(0)
+  declined          Int      @default(0)
+  pending           Int      @default(0)
+  adultsConfirmed   Int      @default(0) @map("adults_confirmed")
+  childrenConfirmed Int      @default(0) @map("children_confirmed")
+  babiesConfirmed   Int      @default(0) @map("babies_confirmed")
+  partiesPending    Int      @default(0) @map("parties_pending")
+  rsvpPercent       Decimal  @default(0) @map("rsvp_percent") @db.Decimal(5, 2)
+
+  wedding Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+
+  @@index([rsvpPercent], map: "idx_wedding_stats_rsvp_percent")
+  @@map("wedding_stats")
 }

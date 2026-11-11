@@ -135,6 +135,17 @@ describe('Cadastro do casal: POST /v1/weddings e GET /v1/weddings/slug-availabil
     expect(wedding.eventDate).toBeNull();
   });
 
+  it('Grupos RN16 (decisão 188) - o cadastro cria a linha zerada dos números do casamento', async () => {
+    const { cookie } = await signedInUser({ app });
+
+    const response = await create(cookie, body()).expect(201);
+
+    const stats = await db.weddingStats.findUniqueOrThrow({
+      where: { weddingId: response.body.weddingId },
+    });
+    expect(stats).toMatchObject({ guestsTotal: 0, confirmed: 0, pending: 0, partiesPending: 0 });
+  });
+
   it.each([
     ['sem cidade', { city: '   ' }],
     ['UF inexistente', { state: 'XX' }],
