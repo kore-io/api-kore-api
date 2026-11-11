@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsIn, IsInt, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsUUID, Max, Min } from 'class-validator';
 import {
   SITE_IMAGE_MAX_BYTES,
   SITE_IMAGE_UPLOAD_CONTENT_TYPES,
@@ -33,4 +33,22 @@ export class SiteImageUploadAuthorizationResponse {
   @ApiProperty({ enum: ['PUT'] }) method: 'PUT';
   @ApiProperty({ type: SiteImageUploadHeaders }) headers: SiteImageUploadHeaders;
   @ApiProperty({ format: 'date-time' }) expiresAt: string;
+}
+
+export class ConfirmSiteImageBody {
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID()
+  imageId: string;
+}
+
+/** A imagem pronta (S4 RN05); a og.jpg não vem: é só da prévia do link. */
+export class SiteImageResponse {
+  @ApiProperty({ format: 'uuid' }) id: string;
+  @ApiProperty({ enum: ['ready'] }) status: 'ready';
+  /** display.jpg, até 2560 px, pelo CDN. */
+  @ApiProperty() url: string;
+  /** thumb.jpg, 640 px, pelo CDN. */
+  @ApiProperty() thumbUrl: string;
+  @ApiProperty() width: number;
+  @ApiProperty() height: number;
 }

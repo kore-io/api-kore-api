@@ -1,12 +1,12 @@
-import { CallHandler, ExecutionContext, Inject, Injectable, NestInterceptor } from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { from, lastValueFrom, type Observable } from 'rxjs';
-import { TenantTransaction } from '../../../shared/database/tenant-transaction';
-import { WEDDING_ACTIVITY, type WeddingActivity } from '../application/ports/wedding-activity.port';
-import { WeddingAuthorization } from '../application/wedding-authorization.service';
+import { WeddingScope } from '../application/wedding-scope.service';
 import { WeddingNotFoundError } from '../domain/access.errors';
 import type { MembershipRole } from '../domain/wedding-authorization';
 import { toHttpError } from './access-http-errors';
 import type { AuthenticatedRequest } from './authenticated-request';
+import { OWN_TRANSACTIONS } from './own-transactions.decorator';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -25,9 +25,8 @@ export interface WeddingScopedRequest extends AuthenticatedRequest {
 @Injectable()
 export class TenantTransactionInterceptor implements NestInterceptor {
   constructor(
-    private readonly tenant: TenantTransaction,
-    private readonly authorization: WeddingAuthorization,
-    @Inject(WEDDING_ACTIVITY) private readonly activity: WeddingActivity,
+    private readonly scope: WeddingScope,
+    private readonly reflector: Reflector,
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler<unknown>): Observable<unknown> {
@@ -39,22 +38,16 @@ export class TenantTransactionInterceptor implements NestInterceptor {
     const weddingId = params.weddingId;
     if (weddingId !== undefined && !UUID.test(weddingId))
       throw toHttpError(new WeddingNotFoundError());
+    // A rota abre as próprias transações, curtas, pelo WeddingScope.
+    if (this.reflector.get<boolean>(OWN_TRANSACTIONS, context.getHandler())) return next.handle();
 
     return from(
-      this.tenant
+      this.scope
         .run({
           userId: auth.userId,
           weddingId,
-          work: async (): Promise<unknown> => {
-            if (weddingId) {
-              request.weddingRole = await this.authorization.require({
-                userId: auth.userId,
-                weddingId,
-                action: 'view',
-              });
-              // Abrir o casamento conta como atividade da RN13 (decisões 136 e 180).
-              await this.activity.touch({ weddingId, now: new Date() });
-            }
+          work: async ({ role }): Promise<unknown> => {
+            if (role) request.weddingRole = role;
             return lastValueFrom(next.handle(), { defaultValue: undefined });
           },
         })

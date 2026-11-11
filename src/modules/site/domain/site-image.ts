@@ -39,3 +39,27 @@ export function siteImageKeys({ imageId }: { imageId: string }): {
     og: `${base}/og.jpg`,
   };
 }
+
+/** Lado maior da versão servida (S4 RN03 e RN05). */
+export const SITE_IMAGE_DISPLAY_MAX_PX = 2560;
+/** Lado maior da miniatura (S4 RN05). */
+export const SITE_IMAGE_THUMB_MAX_PX = 640;
+/** A prévia do link (S4 RN05; Site público RN09): 1200 × 630, até 300 KB. */
+export const SITE_IMAGE_OG = { width: 1200, height: 630, maxBytes: 300 * 1024 } as const;
+/** Teto de pixels da entrada, contra bomba de descompressão (S4 RN05). */
+export const SITE_IMAGE_MAX_INPUT_PIXELS = 40_000_000;
+/** As versões servidas saem do cache em até 1 dia, sem `immutable` (S4 RN06). */
+export const SITE_IMAGE_CACHE_CONTROL = 'public, max-age=86400';
+
+export type SiteImageSourceType = 'jpeg' | 'png';
+
+/**
+ * O tipo real pelo conteúdo (S4 RN05): a assinatura de JPEG ou de PNG nos
+ * primeiros bytes. O tipo declarado no envio não vale.
+ */
+export function detectSiteImageType({ head }: { head: Uint8Array }): SiteImageSourceType | null {
+  if (head.length >= 3 && head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) return 'jpeg';
+  const png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+  if (head.length >= png.length && png.every((byte, index) => head[index] === byte)) return 'png';
+  return null;
+}
