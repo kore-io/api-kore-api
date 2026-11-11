@@ -126,3 +126,10 @@ export class NothingToImportErrorBody {
   @ApiProperty({ enum: ['NOTHING_TO_IMPORT'] }) error: 'NOTHING_TO_IMPORT';
   @ApiProperty() message: string;
 }
+
+export class NothingToExportErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['NOTHING_TO_EXPORT'] }) error: 'NOTHING_TO_EXPORT';
+  @ApiProperty() message: string;
+}

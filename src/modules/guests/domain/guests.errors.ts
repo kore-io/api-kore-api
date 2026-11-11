@@ -124,3 +124,8 @@ export class SpreadsheetRefusedError extends Error {
 export class NothingToImportError extends Error {
   override name = 'NothingToImportError';
 }
+
+/** O filtro não tem nenhum convidado (409 NOTHING_TO_EXPORT; Exportação). */
+export class NothingToExportError extends Error {
+  override name = 'NothingToExportError';
+}

@@ -3584,6 +3584,146 @@
           "guest-imports"
         ]
       }
+    },
+    "/v1/weddings/{weddingId}/guests/export": {
+      "get": {
+        "operationId": "ExportController_export_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "required": true,
+            "in": "query",
+            "description": "xlsx (o PDF entra com a feature/67-exportacao-pdf).",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "xlsx"
+              ]
+            }
+          },
+          {
+            "name": "who",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "confirmed",
+                "tag"
+              ]
+            }
+          },
+          {
+            "name": "columns",
+            "required": true,
+            "in": "query",
+            "description": "Separadas por vírgula: name, party, ageGroup, dietaryRestriction, rsvp, phone, tags",
+            "schema": {
+              "minItems": 1,
+              "example": "name,party,ageGroup,dietaryRestriction,rsvp",
+              "type": "string",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "name",
+                  "party",
+                  "ageGroup",
+                  "dietaryRestriction",
+                  "rsvp",
+                  "phone",
+                  "tags"
+                ]
+              }
+            }
+          },
+          {
+            "name": "tag",
+            "required": false,
+            "in": "query",
+            "description": "Id de uma tag ativa; obrigatório com who=tag.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "O arquivo.",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "$ref": "#/components/schemas/NothingToExportErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Exportar: o arquivo na hora, sem cache (Exportação RN01 a RN10).",
+        "tags": [
+          "guests"
+        ]
+      }
     }
   },
   "info": {
@@ -7186,6 +7326,31 @@
         "required": [
           "parties",
           "guests"
+        ]
+      },
+      "NothingToExportErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "NOTHING_TO_EXPORT"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
         ]
       }
     }
