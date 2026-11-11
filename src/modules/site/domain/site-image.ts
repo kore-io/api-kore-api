@@ -63,3 +63,8 @@ export function detectSiteImageType({ head }: { head: Uint8Array }): SiteImageSo
   if (head.length >= png.length && png.every((byte, index) => head[index] === byte)) return 'png';
   return null;
 }
+
+/** Envio que não chegou ao fim (`uploading` ou `processing`) sai depois de 1 hora (S4 RN08). */
+export const SITE_IMAGE_STALE_UPLOAD_MS = 60 * 60 * 1000;
+/** Imagem pronta fora de uso sai depois de 24 horas (S4 RN08; decisão 207, item 2). */
+export const SITE_IMAGE_UNUSED_MS = 24 * 60 * 60 * 1000;
