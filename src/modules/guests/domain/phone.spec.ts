@@ -45,6 +45,9 @@ describe('parsePhone (Grupos RN04; decisão 189, item 4)', () => {
     ['+1234567', 7],
     ['+1234567890123456', 16],
     ['+999 1234 5678', 11],
+    ['+5519998', 7],
+    ['+55 19 9998', 8],
+    ['+55 19 99876 14020', 14],
   ])('RN04 - "%s" é PHONE_INVALID (fora de 8 a 15 dígitos ou país que não existe)', (raw, n) => {
     expect(parsePhone({ raw })).toEqual({ ok: false, code: 'PHONE_INVALID', params: { n } });
   });
