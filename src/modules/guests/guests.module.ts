@@ -16,6 +16,14 @@ import { TagsController } from './presentation/tags.controller';
 import { TrashController } from './presentation/trash.controller';
 import { GuestImportsController } from './presentation/guest-imports.controller';
 import { ImportPastedList, PreviewPastedList } from './application/import-paste.use-cases';
+import {
+  ImportSpreadsheet,
+  PreviewSpreadsheet,
+  SpreadsheetCheckService,
+} from './application/import-spreadsheet.use-cases';
+import { SPREADSHEET_READER } from './application/ports/spreadsheet-reader.port';
+import { ExceljsSpreadsheetReader } from './infrastructure/exceljs-spreadsheet-reader';
+import { SpreadsheetUploadGuard } from './presentation/spreadsheet-upload.guard';
 import { GuestImportRateLimitGuard } from '../../shared/rate-limit/guest-import-rate-limit.guard';
 import { TRASH_STORE } from './application/ports/trash-store.port';
 import { PrismaTrashStore } from './infrastructure/prisma-trash.store';
@@ -73,6 +81,11 @@ import { MoveGuest } from './application/move-guest.use-case';
     PreviewPastedList,
     ImportPastedList,
     GuestImportRateLimitGuard,
+    { provide: SPREADSHEET_READER, useClass: ExceljsSpreadsheetReader },
+    SpreadsheetCheckService,
+    PreviewSpreadsheet,
+    ImportSpreadsheet,
+    SpreadsheetUploadGuard,
   ],
 })
 export class GuestsModule {}

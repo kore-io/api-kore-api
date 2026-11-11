@@ -7,6 +7,7 @@ import {
   IsInt,
   IsNotEmpty,
   IsString,
+  Max,
   MaxLength,
   Min,
   ValidateNested,
@@ -83,11 +84,89 @@ export class PasteImportBody {
   @Type(() => PastedGroupBody)
   groups: PastedGroupBody[];
 
-  /** As pessoas removidas, as duplicadas tiradas e 1 por grupo que saiu (o linhas_erro). */
-  @ApiProperty({ minimum: 0 }) @IsInt() @Min(0) removedInPreview: number;
+  /**
+   * As pessoas removidas, as duplicadas tiradas e 1 por grupo que saiu (o
+   * linhas_erro). O teto é o do texto colado: não sai mais que um item por
+   * caractere, e o evento não fica distorcido (sugestão do Crivo).
+   */
+  @ApiProperty({ minimum: 0, maximum: PASTE_TEXT_MAX })
+  @IsInt()
+  @Min(0)
+  @Max(PASTE_TEXT_MAX)
+  removedInPreview: number;
 }
 
 export class ImportResultResponse {
   parties: number;
   guests: number;
+}
+
+/** O arquivo da planilha (multipart, campo file, até 5 MB). */
+export class SpreadsheetUploadBody {
+  @ApiProperty({ type: 'string', format: 'binary' }) file: unknown;
+}
+
+const SKIPPED_CODES = [
+  'NAME_MISSING',
+  'PARTY_MISSING',
+  'PHONE_TOO_SHORT',
+  'PHONE_TOO_LONG',
+  'PHONE_INVALID',
+  'EMAIL_INVALID',
+  'AGE_GROUP_INVALID',
+  'TOO_LONG',
+  'DUPLICATE',
+];
+const ROW_FIELDS = ['party', 'name', 'phone', 'email', 'ageGroup', 'dietaryRestriction', 'tags'];
+
+export class DuplicateOfResponse {
+  row: number;
+  party: string;
+}
+
+/** Uma falha de uma linha (uma linha com várias falhas aparece uma vez por falha). */
+export class SkippedRowResponse {
+  /** O número da linha na planilha (a dos títulos é a 1). */
+  row: number;
+  @ApiProperty({ type: String, nullable: true }) name: string | null;
+  @ApiProperty({ enum: ['error', 'duplicate'] }) kind: 'error' | 'duplicate';
+  @ApiProperty({ enum: SKIPPED_CODES }) code: string;
+  @ApiProperty({ enum: ROW_FIELDS, required: false }) field?: string;
+  @ApiProperty({ type: 'object', additionalProperties: true, example: { n: 8 } })
+  params: Record<string, unknown>;
+  @ApiProperty({ type: DuplicateOfResponse, required: false }) duplicateOf?: DuplicateOfResponse;
+}
+
+export class ImportWarningResponse {
+  @ApiProperty({ enum: ['PARTY_NAME_EXISTS', 'TAG_LIMIT'] }) code:
+    'PARTY_NAME_EXISTS' | 'TAG_LIMIT';
+  /** Em PARTY_NAME_EXISTS. */
+  @ApiProperty({ required: false }) party?: string;
+  /** Em TAG_LIMIT. */
+  @ApiProperty({ required: false }) tag?: string;
+  @ApiProperty({ type: [Number], required: false }) rows?: number[];
+}
+
+export class SpreadsheetCountsResponse {
+  valid: number;
+  /** Linhas com erro (não falhas). */
+  errors: number;
+  duplicates: number;
+}
+
+export class SpreadsheetPreviewResponse {
+  fileName: string;
+  parties: number;
+  guests: number;
+  counts: SpreadsheetCountsResponse;
+  @ApiProperty({ type: [SkippedRowResponse] }) skipped: SkippedRowResponse[];
+  @ApiProperty({ type: [ImportWarningResponse] }) warnings: ImportWarningResponse[];
+}
+
+export class SpreadsheetImportResponse {
+  parties: number;
+  guests: number;
+  /** Linhas que ficaram de fora, com erro ou duplicadas. */
+  skipped: number;
+  @ApiProperty({ type: [String] }) tagsCreated: string[];
 }

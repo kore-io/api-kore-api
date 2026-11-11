@@ -99,3 +99,30 @@ export class DuplicateErrorBody {
   /** A pessoa repetida, ex.: groups.1.guests.2. */
   @ApiProperty({ example: 'groups.1.guests.2' }) path: string;
 }
+
+/** Arquivo acima de 5 MB, ou de 50 MB descompactado (ADR-39; decisão 189, item 8). */
+export class FileTooLargeErrorBody {
+  static readonly status = 413;
+  @ApiProperty({ enum: [413] }) statusCode: 413;
+  @ApiProperty({ enum: ['FILE_TOO_LARGE'] }) error: 'FILE_TOO_LARGE';
+  @ApiProperty() message: string;
+  @ApiProperty({ example: 5242880 }) maxBytes: number;
+  /** Quando o que passou foi o descompactado (50 MB). */
+  @ApiProperty({ required: false, example: 52428800 }) unzippedMaxBytes?: number;
+}
+
+/** Regras do arquivo da planilha (Importação RN01 e RN03). */
+export class SpreadsheetRefusedErrorBody {
+  static readonly status = 422;
+  @ApiProperty({ enum: [422] }) statusCode: 422;
+  @ApiProperty({ enum: ['NOT_XLSX', 'TEMPLATE_MISMATCH', 'TOO_MANY_ROWS'] })
+  error: 'NOT_XLSX' | 'TEMPLATE_MISMATCH' | 'TOO_MANY_ROWS';
+  @ApiProperty() message: string;
+}
+
+export class NothingToImportErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['NOTHING_TO_IMPORT'] }) error: 'NOTHING_TO_IMPORT';
+  @ApiProperty() message: string;
+}

@@ -1,14 +1,21 @@
 import {
   ConflictException,
   ForbiddenException,
+  HttpException,
+  HttpStatus,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import { SPREADSHEET_MAX_BYTES } from './spreadsheet-upload.guard';
+import { UNZIPPED_MAX_BYTES } from '../infrastructure/exceljs-spreadsheet-reader';
 import { IMPORT_GUESTS_MAX } from '../domain/paste-list';
 import { toHttpError as toAccessHttpError } from '../../access/presentation/access-http-errors';
 import { validationError } from '../../../shared/http/validation-errors';
 import {
   AlreadyRespondedError,
+  FileTooLargeError,
+  NothingToImportError,
+  SpreadsheetRefusedError,
   DuplicateGuestError,
   TooManyGuestsError,
   EmptyPlusOneError,
@@ -115,6 +122,32 @@ export function toHttpError(error: unknown): unknown {
       error: 'DUPLICATE',
       message: 'A name repeats in the same party.',
       path: error.path,
+    });
+  }
+  if (error instanceof FileTooLargeError) {
+    return new HttpException(
+      {
+        statusCode: 413,
+        error: 'FILE_TOO_LARGE',
+        message: 'The unzipped file is larger than 50 MB.',
+        maxBytes: SPREADSHEET_MAX_BYTES,
+        unzippedMaxBytes: UNZIPPED_MAX_BYTES,
+      },
+      HttpStatus.PAYLOAD_TOO_LARGE,
+    );
+  }
+  if (error instanceof SpreadsheetRefusedError) {
+    return new UnprocessableEntityException({
+      statusCode: 422,
+      error: error.code,
+      message: 'The spreadsheet was refused.',
+    });
+  }
+  if (error instanceof NothingToImportError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'NOTHING_TO_IMPORT',
+      message: 'The spreadsheet has no valid row.',
     });
   }
   return toAccessHttpError(error);
