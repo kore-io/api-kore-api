@@ -7873,6 +7873,19 @@
           "headers",
           "expiresAt"
         ]
+      },
+      "SpreadsheetTemplateHeaders": {
+        "type": "string",
+        "enum": [
+          "Grupo",
+          "Nome",
+          "Telefone",
+          "E-mail",
+          "Faixa etária",
+          "Restrição alimentar",
+          "Tags"
+        ],
+        "description": "Os 7 títulos da primeira linha do modelo de planilha, na ordem das colunas (Importação RN02 e RN03)."
       }
     }
   }
