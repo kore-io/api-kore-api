@@ -5311,6 +5311,18 @@
             "type": "string",
             "nullable": true
           },
+          "phoneMasked": {
+            "type": "string",
+            "nullable": true,
+            "description": "Para o painel (decisão 202(3)): \"(19) 9****-3310\", \"+351 9** *** 678\".",
+            "example": "(19) 9****-3310"
+          },
+          "emailMasked": {
+            "type": "string",
+            "nullable": true,
+            "description": "Para o painel (decisão 202(3)): \"ce***@gmail.com\".",
+            "example": "ce***@gmail.com"
+          },
           "rsvpStatus": {
             "enum": [
               "pending",
@@ -5338,6 +5350,8 @@
           "dietaryRestriction",
           "phone",
           "email",
+          "phoneMasked",
+          "emailMasked",
           "rsvpStatus",
           "tags",
           "id",

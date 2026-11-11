@@ -253,6 +253,12 @@ export class PartyGuestResponse {
   /** Inteiro, em E.164: o formulário de edição precisa dele; o painel mascara. */
   @ApiProperty({ type: String, nullable: true }) phone: string | null;
   @ApiProperty({ type: String, nullable: true }) email: string | null;
+  /** Para o painel (decisão 202(3)): "(19) 9****-3310", "+351 9** *** 678". */
+  @ApiProperty({ type: String, nullable: true, example: '(19) 9****-3310' })
+  phoneMasked: string | null;
+  /** Para o painel (decisão 202(3)): "ce***@gmail.com". */
+  @ApiProperty({ type: String, nullable: true, example: 'ce***@gmail.com' })
+  emailMasked: string | null;
   isPlusOne: boolean;
   @ApiProperty({ enum: RSVP_STATUSES }) rsvpStatus: RsvpStatus;
   @ApiProperty({ type: [TagSummaryResponse] }) tags: TagSummaryResponse[];
