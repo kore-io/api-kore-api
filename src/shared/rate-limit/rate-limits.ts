@@ -30,3 +30,7 @@ export function isAuthRateLimited(context: ExecutionContext): boolean {
  */
 export const GUEST_IMPORT_THROTTLER = 'guest_import';
 export const GUEST_IMPORT_PER_MINUTE = 20;
+
+/** Imagens do site (S4 RN07): 30 por minuto por usuário, autorização e confirmação somadas. */
+export const SITE_IMAGE_THROTTLER = 'site_image';
+export const SITE_IMAGE_PER_MINUTE = 30;

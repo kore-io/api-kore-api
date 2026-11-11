@@ -1,6 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { Prisma } from '../../../../generated/prisma/client';
 import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
+import {
+  OBJECT_STORAGE,
+  type ObjectStorage,
+} from '../../../../shared/storage/application/object-storage.port';
+import { siteImageKeys } from '../../../site/domain/site-image';
 import type {
   OwnerlessWedding,
   OwnerlessWeddings,
@@ -18,7 +23,10 @@ const NO_ACTIVE_OWNER: Prisma.WeddingWhereInput = {
 /** Pela conexão do backoffice (BYPASSRLS): a rotina atravessa os casamentos. */
 @Injectable()
 export class PrismaOwnerlessWeddings implements OwnerlessWeddings {
-  constructor(private readonly prisma: BackofficePrismaService) {}
+  constructor(
+    private readonly prisma: BackofficePrismaService,
+    @Inject(OBJECT_STORAGE) private readonly storage: ObjectStorage,
+  ) {}
 
   async listCandidates({
     lastActivityBefore,
@@ -150,6 +158,7 @@ export class PrismaOwnerlessWeddings implements OwnerlessWeddings {
       await tx.party.deleteMany({ where: { weddingId } });
       await tx.tag.deleteMany({ where: { weddingId } });
       await tx.weddingStats.deleteMany({ where: { weddingId } });
+      await this.purgeSiteImages({ tx, weddingId });
       // Lápide (Modelo de Dados): ficam id, status, purgedAt, o indicador e createdAt.
       await tx.wedding.update({
         where: { id: weddingId },
@@ -180,6 +189,32 @@ export class PrismaOwnerlessWeddings implements OwnerlessWeddings {
         },
       });
       return true;
+    });
+  }
+
+  /**
+   * As imagens do site e os arquivos delas (Imagens do site RN11), pela lista
+   * do banco: as chaves não levam o casamento. Os objetos saem dentro da
+   * transação, com o casamento travado. Se o armazenamento falhar, o erro
+   * desfaz o expurgo inteiro no banco e a rotina tenta de novo no dia seguinte.
+   * Se o commit falhar depois de apagar os arquivos, as linhas voltam sem
+   * arquivo, o que é inofensivo: a rodada seguinte as apaga de novo.
+   */
+  private async purgeSiteImages({
+    tx,
+    weddingId,
+  }: {
+    tx: Prisma.TransactionClient;
+    weddingId: string;
+  }): Promise<void> {
+    const images = await tx.siteImage.findMany({ where: { weddingId }, select: { id: true } });
+    if (images.length === 0) return;
+    await tx.siteImage.deleteMany({ where: { weddingId } });
+    const keys = images.map(({ id }) => siteImageKeys({ imageId: id }));
+    await this.storage.delete({ bucket: 'private', keys: keys.map((key) => key.original) });
+    await this.storage.delete({
+      bucket: 'public',
+      keys: keys.flatMap((key) => [key.display, key.thumb, key.og]),
     });
   }
 }

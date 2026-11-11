@@ -10,6 +10,7 @@ import { EmailModule } from './shared/email/email.module';
 import { HealthModule } from './shared/health/health.module';
 import { HttpSecurityModule } from './shared/http/http-security.module';
 import { JobsModule } from './shared/jobs/jobs.module';
+import { SiteModule } from './modules/site/site.module';
 import { StorageModule } from './shared/storage/storage.module';
 import { ObservabilityModule } from './shared/observability/observability.module';
 import { RateLimitModule } from './shared/rate-limit/rate-limit.module';
@@ -35,6 +36,7 @@ import { RedisModule } from './shared/redis/redis.module';
     HttpSecurityModule,
     AccessModule,
     GuestsModule,
+    SiteModule,
   ],
 })
 export class AppModule {}
