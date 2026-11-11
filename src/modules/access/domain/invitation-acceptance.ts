@@ -123,11 +123,10 @@ export function partnerChoice({
 
 /**
  * Código de indicação do perfil mínimo do cerimonialista (decisão 135, item 6):
- * o nome em minúsculas, sem acento, palavras unidas por hífen; se repetir,
- * sufixo numérico (juliana-prado-2).
+ * o nome em minúsculas, sem acento, palavras unidas por hífen.
  */
-export function* referralCodeCandidates({ name }: { name: string }): Generator<string> {
-  const base =
+export function referralCodeBase({ name }: { name: string }): string {
+  return (
     name
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
@@ -135,7 +134,29 @@ export function* referralCodeCandidates({ name }: { name: string }): Generator<s
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '')
       .slice(0, 60)
-      .replace(/-+$/, '') || 'cerimonialista';
-  yield base;
-  for (let n = 2; ; n++) yield `${base}-${n}`;
+      .replace(/-+$/, '') || 'cerimonialista'
+  );
+}
+
+/**
+ * Se a base repetir, o próximo sufixo numérico livre (decisão 135, item 6;
+ * decisão 211): o maior `base-N` em uso + 1, sem teto. `taken` são os códigos
+ * em uso que começam pela base (outros nomes, como `ana-silva-prado` para
+ * `ana-silva`, são ignorados).
+ */
+export function nextReferralCode({
+  base,
+  taken,
+}: {
+  base: string;
+  taken: readonly string[];
+}): string {
+  if (!taken.includes(base)) return base;
+  // A base só tem a-z, 0-9 e hífen: nada a escapar na expressão.
+  const suffix = new RegExp(`^${base}-(\\d+)$`);
+  const highest = taken.reduce((max, code) => {
+    const match = suffix.exec(code);
+    return match ? Math.max(max, Number(match[1])) : max;
+  }, 1);
+  return `${base}-${highest + 1}`;
 }

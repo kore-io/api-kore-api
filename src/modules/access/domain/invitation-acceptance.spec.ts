@@ -3,7 +3,8 @@ import {
   emailDiffers,
   invalidReason,
   partnerChoice,
-  referralCodeCandidates,
+  nextReferralCode,
+  referralCodeBase,
   type InvitationPartner,
 } from './invitation-acceptance';
 
@@ -81,13 +82,21 @@ describe('Convites de acesso: regras do aceite', () => {
     ).toBeNull();
   });
 
-  it('decisão 135 (6) - código de indicação: slug do nome, sem acento, com sufixo se repetir', () => {
-    const codes = referralCodeCandidates({ name: '  Júlia  D’Ávila Prado ' });
-    expect([codes.next().value, codes.next().value, codes.next().value]).toEqual([
-      'julia-d-avila-prado',
-      'julia-d-avila-prado-2',
-      'julia-d-avila-prado-3',
-    ]);
-    expect(referralCodeCandidates({ name: '!!!' }).next().value).toBe('cerimonialista');
+  it('decisão 135 (6) - código de indicação: slug do nome, sem acento', () => {
+    expect(referralCodeBase({ name: '  Júlia  D’Ávila Prado ' })).toBe('julia-d-avila-prado');
+    expect(referralCodeBase({ name: '!!!' })).toBe('cerimonialista');
+  });
+
+  it('decisão 211 - se repetir, o próximo sufixo numérico livre, sem teto', () => {
+    const base = 'ana-silva';
+    expect(nextReferralCode({ base, taken: [] })).toBe('ana-silva');
+    expect(nextReferralCode({ base, taken: ['ana-silva'] })).toBe('ana-silva-2');
+    const many = ['ana-silva', ...Array.from({ length: 59 }, (_, i) => `ana-silva-${i + 2}`)];
+    expect(nextReferralCode({ base, taken: many })).toBe('ana-silva-61');
+    // Outro nome com o mesmo começo não conta como sufixo.
+    expect(nextReferralCode({ base, taken: ['ana-silva', 'ana-silva-prado-7'] })).toBe(
+      'ana-silva-2',
+    );
+    expect(nextReferralCode({ base, taken: ['ana-silva-3'] })).toBe('ana-silva');
   });
 });
