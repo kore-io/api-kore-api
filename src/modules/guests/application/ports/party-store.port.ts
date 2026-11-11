@@ -10,6 +10,9 @@ export interface NewGuest {
   phone: string | null;
   email: string | null;
   isPlusOne: boolean;
+  /** Só a importação pela planilha traz (Importação RN05 e RN08). */
+  dietaryRestriction?: string | null;
+  tagIds?: readonly string[];
 }
 
 export interface NewParty {
@@ -36,6 +39,10 @@ export interface PartyStore {
     tagIds: readonly string[];
   }): Promise<string[]>;
   create({ party }: { party: NewParty }): Promise<void>;
+  /** Vários grupos de uma vez (a importação), em lotes; tudo na mesma transação. */
+  createMany({ parties }: { parties: readonly NewParty[] }): Promise<void>;
+  /** Os nomes dos grupos ativos do casamento (o aviso PARTY_NAME_EXISTS). */
+  activePartyNames({ weddingId }: { weddingId: string }): Promise<string[]>;
   /** Troca o token e sobe a versão; null se o grupo não está ativo no casamento. */
   regenerateLink({
     weddingId,

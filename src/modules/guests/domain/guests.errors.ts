@@ -84,3 +84,22 @@ export class AlreadyRespondedError extends Error {
 export class TrashItemNotFoundError extends Error {
   override name = 'TrashItemNotFoundError';
 }
+
+/** Mais de 1.000 convidados na importação (422 TOO_MANY_GUESTS; Importação RN10). */
+export class TooManyGuestsError extends Error {
+  override name = 'TooManyGuestsError';
+}
+
+/**
+ * Nome repetido no mesmo grupo na confirmação da lista colada (422 DUPLICATE;
+ * Importação RN11): o caminho aponta a pessoa repetida.
+ */
+export class DuplicateGuestError extends Error {
+  override name = 'DuplicateGuestError';
+  readonly path: string;
+
+  constructor({ path }: { path: string }) {
+    super();
+    this.path = path;
+  }
+}

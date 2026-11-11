@@ -14,6 +14,9 @@ import { PartiesController } from './presentation/parties.controller';
 import { GuestsController } from './presentation/guests.controller';
 import { TagsController } from './presentation/tags.controller';
 import { TrashController } from './presentation/trash.controller';
+import { GuestImportsController } from './presentation/guest-imports.controller';
+import { ImportPastedList, PreviewPastedList } from './application/import-paste.use-cases';
+import { GuestImportRateLimitGuard } from '../../shared/rate-limit/guest-import-rate-limit.guard';
 import { TRASH_STORE } from './application/ports/trash-store.port';
 import { PrismaTrashStore } from './infrastructure/prisma-trash.store';
 import {
@@ -36,7 +39,13 @@ import { MoveGuest } from './application/move-guest.use-case';
 /** Contexto Convidados: grupos, convidados, tags, lixeira, importação e exportação. */
 @Module({
   imports: [AccessModule],
-  controllers: [PartiesController, GuestsController, TagsController, TrashController],
+  controllers: [
+    PartiesController,
+    GuestsController,
+    TagsController,
+    TrashController,
+    GuestImportsController,
+  ],
   providers: [
     { provide: PARTY_STORE, useClass: PrismaPartyStore },
     { provide: PARTY_READER, useClass: PrismaPartyReader },
@@ -61,6 +70,9 @@ import { MoveGuest } from './application/move-guest.use-case';
     TrashTag,
     ListTrash,
     RestoreTrashItem,
+    PreviewPastedList,
+    ImportPastedList,
+    GuestImportRateLimitGuard,
   ],
 })
 export class GuestsModule {}

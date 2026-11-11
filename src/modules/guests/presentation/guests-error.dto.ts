@@ -80,3 +80,22 @@ export class TrashItemNotFoundErrorBody {
   @ApiProperty({ enum: ['TRASH_ITEM_NOT_FOUND'] }) error: 'TRASH_ITEM_NOT_FOUND';
   @ApiProperty() message: string;
 }
+
+/** Mais de 1.000 convidados na importação (Importação RN10). */
+export class TooManyGuestsErrorBody {
+  static readonly status = 422;
+  @ApiProperty({ enum: [422] }) statusCode: 422;
+  @ApiProperty({ enum: ['TOO_MANY_GUESTS'] }) error: 'TOO_MANY_GUESTS';
+  @ApiProperty() message: string;
+  @ApiProperty({ example: 1000 }) max: number;
+}
+
+/** Nome repetido no mesmo grupo na confirmação (Importação RN11). */
+export class DuplicateErrorBody {
+  static readonly status = 422;
+  @ApiProperty({ enum: [422] }) statusCode: 422;
+  @ApiProperty({ enum: ['DUPLICATE'] }) error: 'DUPLICATE';
+  @ApiProperty() message: string;
+  /** A pessoa repetida, ex.: groups.1.guests.2. */
+  @ApiProperty({ example: 'groups.1.guests.2' }) path: string;
+}
