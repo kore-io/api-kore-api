@@ -8,6 +8,9 @@ import {
   LastGuestError,
   PartyNotFoundError,
   PlusOnesInUseError,
+  TagLimitReachedError,
+  TagNameTakenError,
+  TagNotFoundError,
 } from '../domain/guests.errors';
 
 /**
@@ -50,6 +53,27 @@ export function toHttpError(error: unknown): unknown {
       error: 'PLUS_ONES_IN_USE',
       message: 'There are more filled or answered plus-ones than the slots asked.',
       inUse: error.inUse,
+    });
+  }
+  if (error instanceof TagNotFoundError) {
+    return new NotFoundException({
+      statusCode: 404,
+      error: 'TAG_NOT_FOUND',
+      message: 'Tag not found.',
+    });
+  }
+  if (error instanceof TagLimitReachedError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'TAG_LIMIT_REACHED',
+      message: 'The wedding already has 10 active tags.',
+    });
+  }
+  if (error instanceof TagNameTakenError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'TAG_NAME_TAKEN',
+      message: 'Another active tag already has this name.',
     });
   }
   return toAccessHttpError(error);

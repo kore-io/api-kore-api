@@ -49,3 +49,18 @@ export class PlusOnesInUseError extends Error {
     this.inUse = inUse;
   }
 }
+
+/** A tag não existe neste casamento ou está na lixeira (404 TAG_NOT_FOUND). */
+export class TagNotFoundError extends Error {
+  override name = 'TagNotFoundError';
+}
+
+/** O casamento já tem 10 tags ativas (409 TAG_LIMIT_REACHED; Tags RN01). */
+export class TagLimitReachedError extends Error {
+  override name = 'TagLimitReachedError';
+}
+
+/** Outra tag ativa tem o mesmo nome, sem diferenciar maiúsculas (409 TAG_NAME_TAKEN; RN02). */
+export class TagNameTakenError extends Error {
+  override name = 'TagNameTakenError';
+}

@@ -40,3 +40,26 @@ export class PlusOnesInUseErrorBody {
   /** "Já há {n} acompanhantes com resposta neste grupo." */
   @ApiProperty() inUse: number;
 }
+
+export class TagNotFoundErrorBody {
+  static readonly status = 404;
+  @ApiProperty({ enum: [404] }) statusCode: 404;
+  @ApiProperty({ enum: ['TAG_NOT_FOUND'] }) error: 'TAG_NOT_FOUND';
+  @ApiProperty() message: string;
+}
+
+/** 10 tags ativas (RN01); o app escolhe o texto pelo perfil. */
+export class TagLimitReachedErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['TAG_LIMIT_REACHED'] }) error: 'TAG_LIMIT_REACHED';
+  @ApiProperty() message: string;
+}
+
+/** "Já existe uma tag com este nome." (RN02). */
+export class TagNameTakenErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['TAG_NAME_TAKEN'] }) error: 'TAG_NAME_TAKEN';
+  @ApiProperty() message: string;
+}

@@ -12,6 +12,10 @@ import { PrismaPartyStore } from './infrastructure/prisma-party.store';
 import { RandomPartyLinks } from './infrastructure/random-party-links';
 import { PartiesController } from './presentation/parties.controller';
 import { GuestsController } from './presentation/guests.controller';
+import { TagsController } from './presentation/tags.controller';
+import { TAG_STORE } from './application/ports/tag-store.port';
+import { PrismaTagStore } from './infrastructure/prisma-tag.store';
+import { ApplyTag, CreateTag, ListTags, UpdateTag } from './application/tags.use-cases';
 import { GROUP_STORE } from './application/ports/group-store.port';
 import { PrismaGroupStore } from './infrastructure/prisma-group.store';
 import { UpdateParty } from './application/update-party.use-case';
@@ -20,7 +24,7 @@ import { MoveGuest } from './application/move-guest.use-case';
 /** Contexto Convidados: grupos, convidados, tags, lixeira, importação e exportação. */
 @Module({
   imports: [AccessModule],
-  controllers: [PartiesController, GuestsController],
+  controllers: [PartiesController, GuestsController, TagsController],
   providers: [
     { provide: PARTY_STORE, useClass: PrismaPartyStore },
     { provide: PARTY_READER, useClass: PrismaPartyReader },
@@ -32,6 +36,11 @@ import { MoveGuest } from './application/move-guest.use-case';
     { provide: GROUP_STORE, useClass: PrismaGroupStore },
     UpdateParty,
     MoveGuest,
+    { provide: TAG_STORE, useClass: PrismaTagStore },
+    ListTags,
+    CreateTag,
+    UpdateTag,
+    ApplyTag,
   ],
 })
 export class GuestsModule {}
