@@ -44,6 +44,7 @@ a API não sobe com variável faltando ou inválida.
 ```bash
 cp .env.example .env
 pnpm db:setup          # aplica as migrations e cria o usuário local kore_api
+pnpm storage:setup     # cria os buckets do MinIO (privado dos originais e público das versões)
 pnpm db:migrate:dev    # nova migration (--create-only): revise o SQL antes de aplicar
 pnpm db:seed           # Dados de exemplo do Kore (local, test e homolog; recusa produção)
 ```

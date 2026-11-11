@@ -4,7 +4,8 @@ import './load-test-env';
 
 /**
  * Prepara o banco real dos testes: cria o kore_test se não existir, aplica as
- * migrations e cria o usuário da API. Requer o docker compose no ar.
+ * migrations, cria o usuário da API e os buckets do MinIO. Requer o docker
+ * compose no ar.
  */
 export default async function globalSetup(): Promise<void> {
   const migrationUrl = new URL(process.env.DATABASE_MIGRATION_URL ?? '');
@@ -35,4 +36,6 @@ export default async function globalSetup(): Promise<void> {
   }
 
   execSync('pnpm -s db:setup', { stdio: 'inherit', env: process.env });
+  // Os buckets kore-test-* no MinIO (Imagens do site).
+  execSync('pnpm -s storage:setup', { stdio: 'inherit', env: process.env });
 }

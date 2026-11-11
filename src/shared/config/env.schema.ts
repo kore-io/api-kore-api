@@ -82,6 +82,21 @@ export const envSchema = z
     OAUTH_STATE_KEY: base64Key32,
     // Versão vigente dos Termos e da Política (RN11 de Cadastro; decisão 166).
     TERMS_VERSION: z.string().min(1).default('2026-09'),
+    // Armazenamento compatível com S3 (Imagens do site, RN06): MinIO no local,
+    // R2 em homologação e produção (ADR do MinIO). Path-style só no MinIO.
+    STORAGE_ENDPOINT: z.url({ protocol: /^https?$/ }),
+    STORAGE_REGION: z.string().min(1).default('auto'),
+    STORAGE_ACCESS_KEY_ID: z.string().min(1),
+    STORAGE_SECRET_ACCESS_KEY: z.string().min(1),
+    STORAGE_FORCE_PATH_STYLE: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
+    // Originais do envio, nunca públicos; e as versões servidas pelo CDN.
+    STORAGE_PRIVATE_BUCKET: z.string().min(3),
+    STORAGE_PUBLIC_BUCKET: z.string().min(3),
+    // Base pública das versões servidas (o domínio do CDN; no local, o MinIO).
+    STORAGE_PUBLIC_URL: z.url({ protocol: /^https?$/ }),
     // Observabilidade: console no local; o OTLP do SigNoz entra com a infraestrutura.
     OTEL_EXPORTER: z.enum(OTEL_EXPORTERS).default('none'),
     LOG_LEVEL: z
