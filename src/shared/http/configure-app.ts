@@ -64,7 +64,15 @@ export function configureApp({
   const corsByRoute: CorsOptionsDelegate<Request> = (request, callback) => {
     const origin = request.headers.origin;
     const allowed = originsFor({
-      isSiteRoute: siteRoutes?.isSitePath({ path: request.path }) ?? false,
+      isSiteRoute:
+        siteRoutes?.isSiteRoute({
+          path: request.path,
+          // No preflight, o método da requisição que vem depois.
+          method:
+            request.method === 'OPTIONS'
+              ? String(request.headers['access-control-request-method'] ?? '')
+              : request.method,
+        }) ?? false,
       appOrigins: allowedOrigins,
       siteOrigin,
     });

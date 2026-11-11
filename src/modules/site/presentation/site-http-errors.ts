@@ -7,6 +7,8 @@ import {
 import { toHttpError as toAccessHttpError } from '../../access/presentation/access-http-errors';
 import { validationError } from '../../../shared/http/validation-errors';
 import {
+  SiteDraftError,
+  SiteNotFoundError,
   ContrastTooLowError,
   SiteImageInvalidError,
   SiteImageLimitReachedError,
@@ -24,6 +26,20 @@ import {
  * WEDDING_NOT_FOUND e 403 ACTION_NOT_ALLOWED) seguem o mapa do Acesso.
  */
 export function toHttpError(error: unknown): unknown {
+  if (error instanceof SiteNotFoundError) {
+    return new NotFoundException({
+      statusCode: 404,
+      error: 'SITE_NOT_FOUND',
+      message: 'Site not found.',
+    });
+  }
+  if (error instanceof SiteDraftError) {
+    return new NotFoundException({
+      statusCode: 404,
+      error: 'SITE_DRAFT',
+      message: 'The site is not published yet.',
+    });
+  }
   if (error instanceof SiteFieldsInvalidError) return validationError({ errors: error.issues });
   if (error instanceof ContrastTooLowError) {
     return new UnprocessableEntityException({

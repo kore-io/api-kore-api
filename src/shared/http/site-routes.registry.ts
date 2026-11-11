@@ -34,9 +34,17 @@ export class SiteRouteRegistry {
     private readonly reflector: Reflector,
   ) {}
 
-  /** Algum método de rota do site responde neste caminho (o preflight não sabe o método). */
-  isSitePath({ path }: { path: string }): boolean {
-    return this.routes().some(({ pattern }) => pattern.test(path));
+  /**
+   * Uma rota do site responde a este método neste caminho. No preflight, o
+   * método é o do Access-Control-Request-Method (quem chama passa ele).
+   */
+  isSiteRoute({ path, method }: { path: string; method: string }): boolean {
+    const requested = RequestMethod[method.toUpperCase() as keyof typeof RequestMethod];
+    return this.routes().some(
+      (route) =>
+        (route.method === RequestMethod.ALL || route.method === requested) &&
+        route.pattern.test(path),
+    );
   }
 
   private routes(): SiteRouteMatcher[] {
