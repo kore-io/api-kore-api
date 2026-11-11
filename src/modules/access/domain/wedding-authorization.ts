@@ -12,12 +12,19 @@ export type WeddingAction =
   /** Convidar o cerimonialista (RN02 de Convites): dono. */
   | 'invite_planner'
   /** Remover colaborador (RN02, RN03 e RN06 de Papéis): só o dono. */
-  | 'remove_collaborator';
+  | 'remove_collaborator'
+  /** Mexer na lista de convidados, tags e lixeira (Grupos RN02): qualquer vínculo (186(4)). */
+  | 'manage_guests'
+  /** Exportar a lista (Exportação RN07): qualquer vínculo (186(4)). */
+  | 'export_guests'
+  /** Mandar para a lixeira quem já respondeu (Lixeira RN07): só o dono (184(15)). */
+  | 'trash_responded';
 
 const OWNER_ONLY: ReadonlySet<WeddingAction> = new Set([
   'invite_partner',
   'invite_planner',
   'remove_collaborator',
+  'trash_responded',
 ]);
 
 /**
