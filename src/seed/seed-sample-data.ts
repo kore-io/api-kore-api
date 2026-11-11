@@ -1,7 +1,10 @@
+import { randomBytes } from 'node:crypto';
 import type { Prisma, PrismaClient } from '../generated/prisma/client';
 import { invitationExpiresAt } from '../modules/access/domain/access-invitation';
 import { timezoneForState } from '../modules/access/domain/wedding-signup';
 import { OpaqueSessionTokens } from '../modules/access/infrastructure/opaque-session-tokens';
+import { recomputeWeddingStats } from '../modules/guests/infrastructure/backoffice/wedding-stats-recompute';
+import { uuidV7 } from '../shared/ids/uuid-v7';
 import { INVITATION_PATH } from '../modules/access/infrastructure/outbox-invitation-mailer';
 import {
   ownAccountEmail,
@@ -13,6 +16,7 @@ import {
   SAMPLE_WEDDINGS,
   type SampleWedding,
 } from './sample-data';
+import { SAMPLE_GUESTS_WEDDING, SAMPLE_PARTIES, SAMPLE_TAGS } from './sample-guests';
 
 /** O seed roda em local, test e homologação; nunca em produção (decisão 181). */
 export const SEED_ALLOWED_ENVS = ['local', 'test', 'homolog'] as const;
@@ -62,6 +66,10 @@ export async function seedSampleData({
           await upsertWedding({ tx, wedding, users, plannerReferrerId: referrers.planner, now }),
         );
       }
+      const weddingId = weddings.get(SAMPLE_GUESTS_WEDDING);
+      if (!weddingId)
+        throw new Error(`Casamento de exemplo desconhecido: ${SAMPLE_GUESTS_WEDDING}`);
+      await upsertGuests({ tx, weddingId, now });
       return upsertInvitations({ tx, users, weddings, appEnv, appUrl, now });
     },
     { timeout: 60_000 },
@@ -388,4 +396,95 @@ async function upsertInvitations({
     });
   }
   return seeded;
+}
+
+/**
+ * Tags, grupos e convidados de Ana e Marcos (Fase 1), idempotente pelo nome:
+ * um grupo ou uma tag que já existe fica como está. Os números do casamento
+ * são recalculados do Guest no fim (Grupos RN16).
+ */
+async function upsertGuests({
+  tx,
+  weddingId,
+  now,
+}: {
+  tx: Tx;
+  weddingId: string;
+  now: Date;
+}): Promise<void> {
+  const tagIds = new Map<string, string>();
+  for (const name of SAMPLE_TAGS) {
+    const existing = await tx.tag.findFirst({
+      where: { weddingId, name: { equals: name, mode: 'insensitive' }, deletedAt: null },
+      select: { id: true },
+    });
+    tagIds.set(
+      name,
+      existing?.id ?? (await tx.tag.create({ data: { weddingId, name }, select: { id: true } })).id,
+    );
+  }
+
+  for (const [partyIndex, party] of SAMPLE_PARTIES.entries()) {
+    const exists = await tx.party.findFirst({
+      where: { weddingId, name: party.name, deletedAt: null },
+      select: { id: true },
+    });
+    if (exists) continue;
+    // Um instante por grupo e um milissegundo por pessoa: a ordem do grupo é
+    // joinedPartyAt e id (RN17).
+    const base = now.getTime() + partyIndex * 1000;
+    const partyId = uuidV7({ now: base });
+    const guests = [
+      ...party.guests.map((guest, index) => ({
+        id: uuidV7({ now: base + index }),
+        name: guest.name,
+        ageGroup: guest.ageGroup ?? null,
+        phone: guest.phone ?? null,
+        rsvpStatus: guest.rsvpStatus ?? 'pending',
+        isPlusOne: false,
+        contact: guest.contact ?? false,
+      })),
+      ...Array.from({ length: party.plusOneSlots ?? 0 }, (_, index) => ({
+        id: uuidV7({ now: base + party.guests.length + index }),
+        name: null,
+        ageGroup: null,
+        phone: null,
+        rsvpStatus: 'pending' as const,
+        isPlusOne: true,
+        contact: false,
+      })),
+    ];
+    await tx.party.create({
+      data: {
+        id: partyId,
+        weddingId,
+        name: party.name,
+        linkToken: randomBytes(16).toString('base64url'),
+        contactGuestId: guests.find((guest) => guest.contact)?.id ?? null,
+        plusOneSlots: party.plusOneSlots ?? 0,
+        deliveryStatus: party.deliveryStatus,
+        respondedAt: party.respondedAt ? new Date(party.respondedAt) : null,
+      },
+    });
+    await tx.guest.createMany({
+      data: guests.map((guest) => ({
+        id: guest.id,
+        name: guest.name,
+        ageGroup: guest.ageGroup,
+        phone: guest.phone,
+        rsvpStatus: guest.rsvpStatus,
+        isPlusOne: guest.isPlusOne,
+        weddingId,
+        partyId,
+        joinedPartyAt: new Date(base),
+        respondedAt:
+          guest.rsvpStatus !== 'pending' && party.respondedAt ? new Date(party.respondedAt) : null,
+      })),
+    });
+    if (party.tag)
+      await tx.partyTag.create({
+        data: { weddingId, partyId, tagId: tagIds.get(party.tag) as string },
+      });
+  }
+  await recomputeWeddingStats({ db: tx, weddingId });
 }

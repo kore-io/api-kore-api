@@ -34,6 +34,9 @@ describe('Dados de exemplo do Kore (seed da Fase 0; banco real)', () => {
       memberships: await db.membership.count({
         where: { removedAt: null, wedding: sampleWeddings },
       }),
+      parties: await db.party.count({ where: { wedding: sampleWeddings } }),
+      guests: await db.guest.count({ where: { wedding: sampleWeddings } }),
+      tags: await db.tag.count({ where: { wedding: sampleWeddings } }),
       pendingInvitations: await db.accessInvitation.count({
         where: {
           wedding: sampleWeddings,
@@ -53,6 +56,48 @@ describe('Dados de exemplo do Kore (seed da Fase 0; banco real)', () => {
     expect(before.weddings).toBe(14);
     expect(before.pendingInvitations).toBe(5);
     expect(first.every(({ url }) => url.startsWith(`${appUrl}/convite/seed-`))).toBe(true);
+  });
+
+  it('Grupos (F1) - Ana vê os grupos de exemplo pela API, com o contato mascarado, e os números do casamento batem', async () => {
+    await run();
+    const ana = await db.user.findUniqueOrThrow({
+      where: { email: `ana.moreira@${SAMPLE_EMAIL_DOMAIN}` },
+    });
+    const wedding = await db.wedding.findUniqueOrThrow({ where: { slug: 'ana-e-marcos' } });
+    const cookie = await openSession({ app, userId: ana.id });
+
+    const response = await request(app.getHttpServer())
+      .get(`/v1/weddings/${wedding.id}/parties`)
+      .query({ q: 'moreira' })
+      .set('Cookie', cookie)
+      .expect(200);
+
+    expect(response.body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: 'Família Moreira',
+          contact: expect.objectContaining({
+            name: 'Célia Moreira',
+            phoneMasked: '(19) 9****-3310',
+          }),
+          counts: { confirmed: 3, declined: 0, pending: 0, pendingPlusOnes: 0 },
+          deliveryStatus: 'responded',
+          tags: [expect.objectContaining({ name: 'Família da Ana' })],
+        }),
+        expect.objectContaining({ name: 'Vó Helena', contact: null }),
+      ]),
+    );
+    const summary = response.body.summary as { guests: number; pending: number };
+    expect(
+      await db.weddingStats.findUniqueOrThrow({ where: { weddingId: wedding.id } }),
+    ).toMatchObject({
+      guestsTotal: summary.guests,
+      pending: summary.pending,
+      confirmed: 6,
+      declined: 1,
+      adultsConfirmed: 5,
+      childrenConfirmed: 1,
+    });
   });
 
   it('decisão 181 - nenhum e-mail do seed sai do domínio de exemplo', async () => {
