@@ -74,7 +74,7 @@ export class CreatePartyBody {
   @Transform(trim) @IsString() @IsNotEmpty() @MaxLength(PARTY_NAME_MAX) name: string;
 
   /** Um ou mais, na ordem do grupo (RN03, RN17). */
-  @ApiProperty({ type: [CreatePartyGuestBody] })
+  @ApiProperty({ type: [CreatePartyGuestBody], minItems: 1, maxItems: GUESTS_PER_PARTY_MAX })
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(GUESTS_PER_PARTY_MAX)
@@ -166,7 +166,7 @@ export class UpdatePartyBody {
   name?: string;
 
   /** Os editados (com id) e os novos (sem id). Não tira convidado: tirar é a lixeira. */
-  @ApiProperty({ type: [UpdatePartyGuestBody], required: false })
+  @ApiProperty({ type: [UpdatePartyGuestBody], required: false, maxItems: GUESTS_PER_PARTY_MAX })
   @OptionalNotNull()
   @IsArray()
   @ArrayMaxSize(GUESTS_PER_PARTY_MAX)

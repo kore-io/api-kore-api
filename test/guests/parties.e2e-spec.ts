@@ -40,6 +40,18 @@ describe('Grupos e convidados (banco real)', () => {
       .post(`/v1/weddings/${weddingId}/parties/${partyId}/regenerate-link`)
       .set('Cookie', cookie)
       .set('Origin', APP_ORIGIN);
+  const update = (cookie: string, weddingId: string, partyId: string, body: object) =>
+    http()
+      .patch(`/v1/weddings/${weddingId}/parties/${partyId}`)
+      .set('Cookie', cookie)
+      .set('Origin', APP_ORIGIN)
+      .send(body);
+  const move = (cookie: string, weddingId: string, guestId: string, partyId: string) =>
+    http()
+      .post(`/v1/weddings/${weddingId}/guests/${guestId}/move`)
+      .set('Cookie', cookie)
+      .set('Origin', APP_ORIGIN)
+      .send({ partyId });
 
   async function anaWedding() {
     const ana = await signedInUser({ app, name: 'Ana' });
@@ -343,15 +355,28 @@ describe('Grupos e convidados (banco real)', () => {
       }).expect(201);
       const stranger = await signedInUser({ app, name: 'Estranha' });
 
+      const other = await create(ana.cookie, weddingId, {
+        name: 'B',
+        guests: [guest('Bia')],
+      }).expect(201);
+      const ana1 = (party.body as { guests: { id: string }[] }).guests[0].id;
+
       for (const response of [
         await list(stranger.cookie, weddingId),
         await create(stranger.cookie, weddingId, { name: 'X', guests: [guest('X')] }),
         await get(stranger.cookie, weddingId, party.body.id),
         await regenerate(stranger.cookie, weddingId, party.body.id),
+        await update(stranger.cookie, weddingId, party.body.id, { name: 'Outro nome' }),
+        await move(stranger.cookie, weddingId, ana1, other.body.id),
       ]) {
         expect(response.status).toBe(404);
         expect(response.body.error).toBe('WEDDING_NOT_FOUND');
       }
+      // Nada mudou: o nome e o grupo do convidado continuam.
+      expect((await db.party.findUniqueOrThrow({ where: { id: party.body.id } })).name).toBe('A');
+      expect((await db.guest.findUniqueOrThrow({ where: { id: ana1 } })).partyId).toBe(
+        party.body.id,
+      );
     });
   });
 
