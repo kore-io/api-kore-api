@@ -13,6 +13,18 @@ import { RandomPartyLinks } from './infrastructure/random-party-links';
 import { PartiesController } from './presentation/parties.controller';
 import { GuestsController } from './presentation/guests.controller';
 import { TagsController } from './presentation/tags.controller';
+import { TrashController } from './presentation/trash.controller';
+import { TRASH_STORE } from './application/ports/trash-store.port';
+import { PrismaTrashStore } from './infrastructure/prisma-trash.store';
+import {
+  ListTrash,
+  RestoreTrashItem,
+  TrashGuest,
+  TrashParties,
+  TrashParty,
+  TrashSupport,
+  TrashTag,
+} from './application/trash.use-cases';
 import { TAG_STORE } from './application/ports/tag-store.port';
 import { PrismaTagStore } from './infrastructure/prisma-tag.store';
 import { ApplyTag, CreateTag, ListTags, UpdateTag } from './application/tags.use-cases';
@@ -24,7 +36,7 @@ import { MoveGuest } from './application/move-guest.use-case';
 /** Contexto Convidados: grupos, convidados, tags, lixeira, importação e exportação. */
 @Module({
   imports: [AccessModule],
-  controllers: [PartiesController, GuestsController, TagsController],
+  controllers: [PartiesController, GuestsController, TagsController, TrashController],
   providers: [
     { provide: PARTY_STORE, useClass: PrismaPartyStore },
     { provide: PARTY_READER, useClass: PrismaPartyReader },
@@ -41,6 +53,14 @@ import { MoveGuest } from './application/move-guest.use-case';
     CreateTag,
     UpdateTag,
     ApplyTag,
+    { provide: TRASH_STORE, useClass: PrismaTrashStore },
+    TrashSupport,
+    TrashParty,
+    TrashParties,
+    TrashGuest,
+    TrashTag,
+    ListTrash,
+    RestoreTrashItem,
   ],
 })
 export class GuestsModule {}

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -8,7 +9,9 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { ApiTags } from '@nestjs/swagger';
 import {
   ApiErrorResponses,
@@ -21,6 +24,8 @@ import {
 } from '../../access/presentation/access-error.dto';
 import { CurrentSession } from '../../access/presentation/current-session.decorator';
 import { ApplyTag, CreateTag, ListTags, UpdateTag } from '../application/tags.use-cases';
+import { TrashTag } from '../application/trash.use-cases';
+import { TrashedTagResponse } from './trash.dto';
 import { TagNotFoundError } from '../domain/guests.errors';
 import {
   TagLimitReachedErrorBody,
@@ -45,7 +50,40 @@ export class TagsController {
     private readonly createTag: CreateTag,
     private readonly updateTag: UpdateTag,
     private readonly applyTag: ApplyTag,
+    private readonly trashTag: TrashTag,
   ) {}
+
+  /** Excluir a tag: vai para a lixeira, com os vínculos guardados (Lixeira RN05). */
+  @Delete(':tagId')
+  @ApiErrorResponses(
+    ...commonErrors({ session: true, write: true }),
+    ActionNotAllowedErrorBody,
+    WeddingNotFoundErrorBody,
+    TagNotFoundErrorBody,
+  )
+  async trash(
+    @CurrentSession() session: AuthenticatedSession,
+    @Param('weddingId') weddingId: string,
+    @Param(
+      'tagId',
+      new ParseUUIDPipe({ exceptionFactory: () => toHttpError(new TagNotFoundError()) }),
+    )
+    tagId: string,
+    @Req() request: Request,
+  ): Promise<TrashedTagResponse> {
+    try {
+      const tag = await this.trashTag.execute({
+        userId: session.userId,
+        weddingId,
+        tagId,
+        ip: request.ip ?? null,
+        now: new Date(),
+      });
+      return { ...tag, deletedAt: tag.deletedAt.toISOString() };
+    } catch (error) {
+      throw toHttpError(error);
+    }
+  }
 
   /** Tela Tags, Novo grupo e filtro da lista (Tags RN04, RN05). */
   @Get()

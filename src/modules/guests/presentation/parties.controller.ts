@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -28,8 +29,14 @@ import { GetParty } from '../application/get-party.use-case';
 import { ListParties } from '../application/list-parties.use-case';
 import { RegeneratePartyLink } from '../application/regenerate-party-link.use-case';
 import { UpdateParty } from '../application/update-party.use-case';
+import { TrashParties, TrashParty } from '../application/trash.use-cases';
+import { TrashPartiesBody, TrashPartiesResponse, TrashedPartyResponse } from './trash.dto';
 import { PartyNotFoundError } from '../domain/guests.errors';
-import { PartyNotFoundErrorBody, PlusOnesInUseErrorBody } from './guests-error.dto';
+import {
+  AlreadyRespondedErrorBody,
+  PartyNotFoundErrorBody,
+  PlusOnesInUseErrorBody,
+} from './guests-error.dto';
 import { toHttpError } from './guests-http-errors';
 import {
   CreatePartyBody,
@@ -53,7 +60,65 @@ export class PartiesController {
     private readonly listParties: ListParties,
     private readonly regenerateLink: RegeneratePartyLink,
     private readonly updateParty: UpdateParty,
+    private readonly trashParty: TrashParty,
+    private readonly trashParties: TrashParties,
   ) {}
+
+  /** Seleção múltipla, Mover para a lixeira (Lixeira RN06 e RN07). */
+  @Post('trash')
+  @HttpCode(HttpStatus.OK)
+  @ApiErrorResponses(
+    ...commonErrors({ validated: true, session: true, write: true }),
+    ActionNotAllowedErrorBody,
+    WeddingNotFoundErrorBody,
+  )
+  async trashMany(
+    @CurrentSession() session: AuthenticatedSession,
+    @Param('weddingId') weddingId: string,
+    @Body() body: TrashPartiesBody,
+    @Req() request: Request,
+  ): Promise<TrashPartiesResponse> {
+    try {
+      return await this.trashParties.execute({
+        userId: session.userId,
+        weddingId,
+        partyIds: body.partyIds,
+        ip: request.ip ?? null,
+        now: new Date(),
+      });
+    } catch (error) {
+      throw toHttpError(error);
+    }
+  }
+
+  /** Mover o grupo para a lixeira, com os convidados dele (Lixeira RN03 e RN07). */
+  @Delete(':partyId')
+  @ApiErrorResponses(
+    ...commonErrors({ session: true, write: true }),
+    ActionNotAllowedErrorBody,
+    AlreadyRespondedErrorBody,
+    WeddingNotFoundErrorBody,
+    PartyNotFoundErrorBody,
+  )
+  async trash(
+    @CurrentSession() session: AuthenticatedSession,
+    @Param('weddingId') weddingId: string,
+    @Param('partyId', partyIdPipe) partyId: string,
+    @Req() request: Request,
+  ): Promise<TrashedPartyResponse> {
+    try {
+      const party = await this.trashParty.execute({
+        userId: session.userId,
+        weddingId,
+        partyId,
+        ip: request.ip ?? null,
+        now: new Date(),
+      });
+      return { ...party, deletedAt: party.deletedAt.toISOString() };
+    } catch (error) {
+      throw toHttpError(error);
+    }
+  }
 
   /** Grupos e convidados, a lista (Grupos RN13). */
   @Get()
