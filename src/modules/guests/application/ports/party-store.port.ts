@@ -48,6 +48,11 @@ export interface PartyStore {
     linkToken: string;
     now: Date;
   }): Promise<{ linkToken: string; regeneratedAt: Date } | null>;
+  /**
+   * Trava a linha dos números do casamento antes de mexer nos convidados, para
+   * o recálculo noturno não contar no meio de uma escrita (RN16).
+   */
+  lockStats({ weddingId }: { weddingId: string }): Promise<void>;
   /** Soma o delta nos números do casamento, na mesma transação (RN16). */
   applyStats({ weddingId, delta }: { weddingId: string; delta: StatsDelta }): Promise<void>;
 }

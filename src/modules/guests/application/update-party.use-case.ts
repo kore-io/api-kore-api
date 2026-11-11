@@ -86,6 +86,8 @@ export class UpdateParty {
     now: Date;
   }): Promise<PartyView> {
     await this.authorization.require({ userId, weddingId, action: 'manage_guests' });
+    // Antes de qualquer leitura: a escrita e o recálculo noturno não se cruzam (RN16).
+    await this.parties.lockStats({ weddingId });
     await this.groups.lock({ weddingId, partyIds: [partyId] });
     const group = await this.groups.load({ weddingId, partyId });
     if (!group) throw new PartyNotFoundError();
@@ -96,7 +98,16 @@ export class UpdateParty {
     // Os convidados com id: só os com nome deste grupo (a vaga não se edita aqui).
     const edits: { member: GroupMemberRow; changes: GuestChanges; tagIds?: string[] }[] = [];
     const additions: { input: UpdatePartyGuestInput; index: number }[] = [];
+    const seen = new Set<string>();
     guests.forEach((input, index) => {
+      // O mesmo convidado duas vezes no pedido: qual edição vale seria um acaso.
+      if (input.id !== undefined) {
+        if (seen.has(input.id)) {
+          issues.push({ path: `guests.${index}.id`, code: 'DUPLICATE_GUEST', params: {} });
+          return;
+        }
+        seen.add(input.id);
+      }
       if (input.name === null || (input.id === undefined && input.name === undefined))
         issues.push({ path: `guests.${index}.name`, code: 'IS_NOT_EMPTY', params: {} });
       const phone = this.phoneOf({ input, index, issues });

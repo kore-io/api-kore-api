@@ -18,9 +18,11 @@ export class WeddingStatsRecomputeProcessor extends WorkerHost {
     super();
   }
 
-  async process(): Promise<{ corrected: number }> {
+  async process(): Promise<{ corrected: number; skipped: number }> {
     const result = await this.recompute.execute({ now: new Date() });
-    logger.log(`Recálculo: ${result.corrected} casamentos corrigidos.`);
+    logger.log(
+      `Recálculo: ${result.corrected} casamentos corrigidos, ${result.skipped} para a próxima noite.`,
+    );
     return result;
   }
 

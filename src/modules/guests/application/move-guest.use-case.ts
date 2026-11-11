@@ -60,6 +60,8 @@ export class MoveGuest {
     now: Date;
   }): Promise<{ guestId: string; fromPartyId: string; toPartyId: string }> {
     await this.authorization.require({ userId, weddingId, action: 'manage_guests' });
+    // Antes de qualquer leitura: a escrita e o recálculo noturno não se cruzam (RN16).
+    await this.parties.lockStats({ weddingId });
     const found = await this.groups.findGuest({ weddingId, guestId });
     if (!found) throw new GuestNotFoundError();
     const fromPartyId = found.partyId;
