@@ -60,6 +60,15 @@ describe('Origem por rota: o site só fala com as rotas do site (API inteira)', 
     expect(response.headers['access-control-allow-credentials']).toBe('true');
   });
 
+  it('RN07 - o preflight confere o método: um DELETE que a rota do site não tem não recebe CORS', async () => {
+    const response = await request(app.getHttpServer())
+      .options('/v1/sites-test/ana-e-marcos/ping')
+      .set('Origin', SITE_ORIGIN)
+      .set('Access-Control-Request-Method', 'DELETE');
+
+    expect(response.headers['access-control-allow-origin']).toBeUndefined();
+  });
+
   it('RN07 - um GET do app vindo da origem do site não recebe CORS e não usa a sessão do casal', async () => {
     const response = await request(app.getHttpServer())
       .get('/v1/me')

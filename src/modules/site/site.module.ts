@@ -13,6 +13,13 @@ import { UpdateSiteAppearance } from './application/update-site-appearance.use-c
 import { UpdateSiteBasics } from './application/update-site-basics.use-case';
 import { PrismaSiteReader } from './infrastructure/prisma-site.reader';
 import { PrismaSiteStore } from './infrastructure/prisma-site.store';
+import { PUBLIC_SITE_READER } from './application/ports/public-site-reader.port';
+import { GetPublicSite, GetSiteLinkPreview } from './application/public-site.use-cases';
+import { PrismaPublicSiteReader } from './infrastructure/prisma-public-site.reader';
+import {
+  PublicSiteController,
+  SiteLinkPreviewController,
+} from './presentation/public-site.controller';
 import { SiteController } from './presentation/site.controller';
 import { SITE_IMAGE_STORE } from './application/ports/site-image-store.port';
 import { PrismaSiteImageStore } from './infrastructure/prisma-site-image.store';
@@ -21,7 +28,12 @@ import { SiteImagesController } from './presentation/site-images.controller';
 /** Contexto Site (F2): Editor do site, imagens, site público, prévia e Simule. */
 @Module({
   imports: [AccessModule],
-  controllers: [SiteImagesController, SiteController],
+  controllers: [
+    SiteImagesController,
+    SiteController,
+    PublicSiteController,
+    SiteLinkPreviewController,
+  ],
   providers: [
     { provide: SITE_IMAGE_STORE, useClass: PrismaSiteImageStore },
     AuthorizeSiteImageUpload,
@@ -34,6 +46,9 @@ import { SiteImagesController } from './presentation/site-images.controller';
     UpdateSiteBasics,
     UpdateSiteAppearance,
     UpdateSiteSection,
+    { provide: PUBLIC_SITE_READER, useClass: PrismaPublicSiteReader },
+    GetPublicSite,
+    GetSiteLinkPreview,
     SiteImageRateLimitGuard,
   ],
 })

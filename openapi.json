@@ -4429,6 +4429,115 @@
           "site"
         ]
       }
+    },
+    "/v1/sites/{slug}": {
+      "get": {
+        "operationId": "PublicSiteController_get_v1",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicSiteResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/SiteNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteDraftErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "O site, com o recorte do visitante feito no servidor (RN05). Nenhum cache\npode guardar a resposta: a de um grupo não pode chegar a um visitante (RN03).",
+        "tags": [
+          "sites"
+        ]
+      }
+    },
+    "/v1/public/sites/{slug}/preview": {
+      "get": {
+        "operationId": "SiteLinkPreviewController_preview_v1",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteLinkPreviewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cacheada 5 minutos, sem purga na F2 (decisão 207, item 10); sem dado de grupo.",
+        "tags": [
+          "sites"
+        ]
+      }
     }
   },
   "info": {
@@ -8952,6 +9061,343 @@
             "format": "uuid"
           }
         }
+      },
+      "SiteNotFoundErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SITE_NOT_FOUND"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SiteDraftErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SITE_DRAFT"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PublicAppearanceResponse": {
+        "type": "object",
+        "properties": {
+          "fontPairKey": {
+            "type": "string"
+          },
+          "primaryColor": {
+            "type": "string"
+          },
+          "primaryForeground": {
+            "type": "string",
+            "description": "#FFFFFF ou #1F1F1F, escolhido pelo servidor (Aparência RN09)."
+          },
+          "accentColor": {
+            "type": "string"
+          },
+          "backgroundMode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "fontPairKey",
+          "primaryColor",
+          "primaryForeground",
+          "accentColor",
+          "backgroundMode"
+        ]
+      },
+      "PublicCoverResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "width": {
+            "type": "number"
+          },
+          "height": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "url",
+          "width",
+          "height"
+        ]
+      },
+      "PublicPartyResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "PublicPreviewModeResponse": {
+        "type": "object",
+        "properties": {
+          "as": {
+            "enum": [
+              "visitor",
+              "party"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "as"
+        ]
+      },
+      "PublicViewerResponse": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "Visitante, grupo identificado (link do convite) ou prévia (Site público RN05).",
+            "enum": [
+              "visitor",
+              "party",
+              "preview"
+            ],
+            "type": "string"
+          },
+          "party": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublicPartyResponse"
+              }
+            ]
+          },
+          "preview": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublicPreviewModeResponse"
+              }
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "party",
+          "preview"
+        ]
+      },
+      "PublicContactResponse": {
+        "type": "object",
+        "properties": {
+          "whatsapp": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "whatsapp",
+          "email"
+        ]
+      },
+      "PublicSectionResponse": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "story",
+              "countdown",
+              "ceremony",
+              "lodging",
+              "dress_code",
+              "faq"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "O título do menu (RN10); a contagem não tem."
+          },
+          "locked": {
+            "type": "boolean",
+            "description": "Cerimônia para o visitante: o cartão fechado, sem conteúdo (RN05)."
+          },
+          "content": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "O conteúdo do tipo, com as imagens prontas no lugar dos ids."
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "PublicSiteResponse": {
+        "type": "object",
+        "properties": {
+          "eventDate": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-11-14"
+          },
+          "appearance": {
+            "$ref": "#/components/schemas/PublicAppearanceResponse"
+          },
+          "cover": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublicCoverResponse"
+              }
+            ]
+          },
+          "viewer": {
+            "$ref": "#/components/schemas/PublicViewerResponse"
+          },
+          "contact": {
+            "nullable": true,
+            "description": "Só para o grupo identificado (RN05 e RN10); nulo para o visitante.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublicContactResponse"
+              }
+            ]
+          },
+          "sections": {
+            "description": "Só as ligadas e com conteúdo, na ordem fixa.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicSectionResponse"
+            }
+          },
+          "slug": {
+            "type": "string"
+          },
+          "names": {
+            "type": "string",
+            "description": "Os primeiros nomes (\"Ana & Marcos\"); completos se forem iguais (RN05)."
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "eventDate",
+          "appearance",
+          "cover",
+          "viewer",
+          "contact",
+          "sections",
+          "slug",
+          "names",
+          "city",
+          "state",
+          "timezone"
+        ]
+      },
+      "LinkPreviewImageResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "width": {
+            "type": "number"
+          },
+          "height": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "url",
+          "width",
+          "height"
+        ]
+      },
+      "SiteLinkPreviewResponse": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "description": "`generic`: rascunho ou endereço que não existe, sem diferenciar (RN09).",
+            "enum": [
+              "published",
+              "generic"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "image": {
+            "nullable": true,
+            "description": "A og.jpg da capa (1200 × 630); nula sem capa.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LinkPreviewImageResponse"
+              }
+            ]
+          }
+        },
+        "required": [
+          "state",
+          "title",
+          "description",
+          "image"
+        ]
       },
       "SpreadsheetTemplateHeaders": {
         "type": "string",

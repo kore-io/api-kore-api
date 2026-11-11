@@ -103,3 +103,13 @@ export class ContrastTooLowError extends Error {
     this.ratio = ratio;
   }
 }
+
+/** O endereço não existe ou o casamento foi expurgado (404 SITE_NOT_FOUND; Site público RN04). */
+export class SiteNotFoundError extends Error {
+  override name = 'SiteNotFoundError';
+}
+
+/** O casamento está em rascunho (404 SITE_DRAFT; Site público RN04): sem dado nenhum. */
+export class SiteDraftError extends Error {
+  override name = 'SiteDraftError';
+}

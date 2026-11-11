@@ -81,3 +81,19 @@ export class ContrastTooLowErrorBody {
   /** A razão medida, com duas casas para baixo. */
   @ApiProperty() ratio: number;
 }
+
+/** "Não encontramos este endereço." (Site público RN04). */
+export class SiteNotFoundErrorBody {
+  static readonly status = 404;
+  @ApiProperty({ enum: [404] }) statusCode: 404;
+  @ApiProperty({ enum: ['SITE_NOT_FOUND'] }) error: 'SITE_NOT_FOUND';
+  @ApiProperty() message: string;
+}
+
+/** "Este site ainda não foi publicado." — sem dado nenhum do casal (Site público RN04). */
+export class SiteDraftErrorBody {
+  static readonly status = 404;
+  @ApiProperty({ enum: [404] }) statusCode: 404;
+  @ApiProperty({ enum: ['SITE_DRAFT'] }) error: 'SITE_DRAFT';
+  @ApiProperty() message: string;
+}
