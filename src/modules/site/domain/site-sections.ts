@@ -75,3 +75,33 @@ export function imagesInUse({
   if (coverImageId) ids.add(coverImageId);
   return ids;
 }
+
+/** Limites das seções (Seções RN05 a RN10); todos conferidos no servidor (RN12). */
+export const SECTION_LIMITS = {
+  title: 80,
+  storyText: 5000,
+  storyImages: 12,
+  venues: 4,
+  venueTitle: 40,
+  placeName: 80,
+  address: 200,
+  lodgingText: 5000,
+  dressCodeText: 2000,
+  faqItems: 30,
+  question: 200,
+  answer: 1000,
+} as const;
+
+/**
+ * Texto simples (Seções RN04): trim, `\r\n` → `\n` e sem caracteres de
+ * controle (fica só a quebra de linha). A saída é sempre escapada no site.
+ */
+export function normalizeSiteText({ value }: { value: string }): string {
+  return (
+    value
+      .replace(/\r\n?/g, '\n')
+      // Toda letra de controle (Unicode Cc), menos a quebra de linha.
+      .replace(/(?!\n)\p{Cc}/gu, '')
+      .trim()
+  );
+}

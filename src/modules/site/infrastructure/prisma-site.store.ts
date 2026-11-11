@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../../../generated/prisma/client';
 import { TenantTransaction } from '../../../shared/database/tenant-transaction';
+import type { SectionContent, SiteSectionType } from '../domain/site-sections';
 import type {
   SiteAppearanceChanges,
   SiteBasicsChanges,
@@ -81,6 +82,40 @@ export class PrismaSiteStore implements SiteStore {
     await tx.wedding.updateMany({
       where: { id: weddingId, appearanceSetAt: null },
       data: { appearanceSetAt: now },
+    });
+  }
+
+  async updateSection({
+    weddingId,
+    type,
+    enabled,
+    title,
+    content,
+    now,
+  }: {
+    weddingId: string;
+    type: SiteSectionType;
+    enabled: boolean;
+    title: string | null;
+    content: SectionContent;
+    now: Date;
+  }): Promise<void> {
+    const tx = this.tenant.client();
+    const section = await tx.section.findUniqueOrThrow({
+      where: { weddingId_type: { weddingId, type } },
+      select: { id: true },
+    });
+    await tx.section.update({ where: { id: section.id }, data: { enabled, title } });
+    // A linha pt-BR nasce com a seção (função do cadastro e backfill da F2).
+    const { count } = await tx.sectionContent.updateMany({
+      where: { sectionId: section.id, locale: 'pt-BR' },
+      data: { content: content as Prisma.InputJsonObject },
+    });
+    if (count !== 1) throw new Error('Seção sem o conteúdo pt-BR.');
+    await tx.wedding.update({
+      where: { id: weddingId },
+      data: { siteUpdatedAt: now },
+      select: { id: true },
     });
   }
 

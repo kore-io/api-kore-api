@@ -3,9 +3,18 @@ export class SiteImageLimitReachedError extends Error {
   override name = 'SiteImageLimitReachedError';
 }
 
-/** A imagem não é deste casamento ou está `failed` (404 IMAGE_NOT_FOUND; S4 RN05). */
+/**
+ * A imagem não é `ready` deste casamento (404 IMAGE_NOT_FOUND; S4 RN05 e
+ * RN10). Nas seções, traz os ids recusados.
+ */
 export class SiteImageNotFoundError extends Error {
   override name = 'SiteImageNotFoundError';
+  readonly imageIds: readonly string[] | undefined;
+
+  constructor({ imageIds }: { imageIds?: readonly string[] } = {}) {
+    super();
+    this.imageIds = imageIds;
+  }
 }
 
 /** Outra confirmação já está processando a imagem (409 IMAGE_PROCESSING; S4 RN05). */

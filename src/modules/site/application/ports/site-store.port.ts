@@ -1,3 +1,5 @@
+import type { SectionContent, SiteSectionType } from '../../domain/site-sections';
+
 export interface SiteBasicsChanges {
   eventDate?: Date | null;
   city?: string;
@@ -48,6 +50,23 @@ export interface SiteStore {
   }: {
     weddingId: string;
     appearance: SiteAppearanceChanges;
+    now: Date;
+  }): Promise<void>;
+
+  /** Grava a seção inteira (ligada, título e o conteúdo `pt-BR`) e o `siteUpdatedAt`. */
+  updateSection({
+    weddingId,
+    type,
+    enabled,
+    title,
+    content,
+    now,
+  }: {
+    weddingId: string;
+    type: SiteSectionType;
+    enabled: boolean;
+    title: string | null;
+    content: SectionContent;
     now: Date;
   }): Promise<void>;
 

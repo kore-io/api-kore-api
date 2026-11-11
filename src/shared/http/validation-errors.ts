@@ -58,15 +58,30 @@ export function validationError({
 export function validationExceptionFactory(
   validationErrors: ValidationError[],
 ): BadRequestException {
+  return validationError(toFieldErrors({ validationErrors }));
+}
+
+/**
+ * Os erros do class-validator no formato da decisão 190, com o caminho a
+ * partir de `parentPath` (ex.: `content`, quando o caso de uso valida um
+ * pedaço do corpo com o DTO certo, como as seções do site).
+ */
+export function toFieldErrors({
+  validationErrors,
+  parentPath = '',
+}: {
+  validationErrors: readonly ValidationError[];
+  parentPath?: string;
+}): { errors: FieldError[]; message: string[] } {
   const message: string[] = [];
   const errors: FieldError[] = [];
-  for (const { path, error } of flatten({ errors: validationErrors, parentPath: '' })) {
+  for (const { path, error } of flatten({ errors: validationErrors, parentPath })) {
     for (const [rule, text] of Object.entries(error.constraints ?? {})) {
-      message.push(text);
+      message.push(parentPath ? `${parentPath}.${text}` : text);
       errors.push({ path, code: toErrorCode(rule), params: paramsOf({ error, rule }) });
     }
   }
-  return validationError({ errors, message });
+  return { errors, message };
 }
 
 function* flatten({
