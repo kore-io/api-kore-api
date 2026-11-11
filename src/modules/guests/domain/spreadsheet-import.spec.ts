@@ -118,6 +118,16 @@ describe('Validação da planilha (Importação RN04 a RN08)', () => {
     ]);
   });
 
+  it('RN05 - faixa etária vazia fica vazia: o Kore não deduz (nem pelo nome nem pelo grupo)', () => {
+    const result = check([
+      row('Família Moreira', 'Pedrinho Moreira'),
+      row('Família Moreira', 'Ana', null, null, '  '),
+    ]);
+
+    expect(result.parties[0].guests.map((guest) => guest.ageGroup)).toEqual([null, null]);
+    expect(result.counts.errors).toBe(0);
+  });
+
   it('RN06 - a segunda linha com o mesmo nome no mesmo grupo fica de fora, apontando a primeira', () => {
     const result = check([
       row('Família Moreira', 'Pedro Moreira'),

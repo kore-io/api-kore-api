@@ -41,6 +41,15 @@ describe('parsePhone (Grupos RN04; decisão 189, item 4)', () => {
     });
   });
 
+  it('RN04 - o {n} conta os dígitos como vieram, antes de tirar o zero de tronco', () => {
+    // 13 dígitos: sem o zero, 12, que não são 55 + 10 ou 11 nem do Brasil.
+    expect(parsePhone({ raw: '0035191234567' })).toEqual({
+      ok: false,
+      code: 'PHONE_TOO_LONG',
+      params: { n: 13 },
+    });
+  });
+
   it.each([
     ['+1234567', 7],
     ['+1234567890123456', 16],
