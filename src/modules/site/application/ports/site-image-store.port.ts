@@ -52,6 +52,7 @@ export interface SiteImageStore {
 
   /** `processing` → `ready`, fora de uso desde já (`unusedSince = readyAt`; S4 RN08). */
   markReady({
+    weddingId,
     imageId,
     sizeBytes,
     width,
@@ -60,6 +61,7 @@ export interface SiteImageStore {
     ogKey,
     now,
   }: {
+    weddingId: string;
     imageId: string;
     sizeBytes: number;
     width: number;
@@ -70,10 +72,10 @@ export interface SiteImageStore {
   }): Promise<SiteImageRow | null>;
 
   /** `processing` → `failed`: a rotina apaga a linha (S4 RN08). */
-  markFailed({ imageId }: { imageId: string }): Promise<void>;
+  markFailed({ weddingId, imageId }: { weddingId: string; imageId: string }): Promise<void>;
 
   /** `processing` → `uploading`, para o app poder enviar e confirmar de novo. */
-  releaseToUploading({ imageId }: { imageId: string }): Promise<void>;
+  releaseToUploading({ weddingId, imageId }: { weddingId: string; imageId: string }): Promise<void>;
 }
 
 export interface SiteImageRow {

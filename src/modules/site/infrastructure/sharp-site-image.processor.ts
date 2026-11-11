@@ -7,15 +7,17 @@ import type {
 } from '../application/ports/site-image-processor.port';
 import {
   SITE_IMAGE_DISPLAY_MAX_PX,
+  SITE_IMAGE_MAX_BYTES,
   SITE_IMAGE_MAX_INPUT_PIXELS,
   SITE_IMAGE_OG,
   SITE_IMAGE_THUMB_MAX_PX,
 } from '../domain/site-image';
 import { SiteImageInvalidError } from '../domain/site.errors';
 
-// Qualidade da versão servida e da miniatura; a da prévia desce até caber em 300 KB.
+// Qualidade das versões; desce até a versão caber no teto dela (a servida em
+// 4 MB, o CHECK da tabela; a prévia em 300 KB).
 const QUALITY = 82;
-const OG_QUALITIES = [82, 74, 66, 58, 50, 42, 34] as const;
+const QUALITIES = [82, 74, 66, 58, 50, 42, 34] as const;
 
 /**
  * Recodificação com o sharp (S4 RN05). Cada processamento usa 1 thread do
@@ -34,7 +36,7 @@ export class SharpSiteImageProcessor implements SiteImageProcessor {
   async process({ source }: { source: Buffer }): Promise<ProcessedSiteImage> {
     try {
       // Uma decodificação do original; as outras versões saem da versão servida.
-      const display = await this.jpeg(
+      const normalized = () =>
         sharp(source, { limitInputPixels: SITE_IMAGE_MAX_INPUT_PIXELS })
           // Aplica a orientação do EXIF antes de o EXIF sair.
           .rotate()
@@ -47,9 +49,8 @@ export class SharpSiteImageProcessor implements SiteImageProcessor {
             height: SITE_IMAGE_DISPLAY_MAX_PX,
             fit: 'inside',
             withoutEnlargement: true,
-          }),
-        QUALITY,
-      );
+          });
+      const display = await this.fit(normalized, SITE_IMAGE_MAX_BYTES);
       const thumb = await this.jpeg(
         sharp(display.body).resize({
           width: SITE_IMAGE_THUMB_MAX_PX,
@@ -68,18 +69,24 @@ export class SharpSiteImageProcessor implements SiteImageProcessor {
   }
 
   /** 1200 × 630, recorte central, até 300 KB (Site público RN09). */
-  private async og(display: Buffer): Promise<ProcessedVersion> {
-    for (const quality of OG_QUALITIES) {
-      const version = await this.jpeg(
+  private og(display: Buffer): Promise<ProcessedVersion> {
+    return this.fit(
+      () =>
         sharp(display).resize({
           width: SITE_IMAGE_OG.width,
           height: SITE_IMAGE_OG.height,
           fit: 'cover',
           position: 'centre',
         }),
-        quality,
-      );
-      if (version.body.length <= SITE_IMAGE_OG.maxBytes) return version;
+      SITE_IMAGE_OG.maxBytes,
+    );
+  }
+
+  /** A maior qualidade que cabe no teto; sem nenhuma, a imagem não serve. */
+  private async fit(pipeline: () => sharp.Sharp, maxBytes: number): Promise<ProcessedVersion> {
+    for (const quality of QUALITIES) {
+      const version = await this.jpeg(pipeline(), quality);
+      if (version.body.length <= maxBytes) return version;
     }
     throw new SiteImageInvalidError();
   }

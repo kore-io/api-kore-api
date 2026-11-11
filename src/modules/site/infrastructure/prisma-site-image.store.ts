@@ -71,6 +71,7 @@ export class PrismaSiteImageStore implements SiteImageStore {
   }
 
   async markReady({
+    weddingId,
     imageId,
     sizeBytes,
     width,
@@ -79,6 +80,7 @@ export class PrismaSiteImageStore implements SiteImageStore {
     ogKey,
     now,
   }: {
+    weddingId: string;
     imageId: string;
     sizeBytes: number;
     width: number;
@@ -88,7 +90,7 @@ export class PrismaSiteImageStore implements SiteImageStore {
     now: Date;
   }): Promise<SiteImageRow | null> {
     const { count } = await this.tenant.client().siteImage.updateMany({
-      where: { id: imageId, status: 'processing' },
+      where: { id: imageId, weddingId, status: 'processing' },
       data: {
         status: 'ready',
         sizeBytes,
@@ -104,16 +106,22 @@ export class PrismaSiteImageStore implements SiteImageStore {
     return this.tenant.client().siteImage.findUnique({ where: { id: imageId }, select: ROW });
   }
 
-  async markFailed({ imageId }: { imageId: string }): Promise<void> {
+  async markFailed({ weddingId, imageId }: { weddingId: string; imageId: string }): Promise<void> {
     await this.tenant.client().siteImage.updateMany({
-      where: { id: imageId, status: 'processing' },
+      where: { id: imageId, weddingId, status: 'processing' },
       data: { status: 'failed' },
     });
   }
 
-  async releaseToUploading({ imageId }: { imageId: string }): Promise<void> {
+  async releaseToUploading({
+    weddingId,
+    imageId,
+  }: {
+    weddingId: string;
+    imageId: string;
+  }): Promise<void> {
     await this.tenant.client().siteImage.updateMany({
-      where: { id: imageId, status: 'processing' },
+      where: { id: imageId, weddingId, status: 'processing' },
       data: { status: 'uploading' },
     });
   }

@@ -109,20 +109,32 @@ export class ConfirmSiteImage {
       throw error;
     }
 
-    const ready = await this.scope.run({
-      userId,
-      weddingId,
-      work: () =>
-        this.images.markReady({
-          imageId,
-          sizeBytes: processed.display.body.length,
-          width: processed.display.width,
-          height: processed.display.height,
-          thumbKey: keys.thumb,
-          ogKey: keys.og,
-          now: now(),
-        }),
-    });
+    let ready: SiteImageRow | null;
+    try {
+      ready = await this.scope.run({
+        userId,
+        weddingId,
+        work: () =>
+          this.images.markReady({
+            weddingId,
+            imageId,
+            sizeBytes: processed.display.body.length,
+            width: processed.display.width,
+            height: processed.display.height,
+            thumbKey: keys.thumb,
+            ogKey: keys.og,
+            now: now(),
+          }),
+      });
+    } catch (error) {
+      // Como uma falha do armazenamento: as versões saem e a imagem volta a
+      // `uploading`. O original já foi apagado, então o app envia de novo.
+      await this.storage
+        .delete({ bucket: 'public', keys: [keys.display, keys.thumb, keys.og] })
+        .catch(() => undefined);
+      await this.giveBack({ userId, weddingId, imageId, error, originalKey: keys.original });
+      throw error;
+    }
     // Só a rotina tira uma imagem de `processing` por fora (depois de 1 hora).
     if (!ready) throw new SiteImageNotFoundError();
     return { image: this.view(ready), processed: true };
@@ -162,14 +174,14 @@ export class ConfirmSiteImage {
         await this.scope.run({
           userId,
           weddingId,
-          work: () => this.images.markFailed({ imageId }),
+          work: () => this.images.markFailed({ weddingId, imageId }),
         });
         return;
       }
       await this.scope.run({
         userId,
         weddingId,
-        work: () => this.images.releaseToUploading({ imageId }),
+        work: () => this.images.releaseToUploading({ weddingId, imageId }),
       });
     } catch (cleanupError) {
       // A rotina de limpeza apaga o que ficou em `processing` depois de 1 hora.
