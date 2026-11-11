@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   ParseUUIDPipe,
   Post,
   Query,
@@ -26,8 +27,9 @@ import { CreateParty } from '../application/create-party.use-case';
 import { GetParty } from '../application/get-party.use-case';
 import { ListParties } from '../application/list-parties.use-case';
 import { RegeneratePartyLink } from '../application/regenerate-party-link.use-case';
+import { UpdateParty } from '../application/update-party.use-case';
 import { PartyNotFoundError } from '../domain/guests.errors';
-import { PartyNotFoundErrorBody } from './guests-error.dto';
+import { PartyNotFoundErrorBody, PlusOnesInUseErrorBody } from './guests-error.dto';
 import { toHttpError } from './guests-http-errors';
 import {
   CreatePartyBody,
@@ -35,6 +37,7 @@ import {
   PartyListResponse,
   PartyResponse,
   RegeneratePartyLinkResponse,
+  UpdatePartyBody,
 } from './parties.dto';
 
 const partyIdPipe = new ParseUUIDPipe({
@@ -49,6 +52,7 @@ export class PartiesController {
     private readonly getParty: GetParty,
     private readonly listParties: ListParties,
     private readonly regenerateLink: RegeneratePartyLink,
+    private readonly updateParty: UpdateParty,
   ) {}
 
   /** Grupos e convidados, a lista (Grupos RN13). */
@@ -123,6 +127,43 @@ export class PartiesController {
     try {
       return PartyResponse.from({
         party: await this.getParty.execute({ userId: session.userId, weddingId, partyId }),
+      });
+    } catch (error) {
+      throw toHttpError(error);
+    }
+  }
+
+  /** Editar grupo (Grupos RN09): não tira convidado; vale a última gravação. */
+  @Patch(':partyId')
+  @ApiErrorResponses(
+    ...commonErrors({ validated: true, session: true, write: true }),
+    ActionNotAllowedErrorBody,
+    WeddingNotFoundErrorBody,
+    PartyNotFoundErrorBody,
+    PlusOnesInUseErrorBody,
+  )
+  async update(
+    @CurrentSession() session: AuthenticatedSession,
+    @Param('weddingId') weddingId: string,
+    @Param('partyId', partyIdPipe) partyId: string,
+    @Body() body: UpdatePartyBody,
+    @Req() request: Request,
+  ): Promise<PartyResponse> {
+    try {
+      return PartyResponse.from({
+        party: await this.updateParty.execute({
+          userId: session.userId,
+          weddingId,
+          partyId,
+          name: body.name,
+          internalNote: body.internalNote,
+          guests: body.guests,
+          contactGuestId: body.contactGuestId,
+          plusOneSlots: body.plusOneSlots,
+          tagIds: body.tagIds,
+          ip: request.ip ?? null,
+          now: new Date(),
+        }),
       });
     } catch (error) {
       throw toHttpError(error);
