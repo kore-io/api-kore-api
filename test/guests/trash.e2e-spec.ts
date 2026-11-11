@@ -400,9 +400,10 @@ describe('Lixeira de convidados (banco real)', () => {
         actorUserId: ana.userId,
         entityType: 'guest',
         entityId: luiz.id,
-        data: { partyId: familia.id },
       });
-      expect(JSON.stringify(log)).not.toContain('Luiz');
+      expect(log.data).toEqual({ partyId: familia.id });
+      for (const personal of ['Luiz', 'Moreira', '19998763310', '+5519998763310', 'pedro@exemplo'])
+        expect(JSON.stringify(log)).not.toContain(personal);
     });
 
     it('RN09 - o restaurado só volta a ser contato se o grupo estiver sem contato', async () => {
