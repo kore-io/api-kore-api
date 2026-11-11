@@ -59,6 +59,8 @@ export class CreateParty {
     now: Date;
   }): Promise<PartyView> {
     await this.authorization.require({ userId, weddingId, action: 'manage_guests' });
+    // Antes de qualquer leitura: a escrita e o recálculo noturno não se cruzam (RN16).
+    await this.store.lockStats({ weddingId });
 
     const issues: FieldIssue[] = [];
     const phones = guests.map((guest, index) => {

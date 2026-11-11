@@ -84,6 +84,11 @@ export class PrismaPartyStore implements PartyStore {
     return count === 0 ? null : { linkToken, regeneratedAt: now };
   }
 
+  async lockStats({ weddingId }: { weddingId: string }): Promise<void> {
+    await this.tenant.client()
+      .$queryRaw`SELECT 1 FROM wedding_stats WHERE wedding_id = ${weddingId}::uuid FOR UPDATE`;
+  }
+
   async applyStats({ weddingId, delta }: { weddingId: string; delta: StatsDelta }): Promise<void> {
     const data: Record<string, { increment: number }> = {};
     for (const [field, value] of Object.entries(delta) as [string, number | undefined][])

@@ -7,6 +7,7 @@ import {
   WEDDING_STATS_RECOMPUTE_SCHEDULER_ID,
   WeddingStatsRecomputeProcessor,
 } from '../../src/modules/guests/infrastructure/wedding-stats-recompute.job';
+import { recomputeWeddingStats } from '../../src/modules/guests/infrastructure/backoffice/wedding-stats-recompute';
 import { BackofficePrismaService } from '../../src/shared/database/backoffice-prisma.service';
 import { createTestWorker } from '../support/create-test-worker';
 import { seedWedding } from '../support/weddings';
@@ -88,5 +89,54 @@ describe('Recálculo noturno dos números do casamento (worker)', () => {
     });
     expect(log).toMatchObject({ actorKind: 'system' });
     expect((log.data as { corrected: number }).corrected).toBeGreaterThanOrEqual(1);
+  });
+
+  it('RN16 - o recálculo espera a escrita em andamento e não perde o incremento dela', async () => {
+    const { id: ownerId } = await db.user.create({
+      data: { email: `recalculo.${randomUUID()}@kore.local` },
+    });
+    const { weddingId } = await seedWedding({ db, ownerId });
+    const party = await db.party.create({
+      data: { weddingId, name: 'Tio Jorge', linkToken: randomBytes(16).toString('base64url') },
+    });
+    await db.guest.create({ data: { weddingId, partyId: party.id, name: 'Jorge Almeida' } });
+    // A linha está divergente (o recálculo vai gravar) quando a escrita começa.
+    await db.weddingStats.update({
+      where: { weddingId },
+      data: { guestsTotal: 5, pending: 5, partiesPending: 1 },
+    });
+
+    // Uma escrita como a da API: trava a linha, inclui um convidado, soma 1 e
+    // demora a confirmar; o recálculo começa no meio dela.
+    let releaseWriter: () => void = () => undefined;
+    const writerHolds = new Promise<void>((resolve) => (releaseWriter = resolve));
+    let writerLocked: () => void = () => undefined;
+    const lockTaken = new Promise<void>((resolve) => (writerLocked = resolve));
+    const writer = db.$transaction(
+      async (tx) => {
+        await tx.$queryRaw`SELECT 1 FROM wedding_stats WHERE wedding_id = ${weddingId}::uuid FOR UPDATE`;
+        writerLocked();
+        await tx.guest.create({ data: { weddingId, partyId: party.id, name: 'Rita Almeida' } });
+        await tx.weddingStats.update({
+          where: { weddingId },
+          data: { guestsTotal: { increment: 1 }, pending: { increment: 1 } },
+        });
+        await writerHolds;
+      },
+      { timeout: 10_000 },
+    );
+    await lockTaken;
+    // Só este casamento: a rotina inteira passaria por centenas de outros antes,
+    // e a escrita já teria confirmado.
+    const recompute = db.$transaction((tx) => recomputeWeddingStats({ db: tx, weddingId }));
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    releaseWriter();
+    await Promise.all([writer, recompute]);
+
+    expect(await db.weddingStats.findUniqueOrThrow({ where: { weddingId } })).toMatchObject({
+      guestsTotal: 2,
+      pending: 2,
+      partiesPending: 1,
+    });
   });
 });

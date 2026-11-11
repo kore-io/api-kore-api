@@ -86,6 +86,8 @@ export class UpdateParty {
     now: Date;
   }): Promise<PartyView> {
     await this.authorization.require({ userId, weddingId, action: 'manage_guests' });
+    // Antes de qualquer leitura: a escrita e o recálculo noturno não se cruzam (RN16).
+    await this.parties.lockStats({ weddingId });
     await this.groups.lock({ weddingId, partyIds: [partyId] });
     const group = await this.groups.load({ weddingId, partyId });
     if (!group) throw new PartyNotFoundError();
