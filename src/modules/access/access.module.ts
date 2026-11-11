@@ -80,6 +80,7 @@ import { AccessInvitationsController } from './presentation/access-invitations.c
 import { InvitationAcceptanceController } from './presentation/invitation-acceptance.controller';
 import { WeddingMembersController } from './presentation/wedding-members.controller';
 import { SessionGuard } from './presentation/session.guard';
+import { WeddingScope } from './application/wedding-scope.service';
 import { TenantTransactionInterceptor } from './presentation/tenant-transaction.interceptor';
 
 /** Contexto Acesso: sessão, login, papéis e convites de acesso. */
@@ -103,6 +104,7 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     { provide: APP_INTERCEPTOR, useClass: TenantTransactionInterceptor },
     { provide: MEMBERSHIP_READER, useClass: PrismaMembershipReader },
     WeddingAuthorization,
+    WeddingScope,
     { provide: LOGIN_CHALLENGE_STORE, useClass: PrismaLoginChallengeStore },
     {
       provide: LOGIN_CHALLENGE_SECRETS,
@@ -172,6 +174,6 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     AcceptAccessInvitation,
     DeclineAccessInvitation,
   ],
-  exports: [StartSession, WeddingAuthorization],
+  exports: [StartSession, WeddingAuthorization, WeddingScope],
 })
 export class AccessModule {}
