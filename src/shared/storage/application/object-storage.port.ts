@@ -44,6 +44,11 @@ export interface ObjectStorage {
   /** O tamanho sem ler o corpo; `null` quando o objeto não existe. */
   head({ bucket, key }: { bucket: StorageBucket; key: string }): Promise<StoredObjectHead | null>;
 
+  /**
+   * Lê o objeto inteiro em memória. Chame o `head` antes e recuse pelo tamanho
+   * (S4 RN05: acima de 4 MB, sem ler o corpo): o R2 pode não impor o
+   * `Content-Length` assinado, e o `head` é a autoridade sobre o tamanho.
+   */
   get({ bucket, key }: { bucket: StorageBucket; key: string }): Promise<Buffer>;
 
   put({
