@@ -62,4 +62,21 @@ export class TagNameTakenErrorBody {
   @ApiProperty({ enum: [409] }) statusCode: 409;
   @ApiProperty({ enum: ['TAG_NAME_TAKEN'] }) error: 'TAG_NAME_TAKEN';
   @ApiProperty() message: string;
+  /** Na restauração: o nome da tag ativa que conflita (Lixeira RN09). */
+  @ApiProperty({ required: false }) conflictName?: string;
+}
+
+/** Cerimonialista ou vendedor tirando quem já respondeu (Lixeira RN07; 189(2)). */
+export class AlreadyRespondedErrorBody {
+  static readonly status = 403;
+  @ApiProperty({ enum: [403] }) statusCode: 403;
+  @ApiProperty({ enum: ['ALREADY_RESPONDED'] }) error: 'ALREADY_RESPONDED';
+  @ApiProperty() message: string;
+}
+
+export class TrashItemNotFoundErrorBody {
+  static readonly status = 404;
+  @ApiProperty({ enum: [404] }) statusCode: 404;
+  @ApiProperty({ enum: ['TRASH_ITEM_NOT_FOUND'] }) error: 'TRASH_ITEM_NOT_FOUND';
+  @ApiProperty() message: string;
 }

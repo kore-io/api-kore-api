@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   HttpCode,
   HttpStatus,
   Param,
@@ -21,8 +22,11 @@ import {
 } from '../../access/presentation/access-error.dto';
 import { CurrentSession } from '../../access/presentation/current-session.decorator';
 import { MoveGuest } from '../application/move-guest.use-case';
+import { TrashGuest } from '../application/trash.use-cases';
+import { TrashedGuestResponse } from './trash.dto';
 import { GuestNotFoundError } from '../domain/guests.errors';
 import {
+  AlreadyRespondedErrorBody,
   EmptyPlusOneErrorBody,
   GuestNotFoundErrorBody,
   LastGuestErrorBody,
@@ -33,7 +37,45 @@ import { MoveGuestBody, MoveGuestResponse } from './parties.dto';
 @ApiTags('guests')
 @Controller('weddings/:weddingId/guests')
 export class GuestsController {
-  constructor(private readonly moveGuest: MoveGuest) {}
+  constructor(
+    private readonly moveGuest: MoveGuest,
+    private readonly trashGuest: TrashGuest,
+  ) {}
+
+  /** Mover o convidado para a lixeira (Lixeira RN04 e RN07). */
+  @Delete(':guestId')
+  @ApiErrorResponses(
+    ...commonErrors({ session: true, write: true }),
+    ActionNotAllowedErrorBody,
+    AlreadyRespondedErrorBody,
+    WeddingNotFoundErrorBody,
+    GuestNotFoundErrorBody,
+    LastGuestErrorBody,
+    EmptyPlusOneErrorBody,
+  )
+  async trash(
+    @CurrentSession() session: AuthenticatedSession,
+    @Param('weddingId') weddingId: string,
+    @Param(
+      'guestId',
+      new ParseUUIDPipe({ exceptionFactory: () => toHttpError(new GuestNotFoundError()) }),
+    )
+    guestId: string,
+    @Req() request: Request,
+  ): Promise<TrashedGuestResponse> {
+    try {
+      const guest = await this.trashGuest.execute({
+        userId: session.userId,
+        weddingId,
+        guestId,
+        ip: request.ip ?? null,
+        now: new Date(),
+      });
+      return { ...guest, deletedAt: guest.deletedAt.toISOString() };
+    } catch (error) {
+      throw toHttpError(error);
+    }
+  }
 
   /** Mover de grupo: mantém a resposta e as tags (Grupos RN10). */
   @Post(':guestId/move')

@@ -1,7 +1,8 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { toHttpError as toAccessHttpError } from '../../access/presentation/access-http-errors';
 import { validationError } from '../../../shared/http/validation-errors';
 import {
+  AlreadyRespondedError,
   EmptyPlusOneError,
   GuestFieldsInvalidError,
   GuestNotFoundError,
@@ -11,6 +12,7 @@ import {
   TagLimitReachedError,
   TagNameTakenError,
   TagNotFoundError,
+  TrashItemNotFoundError,
 } from '../domain/guests.errors';
 
 /**
@@ -74,6 +76,21 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 409,
       error: 'TAG_NAME_TAKEN',
       message: 'Another active tag already has this name.',
+      ...(error.conflictName ? { conflictName: error.conflictName } : {}),
+    });
+  }
+  if (error instanceof AlreadyRespondedError) {
+    return new ForbiddenException({
+      statusCode: 403,
+      error: 'ALREADY_RESPONDED',
+      message: 'Only the couple can trash who already answered.',
+    });
+  }
+  if (error instanceof TrashItemNotFoundError) {
+    return new NotFoundException({
+      statusCode: 404,
+      error: 'TRASH_ITEM_NOT_FOUND',
+      message: 'Item not found in the trash.',
     });
   }
   return toAccessHttpError(error);

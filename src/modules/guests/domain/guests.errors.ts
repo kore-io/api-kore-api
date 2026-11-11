@@ -60,7 +60,27 @@ export class TagLimitReachedError extends Error {
   override name = 'TagLimitReachedError';
 }
 
-/** Outra tag ativa tem o mesmo nome, sem diferenciar maiúsculas (409 TAG_NAME_TAKEN; RN02). */
+/**
+ * Outra tag ativa tem o mesmo nome, sem diferenciar maiúsculas (409
+ * TAG_NAME_TAKEN; Tags RN02). Na restauração, traz o nome da tag ativa
+ * (conflictName; Lixeira RN09).
+ */
 export class TagNameTakenError extends Error {
   override name = 'TagNameTakenError';
+  readonly conflictName?: string;
+
+  constructor({ conflictName }: { conflictName?: string } = {}) {
+    super();
+    this.conflictName = conflictName;
+  }
+}
+
+/** Colaborador tirando quem já respondeu (403 ALREADY_RESPONDED; Lixeira RN07; 189(2)). */
+export class AlreadyRespondedError extends Error {
+  override name = 'AlreadyRespondedError';
+}
+
+/** O item não está na lixeira deste casamento (404 TRASH_ITEM_NOT_FOUND). */
+export class TrashItemNotFoundError extends Error {
+  override name = 'TrashItemNotFoundError';
 }
