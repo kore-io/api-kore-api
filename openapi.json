@@ -7075,6 +7075,7 @@
           "guests": {
             "description": "Um ou mais, na ordem do grupo (RN03, RN17).",
             "minItems": 1,
+            "maxItems": 100,
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/CreatePartyGuestBody"
@@ -7378,6 +7379,7 @@
         "properties": {
           "guests": {
             "description": "Os editados (com id) e os novos (sem id). Não tira convidado: tirar é a lixeira.",
+            "maxItems": 100,
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/UpdatePartyGuestBody"
