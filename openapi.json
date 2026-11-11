@@ -3116,6 +3116,252 @@
         ]
       }
     },
+    "/v1/weddings/{weddingId}/guest-imports/spreadsheet/preview": {
+      "post": {
+        "operationId": "GuestImportsController_spreadsheetPreview_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/SpreadsheetUploadBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpreadsheetPreviewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileTooLargeErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpreadsheetRefusedErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "A planilha, prévia: nada é gravado e o arquivo não é guardado (Importação RN03 a RN09).",
+        "tags": [
+          "guest-imports"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/guest-imports/spreadsheet": {
+      "post": {
+        "operationId": "GuestImportsController_spreadsheet_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/SpreadsheetUploadBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpreadsheetImportResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NothingToImportErrorBody"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileTooLargeErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpreadsheetRefusedErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "A planilha, importar: valida de novo e grava só as linhas válidas (RN01, RN09 e RN14).",
+        "tags": [
+          "guest-imports"
+        ]
+      }
+    },
     "/v1/weddings/{weddingId}/guest-imports/paste/preview": {
       "post": {
         "operationId": "GuestImportsController_pastePreview_v1",
@@ -6429,6 +6675,296 @@
           "name"
         ]
       },
+      "FileTooLargeErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              413
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "FILE_TOO_LARGE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "maxBytes": {
+            "type": "number",
+            "example": 5242880
+          },
+          "unzippedMaxBytes": {
+            "type": "number",
+            "description": "Quando o que passou foi o descompactado (50 MB).",
+            "example": 52428800
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "maxBytes"
+        ]
+      },
+      "SpreadsheetRefusedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "enum": [
+              "NOT_XLSX",
+              "TEMPLATE_MISMATCH",
+              "TOO_MANY_ROWS"
+            ],
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SpreadsheetUploadBody": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary"
+          }
+        },
+        "required": [
+          "file"
+        ]
+      },
+      "DuplicateOfResponse": {
+        "type": "object",
+        "properties": {
+          "row": {
+            "type": "number"
+          },
+          "party": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "row",
+          "party"
+        ]
+      },
+      "SkippedRowResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "kind": {
+            "enum": [
+              "error",
+              "duplicate"
+            ],
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "NAME_MISSING",
+              "PARTY_MISSING",
+              "PHONE_TOO_SHORT",
+              "PHONE_TOO_LONG",
+              "PHONE_INVALID",
+              "EMAIL_INVALID",
+              "AGE_GROUP_INVALID",
+              "TOO_LONG",
+              "DUPLICATE"
+            ]
+          },
+          "field": {
+            "type": "string",
+            "enum": [
+              "party",
+              "name",
+              "phone",
+              "email",
+              "ageGroup",
+              "dietaryRestriction",
+              "tags"
+            ]
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": true,
+            "example": {
+              "n": 8
+            }
+          },
+          "duplicateOf": {
+            "$ref": "#/components/schemas/DuplicateOfResponse"
+          },
+          "row": {
+            "type": "number",
+            "description": "O número da linha na planilha (a dos títulos é a 1)."
+          }
+        },
+        "required": [
+          "name",
+          "kind",
+          "code",
+          "params",
+          "row"
+        ]
+      },
+      "ImportWarningResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "enum": [
+              "PARTY_NAME_EXISTS",
+              "TAG_LIMIT"
+            ],
+            "type": "string"
+          },
+          "party": {
+            "type": "string",
+            "description": "Em PARTY_NAME_EXISTS."
+          },
+          "tag": {
+            "type": "string",
+            "description": "Em TAG_LIMIT."
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
+      "SpreadsheetCountsResponse": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "number"
+          },
+          "errors": {
+            "type": "number",
+            "description": "Linhas com erro (não falhas)."
+          },
+          "duplicates": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "valid",
+          "errors",
+          "duplicates"
+        ]
+      },
+      "SpreadsheetPreviewResponse": {
+        "type": "object",
+        "properties": {
+          "skipped": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkippedRowResponse"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportWarningResponse"
+            }
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "parties": {
+            "type": "number"
+          },
+          "guests": {
+            "type": "number"
+          },
+          "counts": {
+            "$ref": "#/components/schemas/SpreadsheetCountsResponse"
+          }
+        },
+        "required": [
+          "skipped",
+          "warnings",
+          "fileName",
+          "parties",
+          "guests",
+          "counts"
+        ]
+      },
+      "NothingToImportErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "NOTHING_TO_IMPORT"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SpreadsheetImportResponse": {
+        "type": "object",
+        "properties": {
+          "tagsCreated": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "parties": {
+            "type": "number"
+          },
+          "guests": {
+            "type": "number"
+          },
+          "skipped": {
+            "type": "number",
+            "description": "Linhas que ficaram de fora, com erro ou duplicadas."
+          }
+        },
+        "required": [
+          "tagsCreated",
+          "parties",
+          "guests",
+          "skipped"
+        ]
+      },
       "TooManyGuestsErrorBody": {
         "type": "object",
         "properties": {
@@ -6627,8 +7163,9 @@
           },
           "removedInPreview": {
             "type": "number",
-            "description": "As pessoas removidas, as duplicadas tiradas e 1 por grupo que saiu (o linhas_erro).",
-            "minimum": 0
+            "description": "As pessoas removidas, as duplicadas tiradas e 1 por grupo que saiu (o\nlinhas_erro). O teto é o do texto colado: não sai mais que um item por\ncaractere, e o evento não fica distorcido (sugestão do Crivo).",
+            "minimum": 0,
+            "maximum": 100000
           }
         },
         "required": [

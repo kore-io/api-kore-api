@@ -103,3 +103,24 @@ export class DuplicateGuestError extends Error {
     this.path = path;
   }
 }
+
+/** Arquivo acima de 5 MB, ou acima de 50 MB descompactado (413 FILE_TOO_LARGE; ADR-39). */
+export class FileTooLargeError extends Error {
+  override name = 'FileTooLargeError';
+}
+
+/** Erro de regra do arquivo da planilha (422 com o código; Importação RN01 e RN03). */
+export class SpreadsheetRefusedError extends Error {
+  override name = 'SpreadsheetRefusedError';
+  readonly code: 'NOT_XLSX' | 'TEMPLATE_MISMATCH' | 'TOO_MANY_ROWS';
+
+  constructor({ code }: { code: 'NOT_XLSX' | 'TEMPLATE_MISMATCH' | 'TOO_MANY_ROWS' }) {
+    super();
+    this.code = code;
+  }
+}
+
+/** Nenhuma linha válida na planilha (409 NOTHING_TO_IMPORT). */
+export class NothingToImportError extends Error {
+  override name = 'NothingToImportError';
+}
