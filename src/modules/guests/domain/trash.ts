@@ -29,3 +29,19 @@ export function purgeAt({
   const [year, month, day] = localDate({ at: deletedAt, timezone }).split('-').map(Number);
   return new Date(Date.UTC(year, month - 1, day + TRASH_RETENTION_DAYS)).toISOString().slice(0, 10);
 }
+
+/**
+ * O item já pode ser apagado de vez (RN10): hoje, no fuso do casamento, é
+ * maior que purgeAt. No próprio dia purgeAt ele ainda restaura.
+ */
+export function isPurgeDue({
+  deletedAt,
+  timezone,
+  now,
+}: {
+  deletedAt: Date;
+  timezone: string | null;
+  now: Date;
+}): boolean {
+  return localDate({ at: now, timezone }) > purgeAt({ deletedAt, timezone });
+}
