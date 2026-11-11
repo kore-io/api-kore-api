@@ -5,9 +5,22 @@ import {
 } from '../../../shared/storage/application/object-storage.port';
 import { BACKGROUND_MODES, evaluateAppearance, type BackgroundMode } from '../domain/appearance';
 import { DRAFT_SITE_STATUSES, coupleNames } from '../domain/public-site';
-import { isSectionEmpty, sectionImageIds, type SectionContent } from '../domain/site-sections';
+import {
+  SITE_SECTION_TYPES,
+  isSectionEmpty,
+  sectionImageIds,
+  type SectionContent,
+} from '../domain/site-sections';
 import { SiteDraftError, SiteNotFoundError } from '../domain/site.errors';
 import { PARTY_COOKIES, type PartyCookies } from './ports/party-cookies.port';
+import {
+  SITE_READER,
+  type ReadySiteImage,
+  type SiteReader,
+  type SiteSnapshot,
+} from './ports/site-reader.port';
+import { SITE_PREVIEW_STORE, type SitePreviewStore } from './ports/site-preview-store.port';
+import { PreviewSessions } from './preview-sessions.service';
 import {
   PUBLIC_SITE_READER,
   type PartySiteView,
@@ -48,7 +61,12 @@ export interface PublicSiteView {
   cover: { url: string; width: number; height: number } | null;
   viewer:
     | { kind: 'visitor'; party: null; preview: null }
-    | { kind: 'party'; party: { name: string }; preview: null };
+    | { kind: 'party'; party: { name: string }; preview: null }
+    | {
+        kind: 'preview';
+        party: { name: string } | null;
+        preview: { as: 'visitor' | 'party' };
+      };
   /** Só para o grupo identificado (RN05 e RN10). */
   contact: { whatsapp: string | null; email: string | null } | null;
   sections: PublicSection[];
@@ -77,15 +95,61 @@ export class GetPublicSite {
     @Inject(PUBLIC_SITE_READER) private readonly reader: PublicSiteReader,
     @Inject(PARTY_COOKIES) private readonly partyCookies: PartyCookies,
     @Inject(OBJECT_STORAGE) private readonly storage: ObjectStorage,
+    private readonly previews: PreviewSessions,
+    @Inject(SITE_READER) private readonly siteReader: SiteReader,
+    @Inject(SITE_PREVIEW_STORE) private readonly previewStore: SitePreviewStore,
   ) {}
 
   async execute({
     slug,
     cookies,
+    now = new Date(),
   }: {
     slug: string;
     cookies: Record<string, string | undefined>;
+    now?: Date;
   }): Promise<PublicSiteRead> {
+    // A prévia vale mais que o cookie de um grupo e também mostra o rascunho
+    // (Pré-visualização RN05). Lida pela transação com o userId do cookie: a
+    // RLS confere o vínculo de novo. Grupo que foi para a lixeira: segue sem prévia.
+    const preview = await this.previews.within({
+      slug,
+      cookies,
+      now,
+      work: async ({ weddingId, claims }) => {
+        const snapshot = await this.siteReader.read({ weddingId });
+        if (!snapshot) return null;
+        const party =
+          claims.mode === 'party' && claims.partyId
+            ? await this.previewStore.activeParty({ weddingId, partyId: claims.partyId })
+            : null;
+        if (claims.mode === 'party' && !party) return null;
+        const ids = [
+          ...(snapshot.coverImageId ? [snapshot.coverImageId] : []),
+          ...snapshot.sections.flatMap((section) => sectionImageIds(section)),
+        ];
+        const images = await this.siteReader.readyImages({ weddingId, ids });
+        return { snapshot, images, party };
+      },
+    });
+    if (preview) {
+      const { snapshot, images, party } = preview.value;
+      const site = liveFromSnapshot({ weddingId: preview.context.weddingId, snapshot, images });
+      const partyView = party && previewPartyView({ snapshot, partyName: party.name });
+      const view = this.view({ site, party: partyView });
+      return {
+        view: {
+          ...view,
+          viewer: {
+            kind: 'preview',
+            party: party ? { name: party.name } : null,
+            preview: { as: preview.context.claims.mode },
+          },
+        },
+        staleCookie: null,
+      };
+    }
+
     const site = await this.reader.bySlug({ slug });
     if (site && !site.live && DRAFT_SITE_STATUSES.includes(site.status)) throw new SiteDraftError();
     if (!site || !site.live) throw new SiteNotFoundError();
@@ -246,4 +310,67 @@ export class GetSiteLinkPreview {
         : null,
     };
   }
+}
+
+/**
+ * O site lido na prévia (transação com a RLS) no formato da função pública:
+ * só as seções ligadas da F2 e, da Cerimônia, só a quantidade de locais (o
+ * recorte segue o modo escolhido na barra).
+ */
+function liveFromSnapshot({
+  weddingId,
+  snapshot,
+  images,
+}: {
+  weddingId: string;
+  snapshot: SiteSnapshot;
+  images: readonly ReadySiteImage[];
+}): LiveSite {
+  return {
+    status: snapshot.status,
+    live: true,
+    weddingId,
+    slug: snapshot.slug ?? '',
+    eventDate: snapshot.eventDate ? snapshot.eventDate.toISOString().slice(0, 10) : null,
+    city: snapshot.city ?? '',
+    state: snapshot.state ?? '',
+    timezone: snapshot.timezone ?? '',
+    fontPairKey: snapshot.appearance.fontPairKey,
+    primaryColor: snapshot.appearance.primaryColor,
+    accentColor: snapshot.appearance.accentColor,
+    backgroundMode: snapshot.appearance.backgroundMode,
+    coverImageId: snapshot.coverImageId,
+    partners: snapshot.partners.map((partner) => partner.name),
+    sections: snapshot.sections
+      .filter((section) => section.enabled && SITE_SECTION_TYPES.includes(section.type))
+      .map(({ type, title, content }) => ({
+        type,
+        title,
+        content:
+          type === 'ceremony'
+            ? { venueCount: Array.isArray(content.venues) ? content.venues.length : 0 }
+            : content,
+      })),
+    images: images.map((image) => ({ ...image })),
+  };
+}
+
+/** Prévia como grupo: o que aquele grupo veria (Pré-visualização RN05). */
+function previewPartyView({
+  snapshot,
+  partyName,
+}: {
+  snapshot: SiteSnapshot;
+  partyName: string;
+}): PartySiteView {
+  const ceremony = snapshot.sections.find((section) => section.type === 'ceremony');
+  const venues = Array.isArray(ceremony?.content.venues)
+    ? (ceremony.content.venues as Record<string, unknown>[])
+    : [];
+  return {
+    partyName,
+    contactWhatsapp: snapshot.contactWhatsapp,
+    contactEmail: snapshot.contactEmail,
+    venues,
+  };
 }

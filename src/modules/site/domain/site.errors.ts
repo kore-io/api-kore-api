@@ -126,3 +126,26 @@ export class SiteLinkInvalidError extends Error {
 export class PartyLinkRateLimitedError extends Error {
   override name = 'PartyLinkRateLimitedError';
 }
+
+/** O casamento ainda não tem endereço (409 SITE_SLUG_MISSING; Pré-visualização RN01). */
+export class SiteSlugMissingError extends Error {
+  override name = 'SiteSlugMissingError';
+}
+
+/** O grupo não é do casamento ou está na lixeira (404 PARTY_NOT_FOUND; Pré-visualização RN09). */
+export class SitePartyNotFoundError extends Error {
+  override name = 'SitePartyNotFoundError';
+}
+
+/**
+ * Token da prévia inexistente, usado, vencido, de outro casamento ou de quem
+ * perdeu o vínculo (404 PREVIEW_INVALID; Pré-visualização RN04).
+ */
+export class PreviewInvalidError extends Error {
+  override name = 'PreviewInvalidError';
+}
+
+/** Sem cookie da prévia válido (401 PREVIEW_REQUIRED; Pré-visualização RN05 e RN06). */
+export class PreviewRequiredError extends Error {
+  override name = 'PreviewRequiredError';
+}

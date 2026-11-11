@@ -159,6 +159,7 @@ export class PrismaOwnerlessWeddings implements OwnerlessWeddings {
       await tx.tag.deleteMany({ where: { weddingId } });
       await tx.weddingStats.deleteMany({ where: { weddingId } });
       // O site (Imagens do site RN11): seções, conteúdos e imagens com os arquivos.
+      await tx.sitePreviewToken.deleteMany({ where: { weddingId } });
       await tx.sectionContent.deleteMany({ where: { weddingId } });
       await tx.section.deleteMany({ where: { weddingId } });
       await this.purgeSiteImages({ tx, weddingId });

@@ -17,6 +17,18 @@ import { PartyLinkFailures } from '../../shared/rate-limit/party-link-failures';
 import { PARTY_COOKIES } from './application/ports/party-cookies.port';
 import { StartPartySession } from './application/start-party-session.use-case';
 import { HmacPartyCookies } from './infrastructure/hmac-party-cookies';
+import { PREVIEW_COOKIES } from './application/ports/preview-cookies.port';
+import { SITE_PREVIEW_STORE } from './application/ports/site-preview-store.port';
+import { PreviewSessions } from './application/preview-sessions.service';
+import {
+  CreateSitePreview,
+  ListPreviewParties,
+  StartPreviewSession,
+  UpdatePreviewSession,
+} from './application/site-preview.use-cases';
+import { HmacPreviewCookies } from './infrastructure/hmac-preview-cookies';
+import { PrismaSitePreviewStore } from './infrastructure/prisma-site-preview.store';
+import { SitePreviewsController } from './presentation/site-previews.controller';
 import { PUBLIC_SITE_READER } from './application/ports/public-site-reader.port';
 import { GetPublicSite, GetSiteLinkPreview } from './application/public-site.use-cases';
 import { PrismaPublicSiteReader } from './infrastructure/prisma-public-site.reader';
@@ -37,6 +49,7 @@ import { SiteImagesController } from './presentation/site-images.controller';
     SiteController,
     PublicSiteController,
     SiteLinkPreviewController,
+    SitePreviewsController,
   ],
   providers: [
     { provide: SITE_IMAGE_STORE, useClass: PrismaSiteImageStore },
@@ -55,6 +68,13 @@ import { SiteImagesController } from './presentation/site-images.controller';
     { provide: PARTY_COOKIES, useClass: HmacPartyCookies },
     PartyLinkFailures,
     StartPartySession,
+    { provide: PREVIEW_COOKIES, useClass: HmacPreviewCookies },
+    { provide: SITE_PREVIEW_STORE, useClass: PrismaSitePreviewStore },
+    PreviewSessions,
+    CreateSitePreview,
+    StartPreviewSession,
+    UpdatePreviewSession,
+    ListPreviewParties,
     GetSiteLinkPreview,
     SiteImageRateLimitGuard,
   ],

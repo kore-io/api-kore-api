@@ -3,6 +3,7 @@ import type { TestingModule } from '@nestjs/testing';
 import type { Queue } from 'bullmq';
 import { randomUUID } from 'node:crypto';
 import { CleanSiteImages } from '../../src/modules/site/application/clean-site-images.use-case';
+import { CleanSitePreviewTokens } from '../../src/modules/site/application/clean-site-preview-tokens.use-case';
 import {
   SITE_IMAGE_CLEANUP,
   type SiteImageCleanup,
@@ -195,5 +196,33 @@ describe('Imagens do site: limpeza diária (worker)', () => {
     expect(await exists(id)).toBe(true);
     expect(await files(id)).toBe(3);
     spy.mockRestore();
+  });
+
+  it('Pré-visualização - a rotina apaga os tokens da prévia com mais de 1 dia, e o registro sai', async () => {
+    const weddingId = await wedding();
+    const owner = await db.membership.findFirstOrThrow({ where: { weddingId } });
+    const now = new Date();
+    const token = (createdAt: Date) =>
+      db.sitePreviewToken.create({
+        data: {
+          weddingId,
+          userId: owner.userId,
+          tokenHash: randomUUID().replace(/-/g, '').padEnd(64, '0'),
+          mode: 'visitor',
+          expiresAt: createdAt,
+          createdAt,
+        },
+      });
+    const old = await token(new Date(now.getTime() - 25 * HOUR_MS));
+    const recent = await token(new Date(now.getTime() - 23 * HOUR_MS));
+
+    const { deleted } = await worker.get(CleanSitePreviewTokens).execute({ now });
+
+    expect(deleted).toBeGreaterThanOrEqual(1);
+    expect(await db.sitePreviewToken.count({ where: { id: old.id } })).toBe(0);
+    expect(await db.sitePreviewToken.count({ where: { id: recent.id } })).toBe(1);
+    await db.applicationLog.findFirstOrThrow({
+      where: { action: 'site_preview_tokens.cleaned', createdAt: { gte: now } },
+    });
   });
 });

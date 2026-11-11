@@ -105,3 +105,35 @@ export class SiteLinkInvalidErrorBody {
   @ApiProperty({ enum: ['LINK_INVALID'] }) error: 'LINK_INVALID';
   @ApiProperty() message: string;
 }
+
+/** O casamento ainda não tem endereço (Pré-visualização RN01). */
+export class SiteSlugMissingErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['SITE_SLUG_MISSING'] }) error: 'SITE_SLUG_MISSING';
+  @ApiProperty() message: string;
+}
+
+/** O grupo não é do casamento ou está na lixeira (Pré-visualização RN09). */
+export class SitePartyNotFoundErrorBody {
+  static readonly status = 404;
+  @ApiProperty({ enum: [404] }) statusCode: 404;
+  @ApiProperty({ enum: ['PARTY_NOT_FOUND'] }) error: 'PARTY_NOT_FOUND';
+  @ApiProperty() message: string;
+}
+
+/** "Esta prévia não vale mais." (Pré-visualização RN04). */
+export class PreviewInvalidErrorBody {
+  static readonly status = 404;
+  @ApiProperty({ enum: [404] }) statusCode: 404;
+  @ApiProperty({ enum: ['PREVIEW_INVALID'] }) error: 'PREVIEW_INVALID';
+  @ApiProperty() message: string;
+}
+
+/** Sem cookie da prévia válido (Pré-visualização RN05 e RN06). */
+export class PreviewRequiredErrorBody {
+  static readonly status = 401;
+  @ApiProperty({ enum: [401] }) statusCode: 401;
+  @ApiProperty({ enum: ['PREVIEW_REQUIRED'] }) error: 'PREVIEW_REQUIRED';
+  @ApiProperty() message: string;
+}

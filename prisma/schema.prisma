@@ -97,6 +97,7 @@ model User {
   organizationMembers       OrganizationMember[]
   referralSettingsUpdated   ReferralSettings[]
   siteImagesUploaded        SiteImage[]          @relation("SiteImageUploadedBy")
+  sitePreviewTokens         SitePreviewToken[]
 
   @@map("users")
 }
@@ -301,6 +302,7 @@ model Wedding {
   siteImages        SiteImage[]
   sections          Section[]
   sectionContents   SectionContent[]
+  sitePreviewTokens SitePreviewToken[]
 
   @@index([createdByUserId], map: "idx_weddings_created_by_user_id")
   @@index([referrerId, status], map: "idx_weddings_referrer_id_status")
@@ -587,9 +589,10 @@ model Party {
   respondedAt       DateTime?           @map("responded_at") @db.Timestamptz(3)
   deletedAt         DateTime?           @map("deleted_at") @db.Timestamptz(3)
 
-  wedding Wedding    @relation(fields: [weddingId], references: [id], onDelete: Cascade)
-  guests  Guest[]
-  tags    PartyTag[]
+  wedding           Wedding            @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  guests            Guest[]
+  tags              PartyTag[]
+  sitePreviewTokens SitePreviewToken[]
 
   @@unique([weddingId, id], map: "uq_parties_wedding_id_id")
   @@map("parties")
@@ -832,4 +835,35 @@ model SectionContent {
   @@unique([sectionId, locale], map: "uq_section_contents_section_id_locale")
   @@index([weddingId], map: "idx_section_contents_wedding_id")
   @@map("section_contents")
+}
+
+// Token da pré-visualização do site (Pré-visualização RN02): 128 bits, uso
+// único, 5 minutos, guardado só em hash; trocado pelo cookie da prévia.
+model SitePreviewToken {
+  id        String          @id @default(uuid(7)) @db.Uuid
+  createdAt DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  weddingId String          @map("wedding_id") @db.Uuid
+  userId    String          @map("user_id") @db.Uuid
+  // SHA-256 do token, em hex.
+  tokenHash String          @unique(map: "uq_site_preview_tokens_token_hash") @map("token_hash")
+  mode      SitePreviewMode
+  // Só no modo party; FK composta com o casamento.
+  partyId   String?         @map("party_id") @db.Uuid
+  expiresAt DateTime        @map("expires_at") @db.Timestamptz(3)
+  usedAt    DateTime?       @map("used_at") @db.Timestamptz(3)
+
+  wedding Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  party   Party?  @relation(fields: [weddingId, partyId], references: [weddingId, id], onDelete: Cascade)
+
+  @@index([weddingId], map: "idx_site_preview_tokens_wedding_id")
+  @@index([createdAt], map: "idx_site_preview_tokens_created_at")
+  @@map("site_preview_tokens")
+}
+
+enum SitePreviewMode {
+  visitor
+  party
+
+  @@map("site_preview_mode")
 }

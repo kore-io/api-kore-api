@@ -1,5 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Matches } from 'class-validator';
+import {
+  IsIn,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Matches,
+  MaxLength,
+  ValidateIf,
+} from 'class-validator';
+import { PREVIEW_MODES, type PreviewMode } from '../domain/site-preview';
 
 class PublicAppearanceResponse {
   fontPairKey: string;
@@ -98,4 +107,55 @@ export class PartySessionResponse {
   /** O endereço do casamento do token: se for outro, o site vai para ele (RN06). */
   slug: string;
   @ApiProperty({ type: PartySessionPartyResponse }) party: PartySessionPartyResponse;
+}
+
+/** O modo da prévia: visitante ou um grupo (Pré-visualização RN02 e RN06). */
+export class PreviewModeBody {
+  @ApiProperty({ enum: PREVIEW_MODES }) @IsIn(PREVIEW_MODES) mode: PreviewMode;
+
+  /** Obrigatório só no modo party. */
+  @ApiProperty({ type: String, format: 'uuid', required: false })
+  @ValidateIf((body: PreviewModeBody) => body.mode === 'party')
+  @IsUUID()
+  partyId?: string;
+}
+
+export class SitePreviewResponse {
+  /** `<SITE_URL>/<slug>?previa=<token>`, para a aba aberta no clique (RN01). */
+  url: string;
+  @ApiProperty({ format: 'date-time' }) expiresAt: string;
+}
+
+/** O token da prévia: 22 caracteres base64url (128 bits; RN02). */
+export class PreviewSessionBody {
+  @ApiProperty({ example: 'q3Xv8LmN2pRtY7wK1cZb4A' })
+  @Matches(/^[A-Za-z0-9_-]{22}$/)
+  token: string;
+}
+
+class PreviewPartyResponse {
+  @ApiProperty({ format: 'uuid' }) id: string;
+  name: string;
+}
+
+export class PreviewSessionResponse {
+  slug: string;
+  @ApiProperty({ enum: PREVIEW_MODES }) mode: PreviewMode;
+  @ApiProperty({ type: PreviewPartyResponse, nullable: true }) party: PreviewPartyResponse | null;
+}
+
+export class PreviewModeResponse {
+  @ApiProperty({ enum: PREVIEW_MODES }) mode: PreviewMode;
+  @ApiProperty({ type: PreviewPartyResponse, nullable: true }) party: PreviewPartyResponse | null;
+}
+
+export class PreviewPartiesQuery {
+  /** Busca pelo nome, sem acento e sem diferenciar maiúsculas (decisão 186(2)). */
+  @ApiProperty({ required: false }) @IsOptional() @IsString() @MaxLength(80) q?: string;
+}
+
+export class PreviewPartiesResponse {
+  /** Quantos grupos batem com a busca, para "Mostrando 100 de {total} grupos." (decisão 203). */
+  total: number;
+  @ApiProperty({ type: [PreviewPartyResponse] }) data: PreviewPartyResponse[];
 }

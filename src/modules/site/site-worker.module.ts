@@ -1,6 +1,9 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { LogsWorkerModule } from '../logs/logs-worker.module';
+import { CleanSitePreviewTokens } from './application/clean-site-preview-tokens.use-case';
+import { SITE_PREVIEW_TOKEN_CLEANUP } from './application/ports/site-preview-token-cleanup.port';
+import { PrismaSitePreviewTokenCleanup } from './infrastructure/backoffice/prisma-site-preview-token-cleanup';
 import { CleanSiteImages } from './application/clean-site-images.use-case';
 import { SITE_IMAGE_CLEANUP } from './application/ports/site-image-cleanup.port';
 import { PrismaSiteImageCleanup } from './infrastructure/backoffice/prisma-site-image-cleanup';
@@ -20,6 +23,8 @@ import {
   providers: [
     { provide: SITE_IMAGE_CLEANUP, useClass: PrismaSiteImageCleanup },
     CleanSiteImages,
+    { provide: SITE_PREVIEW_TOKEN_CLEANUP, useClass: PrismaSitePreviewTokenCleanup },
+    CleanSitePreviewTokens,
     SiteImageCleanupProcessor,
     SiteImageCleanupScheduler,
   ],
