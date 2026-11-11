@@ -5,6 +5,12 @@ import { uuidV7 } from '../../../shared/ids/uuid-v7';
 import type { PlannerProfiles } from '../application/ports/planner-profiles.port';
 import { nextReferralCode, referralCodeBase } from '../domain/invitation-acceptance';
 
+/**
+ * Conflitos seguidos no código antes de desistir. Cada um é outro aceite que
+ * pegou o mesmo número no mesmo instante; não há teto para o número em si.
+ */
+const MAX_CODE_CONFLICTS = 100;
+
 /** Tabelas da indicação: sem RLS de casamento; a API lê e cria (migration referrals). */
 @Injectable()
 export class PrismaPlannerProfiles implements PlannerProfiles {
@@ -42,7 +48,9 @@ export class PrismaPlannerProfiles implements PlannerProfiles {
     const base = referralCodeBase({ name });
     // O próximo sufixo livre, sem teto (decisão 211). Se outro aceite pegar o
     // mesmo código entre a leitura e o INSERT, lê de novo e tenta o seguinte.
-    for (;;) {
+    for (let conflicts = 0; ; conflicts++) {
+      if (conflicts >= MAX_CODE_CONFLICTS)
+        throw new Error('Conflitos seguidos no código de indicação.');
       const taken = await db.referrer.findMany({
         where: { OR: [{ referralCode: base }, { referralCode: { startsWith: `${base}-` } }] },
         select: { referralCode: true },
@@ -63,6 +71,10 @@ export class PrismaPlannerProfiles implements PlannerProfiles {
         skipDuplicates: true,
       });
       if (count === 1) break;
+      // O skipDuplicates também pula o conflito do userId (único): quem já tem
+      // perfil de indicador não ganha outro, e o laço não pode girar à toa.
+      if (await db.referrer.findUnique({ where: { userId }, select: { id: true } }))
+        throw new Error('A pessoa já tem perfil de indicador.');
     }
     await db.planner.createMany({ data: { referrerId, creditName: name } });
     const organizationId = uuidV7({ now: now.getTime() });

@@ -2,6 +2,10 @@ import { INestApplication } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
+import {
+  PLANNER_PROFILES,
+  type PlannerProfiles,
+} from '../../src/modules/access/application/ports/planner-profiles.port';
 import { BackofficePrismaService } from '../../src/shared/database/backoffice-prisma.service';
 import { createTestApp } from '../support/create-test-app';
 import { createTestWorker } from '../support/create-test-worker';
@@ -502,6 +506,12 @@ describe('Convites de acesso: ler, aceitar e recusar (banco real; decisões 168 
         `${base}-57`,
         `${base}-58`,
       ]);
+      // Quem já tem perfil de indicador não entra num laço: o erro é claro.
+      await expect(
+        app
+          .get<PlannerProfiles>(PLANNER_PROFILES)
+          .createMinimal({ userId: first.userId, name, now: new Date() }),
+      ).rejects.toThrow('A pessoa já tem perfil de indicador.');
     });
 
     it('RN10 - casamento que já tem indicador: a cerimonialista entra sem atribuição', async () => {
