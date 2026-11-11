@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import ExcelJS from 'exceljs';
+import { randomBytes } from 'node:crypto';
 import request from 'supertest';
 import { BackofficePrismaService } from '../../src/shared/database/backoffice-prisma.service';
 import { createTestApp } from '../support/create-test-app';
@@ -72,7 +73,11 @@ describe('Importação: planilha (banco real)', () => {
     it('RN05, RN06, RN07 e RN09 - devolve as contagens, as linhas que ficam de fora e os avisos, sem gravar nada', async () => {
       const { ana, weddingId } = await anaWedding();
       await db.party.create({
-        data: { weddingId, name: 'Família Rocha', linkToken: 'A'.repeat(22) },
+        data: {
+          weddingId,
+          name: 'Família Rocha',
+          linkToken: randomBytes(16).toString('base64url'),
+        },
       });
 
       const response = await preview(ana.cookie, weddingId, await sample(), 'lista.xlsx').expect(
@@ -120,7 +125,11 @@ describe('Importação: planilha (banco real)', () => {
     it('RN07 e RN08 - avisa o grupo que já existe e a tag que passaria de 10', async () => {
       const { ana, weddingId } = await anaWedding();
       await db.party.create({
-        data: { weddingId, name: 'FAMILIA MOREIRA', linkToken: 'B'.repeat(22) },
+        data: {
+          weddingId,
+          name: 'FAMILIA MOREIRA',
+          linkToken: randomBytes(16).toString('base64url'),
+        },
       });
       await db.tag.createMany({
         data: Array.from({ length: 9 }, (_, i) => ({ weddingId, name: `Tag ${i}` })),
