@@ -18,6 +18,11 @@ export interface PastedGroup {
   /** Nulo é a pessoa sem nome ("Nome da 2ª pessoa"). */
   guests: { name: string | null }[];
   warnings: PasteWarning[];
+  /**
+   * Quantos nomes repetidos saíram do grupo ("Jorge, jorge, JORGE" dá 2): o app
+   * os soma ao removedInPreview (RN14; decisão 210(4)).
+   */
+  duplicatesRemoved: number;
 }
 
 export interface PastedList {
@@ -74,12 +79,14 @@ export function parsePastedList({ text }: { text: string }): PastedList {
 
     const named: string[] = [];
     const seen = new Set<string>();
+    let duplicatesRemoved = 0;
     for (const person of peoplePart ? peoplePart.split(SEPARATORS) : []) {
       const name = person.replace(/\s+/g, ' ').trim();
       if (!name) continue;
       const key = comparableName(name);
       if (seen.has(key)) {
         warnings.add('DUPLICATE_REMOVED');
+        duplicatesRemoved += 1;
         continue;
       }
       seen.add(key);
@@ -104,6 +111,7 @@ export function parsePastedList({ text }: { text: string }): PastedList {
         ...Array.from({ length: unnamed }, () => ({ name: null })),
       ],
       warnings: [...warnings],
+      duplicatesRemoved,
     });
   });
 

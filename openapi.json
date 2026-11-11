@@ -7459,6 +7459,11 @@
               ]
             }
           },
+          "duplicatesRemoved": {
+            "type": "integer",
+            "description": "Quantos nomes repetidos saíram do grupo (\"Jorge, jorge, JORGE\" dá 2); o app\nos soma ao removedInPreview (RN14; decisão 210(4)).",
+            "minimum": 0
+          },
           "line": {
             "type": "number"
           },
@@ -7471,6 +7476,7 @@
           "name",
           "guests",
           "warnings",
+          "duplicatesRemoved",
           "line",
           "source"
         ]
