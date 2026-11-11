@@ -195,8 +195,10 @@ export class PrismaOwnerlessWeddings implements OwnerlessWeddings {
   /**
    * As imagens do site e os arquivos delas (Imagens do site RN11), pela lista
    * do banco: as chaves não levam o casamento. Os objetos saem dentro da
-   * transação, com o casamento travado; se o armazenamento falhar, nada é
-   * desfeito no banco e a rotina tenta de novo no dia seguinte.
+   * transação, com o casamento travado. Se o armazenamento falhar, o erro
+   * desfaz o expurgo inteiro no banco e a rotina tenta de novo no dia seguinte.
+   * Se o commit falhar depois de apagar os arquivos, as linhas voltam sem
+   * arquivo, o que é inofensivo: a rodada seguinte as apaga de novo.
    */
   private async purgeSiteImages({
     tx,
