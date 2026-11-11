@@ -1,8 +1,16 @@
-import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
+import { IMPORT_GUESTS_MAX } from '../domain/paste-list';
 import { toHttpError as toAccessHttpError } from '../../access/presentation/access-http-errors';
 import { validationError } from '../../../shared/http/validation-errors';
 import {
   AlreadyRespondedError,
+  DuplicateGuestError,
+  TooManyGuestsError,
   EmptyPlusOneError,
   GuestFieldsInvalidError,
   GuestNotFoundError,
@@ -91,6 +99,22 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 404,
       error: 'TRASH_ITEM_NOT_FOUND',
       message: 'Item not found in the trash.',
+    });
+  }
+  if (error instanceof TooManyGuestsError) {
+    return new UnprocessableEntityException({
+      statusCode: 422,
+      error: 'TOO_MANY_GUESTS',
+      message: 'The import has more than 1000 guests.',
+      max: IMPORT_GUESTS_MAX,
+    });
+  }
+  if (error instanceof DuplicateGuestError) {
+    return new UnprocessableEntityException({
+      statusCode: 422,
+      error: 'DUPLICATE',
+      message: 'A name repeats in the same party.',
+      path: error.path,
     });
   }
   return toAccessHttpError(error);

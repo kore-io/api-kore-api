@@ -3115,6 +3115,229 @@
           "trash"
         ]
       }
+    },
+    "/v1/weddings/{weddingId}/guest-imports/paste/preview": {
+      "post": {
+        "operationId": "GuestImportsController_pastePreview_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PastePreviewBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PastePreviewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyGuestsErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Colar a lista, prévia: nada é gravado (Importação RN10 e RN11).",
+        "tags": [
+          "guest-imports"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/guest-imports/paste": {
+      "post": {
+        "operationId": "GuestImportsController_paste_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasteImportBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResultResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/TooManyGuestsErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DuplicateErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Colar a lista, importar: valida de novo e cria tudo numa transação (RN12 e RN14).",
+        "tags": [
+          "guest-imports"
+        ]
+      }
     }
   },
   "info": {
@@ -6204,6 +6427,228 @@
           "type",
           "id",
           "name"
+        ]
+      },
+      "TooManyGuestsErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "TOO_MANY_GUESTS"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "max": {
+            "type": "number",
+            "example": 1000
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "max"
+        ]
+      },
+      "PastePreviewBody": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 100000,
+            "example": "Família Moreira: Jorge, Célia, Pedro"
+          }
+        },
+        "required": [
+          "text"
+        ]
+      },
+      "PastedGuestResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nulo: a pessoa sem nome que o app pede (\"Nome da 2ª pessoa\")."
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "PastedGroupResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nulo na linha só com \"+ N\": o app preenche com a 1ª pessoa antes de enviar."
+          },
+          "guests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PastedGuestResponse"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "PARTY_NAME_EXISTS",
+                "DUPLICATE_REMOVED",
+                "TOO_LONG",
+                "PLUS_OUT_OF_RANGE"
+              ]
+            }
+          },
+          "line": {
+            "type": "number"
+          },
+          "source": {
+            "type": "string",
+            "description": "A linha original, para o cartão \"Qual é o nome de cada pessoa deste grupo?\"."
+          }
+        },
+        "required": [
+          "name",
+          "guests",
+          "warnings",
+          "line",
+          "source"
+        ]
+      },
+      "PastePreviewResponse": {
+        "type": "object",
+        "properties": {
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PastedGroupResponse"
+            }
+          },
+          "droppedLines": {
+            "description": "Linhas que viraram grupo sem ninguém e saíram (o app soma 1 por linha ao removedInPreview).",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "parties": {
+            "type": "number"
+          },
+          "guests": {
+            "type": "number",
+            "description": "Com as pessoas sem nome."
+          },
+          "missingNames": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "groups",
+          "droppedLines",
+          "parties",
+          "guests",
+          "missingNames"
+        ]
+      },
+      "DuplicateErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "DUPLICATE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string",
+            "description": "A pessoa repetida, ex.: groups.1.guests.2.",
+            "example": "groups.1.guests.2"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "path"
+        ]
+      },
+      "PastedGroupBody": {
+        "type": "object",
+        "properties": {
+          "guests": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 80
+            }
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 80
+          }
+        },
+        "required": [
+          "guests",
+          "name"
+        ]
+      },
+      "PasteImportBody": {
+        "type": "object",
+        "properties": {
+          "groups": {
+            "minItems": 1,
+            "maxItems": 1000,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PastedGroupBody"
+            }
+          },
+          "removedInPreview": {
+            "type": "number",
+            "description": "As pessoas removidas, as duplicadas tiradas e 1 por grupo que saiu (o linhas_erro).",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "groups",
+          "removedInPreview"
+        ]
+      },
+      "ImportResultResponse": {
+        "type": "object",
+        "properties": {
+          "parties": {
+            "type": "number"
+          },
+          "guests": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "parties",
+          "guests"
         ]
       }
     }

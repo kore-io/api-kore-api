@@ -3,6 +3,9 @@ import { TenantTransaction } from '../../../shared/database/tenant-transaction';
 import type { NewParty, PartyStore } from '../application/ports/party-store.port';
 import type { StatsDelta } from '../domain/wedding-stats';
 
+/** Grupos por lote no createMany: segura o tamanho de cada INSERT. */
+const BATCH_SIZE = 200;
+
 /**
  * Na transação da requisição, com a RLS ligada. Sem RETURNING nas inclusões
  * (createMany): a leitura do grupo novo vem depois, pelo leitor.
@@ -64,6 +67,64 @@ export class PrismaPartyStore implements PartyStore {
           tagId,
         })),
       });
+  }
+
+  async createMany({ parties }: { parties: readonly NewParty[] }): Promise<void> {
+    const tx = this.tenant.client();
+    for (let start = 0; start < parties.length; start += BATCH_SIZE) {
+      const batch = parties.slice(start, start + BATCH_SIZE);
+      await tx.party.createMany({
+        data: batch.map((party) => ({
+          id: party.id,
+          weddingId: party.weddingId,
+          name: party.name,
+          internalNote: party.internalNote,
+          linkToken: party.linkToken,
+          contactGuestId: party.contactGuestId,
+          plusOneSlots: party.guests.filter((guest) => guest.isPlusOne).length,
+          createdAt: party.now,
+        })),
+      });
+      await tx.guest.createMany({
+        data: batch.flatMap((party) =>
+          party.guests.map((guest) => ({
+            id: guest.id,
+            weddingId: party.weddingId,
+            partyId: party.id,
+            name: guest.name,
+            ageGroup: guest.ageGroup,
+            phone: guest.phone,
+            email: guest.email,
+            dietaryRestriction: guest.dietaryRestriction ?? null,
+            isPlusOne: guest.isPlusOne,
+            joinedPartyAt: party.now,
+            createdAt: party.now,
+          })),
+        ),
+      });
+      const partyTags = batch.flatMap((party) =>
+        party.tagIds.map((tagId) => ({ weddingId: party.weddingId, partyId: party.id, tagId })),
+      );
+      if (partyTags.length > 0) await tx.partyTag.createMany({ data: partyTags });
+      const guestTags = batch.flatMap((party) =>
+        party.guests.flatMap((guest) =>
+          (guest.tagIds ?? []).map((tagId) => ({
+            weddingId: party.weddingId,
+            guestId: guest.id,
+            tagId,
+          })),
+        ),
+      );
+      if (guestTags.length > 0) await tx.guestTag.createMany({ data: guestTags });
+    }
+  }
+
+  async activePartyNames({ weddingId }: { weddingId: string }): Promise<string[]> {
+    const parties = await this.tenant.client().party.findMany({
+      where: { weddingId, deletedAt: null },
+      select: { name: true },
+    });
+    return parties.map((party) => party.name);
   }
 
   async regenerateLink({
