@@ -11,6 +11,11 @@ export class AppConfigService {
     return this.config.get(key, { infer: true });
   }
 
+  /** A origem do site do casal (esquema, host e porta do SITE_URL; Site público RN07). */
+  get siteOrigin(): string {
+    return new URL(this.get({ key: 'SITE_URL' })).origin;
+  }
+
   get isProduction(): boolean {
     return this.get({ key: 'APP_ENV' }) === 'production';
   }

@@ -1,8 +1,12 @@
 import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common';
+import type { CorsOptionsDelegate } from '@nestjs/common/interfaces/external/cors-options.interface';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, type OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
+import type { Request } from 'express';
 import { OPENAPI_CONSTANT_SCHEMAS } from '../../openapi-constants';
+import { originsFor } from './origin-policy';
+import { SiteRouteRegistry } from './site-routes.registry';
 import { validationExceptionFactory } from './validation-errors';
 
 export const API_DOCS_PATH = 'docs';
@@ -15,11 +19,14 @@ export function configureApp({
   app,
   enableDocs,
   allowedOrigins,
+  siteOrigin,
   trustProxyHops,
 }: {
   app: INestApplication;
   enableDocs: boolean;
   allowedOrigins: readonly string[];
+  /** A origem do site do casal (SITE_URL); nula onde não há site (testes, OpenAPI). */
+  siteOrigin: string | null;
   trustProxyHops: number;
 }): INestApplication {
   // Atrás de proxy (Railway), o IP do cliente vem no X-Forwarded-For; só os
@@ -46,15 +53,28 @@ export function configureApp({
     }),
   );
 
-  // O app chama a API de outra origem com o cookie de sessão: só as origens da
-  // lista recebem os cabeçalhos de CORS (a mesma lista do OriginGuard). O
-  // Content-Disposition fica legível no fetch do app, para o nome do arquivo
-  // da exportação (decisão 212(4)).
-  app.enableCors({
-    origin: [...allowedOrigins],
-    credentials: true,
-    exposedHeaders: ['Content-Disposition'],
-  });
+  // O app e o site chamam a API de outra origem com cookies: CORS por rota,
+  // com a mesma regra do OriginGuard (Site público RN07; decisão 207, item 4).
+  // Nas rotas do app, só as origens da lista; nas @SiteRoute(), também a do
+  // site. O CORS roda antes do roteamento (o preflight não chega a rota), então
+  // o caminho é conferido no registro montado dos metadados. O
+  // Content-Disposition fica legível, para o nome do arquivo da exportação
+  // (decisão 212(4)).
+  const siteRoutes = optionalProvider(app, SiteRouteRegistry);
+  const corsByRoute: CorsOptionsDelegate<Request> = (request, callback) => {
+    const origin = request.headers.origin;
+    const allowed = originsFor({
+      isSiteRoute: siteRoutes?.isSitePath({ path: request.path }) ?? false,
+      appOrigins: allowedOrigins,
+      siteOrigin,
+    });
+    callback(null, {
+      origin: origin !== undefined && allowed.includes(origin) ? origin : false,
+      credentials: true,
+      exposedHeaders: ['Content-Disposition'],
+    });
+  };
+  app.enableCors(corsByRoute);
 
   // O cookie de sessão (HttpOnly) é lido pelo SessionGuard.
   app.use(cookieParser());
@@ -80,4 +100,13 @@ export function buildOpenApiDocument({ app }: { app: INestApplication }): OpenAP
     schemas: { ...document.components?.schemas, ...OPENAPI_CONSTANT_SCHEMAS },
   };
   return document;
+}
+
+/** O provider, quando o módulo dele está no app (o teste do configureApp não tem). */
+function optionalProvider<T>(app: INestApplication, type: new (...args: never[]) => T): T | null {
+  try {
+    return app.get(type, { strict: false });
+  } catch {
+    return null;
+  }
 }

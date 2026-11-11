@@ -7,7 +7,8 @@ import { openSession, signedInUser } from '../support/sessions';
 import { seedReferrerWedding, seedWedding } from '../support/weddings';
 
 const APP_ORIGIN = 'http://localhost:5173';
-const SITE_URL = 'http://localhost:5173';
+// O site do casal em porta própria no local (decisão 207, item 12).
+const SITE_URL = 'http://localhost:5174';
 
 /** Grupos e convidados: criar, ler, listar e regenerar o link (banco real). */
 describe('Grupos e convidados (banco real)', () => {
