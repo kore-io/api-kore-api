@@ -74,3 +74,23 @@ export class SiteSlugUnavailableError extends Error {
     this.suggestion = suggestion;
   }
 }
+
+/** A cor bloqueada pelo guarda-corpo (422 CONTRAST_TOO_LOW; Aparência RN04 e RN05). */
+export class ContrastTooLowError extends Error {
+  override name = 'ContrastTooLowError';
+  readonly check: 'primary_foreground' | 'primary_background';
+  /** Duas casas, para baixo. */
+  readonly ratio: number;
+
+  constructor({
+    check,
+    ratio,
+  }: {
+    check: 'primary_foreground' | 'primary_background';
+    ratio: number;
+  }) {
+    super();
+    this.check = check;
+    this.ratio = ratio;
+  }
+}

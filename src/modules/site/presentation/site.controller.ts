@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Put } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import {
   ApiErrorResponses,
@@ -12,7 +12,10 @@ import {
 import { CurrentSession } from '../../access/presentation/current-session.decorator';
 import { GetSiteEditor } from '../application/site-editor-view';
 import { UpdateSiteBasics } from '../application/update-site-basics.use-case';
+import { UpdateSiteAppearance } from '../application/update-site-appearance.use-case';
+import { SiteAppearanceResponse, UpdateSiteAppearanceBody } from './site-appearance.dto';
 import {
+  ContrastTooLowErrorBody,
   SiteFieldNotAllowedErrorBody,
   SiteImageNotFoundErrorBody,
   SiteSlugLockedErrorBody,
@@ -28,7 +31,33 @@ export class SiteController {
   constructor(
     private readonly getEditor: GetSiteEditor,
     private readonly updateBasics: UpdateSiteBasics,
+    private readonly updateAppearance: UpdateSiteAppearance,
   ) {}
+
+  /** Grava a Aparência inteira, com o guarda-corpo de contraste (Aparência RN01 a RN07). */
+  @Put('appearance')
+  @ApiErrorResponses(
+    ...commonErrors({ validated: true, session: true, write: true }),
+    ActionNotAllowedErrorBody,
+    WeddingNotFoundErrorBody,
+    ContrastTooLowErrorBody,
+  )
+  async appearance(
+    @CurrentSession() session: AuthenticatedSession,
+    @Param('weddingId') weddingId: string,
+    @Body() body: UpdateSiteAppearanceBody,
+  ): Promise<SiteAppearanceResponse> {
+    try {
+      return await this.updateAppearance.execute({
+        userId: session.userId,
+        weddingId,
+        input: body,
+        now: new Date(),
+      });
+    } catch (error) {
+      throw toHttpError(error);
+    }
+  }
 
   /** Tudo o que o Editor mostra, numa chamada (Dados básicos RN11). */
   @Get()

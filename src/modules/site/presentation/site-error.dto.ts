@@ -67,3 +67,15 @@ export class SiteSlugUnavailableErrorBody {
   @ApiProperty({ enum: ['taken', 'reserved'] }) reason: 'taken' | 'reserved';
   @ApiProperty({ type: String, nullable: true }) suggestion: string | null;
 }
+
+/** A cor bloqueada; o app escolhe o texto pelo check (Aparência RN04 e RN05). */
+export class ContrastTooLowErrorBody {
+  static readonly status = 422;
+  @ApiProperty({ enum: [422] }) statusCode: 422;
+  @ApiProperty({ enum: ['CONTRAST_TOO_LOW'] }) error: 'CONTRAST_TOO_LOW';
+  @ApiProperty() message: string;
+  @ApiProperty({ enum: ['primary_foreground', 'primary_background'] })
+  check: 'primary_foreground' | 'primary_background';
+  /** A razão medida, com duas casas para baixo. */
+  @ApiProperty() ratio: number;
+}

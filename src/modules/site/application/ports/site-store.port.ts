@@ -37,6 +37,20 @@ export interface SiteStore {
    * O "em uso" das imagens, recalculado por inteiro (Imagens do site RN08):
    * `unusedSince` nulo nas em uso e `now` nas `ready` que acabaram de sair.
    */
+  /**
+   * Grava a Aparência inteira e o `siteUpdatedAt`; o `appearanceSetAt` só na
+   * primeira vez (Aparência RN10).
+   */
+  updateAppearance({
+    weddingId,
+    appearance,
+    now,
+  }: {
+    weddingId: string;
+    appearance: SiteAppearanceChanges;
+    now: Date;
+  }): Promise<void>;
+
   markImageUsage({
     weddingId,
     inUse,
@@ -46,6 +60,14 @@ export interface SiteStore {
     inUse: ReadonlySet<string>;
     now: Date;
   }): Promise<void>;
+}
+
+export interface SiteAppearanceChanges {
+  fontPairKey: string;
+  starterPaletteKey: string | null;
+  primaryColor: string;
+  accentColor: string;
+  backgroundMode: string;
 }
 
 export const SITE_STORE = Symbol('SiteStore');

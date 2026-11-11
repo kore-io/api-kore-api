@@ -7,6 +7,7 @@ import {
 import { toHttpError as toAccessHttpError } from '../../access/presentation/access-http-errors';
 import { validationError } from '../../../shared/http/validation-errors';
 import {
+  ContrastTooLowError,
   SiteImageInvalidError,
   SiteImageLimitReachedError,
   SiteImageNotFoundError,
@@ -24,6 +25,15 @@ import {
  */
 export function toHttpError(error: unknown): unknown {
   if (error instanceof SiteFieldsInvalidError) return validationError({ errors: error.issues });
+  if (error instanceof ContrastTooLowError) {
+    return new UnprocessableEntityException({
+      statusCode: 422,
+      error: 'CONTRAST_TOO_LOW',
+      message: 'The color does not reach the minimum contrast.',
+      check: error.check,
+      ratio: error.ratio,
+    });
+  }
   if (error instanceof SiteFieldNotAllowedError) {
     return new ForbiddenException({
       statusCode: 403,

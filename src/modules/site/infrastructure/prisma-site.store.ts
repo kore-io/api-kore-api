@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../../../generated/prisma/client';
 import { TenantTransaction } from '../../../shared/database/tenant-transaction';
-import type { SiteBasicsChanges, SiteStore } from '../application/ports/site-store.port';
+import type {
+  SiteAppearanceChanges,
+  SiteBasicsChanges,
+  SiteStore,
+} from '../application/ports/site-store.port';
 
 /** O endereço repetido bate no índice único (migration weddings). */
 function isSlugTaken(error: unknown): boolean {
@@ -57,6 +61,27 @@ export class PrismaSiteStore implements SiteStore {
         data: { displayName: partner.name },
       });
     }
+  }
+
+  async updateAppearance({
+    weddingId,
+    appearance,
+    now,
+  }: {
+    weddingId: string;
+    appearance: SiteAppearanceChanges;
+    now: Date;
+  }): Promise<void> {
+    const tx = this.tenant.client();
+    await tx.wedding.update({
+      where: { id: weddingId },
+      data: { ...appearance, siteUpdatedAt: now },
+      select: { id: true },
+    });
+    await tx.wedding.updateMany({
+      where: { id: weddingId, appearanceSetAt: null },
+      data: { appearanceSetAt: now },
+    });
   }
 
   async markImageUsage({
