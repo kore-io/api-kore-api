@@ -10,6 +10,7 @@ import {
   IsString,
   IsUUID,
   MaxLength,
+  ValidateIf,
 } from 'class-validator';
 import { TAG_COLORS, TAG_NAME_MAX, type TagColor } from '../domain/party';
 
@@ -37,7 +38,9 @@ export class CreateTagBody {
 
 export class UpdateTagBody {
   @ApiProperty({ maxLength: TAG_NAME_MAX, required: false })
-  @IsOptional()
+  // Ausente não muda; null não é aceito (o nome é obrigatório). @IsOptional
+  // deixaria o null passar.
+  @ValidateIf((_, value) => value !== undefined)
   @Transform(trim)
   @IsString()
   @IsNotEmpty()

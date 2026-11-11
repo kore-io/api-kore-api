@@ -164,6 +164,17 @@ describe('Tags dos convidados (banco real)', () => {
       expect(cleared.body).toMatchObject({ name: 'Trabalho', color: null });
     });
 
+    it('RN02 - renomear com nome nulo ou vazio dá 400 em "name", e a tag não muda', async () => {
+      const { ana, weddingId } = await anaWedding();
+      const tag = await createTag(ana.cookie, weddingId, { name: 'Igreja' }).expect(201);
+
+      for (const name of [null, '  '])
+        expect(
+          (await updateTag(ana.cookie, weddingId, tag.body.id, { name }).expect(400)).body.errors,
+        ).toEqual(expect.arrayContaining([expect.objectContaining({ path: 'name' })]));
+      expect((await db.tag.findUniqueOrThrow({ where: { id: tag.body.id } })).name).toBe('Igreja');
+    });
+
     it('RN06 - tag na lixeira, de outro casamento ou id inválido: 404 TAG_NOT_FOUND', async () => {
       const { ana, weddingId } = await anaWedding();
       const other = await anaWedding();
