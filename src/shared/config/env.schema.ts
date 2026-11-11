@@ -104,6 +104,15 @@ export const envSchema = z
       .default('info'),
   })
   .superRefine((env, ctx) => {
+    // A origem do site só vale nas rotas do site (Site público RN07): na lista
+    // do app, ela leria e escreveria nas rotas do app com a sessão do casal.
+    if (env.ALLOWED_ORIGINS.includes(new URL(env.SITE_URL).origin)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['ALLOWED_ORIGINS'],
+        message: 'não pode ter a origem do SITE_URL (a origem do site vale só nas rotas do site)',
+      });
+    }
     if (env.GOOGLE_PROVIDER === 'dev' && !LOCAL_KEY_ENVS.includes(env.APP_ENV)) {
       ctx.addIssue({
         code: 'custom',

@@ -20,6 +20,7 @@ async function exportOpenApi(): Promise<void> {
     app,
     enableDocs: false,
     allowedOrigins: [],
+    siteOrigin: null,
     trustProxyHops: 0,
   });
   const content = `${JSON.stringify(buildOpenApiDocument({ app }), null, 2)}\n`;

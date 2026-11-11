@@ -22,6 +22,7 @@ export async function createTestApp({
     app: moduleRef.createNestApplication(),
     enableDocs: false,
     allowedOrigins: moduleRef.get(AppConfigService).get({ key: 'ALLOWED_ORIGINS' }),
+    siteOrigin: moduleRef.get(AppConfigService).siteOrigin,
     trustProxyHops: moduleRef.get(AppConfigService).get({ key: 'TRUST_PROXY_HOPS' }),
   });
   await app.init();

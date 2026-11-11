@@ -17,7 +17,7 @@ const validConfig = {
   GOOGLE_PROVIDER: 'dev',
   OAUTH_STATE_KEY: 'nKTxWhY4lzQ+sR037TnEfHcScVZXA1kcFbG/ODTNFik=',
   APP_URL: 'http://localhost:5173',
-  SITE_URL: 'http://localhost:5173',
+  SITE_URL: 'http://localhost:5174',
   KMS_LOCAL_MASTER_KEY: '258+JWcuRfDrsS0xeKuTKgRV7p+kFlSMaIu3PErymmo=',
   STORAGE_ENDPOINT: 'http://localhost:9000',
   STORAGE_ACCESS_KEY_ID: 'kore',
@@ -116,5 +116,13 @@ describe('validateEnv', () => {
       validateEnv({ config: { ...validConfig, STORAGE_FORCE_PATH_STYLE: 'true' } })
         .STORAGE_FORCE_PATH_STYLE,
     ).toBe(true);
+  });
+
+  it('dada a origem do site na lista do app, quando valida, então recusa subir (Site público RN07)', () => {
+    expect(() =>
+      validateEnv({
+        config: { ...validConfig, ALLOWED_ORIGINS: 'http://localhost:5173, http://localhost:5174' },
+      }),
+    ).toThrow(/ALLOWED_ORIGINS: não pode ter a origem do SITE_URL/);
   });
 });
