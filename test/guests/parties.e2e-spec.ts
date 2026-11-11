@@ -382,8 +382,8 @@ describe('Grupos e convidados (banco real)', () => {
         internalNote: 'Pedro tem 7 anos e vai de pajem.',
         tags: [{ name: 'Família da Ana' }],
         guests: [
-          { name: 'Célia Moreira', phone: '+5519998763310' },
-          { name: 'Luiz Moreira' },
+          { name: 'Célia Moreira', phone: '+5519998763310', phoneMasked: '(19) 9****-3310' },
+          { name: 'Luiz Moreira', phone: null, phoneMasked: null, emailMasked: null },
           {
             name: 'Pedro Moreira',
             ageGroup: 'child',
@@ -393,6 +393,34 @@ describe('Grupos e convidados (banco real)', () => {
           { name: null, isPlusOne: true },
         ],
       });
+    });
+
+    it('decisão 202(3) - o painel traz o telefone e o e-mail mascarados, além dos inteiros do Editar grupo', async () => {
+      const { ana, weddingId } = await anaWedding();
+      const created = await create(ana.cookie, weddingId, {
+        name: 'Beatriz e Leonardo',
+        guests: [
+          guest('Beatriz Lima', { phone: '(19) 99876-1402', email: 'bia.lima@gmail.com' }),
+          guest('Leonardo Castro', { phone: '+351 912 345 678', email: 'lc@exemplo.kore.local' }),
+        ],
+      }).expect(201);
+
+      const response = await get(ana.cookie, weddingId, created.body.id).expect(200);
+
+      expect(response.body.guests).toMatchObject([
+        {
+          phone: '+5519998761402',
+          phoneMasked: '(19) 9****-1402',
+          email: 'bia.lima@gmail.com',
+          emailMasked: 'bi***@gmail.com',
+        },
+        {
+          phone: '+351912345678',
+          phoneMasked: '+351 9** *** 678',
+          email: 'lc@exemplo.kore.local',
+          emailMasked: 'l***@exemplo.kore.local',
+        },
+      ]);
     });
 
     it('RN14 - grupo de outro casamento, na lixeira ou com id inválido: 404 PARTY_NOT_FOUND', async () => {
