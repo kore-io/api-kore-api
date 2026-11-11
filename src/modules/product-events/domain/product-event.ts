@@ -15,6 +15,16 @@ export type ProductEvent =
       name: 'importacao';
       weddingId: string;
       props: { metodo: 'planilha' | 'lista'; linhas_erro: number };
+    }
+  /** Exportação RN08: a cada exportação com a coluna Restrição alimentar. */
+  | {
+      name: 'exportacao_buffet';
+      weddingId: string;
+      props: {
+        formato: 'xlsx' | 'pdf';
+        quem: 'owner' | 'collaborator';
+        filtro: 'all' | 'confirmed' | 'tag';
+      };
     };
 
 export type ProductEventName = ProductEvent['name'];

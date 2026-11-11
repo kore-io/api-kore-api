@@ -15,6 +15,11 @@ import { GuestsController } from './presentation/guests.controller';
 import { TagsController } from './presentation/tags.controller';
 import { TrashController } from './presentation/trash.controller';
 import { GuestImportsController } from './presentation/guest-imports.controller';
+import { ExportController } from './presentation/export.controller';
+import { ExportGuests } from './application/export-guests.use-case';
+import { EXPORT_READER, EXPORT_RENDERER } from './application/ports/export-reader.port';
+import { PrismaExportReader } from './infrastructure/prisma-export.reader';
+import { ExceljsExportRenderer } from './infrastructure/exceljs-export-renderer';
 import { ImportPastedList, PreviewPastedList } from './application/import-paste.use-cases';
 import {
   ImportSpreadsheet,
@@ -53,6 +58,7 @@ import { MoveGuest } from './application/move-guest.use-case';
     TagsController,
     TrashController,
     GuestImportsController,
+    ExportController,
   ],
   providers: [
     { provide: PARTY_STORE, useClass: PrismaPartyStore },
@@ -86,6 +92,9 @@ import { MoveGuest } from './application/move-guest.use-case';
     PreviewSpreadsheet,
     ImportSpreadsheet,
     SpreadsheetUploadGuard,
+    { provide: EXPORT_READER, useClass: PrismaExportReader },
+    { provide: EXPORT_RENDERER, useClass: ExceljsExportRenderer },
+    ExportGuests,
   ],
 })
 export class GuestsModule {}

@@ -14,6 +14,7 @@ import { validationError } from '../../../shared/http/validation-errors';
 import {
   AlreadyRespondedError,
   FileTooLargeError,
+  NothingToExportError,
   NothingToImportError,
   SpreadsheetRefusedError,
   DuplicateGuestError,
@@ -148,6 +149,13 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 409,
       error: 'NOTHING_TO_IMPORT',
       message: 'The spreadsheet has no valid row.',
+    });
+  }
+  if (error instanceof NothingToExportError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'NOTHING_TO_EXPORT',
+      message: 'No guest matches the filter.',
     });
   }
   return toAccessHttpError(error);
