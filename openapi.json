@@ -4007,6 +4007,127 @@
         ]
       }
     },
+    "/v1/weddings/{weddingId}/site/sections/{type}": {
+      "put": {
+        "operationId": "SiteController_section_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": [
+                "faq",
+                "story",
+                "countdown",
+                "ceremony",
+                "lodging",
+                "dress_code"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSiteSectionBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteSectionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteImageNotFoundErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Grava uma seção inteira: ligada, título e conteúdo (Seções RN04 a RN13).",
+        "tags": [
+          "site"
+        ]
+      }
+    },
     "/v1/weddings/{weddingId}/site/appearance": {
       "put": {
         "operationId": "SiteController_appearance_v1",
@@ -7960,6 +8081,13 @@
           },
           "message": {
             "type": "string"
+          },
+          "imageIds": {
+            "description": "Nas seções: os ids que não são imagens prontas deste casamento.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -8190,6 +8318,70 @@
           "method",
           "headers",
           "expiresAt"
+        ]
+      },
+      "UpdateSiteSectionBody": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "De 1 a 80; null só na contagem regressiva (RN02 e RN12).",
+            "maxLength": 80
+          },
+          "content": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "O conteúdo do tipo (tabela do contrato), validado pelo DTO do tipo (RN12)."
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "\"Mostrar a seção no site\"; desligar só esconde (Seções RN11)."
+          }
+        },
+        "required": [
+          "title",
+          "content",
+          "enabled"
+        ]
+      },
+      "SiteSectionResponse": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "story",
+              "countdown",
+              "ceremony",
+              "lodging",
+              "dress_code",
+              "faq"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "content": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "O conteúdo do tipo (PUT …/site/sections/{type}), com as imagens no lugar dos ids."
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "empty": {
+            "type": "boolean",
+            "description": "Ligada e vazia não aparece no site (Seções RN03)."
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "content",
+          "enabled",
+          "empty"
         ]
       },
       "ContrastTooLowErrorBody": {
@@ -8445,45 +8637,6 @@
           "primaryColor",
           "accentColor",
           "backgroundMode"
-        ]
-      },
-      "SiteSectionResponse": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "enum": [
-              "story",
-              "countdown",
-              "ceremony",
-              "lodging",
-              "dress_code",
-              "faq"
-            ],
-            "type": "string"
-          },
-          "title": {
-            "type": "string",
-            "nullable": true
-          },
-          "content": {
-            "type": "object",
-            "additionalProperties": true,
-            "description": "O conteúdo do tipo (PUT …/site/sections/{type}), com as imagens no lugar dos ids."
-          },
-          "enabled": {
-            "type": "boolean"
-          },
-          "empty": {
-            "type": "boolean",
-            "description": "Ligada e vazia não aparece no site (Seções RN03)."
-          }
-        },
-        "required": [
-          "type",
-          "title",
-          "content",
-          "enabled",
-          "empty"
         ]
       },
       "SiteEditableResponse": {

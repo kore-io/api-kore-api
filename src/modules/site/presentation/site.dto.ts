@@ -4,15 +4,18 @@ import {
   ArrayMaxSize,
   ArrayMinSize,
   IsArray,
+  IsBoolean,
   IsEmail,
   IsIn,
   IsISO8601,
   IsNotEmpty,
+  IsObject,
   IsOptional,
   IsString,
   IsUUID,
   Matches,
   MaxLength,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 import { OptionalNotNull } from '../../../shared/http/optional-not-null';
@@ -173,3 +176,22 @@ export class SiteEditorResponse {
     };
   }
 }
+
+/** A seção inteira (PUT …/site/sections/{type}); o `content` é validado pelo tipo no caso de uso. */
+export class UpdateSiteSectionBody {
+  /** "Mostrar a seção no site"; desligar só esconde (Seções RN11). */
+  @IsBoolean() enabled: boolean;
+
+  /** De 1 a 80; null só na contagem regressiva (RN02 e RN12). */
+  @ApiProperty({ type: String, nullable: true, maxLength: 80 })
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  title: string | null;
+
+  /** O conteúdo do tipo (tabela do contrato), validado pelo DTO do tipo (RN12). */
+  @ApiProperty({ type: 'object', additionalProperties: true })
+  @IsObject()
+  content: Record<string, unknown>;
+}
+
+export { SiteSectionResponse };

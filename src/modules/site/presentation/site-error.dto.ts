@@ -15,6 +15,8 @@ export class SiteImageNotFoundErrorBody {
   @ApiProperty({ enum: [404] }) statusCode: 404;
   @ApiProperty({ enum: ['IMAGE_NOT_FOUND'] }) error: 'IMAGE_NOT_FOUND';
   @ApiProperty() message: string;
+  /** Nas seções: os ids que não são imagens prontas deste casamento. */
+  @ApiProperty({ type: [String], required: false }) imageIds?: string[];
 }
 
 /** Outra confirmação está processando: o app tenta de novo em instantes (S4 RN05). */

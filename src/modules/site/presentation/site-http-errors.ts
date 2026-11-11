@@ -70,6 +70,7 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 404,
       error: 'IMAGE_NOT_FOUND',
       message: 'Image not found.',
+      ...(error.imageIds && { imageIds: error.imageIds }),
     });
   }
   if (error instanceof SiteImageProcessingError) {

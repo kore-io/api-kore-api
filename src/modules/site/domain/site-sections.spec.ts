@@ -1,4 +1,4 @@
-import { imagesInUse, isSectionEmpty, sectionImageIds } from './site-sections';
+import { imagesInUse, isSectionEmpty, normalizeSiteText, sectionImageIds } from './site-sections';
 
 const ready = new Set(['img-1']);
 
@@ -71,5 +71,19 @@ describe('Seções do site: vazia e imagens (Seções RN03; Imagens RN08)', () =
         }),
       ].sort(),
     ).toEqual(['a', 'b', 'c', 'capa']);
+  });
+});
+
+describe('normalizeSiteText (Seções RN04)', () => {
+  it('RN04 - trim, \\r\\n e \\r viram \\n, e saem os caracteres de controle (menos a quebra)', () => {
+    expect(normalizeSiteText({ value: '  Olá\r\nmundo\rnovo\t\u0007\u007f  ' })).toBe(
+      'Olá\nmundo\nnovo',
+    );
+  });
+
+  it('RN04 - nada de HTML é tirado: a saída é escapada no site', () => {
+    expect(normalizeSiteText({ value: '<b>oi</b> https://kore.com.br' })).toBe(
+      '<b>oi</b> https://kore.com.br',
+    );
   });
 });
