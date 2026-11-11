@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import ExcelJS from 'exceljs';
 import { randomBytes } from 'node:crypto';
+import { crc32, deflateRawSync } from 'node:zlib';
 import request from 'supertest';
 import { BackofficePrismaService } from '../../src/shared/database/backoffice-prisma.service';
 import { createTestApp } from '../support/create-test-app';
@@ -24,6 +25,49 @@ async function xlsx(rows: unknown[][], header: unknown[] = HEADER): Promise<Buff
   sheet.addRow(header);
   for (const row of rows) sheet.addRow(row);
   return Buffer.from(await workbook.xlsx.writeBuffer());
+}
+
+/**
+ * Um zip de uma entrada só, com `realBytes` de zeros comprimidos (deflate) e o
+ * tamanho descompactado declarado como `declaredBytes` nos dois cabeçalhos: o
+ * zip bomb que mente no diretório (ADR-39).
+ */
+function lyingZip({
+  realBytes,
+  declaredBytes,
+}: {
+  realBytes: number;
+  declaredBytes: number;
+}): Buffer {
+  const content = Buffer.alloc(realBytes);
+  const data = deflateRawSync(content);
+  const name = Buffer.from('xl/worksheets/sheet1.xml');
+  const crc = crc32(content);
+  const local = Buffer.alloc(30);
+  local.writeUInt32LE(0x04034b50, 0);
+  local.writeUInt16LE(20, 4);
+  local.writeUInt16LE(8, 8);
+  local.writeUInt32LE(crc, 14);
+  local.writeUInt32LE(data.length, 18);
+  local.writeUInt32LE(declaredBytes, 22);
+  local.writeUInt16LE(name.length, 26);
+  const central = Buffer.alloc(46);
+  central.writeUInt32LE(0x02014b50, 0);
+  central.writeUInt16LE(20, 4);
+  central.writeUInt16LE(20, 6);
+  central.writeUInt16LE(8, 10);
+  central.writeUInt32LE(crc, 16);
+  central.writeUInt32LE(data.length, 20);
+  central.writeUInt32LE(declaredBytes, 24);
+  central.writeUInt16LE(name.length, 28);
+  const centralOffset = local.length + name.length + data.length;
+  const end = Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50, 0);
+  end.writeUInt16LE(1, 8);
+  end.writeUInt16LE(1, 10);
+  end.writeUInt32LE(central.length + name.length, 12);
+  end.writeUInt32LE(centralOffset, 16);
+  return Buffer.concat([local, name, data, central, name, end]);
 }
 
 /** Importação de convidados: a planilha (banco real). */
@@ -174,6 +218,20 @@ describe('Importação: planilha (banco real)', () => {
         .expect(400);
       expect(missing.body.errors).toEqual([{ path: 'file', code: 'IS_NOT_EMPTY', params: {} }]);
     });
+
+    it('RN03 e ADR-39 - zip que mente o tamanho (diz 100 bytes, descompacta 51 MB): 413 pela rota', async () => {
+      const { ana, weddingId } = await anaWedding();
+      const file = lyingZip({ realBytes: 51 * 1024 * 1024, declaredBytes: 100 });
+      expect(file.length).toBeLessThan(5 * 1024 * 1024);
+
+      const response = await preview(ana.cookie, weddingId, file).expect(413);
+
+      expect(response.body).toMatchObject({
+        statusCode: 413,
+        error: 'FILE_TOO_LARGE',
+        unzippedMaxBytes: 50 * 1024 * 1024,
+      });
+    });
   });
 
   describe('Importar (RN01, RN04, RN08, RN14)', () => {
@@ -207,6 +265,12 @@ describe('Importação: planilha (banco real)', () => {
       });
       expect(party.guests[0].tags.map(({ tagId }) => tagId)).toEqual([familiaDaAna.id]);
       expect(party.guests[2].tags.map(({ tag }) => tag.name)).toEqual(['Pajens']);
+      // Tags RN07: a tag da coluna é do convidado; o grupo de Pedro não recebe "Pajens".
+      const partyTags = await db.partyTag.findMany({
+        where: { partyId: party.id },
+        include: { tag: true },
+      });
+      expect(partyTags.map(({ tag }) => tag.name)).not.toContain('Pajens');
       expect(await db.weddingStats.findUniqueOrThrow({ where: { weddingId } })).toMatchObject({
         guestsTotal: 3,
         pending: 3,
@@ -217,6 +281,83 @@ describe('Importação: planilha (banco real)', () => {
         orderBy: { createdAt: 'desc' },
       });
       expect(event?.props).toEqual({ metodo: 'planilha', linhas_erro: 3 });
+    });
+
+    it('RN07 - importar um grupo com o nome de um grupo ativo: ficam dois, e o antigo não muda', async () => {
+      const { ana, weddingId } = await anaWedding();
+      const old = await db.party.create({
+        data: {
+          weddingId,
+          name: 'Família Rocha',
+          linkToken: randomBytes(16).toString('base64url'),
+        },
+      });
+      await db.guest.create({ data: { weddingId, partyId: old.id, name: 'Antônio Rocha' } });
+      const before = await db.party.findUniqueOrThrow({ where: { id: old.id } });
+
+      await importSheet(
+        ana.cookie,
+        weddingId,
+        await xlsx([['Família Rocha', 'Rosa Almeida', null, null, null, null, null]]),
+      ).expect(201);
+
+      const rochas = await db.party.findMany({
+        where: { weddingId, name: 'Família Rocha' },
+        include: { guests: true },
+        orderBy: { createdAt: 'asc' },
+      });
+      expect(rochas).toHaveLength(2);
+      expect(rochas[0]).toMatchObject({ id: old.id, updatedAt: before.updatedAt });
+      expect(rochas[0].guests.map((guest) => guest.name)).toEqual(['Antônio Rocha']);
+      expect(rochas[1].guests.map((guest) => guest.name)).toEqual(['Rosa Almeida']);
+    });
+
+    it('RN01 e RN08 - a confirmação valida de novo: a 10ª tag criada depois da prévia deixa "Vizinhos" de fora, e as linhas entram', async () => {
+      const { ana, weddingId } = await anaWedding();
+      await db.tag.createMany({
+        data: Array.from({ length: 9 }, (_, i) => ({ weddingId, name: `Tag ${i}` })),
+      });
+      const file = await xlsx([
+        ['Família Moreira', 'Luiz Moreira', null, null, null, null, 'Vizinhos'],
+      ]);
+      const before = await preview(ana.cookie, weddingId, file).expect(200);
+      expect(before.body.warnings ?? []).toEqual([]);
+      // Entre a prévia e a confirmação, alguém cria a 10ª tag.
+      await db.tag.create({ data: { weddingId, name: 'Padrinhos' } });
+
+      const response = await importSheet(ana.cookie, weddingId, file).expect(201);
+
+      expect(response.body).toMatchObject({ parties: 1, guests: 1, tagsCreated: [] });
+      expect(await db.tag.count({ where: { weddingId, name: 'Vizinhos' } })).toBe(0);
+      const luiz = await db.guest.findFirstOrThrow({
+        where: { weddingId, name: 'Luiz Moreira' },
+        include: { tags: true },
+      });
+      expect(luiz.tags).toEqual([]);
+    });
+
+    it('RN08 - a tag na lixeira não é reaproveitada: a importação cria uma nova', async () => {
+      const { ana, weddingId } = await anaWedding();
+      const trashed = await db.tag.create({
+        data: { weddingId, name: 'Vizinhos', deletedAt: new Date() },
+      });
+
+      const response = await importSheet(
+        ana.cookie,
+        weddingId,
+        await xlsx([['Família Moreira', 'Luiz Moreira', null, null, null, null, 'Vizinhos']]),
+      ).expect(201);
+
+      expect(response.body.tagsCreated).toEqual(['Vizinhos']);
+      const tags = await db.tag.findMany({ where: { weddingId, name: 'Vizinhos' } });
+      expect(tags).toHaveLength(2);
+      const fresh = tags.find((tag) => tag.id !== trashed.id);
+      expect(fresh?.deletedAt).toBeNull();
+      const luiz = await db.guest.findFirstOrThrow({
+        where: { weddingId, name: 'Luiz Moreira' },
+        include: { tags: true },
+      });
+      expect(luiz.tags.map(({ tagId }) => tagId)).toEqual([fresh?.id]);
     });
 
     it('RN09 - nenhuma linha válida: 409 NOTHING_TO_IMPORT, e nada é gravado', async () => {
