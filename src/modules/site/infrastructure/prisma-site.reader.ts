@@ -75,13 +75,21 @@ export class PrismaSiteReader implements SiteReader {
     if (ids.length === 0) return [];
     const images = await this.tenant.client().siteImage.findMany({
       where: { weddingId, status: 'ready', id: { in: [...ids] } },
-      select: { id: true, storageKey: true, thumbKey: true, width: true, height: true },
+      select: {
+        id: true,
+        storageKey: true,
+        thumbKey: true,
+        ogKey: true,
+        width: true,
+        height: true,
+      },
     });
     // `ready` sempre tem as versões e as medidas (chk_site_images_ready).
     return images.map((image) => ({
       id: image.id,
       storageKey: image.storageKey,
       thumbKey: image.thumbKey ?? image.storageKey,
+      ogKey: image.ogKey ?? image.storageKey,
       width: image.width ?? 0,
       height: image.height ?? 0,
     }));

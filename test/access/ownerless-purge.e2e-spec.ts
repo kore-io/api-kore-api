@@ -204,6 +204,7 @@ describe('Expurgo do casamento sem dono (RN13 de Convites; decisões 136 e 180; 
     'section_contents',
     'sections',
     'site_images',
+    'site_preview_tokens',
     'tags',
     'wedding_stats',
   ];
@@ -259,6 +260,16 @@ describe('Expurgo do casamento sem dono (RN13 de Convites; decisões 136 e 180; 
       await storage.put({ bucket: 'private', key: keys.original, body, contentType: 'image/jpeg' });
       for (const key of [keys.display, keys.thumb, keys.og])
         await storage.put({ bucket: 'public', key, body, contentType: 'image/jpeg' });
+      const owner = await db.membership.findFirstOrThrow({ where: { weddingId } });
+      await db.sitePreviewToken.create({
+        data: {
+          weddingId,
+          userId: owner.userId,
+          tokenHash: randomBytes(32).toString('hex'),
+          mode: 'visitor',
+          expiresAt: new Date(),
+        },
+      });
       await db.wedding.update({
         where: { id: weddingId },
         data: {

@@ -33,6 +33,7 @@ export interface ReadySiteImage {
   id: string;
   storageKey: string;
   thumbKey: string;
+  ogKey: string;
   width: number;
   height: number;
 }

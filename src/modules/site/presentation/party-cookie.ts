@@ -27,3 +27,18 @@ export function setPartyCookie({
 export function clearPartyCookie({ response, name }: { response: Response; name: string }): void {
   response.clearCookie(name, BASE_OPTIONS);
 }
+
+/** O cookie da prévia: 30 minutos fixos, sem estender (Pré-visualização RN03). */
+export function setPreviewCookie({
+  response,
+  name,
+  value,
+  expiresAt,
+}: {
+  response: Response;
+  name: string;
+  value: string;
+  expiresAt: Date;
+}): void {
+  response.cookie(name, value, { ...BASE_OPTIONS, expires: expiresAt });
+}

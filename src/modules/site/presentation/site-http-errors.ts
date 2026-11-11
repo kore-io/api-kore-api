@@ -4,11 +4,16 @@ import {
   HttpException,
   HttpStatus,
   NotFoundException,
+  UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { toHttpError as toAccessHttpError } from '../../access/presentation/access-http-errors';
 import { validationError } from '../../../shared/http/validation-errors';
 import {
+  PreviewInvalidError,
+  PreviewRequiredError,
+  SitePartyNotFoundError,
+  SiteSlugMissingError,
   PartyLinkRateLimitedError,
   SiteLinkInvalidError,
   SiteDraftError,
@@ -30,6 +35,34 @@ import {
  * WEDDING_NOT_FOUND e 403 ACTION_NOT_ALLOWED) seguem o mapa do Acesso.
  */
 export function toHttpError(error: unknown): unknown {
+  if (error instanceof SiteSlugMissingError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'SITE_SLUG_MISSING',
+      message: 'The wedding has no site address yet.',
+    });
+  }
+  if (error instanceof SitePartyNotFoundError) {
+    return new NotFoundException({
+      statusCode: 404,
+      error: 'PARTY_NOT_FOUND',
+      message: 'Party not found.',
+    });
+  }
+  if (error instanceof PreviewInvalidError) {
+    return new NotFoundException({
+      statusCode: 404,
+      error: 'PREVIEW_INVALID',
+      message: 'This preview is no longer valid.',
+    });
+  }
+  if (error instanceof PreviewRequiredError) {
+    return new UnauthorizedException({
+      statusCode: 401,
+      error: 'PREVIEW_REQUIRED',
+      message: 'A valid site preview is required.',
+    });
+  }
   if (error instanceof SiteLinkInvalidError) {
     return new NotFoundException({
       statusCode: 404,

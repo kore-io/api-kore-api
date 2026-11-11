@@ -1,4 +1,16 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Req, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  Res,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { isValidSlugFormat } from '../../access/domain/wedding-signup';
@@ -11,14 +23,28 @@ import { SiteRoute } from '../../../shared/http/site-route.decorator';
 import { validationError } from '../../../shared/http/validation-errors';
 import { GetPublicSite, GetSiteLinkPreview } from '../application/public-site.use-cases';
 import { StartPartySession } from '../application/start-party-session.use-case';
-import { clearPartyCookie, setPartyCookie } from './party-cookie';
+import { clearPartyCookie, setPartyCookie, setPreviewCookie } from './party-cookie';
 import {
+  ListPreviewParties,
+  StartPreviewSession,
+  UpdatePreviewSession,
+} from '../application/site-preview.use-cases';
+import {
+  PreviewInvalidErrorBody,
+  PreviewRequiredErrorBody,
   SiteDraftErrorBody,
   SiteLinkInvalidErrorBody,
   SiteNotFoundErrorBody,
+  SitePartyNotFoundErrorBody,
 } from './site-error.dto';
 import { toHttpError } from './site-http-errors';
 import {
+  PreviewModeBody,
+  PreviewModeResponse,
+  PreviewPartiesQuery,
+  PreviewPartiesResponse,
+  PreviewSessionBody,
+  PreviewSessionResponse,
   PartySessionBody,
   PartySessionResponse,
   PublicSiteResponse,
@@ -27,6 +53,15 @@ import {
 
 /** Fora dos buscadores em todo o site do casal na F2 (Site público RN02). */
 const NO_INDEX = 'noindex, nofollow';
+
+/** Nenhum cache guarda as respostas com dado de grupo ou da prévia (RN03). */
+function noCache(response: Response): void {
+  response.setHeader('Cache-Control', 'private, no-store');
+  response.setHeader('X-Robots-Tag', NO_INDEX);
+}
+
+const cookiesOf = (request: Request) =>
+  (request.cookies ?? {}) as Record<string, string | undefined>;
 
 /**
  * O site do casal, lido por kore.com.br (Site público RN04, RN05 e RN07). Sem
@@ -40,7 +75,89 @@ export class PublicSiteController {
   constructor(
     private readonly getSite: GetPublicSite,
     private readonly startPartySession: StartPartySession,
+    private readonly startPreviewSession: StartPreviewSession,
+    private readonly updatePreviewSession: UpdatePreviewSession,
+    private readonly listPreviewParties: ListPreviewParties,
   ) {}
+
+  /**
+   * Troca o token da prévia pelo cookie da prévia, de 30 minutos fixos
+   * (Pré-visualização RN03 e RN04). O site chama uma vez só por carregamento.
+   */
+  @Post('preview-session')
+  @HttpCode(HttpStatus.OK)
+  @ApiErrorResponses(...commonErrors({ validated: true, write: true }), PreviewInvalidErrorBody)
+  async previewSession(
+    @Param('slug') slug: string,
+    @Body() body: PreviewSessionBody,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<PreviewSessionResponse> {
+    noCache(response);
+    try {
+      const session = await this.startPreviewSession.execute({
+        slug: slug.toLowerCase(),
+        token: body.token,
+        ip: request.ip ?? 'unknown',
+        now: new Date(),
+      });
+      setPreviewCookie({ response, ...session.cookie });
+      return { slug: session.slug, mode: session.mode, party: session.party };
+    } catch (error) {
+      throw toHttpError(error);
+    }
+  }
+
+  /** Troca o modo da prévia pela barra, sem estender os 30 minutos (Pré-visualização RN06). */
+  @Patch('preview-session')
+  @ApiErrorResponses(
+    ...commonErrors({ validated: true, write: true }),
+    PreviewRequiredErrorBody,
+    SitePartyNotFoundErrorBody,
+  )
+  async changePreview(
+    @Param('slug') slug: string,
+    @Body() body: PreviewModeBody,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<PreviewModeResponse> {
+    noCache(response);
+    try {
+      const session = await this.updatePreviewSession.execute({
+        slug: slug.toLowerCase(),
+        cookies: cookiesOf(request),
+        mode: body.mode,
+        partyId: body.partyId ?? null,
+        now: new Date(),
+      });
+      setPreviewCookie({ response, ...session.cookie });
+      return { mode: session.mode, party: session.party };
+    } catch (error) {
+      throw toHttpError(error);
+    }
+  }
+
+  /** Os grupos para o Select da barra da prévia, até 100 (Pré-visualização RN06; decisão 203). */
+  @Get('preview-parties')
+  @ApiErrorResponses(...commonErrors({ validated: true }), PreviewRequiredErrorBody)
+  async previewParties(
+    @Param('slug') slug: string,
+    @Query() query: PreviewPartiesQuery,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<PreviewPartiesResponse> {
+    noCache(response);
+    try {
+      return await this.listPreviewParties.execute({
+        slug: slug.toLowerCase(),
+        cookies: cookiesOf(request),
+        q: query.q?.trim() || null,
+        now: new Date(),
+      });
+    } catch (error) {
+      throw toHttpError(error);
+    }
+  }
 
   /**
    * O site, com o recorte do visitante feito no servidor (RN05). Nenhum cache
@@ -59,7 +176,7 @@ export class PublicSiteController {
     try {
       const { view, staleCookie } = await this.getSite.execute({
         slug: slug.toLowerCase(),
-        cookies: (request.cookies ?? {}) as Record<string, string | undefined>,
+        cookies: cookiesOf(request),
       });
       if (staleCookie) clearPartyCookie({ response, name: staleCookie });
       return view;
