@@ -2,6 +2,7 @@ import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, type OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
+import { OPENAPI_CONSTANT_SCHEMAS } from '../../openapi-constants';
 import { validationExceptionFactory } from './validation-errors';
 
 export const API_DOCS_PATH = 'docs';
@@ -63,8 +64,14 @@ export function configureApp({
 
 /** O documento OpenAPI gerado do código (ADR do Swagger), servido em /docs e exportado. */
 export function buildOpenApiDocument({ app }: { app: INestApplication }): OpenAPIObject {
-  return SwaggerModule.createDocument(
+  const document = SwaggerModule.createDocument(
     app,
     new DocumentBuilder().setTitle('Kore API').setVersion('1').build(),
   );
+  // Constantes do domínio sem rota (ex.: os títulos do modelo de planilha).
+  document.components = {
+    ...document.components,
+    schemas: { ...document.components?.schemas, ...OPENAPI_CONSTANT_SCHEMAS },
+  };
+  return document;
 }

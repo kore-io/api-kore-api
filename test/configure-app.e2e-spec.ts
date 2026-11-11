@@ -109,6 +109,16 @@ describe('configureApp', () => {
     expect(response.body.openapi).toMatch(/^3\./);
   });
 
+  it('Importação RN02 - o documento publica os 7 títulos do modelo, na ordem, para o web comparar', async () => {
+    const response = await request(app.getHttpServer()).get('/docs-json').expect(200);
+
+    expect(response.body.components.schemas.SpreadsheetTemplateHeaders).toEqual({
+      type: 'string',
+      enum: ['Grupo', 'Nome', 'Telefone', 'E-mail', 'Faixa etária', 'Restrição alimentar', 'Tags'],
+      description: expect.any(String),
+    });
+  });
+
   it('dada uma origem da lista, quando faz o preflight, então libera o CORS com credenciais', async () => {
     const response = await request(app.getHttpServer())
       .options('/v1/echo')
