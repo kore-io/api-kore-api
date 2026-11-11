@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { PurgeOwnerlessWeddings } from '../../src/modules/access/application/purge-ownerless-weddings.use-case';
 import { EmailDeliveryFailures } from '../../src/shared/email/application/email-delivery-failures';
@@ -182,6 +182,67 @@ describe('Expurgo do casamento sem dono (RN13 de Convites; decisões 136 e 180; 
       where: { action: 'wedding.purged', weddingId },
     });
     expect(log.data).toEqual({ reason: 'ownerless_inactive', status: 'draft' });
+  });
+
+  it('decisão 207(17) - o expurgo apaga também grupos, convidados, tags, vínculos e números, e só deste casamento', async () => {
+    async function seedGuestList(weddingId: string) {
+      const party = await db.party.create({
+        data: {
+          weddingId,
+          name: 'Família Moreira',
+          linkToken: randomBytes(16).toString('base64url'),
+        },
+      });
+      const luiz = await db.guest.create({
+        data: { weddingId, partyId: party.id, name: 'Luiz Moreira' },
+      });
+      await db.guest.create({
+        data: { weddingId, partyId: party.id, name: 'Célia Moreira', deletedAt: new Date() },
+      });
+      await db.party.update({ where: { id: party.id }, data: { contactGuestId: luiz.id } });
+      const tag = await db.tag.create({ data: { weddingId, name: 'Igreja' } });
+      await db.partyTag.create({ data: { weddingId, partyId: party.id, tagId: tag.id } });
+      await db.guestTag.create({ data: { weddingId, guestId: luiz.id, tagId: tag.id } });
+    }
+    async function counts(weddingId: string) {
+      const where = { weddingId };
+      return {
+        parties: await db.party.count({ where }),
+        guests: await db.guest.count({ where }),
+        tags: await db.tag.count({ where }),
+        partyTags: await db.partyTag.count({ where }),
+        guestTags: await db.guestTag.count({ where }),
+        stats: await db.weddingStats.count({ where }),
+      };
+    }
+    const lastActivityAt = new Date('2014-01-10T12:00:00Z');
+    const purgeDate = new Date('2014-07-10T12:00:00Z');
+    const { weddingId } = await ownerlessWedding({ lastActivityAt, status: 'draft' });
+    await seedGuestList(weddingId);
+    await db.wedding.update({
+      where: { id: weddingId },
+      data: { purgeNoticeSentAt: new Date(purgeDate.getTime() - 30 * day) },
+    });
+    const ana = (await db.user.create({ data: { email: `${randomUUID()}@kore.local` } })).id;
+    const other = await seedWedding({ db, ownerId: ana });
+    await seedGuestList(other.weddingId);
+    const kept = { parties: 1, guests: 2, tags: 1, partyTags: 1, guestTags: 1, stats: 1 };
+    expect(await counts(weddingId)).toEqual(kept);
+
+    await purge.execute({ now: purgeDate });
+
+    expect((await db.wedding.findUniqueOrThrow({ where: { id: weddingId } })).status).toBe(
+      'purged',
+    );
+    expect(await counts(weddingId)).toEqual({
+      parties: 0,
+      guests: 0,
+      tags: 0,
+      partyTags: 0,
+      guestTags: 0,
+      stats: 0,
+    });
+    expect(await counts(other.weddingId)).toEqual(kept);
   });
 
   it('RN13 - casamento com dono nunca entra, mesmo parado', async () => {

@@ -142,6 +142,14 @@ export class PrismaOwnerlessWeddings implements OwnerlessWeddings {
       await tx.accessInvitation.deleteMany({ where: { weddingId } });
       await tx.membership.deleteMany({ where: { weddingId } });
       await tx.partner.deleteMany({ where: { weddingId } });
+      // A lápide fica, então o cascade do Wedding não dispara: as filhas da F1 saem
+      // à mão, das folhas para a raiz (decisão 207(17)).
+      await tx.guestTag.deleteMany({ where: { weddingId } });
+      await tx.partyTag.deleteMany({ where: { weddingId } });
+      await tx.guest.deleteMany({ where: { weddingId } });
+      await tx.party.deleteMany({ where: { weddingId } });
+      await tx.tag.deleteMany({ where: { weddingId } });
+      await tx.weddingStats.deleteMany({ where: { weddingId } });
       // Lápide (Modelo de Dados): ficam id, status, purgedAt, o indicador e createdAt.
       await tx.wedding.update({
         where: { id: weddingId },
