@@ -367,4 +367,29 @@ describe('Exportação de convidados (banco real)', () => {
       { path: 'tag', code: 'TAG_NOT_FOUND', params: {} },
     ]);
   });
+
+  it('Lixeira RN01 - quem está na lixeira não sai no arquivo: nem o grupo inteiro, nem o convidado que foi sozinho', async () => {
+    const { ana, weddingId } = await anaWedding();
+    const trash = (url: string) =>
+      request(app.getHttpServer())
+        .delete(url)
+        .set('Cookie', ana.cookie)
+        .set('Origin', APP_ORIGIN)
+        .expect(200);
+    const padrinhos = await db.party.findFirstOrThrow({ where: { weddingId, name: 'Padrinhos' } });
+    const pedro = await db.guest.findFirstOrThrow({ where: { weddingId, name: 'Pedro Moreira' } });
+    await trash(`/v1/weddings/${weddingId}/parties/${padrinhos.id}`);
+    await trash(`/v1/weddings/${weddingId}/guests/${pedro.id}`);
+
+    const response = await exportGuests(ana.cookie, weddingId, {
+      format: 'xlsx',
+      who: 'all',
+      columns: 'name,party',
+    }).expect(200);
+
+    const names = (await sheetOf(response.body as Buffer)).rows.flat();
+    expect(names).toContain('Jorge Moreira');
+    for (const gone of ['Leonardo Castro', 'Padrinhos', 'Pedro Moreira'])
+      expect(names).not.toContain(gone);
+  });
 });

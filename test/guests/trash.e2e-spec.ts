@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { BackofficePrismaService } from '../../src/shared/database/backoffice-prisma.service';
@@ -125,7 +126,11 @@ describe('Lixeira de convidados (banco real)', () => {
         'LAST_GUEST',
       );
       const [log] = await logs(weddingId, 'guest.deleted');
-      expect(log).toMatchObject({ entityId: celia.id, data: { partyId: familia.id } });
+      expect(log).toMatchObject({ entityId: celia.id, actorUserId: ana.userId });
+      // RN11: só ids; o nome, o telefone e o e-mail ficam fora do log.
+      expect(log.data).toEqual({ partyId: familia.id });
+      for (const personal of ['Célia', 'Moreira', '19998763310', '+5519998763310', 'pedro@exemplo'])
+        expect(JSON.stringify(log)).not.toContain(personal);
     });
 
     it('RN04 - o acompanhante com nome leva a vaga para a lixeira', async () => {
@@ -196,6 +201,43 @@ describe('Lixeira de convidados (banco real)', () => {
         select: { trashBatchId: true },
       });
       expect(new Set(batches.map((guest) => guest.trashBatchId)).size).toBe(2);
+    });
+
+    it('RN06 e decisão 206 - mais de 200 ids, lista vazia ou grupo já na lixeira: 400, sem gravar nada', async () => {
+      const { ana, weddingId } = await anaWedding();
+      const party = await createParty(ana.cookie, weddingId, {
+        name: 'A',
+        guests: [{ name: 'Ana' }],
+      });
+      const gone = await createParty(ana.cookie, weddingId, {
+        name: 'B',
+        guests: [{ name: 'Bia' }],
+      });
+      await trashParty(ana.cookie, weddingId, gone.id).expect(200);
+      const trashedBefore = await db.party.count({
+        where: { weddingId, deletedAt: { not: null } },
+      });
+      const ids = Array.from({ length: 201 }, () => randomUUID());
+
+      const tooMany = await trashParties(ana.cookie, weddingId, ids).expect(400);
+      const empty = await trashParties(ana.cookie, weddingId, []).expect(400);
+      const alreadyTrashed = await trashParties(ana.cookie, weddingId, [party.id, gone.id]).expect(
+        400,
+      );
+
+      expect(tooMany.body.errors).toEqual([
+        { path: 'partyIds', code: 'ARRAY_MAX_SIZE', params: { max: 200 } },
+      ]);
+      expect(empty.body.errors).toEqual([
+        { path: 'partyIds', code: 'ARRAY_MIN_SIZE', params: { min: 1 } },
+      ]);
+      expect(alreadyTrashed.body.errors).toEqual([
+        { path: 'partyIds.1', code: 'PARTY_NOT_FOUND', params: {} },
+      ]);
+      expect(await db.party.count({ where: { weddingId, deletedAt: { not: null } } })).toBe(
+        trashedBefore,
+      );
+      expect((await db.party.findUniqueOrThrow({ where: { id: party.id } })).deletedAt).toBeNull();
     });
   });
 
@@ -276,6 +318,12 @@ describe('Lixeira de convidados (banco real)', () => {
       const { ana, weddingId, familia, pedro } = await moreira();
       const tag = await db.tag.create({ data: { weddingId, name: 'Família da Ana' } });
       await db.partyTag.create({ data: { weddingId, partyId: familia.id, tagId: tag.id } });
+      const pajens = await db.tag.create({ data: { weddingId, name: 'Pajens' } });
+      await db.guestTag.create({ data: { weddingId, guestId: pedro.id, tagId: pajens.id } });
+      await db.party.update({
+        where: { id: familia.id },
+        data: { internalNote: 'Mesa perto da pista' },
+      });
       await db.guest.update({ where: { id: pedro.id }, data: { rsvpStatus: 'confirmed' } });
       await db.weddingStats.update({
         where: { weddingId },
@@ -297,6 +345,13 @@ describe('Lixeira de convidados (banco real)', () => {
       expect(panel.guests).toHaveLength(4);
       expect(panel.guests[2]).toMatchObject({ name: 'Pedro Moreira', rsvpStatus: 'confirmed' });
       expect(panel.tags).toMatchObject([{ name: 'Família da Ana' }]);
+      // A observação do grupo e a tag do convidado também voltam (RN09).
+      expect((panel as unknown as { internalNote: string | null }).internalNote).toBe(
+        'Mesa perto da pista',
+      );
+      expect(
+        (panel.guests[2] as unknown as { tags: { name: string }[] }).tags.map(({ name }) => name),
+      ).toEqual(['Pajens']);
       expect(panel.plusOneSlots).toBe(1);
       const linkAfter = await db.party.findUniqueOrThrow({ where: { id: familia.id } });
       expect([linkAfter.linkToken, linkAfter.linkVersion]).toEqual([
@@ -339,6 +394,16 @@ describe('Lixeira de convidados (banco real)', () => {
         null,
       ]);
       expect((await stats(weddingId)).guestsTotal).toBe(4);
+      // RN11: quem restaurou, o convidado e o grupo, só com ids.
+      const [log] = await logs(weddingId, 'guest.restored');
+      expect(log).toMatchObject({
+        actorUserId: ana.userId,
+        entityType: 'guest',
+        entityId: luiz.id,
+      });
+      expect(log.data).toEqual({ partyId: familia.id });
+      for (const personal of ['Luiz', 'Moreira', '19998763310', '+5519998763310', 'pedro@exemplo'])
+        expect(JSON.stringify(log)).not.toContain(personal);
     });
 
     it('RN09 - o restaurado só volta a ser contato se o grupo estiver sem contato', async () => {
