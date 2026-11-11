@@ -1,11 +1,21 @@
-import { ConflictException, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { toHttpError as toAccessHttpError } from '../../access/presentation/access-http-errors';
+import { validationError } from '../../../shared/http/validation-errors';
 import {
   SiteImageInvalidError,
   SiteImageLimitReachedError,
   SiteImageNotFoundError,
   SiteImageProcessingError,
   SiteImageUploadMissingError,
+  SiteFieldNotAllowedError,
+  SiteFieldsInvalidError,
+  SiteSlugLockedError,
+  SiteSlugUnavailableError,
 } from '../domain/site.errors';
 
 /**
@@ -13,6 +23,31 @@ import {
  * WEDDING_NOT_FOUND e 403 ACTION_NOT_ALLOWED) seguem o mapa do Acesso.
  */
 export function toHttpError(error: unknown): unknown {
+  if (error instanceof SiteFieldsInvalidError) return validationError({ errors: error.issues });
+  if (error instanceof SiteFieldNotAllowedError) {
+    return new ForbiddenException({
+      statusCode: 403,
+      error: 'FIELD_NOT_ALLOWED',
+      message: 'Only the couple can change these fields.',
+      fields: error.fields,
+    });
+  }
+  if (error instanceof SiteSlugLockedError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'SLUG_LOCKED',
+      message: 'The site is published; its address no longer changes.',
+    });
+  }
+  if (error instanceof SiteSlugUnavailableError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'SLUG_UNAVAILABLE',
+      message: 'Wedding address taken or reserved.',
+      reason: error.reason,
+      suggestion: error.suggestion,
+    });
+  }
   if (error instanceof SiteImageLimitReachedError) {
     return new ConflictException({
       statusCode: 409,

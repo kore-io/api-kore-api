@@ -61,7 +61,10 @@ function setup({
     findByCode: jest.fn().mockResolvedValue(referrer),
     referralDiscountPercent: jest.fn().mockResolvedValue(10),
   };
-  const slugs: SlugRegistry = { isTaken: ({ slug }) => Promise.resolve(taken.includes(slug)) };
+  const slugs: SlugRegistry = {
+    isTaken: ({ slug }) => Promise.resolve(taken.includes(slug)),
+    currentSlugOf: () => Promise.resolve(null),
+  };
   const useCase = new CreateWedding(store, referrals, slugs, new SuggestSlug(slugs), '2026-09');
   return { useCase, store, created };
 }

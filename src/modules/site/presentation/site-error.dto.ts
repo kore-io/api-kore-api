@@ -40,3 +40,30 @@ export class SiteImageInvalidErrorBody {
   @ApiProperty({ enum: ['IMAGE_INVALID'] }) error: 'IMAGE_INVALID';
   @ApiProperty() message: string;
 }
+
+/** Sem `manage_site_identity`, a data, a UF ou o endereço vieram diferentes (Dados básicos RN04). */
+export class SiteFieldNotAllowedErrorBody {
+  static readonly status = 403;
+  @ApiProperty({ enum: [403] }) statusCode: 403;
+  @ApiProperty({ enum: ['FIELD_NOT_ALLOWED'] }) error: 'FIELD_NOT_ALLOWED';
+  @ApiProperty() message: string;
+  @ApiProperty({ type: [String], enum: ['eventDate', 'state', 'slug'] }) fields: string[];
+}
+
+/** "O site já foi publicado, então o endereço não muda mais." (Dados básicos RN05). */
+export class SiteSlugLockedErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['SLUG_LOCKED'] }) error: 'SLUG_LOCKED';
+  @ApiProperty() message: string;
+}
+
+/** Endereço em uso ou reservado, com a sugestão (Dados básicos RN06). */
+export class SiteSlugUnavailableErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['SLUG_UNAVAILABLE'] }) error: 'SLUG_UNAVAILABLE';
+  @ApiProperty() message: string;
+  @ApiProperty({ enum: ['taken', 'reserved'] }) reason: 'taken' | 'reserved';
+  @ApiProperty({ type: String, nullable: true }) suggestion: string | null;
+}
