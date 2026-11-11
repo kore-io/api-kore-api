@@ -1473,6 +1473,408 @@
           "memberships"
         ]
       }
+    },
+    "/v1/weddings/{weddingId}/parties": {
+      "get": {
+        "operationId": "PartiesController_list_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rsvp",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "confirmed",
+                "declined"
+              ]
+            }
+          },
+          {
+            "name": "sent",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "not_sent",
+                "sent",
+                "viewed",
+                "responded"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Nome do grupo ou de um convidado, sem diferenciar maiúsculas nem acentos (RN13).",
+            "schema": {
+              "maxLength": 80,
+              "type": "string"
+            }
+          },
+          {
+            "name": "tag",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 500,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartyListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Grupos e convidados, a lista (Grupos RN13).",
+        "tags": [
+          "parties"
+        ]
+      },
+      "post": {
+        "operationId": "PartiesController_create_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePartyBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Novo grupo, com os convidados, as vagas, as tags e a observação (Grupos RN03).",
+        "tags": [
+          "parties"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/parties/{partyId}": {
+      "get": {
+        "operationId": "PartiesController_get_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "partyId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartyResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PartyNotFoundErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Painel do grupo e Editar grupo (Grupos RN14).",
+        "tags": [
+          "parties"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/parties/{partyId}/regenerate-link": {
+      "post": {
+        "operationId": "PartiesController_regenerate_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "partyId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegeneratePartyLinkResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PartyNotFoundErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Regenerar link: o antigo para na hora (Grupos RN12).",
+        "tags": [
+          "parties"
+        ]
+      }
     }
   },
   "info": {
@@ -3210,6 +3612,505 @@
           "statusCode",
           "error",
           "message"
+        ]
+      },
+      "PartyContactResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "phoneMasked": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nunca o número inteiro (RN13; decisão 186, item 11); nulo se só tem e-mail.",
+            "example": "(19) 9****-3310"
+          },
+          "guestId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "phoneMasked",
+          "guestId"
+        ]
+      },
+      "TagSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "color": {
+            "nullable": true,
+            "enum": [
+              "wine",
+              "champagne",
+              "green",
+              "amber",
+              "red",
+              "blue"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "color",
+          "id",
+          "name"
+        ]
+      },
+      "PartyCountsResponse": {
+        "type": "object",
+        "properties": {
+          "confirmed": {
+            "type": "number"
+          },
+          "declined": {
+            "type": "number"
+          },
+          "pending": {
+            "type": "number"
+          },
+          "pendingPlusOnes": {
+            "type": "number",
+            "description": "Vagas vazias ainda pendentes (\"1 vaga pendente\")."
+          }
+        },
+        "required": [
+          "confirmed",
+          "declined",
+          "pending",
+          "pendingPlusOnes"
+        ]
+      },
+      "PartyListItemResponse": {
+        "type": "object",
+        "properties": {
+          "contact": {
+            "nullable": true,
+            "description": "Nulo quando o grupo não tem contato (RN06).",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartyContactResponse"
+              }
+            ]
+          },
+          "firstGuestName": {
+            "type": "string",
+            "nullable": true
+          },
+          "deliveryStatus": {
+            "enum": [
+              "not_sent",
+              "sent",
+              "viewed",
+              "responded"
+            ],
+            "type": "string"
+          },
+          "respondedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "respondedBy": {
+            "type": "string",
+            "nullable": true,
+            "description": "Fase 4."
+          },
+          "tags": {
+            "description": "Só as do grupo.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TagSummaryResponse"
+            }
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "people": {
+            "type": "number",
+            "description": "Convidados e vagas."
+          },
+          "counts": {
+            "$ref": "#/components/schemas/PartyCountsResponse"
+          }
+        },
+        "required": [
+          "contact",
+          "firstGuestName",
+          "deliveryStatus",
+          "respondedAt",
+          "respondedBy",
+          "tags",
+          "id",
+          "name",
+          "people",
+          "counts"
+        ]
+      },
+      "PartySummaryResponse": {
+        "type": "object",
+        "properties": {
+          "guests": {
+            "type": "number",
+            "description": "Pessoas e vagas."
+          },
+          "namedGuests": {
+            "type": "number",
+            "description": "Só os convidados com nome: o Todos ({n}) da Exportação (decisão 186, item 13)."
+          },
+          "parties": {
+            "type": "number"
+          },
+          "confirmed": {
+            "type": "number"
+          },
+          "declined": {
+            "type": "number"
+          },
+          "pending": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "guests",
+          "namedGuests",
+          "parties",
+          "confirmed",
+          "declined",
+          "pending"
+        ]
+      },
+      "PartyListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PartyListItemResponse"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nulo na última página."
+          },
+          "summary": {
+            "description": "Do casamento inteiro, sem os filtros.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartySummaryResponse"
+              }
+            ]
+          },
+          "total": {
+            "type": "number",
+            "description": "Grupos com os filtros (\"Mostrando 7 de 58 grupos\")."
+          }
+        },
+        "required": [
+          "data",
+          "nextCursor",
+          "summary",
+          "total"
+        ]
+      },
+      "CreatePartyGuestBody": {
+        "type": "object",
+        "properties": {
+          "ageGroup": {
+            "enum": [
+              "adult",
+              "child",
+              "baby"
+            ],
+            "type": "string"
+          },
+          "phone": {
+            "type": "string",
+            "description": "BR com DDD ou internacional com \"+\"; validado no servidor (RN04), gravado em E.164.",
+            "maxLength": 40,
+            "example": "(19) 99876-1402"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CreatePartyBody": {
+        "type": "object",
+        "properties": {
+          "guests": {
+            "description": "Um ou mais, na ordem do grupo (RN03, RN17).",
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreatePartyGuestBody"
+            }
+          },
+          "plusOneSlots": {
+            "type": "number",
+            "description": "Vagas de acompanhante (RN07).",
+            "minimum": 0,
+            "maximum": 5,
+            "default": 0
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "contactIndex": {
+            "type": "number",
+            "description": "Posição do contato em guests; omitido, o primeiro com telefone ou e-mail (RN06).",
+            "minimum": 0
+          },
+          "tagIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "internalNote": {
+            "type": "string",
+            "description": "\"Só vocês veem\" (RN03).",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "guests",
+          "name"
+        ]
+      },
+      "PartyGuestResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nulo só na vaga de acompanhante vazia."
+          },
+          "ageGroup": {
+            "nullable": true,
+            "enum": [
+              "adult",
+              "child",
+              "baby"
+            ],
+            "type": "string"
+          },
+          "dietaryRestriction": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "Inteiro, em E.164: o formulário de edição precisa dele; o painel mascara."
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "rsvpStatus": {
+            "enum": [
+              "pending",
+              "confirmed",
+              "declined"
+            ],
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TagSummaryResponse"
+            }
+          },
+          "id": {
+            "type": "string"
+          },
+          "isPlusOne": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "ageGroup",
+          "dietaryRestriction",
+          "phone",
+          "email",
+          "rsvpStatus",
+          "tags",
+          "id",
+          "isPlusOne"
+        ]
+      },
+      "PartyHistoryEntryResponse": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "sent",
+              "viewed",
+              "responded"
+            ],
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "kind",
+          "at"
+        ]
+      },
+      "PartyLinkResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "nullable": true,
+            "description": "<SITE_URL>/<slug>/grupo/<token>; nulo enquanto o casamento não tem endereço."
+          },
+          "regeneratedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "url",
+          "regeneratedAt"
+        ]
+      },
+      "PartyResponse": {
+        "type": "object",
+        "properties": {
+          "contactGuestId": {
+            "type": "string",
+            "nullable": true
+          },
+          "internalNote": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TagSummaryResponse"
+            }
+          },
+          "deliveryStatus": {
+            "enum": [
+              "not_sent",
+              "sent",
+              "viewed",
+              "responded"
+            ],
+            "type": "string"
+          },
+          "guests": {
+            "description": "Na ordem do grupo, vagas no fim (RN17).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PartyGuestResponse"
+            }
+          },
+          "history": {
+            "description": "Do mais novo para o mais antigo; vazio até a Fase 4.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PartyHistoryEntryResponse"
+            }
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "plusOneSlots": {
+            "type": "number"
+          },
+          "link": {
+            "$ref": "#/components/schemas/PartyLinkResponse"
+          }
+        },
+        "required": [
+          "contactGuestId",
+          "internalNote",
+          "tags",
+          "deliveryStatus",
+          "guests",
+          "history",
+          "id",
+          "name",
+          "plusOneSlots",
+          "link"
+        ]
+      },
+      "PartyNotFoundErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PARTY_NOT_FOUND"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "RegeneratePartyLinkResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "nullable": true
+          },
+          "regeneratedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "url",
+          "regeneratedAt"
         ]
       }
     }

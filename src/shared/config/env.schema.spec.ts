@@ -17,6 +17,7 @@ const validConfig = {
   GOOGLE_PROVIDER: 'dev',
   OAUTH_STATE_KEY: 'nKTxWhY4lzQ+sR037TnEfHcScVZXA1kcFbG/ODTNFik=',
   APP_URL: 'http://localhost:5173',
+  SITE_URL: 'http://localhost:5173',
   KMS_LOCAL_MASTER_KEY: '258+JWcuRfDrsS0xeKuTKgRV7p+kFlSMaIu3PErymmo=',
 };
 

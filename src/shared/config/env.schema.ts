@@ -47,6 +47,8 @@ export const envSchema = z
     ALLOWED_ORIGINS: originList,
     // Endereço do app, para os links dos e-mails (botão de acesso, convites).
     APP_URL: z.url({ protocol: /^https?$/ }),
+    // Endereço do site do casal, base do link do grupo (Grupos RN11; decisão 196).
+    SITE_URL: z.url({ protocol: /^https?$/ }),
     // Rate limit por IP, por minuto (decisão 135, Q4).
     RATE_LIMIT_GENERAL_PER_MINUTE: z.coerce.number().int().min(1).default(100),
     RATE_LIMIT_AUTH_PER_MINUTE: z.coerce.number().int().min(1).default(10),
