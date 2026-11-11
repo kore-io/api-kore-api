@@ -23,11 +23,14 @@ export class ExportController {
   /** Exportar: o arquivo na hora, sem cache (Exportação RN01 a RN10). */
   @Get('export')
   @Header('Cache-Control', 'no-store')
-  @ApiProduces(XLSX)
+  @ApiProduces(XLSX, 'application/pdf')
   @ApiResponse({
     status: 200,
     description: 'O arquivo.',
-    content: { [XLSX]: { schema: { type: 'string', format: 'binary' } } },
+    content: {
+      [XLSX]: { schema: { type: 'string', format: 'binary' } },
+      'application/pdf': { schema: { type: 'string', format: 'binary' } },
+    },
   })
   @ApiErrorResponses(
     ...commonErrors({ validated: true, session: true }),

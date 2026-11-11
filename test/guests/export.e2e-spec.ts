@@ -257,6 +257,52 @@ describe('Exportação de convidados (banco real)', () => {
     });
   });
 
+  it('RN01 e RN09 - o PDF para o cerimonial: application/pdf, o nome com .pdf, sem cache, e o evento com formato pdf', async () => {
+    const { ana, weddingId, slug, pajens } = await anaWedding();
+
+    const response = await exportGuests(ana.cookie, weddingId, {
+      format: 'pdf',
+      who: 'tag',
+      tag: pajens.id,
+      columns: DEFAULT_COLUMNS,
+    }).expect(200);
+
+    expect(response.headers['content-type']).toBe('application/pdf');
+    expect(response.headers['cache-control']).toBe('no-store');
+    expect(response.headers['content-disposition']).toMatch(
+      new RegExp(`filename="convidados-${slug}-\\d{4}-\\d{2}-\\d{2}\\.pdf"`),
+    );
+    const raw = (response.body as Buffer).toString('latin1');
+    expect(raw.startsWith('%PDF-')).toBe(true);
+    expect(raw).toMatch(/NunitoSans/);
+    const latestEvent = await db.productEvent.findFirst({
+      where: { name: 'exportacao_buffet' },
+      orderBy: { createdAt: 'desc' },
+    });
+    expect(latestEvent?.props).toEqual({ formato: 'pdf', quem: 'owner', filtro: 'tag' });
+    const [log] = await db.applicationLog.findMany({
+      where: { weddingId, action: 'guests.exported' },
+    });
+    expect(log.data).toMatchObject({ format: 'pdf', who: 'tag', tagId: pajens.id, guests: 1 });
+  });
+
+  it('RN08 - o tag= da URL só vai para o log com who=tag', async () => {
+    const { ana, weddingId, pajens } = await anaWedding();
+
+    await exportGuests(ana.cookie, weddingId, {
+      format: 'xlsx',
+      who: 'all',
+      tag: pajens.id,
+      columns: 'name',
+    }).expect(200);
+
+    const [log] = await db.applicationLog.findMany({
+      where: { weddingId, action: 'guests.exported' },
+    });
+    expect(log.data).not.toHaveProperty('tagId');
+    expect(log.data).toMatchObject({ who: 'all', guests: 5 });
+  });
+
   it('casos de borda - filtro sem ninguém dá 409 NOTHING_TO_EXPORT', async () => {
     const ana = await signedInUser({ app, name: 'Ana' });
     const { weddingId } = await seedWedding({ db, ownerId: ana.userId });
@@ -271,7 +317,7 @@ describe('Exportação de convidados (banco real)', () => {
     expect(JSON.parse((response.body as Buffer).toString()).error).toBe('NOTHING_TO_EXPORT');
   });
 
-  it('RN02 e RN04 - tag na lixeira, tag ausente, coluna fora da lista, sem coluna e PDF (até o 7b) dão 400', async () => {
+  it('RN02 e RN04 - tag na lixeira, tag ausente, coluna fora da lista e sem coluna dão 400', async () => {
     const { ana, weddingId, pajens } = await anaWedding();
     await db.tag.update({ where: { id: pajens.id }, data: { deletedAt: new Date() } });
 
@@ -280,7 +326,6 @@ describe('Exportação de convidados (banco real)', () => {
       { format: 'xlsx', who: 'tag', columns: 'name' },
       { format: 'xlsx', who: 'all', columns: 'name,email' },
       { format: 'xlsx', who: 'all', columns: '' },
-      { format: 'pdf', who: 'all', columns: 'name' },
     ];
     for (const query of queries) await exportGuests(ana.cookie, weddingId, query).expect(400);
   });
