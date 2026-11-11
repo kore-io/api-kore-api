@@ -8,7 +8,7 @@ import {
 import { toReferral } from '../domain/referral';
 import {
   cleanText,
-  RESERVED_SLUGS,
+  isReservedSlug,
   timezoneForState,
   type BrazilianState,
   type ClientSignupSource,
@@ -81,7 +81,7 @@ export class CreateWedding {
       this.suggestSlug
         .execute({ slug: signup.slug, eventDate: signup.eventDate })
         .then((suggestion) => new SlugUnavailableError({ suggestion }));
-    if (RESERVED_SLUGS.has(signup.slug) || (await this.slugs.isTaken({ slug: signup.slug })))
+    if (isReservedSlug({ slug: signup.slug }) || (await this.slugs.isTaken({ slug: signup.slug })))
       throw await slugUnavailable();
 
     const attribution = await this.attribution({ userId, referralCode: signup.referralCode });

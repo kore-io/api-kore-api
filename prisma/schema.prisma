@@ -266,6 +266,26 @@ model Wedding {
   purgeNoticeSentAt DateTime?       @map("purge_notice_sent_at") @db.Timestamptz(3)
   // Lápide: no expurgo, ficam id, status, purgedAt, o indicador e createdAt.
   purgedAt          DateTime?       @map("purged_at") @db.Timestamptz(3)
+  // Site do casal (F2). Contato só para o grupo identificado (Dados básicos RN08).
+  contactEmail      String?         @map("contact_email") @db.Citext
+  // E.164.
+  contactWhatsapp   String?         @map("contact_whatsapp")
+  // Foto de capa: FK composta (id, cover_image_id) → site_images (wedding_id, id),
+  // ON DELETE SET NULL, só no SQL (Imagens do site RN10).
+  coverImageId      String?         @map("cover_image_id") @db.Uuid
+  locales           String[]        @default(["pt-BR"])
+  // A última gravação do Editor, para o "salvo às" (Dados básicos RN10).
+  siteUpdatedAt     DateTime?       @map("site_updated_at") @db.Timestamptz(3)
+  // Nula até a publicação (F4); trava o endereço (Dados básicos RN05; decisão 207(14)).
+  publishedAt       DateTime?       @map("published_at") @db.Timestamptz(3)
+  // Aparência (Aparência do site RN01 e RN02); nulas só na lápide.
+  fontPairKey       String?         @default("romantico") @map("font_pair_key")
+  starterPaletteKey String?         @default("terracota") @map("starter_palette_key")
+  primaryColor      String?         @default("#A94F37") @map("primary_color")
+  accentColor       String?         @default("#7A8B69") @map("accent_color")
+  backgroundMode    String?         @default("cream") @map("background_mode")
+  // Primeira gravação da Aparência ou criação pelo simulador (Aparência RN10).
+  appearanceSetAt   DateTime?       @map("appearance_set_at") @db.Timestamptz(3)
 
   createdBy         User?              @relation("WeddingCreatedBy", fields: [createdByUserId], references: [id])
   referrer          Referrer?          @relation(fields: [referrerId], references: [id])
@@ -279,6 +299,8 @@ model Wedding {
   guestTags         GuestTag[]
   stats             WeddingStats?
   siteImages        SiteImage[]
+  sections          Section[]
+  sectionContents   SectionContent[]
 
   @@index([createdByUserId], map: "idx_weddings_created_by_user_id")
   @@index([referrerId, status], map: "idx_weddings_referrer_id_status")
@@ -757,4 +779,57 @@ enum SiteImageStatus {
   failed
 
   @@map("site_image_status")
+}
+
+// Seção do site (Seções do site): as 6 da F2 nascem com o casamento, na ordem
+// fixa de position. Desligar só esconde (RN11).
+model Section {
+  id        String      @id @default(uuid(7)) @db.Uuid
+  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+  weddingId String      @map("wedding_id") @db.Uuid
+  type      SectionType
+  enabled   Boolean     @default(false)
+  position  Int
+  // Até 80; nulo na contagem regressiva (RN02).
+  title     String?
+
+  wedding  Wedding          @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  contents SectionContent[]
+
+  @@unique([weddingId, type], map: "uq_sections_wedding_id_type")
+  @@unique([weddingId, id], map: "uq_sections_wedding_id_id")
+  @@map("sections")
+}
+
+enum SectionType {
+  story
+  countdown
+  ceremony
+  lodging
+  dress_code
+  faq
+  gallery
+  gifts
+  messages
+
+  @@map("section_type")
+}
+
+// Conteúdo da seção por idioma (pt-BR na F2): jsonb validado pelo DTO do tipo (RN12).
+model SectionContent {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  weddingId String   @map("wedding_id") @db.Uuid
+  sectionId String   @map("section_id") @db.Uuid
+  locale    String
+  content   Json
+
+  wedding Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  section Section @relation(fields: [weddingId, sectionId], references: [weddingId, id], onDelete: Cascade)
+
+  @@unique([sectionId, locale], map: "uq_section_contents_section_id_locale")
+  @@index([weddingId], map: "idx_section_contents_wedding_id")
+  @@map("section_contents")
 }

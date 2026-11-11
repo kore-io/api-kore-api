@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { RESERVED_SLUGS, slugAlternatives } from '../domain/wedding-signup';
+import { isReservedSlug, slugAlternatives } from '../domain/wedding-signup';
 import { SLUG_REGISTRY, type SlugRegistry } from './ports/slug-registry.port';
 
 /** Tentativas antes de desistir de sugerir (cada uma é uma consulta). */
@@ -20,7 +20,7 @@ export class SuggestSlug {
     let attempts = 0;
     for (const candidate of slugAlternatives({ slug, eventDate })) {
       if (attempts++ >= MAX_ATTEMPTS) return null;
-      if (RESERVED_SLUGS.has(candidate)) continue;
+      if (isReservedSlug({ slug: candidate })) continue;
       if (!(await this.slugs.isTaken({ slug: candidate }))) return candidate;
     }
     return null;

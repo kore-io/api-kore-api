@@ -158,6 +158,9 @@ export class PrismaOwnerlessWeddings implements OwnerlessWeddings {
       await tx.party.deleteMany({ where: { weddingId } });
       await tx.tag.deleteMany({ where: { weddingId } });
       await tx.weddingStats.deleteMany({ where: { weddingId } });
+      // O site (Imagens do site RN11): seções, conteúdos e imagens com os arquivos.
+      await tx.sectionContent.deleteMany({ where: { weddingId } });
+      await tx.section.deleteMany({ where: { weddingId } });
       await this.purgeSiteImages({ tx, weddingId });
       // Lápide (Modelo de Dados): ficam id, status, purgedAt, o indicador e createdAt.
       await tx.wedding.update({
@@ -176,6 +179,17 @@ export class PrismaOwnerlessWeddings implements OwnerlessWeddings {
           utmMedium: null,
           utmCampaign: null,
           purgeNoticeSentAt: null,
+          // Sem contato, aparência nem capa (Imagens do site RN11).
+          contactEmail: null,
+          contactWhatsapp: null,
+          coverImageId: null,
+          siteUpdatedAt: null,
+          fontPairKey: null,
+          starterPaletteKey: null,
+          primaryColor: null,
+          accentColor: null,
+          backgroundMode: null,
+          appearanceSetAt: null,
         },
       });
       await tx.applicationLog.create({
