@@ -2,6 +2,7 @@ import {
   BRAZILIAN_STATES,
   cleanText,
   isValidSlugFormat,
+  isReservedSlug,
   slugAlternatives,
   timezoneForState,
 } from './wedding-signup';
@@ -67,5 +68,21 @@ describe('Cadastro do casal: regras do casamento', () => {
 
   it('nomes e cidade perdem os espaços sobrando (decisão 166)', () => {
     expect(cleanText({ value: '  Ana   Beatriz ' })).toBe('Ana Beatriz');
+  });
+});
+
+describe('isReservedSlug (Dados básicos RN07; decisão 205, D19)', () => {
+  it('RN07 - a lista única inclui as rotas novas da F2 e o vendedor do app', () => {
+    for (const slug of ['previa', 'simule', 'grupo', 'vendedor', 'perfis', 'assets', 'favicon'])
+      expect(isReservedSlug({ slug })).toBe(true);
+  });
+
+  it('RN07 - a reserva não diferencia maiúsculas de minúsculas', () => {
+    expect(isReservedSlug({ slug: 'Simule' })).toBe(true);
+    expect(isReservedSlug({ slug: 'VENDEDOR' })).toBe(true);
+  });
+
+  it('RN07 - endereço comum não é reservado', () => {
+    expect(isReservedSlug({ slug: 'ana-e-marcos' })).toBe(false);
   });
 });

@@ -45,23 +45,56 @@ export function timezoneForState({ state }: { state: BrazilianState }): string {
   return TIMEZONE_BY_STATE[state];
 }
 
-/** Modelo de Dados, Slugs reservados: são rotas do Kore. */
-export const RESERVED_SLUGS: ReadonlySet<string> = new Set([
+/**
+ * Slugs reservados: rotas do Kore na raiz de kore.com.br (Modelo de Dados;
+ * Dados básicos RN07; decisão 205, D19). Lista única, publicada no OpenAPI
+ * (ReservedSlugs); o teste do web falha se uma rota nova da raiz faltar aqui.
+ */
+export const RESERVED_SLUG_LIST = [
+  // Site do casal e convite.
   'grupo',
   'convite',
   'evento',
+  'previa',
+  // Site Institucional.
+  'simule',
+  'precos',
+  'como-funciona',
+  'comparar',
+  'cerimonialistas',
+  'faq',
+  'cadastro',
+  'entrar',
+  'i',
+  'termos',
+  'privacidade',
+  'ajuda',
+  // App e API (vendedor é rota de raiz do app, HOME_BY_PROFILE).
   'app',
   'admin',
   'api',
+  'public',
   'cerimonialista',
+  'vendedor',
   'login',
-  'entrar',
-  'ajuda',
-  'termos',
-  'privacidade',
+  'perfis',
+  'sessao-expirada',
+  // Marca e técnicos do bundle.
   'kore',
   'www',
-]);
+  'assets',
+  '.well-known',
+  'sitemap',
+  'robots',
+  'favicon',
+] as const;
+
+const RESERVED_SLUGS: ReadonlySet<string> = new Set(RESERVED_SLUG_LIST);
+
+/** A reserva não diferencia maiúsculas de minúsculas (decisão 205, D19). */
+export function isReservedSlug({ slug }: { slug: string }): boolean {
+  return RESERVED_SLUGS.has(slug.toLowerCase());
+}
 
 export const SLUG_MIN_LENGTH = 3;
 export const SLUG_MAX_LENGTH = 40;

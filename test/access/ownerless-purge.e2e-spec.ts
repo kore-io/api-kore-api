@@ -201,6 +201,8 @@ describe('Expurgo do casamento sem dono (RN13 de Convites; decisões 136 e 180; 
     'parties',
     'partners',
     'party_tags',
+    'section_contents',
+    'sections',
     'site_images',
     'tags',
     'wedding_stats',
@@ -257,6 +259,17 @@ describe('Expurgo do casamento sem dono (RN13 de Convites; decisões 136 e 180; 
       await storage.put({ bucket: 'private', key: keys.original, body, contentType: 'image/jpeg' });
       for (const key of [keys.display, keys.thumb, keys.og])
         await storage.put({ bucket: 'public', key, body, contentType: 'image/jpeg' });
+      await db.wedding.update({
+        where: { id: weddingId },
+        data: {
+          contactEmail: 'casal@exemplo.kore.local',
+          contactWhatsapp: '+5519998763310',
+          coverImageId: imageId,
+          siteUpdatedAt: new Date(),
+          appearanceSetAt: new Date(),
+          primaryColor: '#566C4B',
+        },
+      });
       return keys;
     }
     async function stored(keys: ReturnType<typeof siteImageKeys>) {
@@ -310,6 +323,19 @@ describe('Expurgo do casamento sem dono (RN13 de Convites; decisões 136 e 180; 
       'purged',
     );
     expect(Object.values(await counts(weddingId)).every((count) => count === 0)).toBe(true);
+    // A lápide fica sem contato, aparência nem capa (Imagens do site RN11).
+    expect(await db.wedding.findUniqueOrThrow({ where: { id: weddingId } })).toMatchObject({
+      contactEmail: null,
+      contactWhatsapp: null,
+      coverImageId: null,
+      siteUpdatedAt: null,
+      fontPairKey: null,
+      starterPaletteKey: null,
+      primaryColor: null,
+      accentColor: null,
+      backgroundMode: null,
+      appearanceSetAt: null,
+    });
     expect(await stored(keys)).toBe(0);
     expect(await counts(other.weddingId)).toEqual(otherBefore);
     expect(await stored(otherKeys)).toBe(4);

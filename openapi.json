@@ -7892,6 +7892,44 @@
           "Tags"
         ],
         "description": "Os 7 títulos da primeira linha do modelo de planilha, na ordem das colunas (Importação RN02 e RN03)."
+      },
+      "ReservedSlugs": {
+        "type": "string",
+        "enum": [
+          "grupo",
+          "convite",
+          "evento",
+          "previa",
+          "simule",
+          "precos",
+          "como-funciona",
+          "comparar",
+          "cerimonialistas",
+          "faq",
+          "cadastro",
+          "entrar",
+          "i",
+          "termos",
+          "privacidade",
+          "ajuda",
+          "app",
+          "admin",
+          "api",
+          "public",
+          "cerimonialista",
+          "vendedor",
+          "login",
+          "perfis",
+          "sessao-expirada",
+          "kore",
+          "www",
+          "assets",
+          ".well-known",
+          "sitemap",
+          "robots",
+          "favicon"
+        ],
+        "description": "Endereços que nenhum casamento pode usar, porque são rotas do Kore na raiz de kore.com.br. A comparação não diferencia maiúsculas de minúsculas (Dados básicos RN07)."
       }
     }
   }

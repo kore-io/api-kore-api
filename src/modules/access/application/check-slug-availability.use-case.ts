@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   isValidSlugFormat,
-  RESERVED_SLUGS,
+  isReservedSlug,
   type SlugUnavailableReason,
 } from '../domain/wedding-signup';
 import { SLUG_REGISTRY, type SlugRegistry } from './ports/slug-registry.port';
@@ -31,7 +31,7 @@ export class CheckSlugAvailability {
   }): Promise<SlugAvailability> {
     if (!isValidSlugFormat({ slug }))
       return { slug, available: false, reason: 'invalid_format', suggestion: null };
-    const reason: SlugUnavailableReason | null = RESERVED_SLUGS.has(slug)
+    const reason: SlugUnavailableReason | null = isReservedSlug({ slug })
       ? 'reserved'
       : (await this.slugs.isTaken({ slug }))
         ? 'taken'
