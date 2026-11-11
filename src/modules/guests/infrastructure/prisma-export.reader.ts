@@ -4,6 +4,7 @@ import { TenantTransaction } from '../../../shared/database/tenant-transaction';
 import type { ExportReader, ExportWedding } from '../application/ports/export-reader.port';
 import type { ExportGuest, ExportWho } from '../domain/export';
 import type { AgeGroup, RsvpStatus } from '../domain/party';
+import { coupleNames } from '../../access/domain/invitation-acceptance';
 
 /** Na transação da requisição, com a RLS ligada. */
 @Injectable()
@@ -13,17 +14,40 @@ export class PrismaExportReader implements ExportReader {
   async wedding({ weddingId }: { weddingId: string }): Promise<ExportWedding | null> {
     const wedding = await this.tenant.client().wedding.findFirst({
       where: { id: weddingId },
-      select: { slug: true, timezone: true },
+      select: {
+        slug: true,
+        timezone: true,
+        eventDate: true,
+        city: true,
+        state: true,
+        partners: { select: { slot: true, displayName: true, title: true, userId: true } },
+      },
     });
-    return wedding?.slug ? { slug: wedding.slug, timezone: wedding.timezone } : null;
+    if (!wedding?.slug) return null;
+    return {
+      slug: wedding.slug,
+      timezone: wedding.timezone,
+      coupleNames: coupleNames({
+        partners: wedding.partners.map((partner) => ({ ...partner, slot: partner.slot as 1 | 2 })),
+      }),
+      eventDate: wedding.eventDate,
+      city: wedding.city,
+      state: wedding.state,
+    };
   }
 
-  async isActiveTag({ weddingId, tagId }: { weddingId: string; tagId: string }): Promise<boolean> {
+  async activeTagName({
+    weddingId,
+    tagId,
+  }: {
+    weddingId: string;
+    tagId: string;
+  }): Promise<string | null> {
     const tag = await this.tenant.client().tag.findFirst({
       where: { id: tagId, weddingId, deletedAt: null },
-      select: { id: true },
+      select: { name: true },
     });
-    return tag !== null;
+    return tag?.name ?? null;
   }
 
   async guests({

@@ -8,7 +8,16 @@
     "plugins": [
       {
         "name": "@nestjs/swagger",
-        "options": { "classValidatorShim": true, "introspectComments": true }
+        "options": {
+          "classValidatorShim": true,
+          "introspectComments": true
+        }
+      }
+    ],
+    "assets": [
+      {
+        "include": "modules/guests/infrastructure/fonts/**/*",
+        "outDir": "dist"
       }
     ]
   }

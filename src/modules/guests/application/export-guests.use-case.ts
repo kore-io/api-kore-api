@@ -10,7 +10,11 @@ import {
 } from '../../product-events/application/ports/product-event-recorder.port';
 import { AFTER_COMMIT, type AfterCommit } from '../../../shared/database/after-commit.port';
 import {
+  eventLine,
   exportFileName,
+  filterLabel,
+  generatedLine,
+  summaryLine,
   orderedColumns,
   type ExportColumn,
   type ExportFormat,
@@ -74,7 +78,11 @@ export class ExportGuests {
     now: Date;
   }): Promise<ExportedFile> {
     const role = await this.authorization.require({ userId, weddingId, action: 'export_guests' });
-    if (who === 'tag' && !(tagId && (await this.reader.isActiveTag({ weddingId, tagId }))))
+    // A tag só vale com who=tag (sugestão do Crivo na 67-exportacao).
+    const filterTagId = who === 'tag' ? tagId : undefined;
+    const tagName =
+      who === 'tag' && tagId ? await this.reader.activeTagName({ weddingId, tagId }) : null;
+    if (who === 'tag' && !tagName)
       throw new GuestFieldsInvalidError({
         issues: [{ path: 'tag', code: tagId ? 'TAG_NOT_FOUND' : 'IS_NOT_EMPTY', params: {} }],
       });
@@ -82,10 +90,23 @@ export class ExportGuests {
     // Sem endereço só a lápide do expurgo, que não tem lista.
     if (!wedding) throw new WeddingNotFoundError();
 
-    const guests = await this.reader.guests({ weddingId, who, tagId });
+    const guests = await this.reader.guests({ weddingId, who, tagId: filterTagId });
     if (guests.length === 0) throw new NothingToExportError();
     const columns = orderedColumns({ columns: requested });
-    const content = await this.renderer.xlsx({ guests, columns });
+    const content =
+      format === 'pdf'
+        ? await this.renderer.pdf({
+            guests,
+            columns,
+            heading: {
+              title: wedding.coupleNames,
+              eventLine: eventLine(wedding),
+              filter: filterLabel({ who, tagName: tagName ?? undefined }),
+              summary: summaryLine({ guests }),
+              generated: generatedLine({ now, timezone: wedding.timezone }),
+            },
+          })
+        : await this.renderer.xlsx({ guests, columns });
 
     await this.log.record({
       entry: {
@@ -96,7 +117,13 @@ export class ExportGuests {
         entityType: 'wedding',
         entityId: weddingId,
         // O filtro por tag vai pelo id (186(6)); nada da lista.
-        data: { format, who, ...(tagId ? { tagId } : {}), columns, guests: guests.length },
+        data: {
+          format,
+          who,
+          ...(filterTagId ? { tagId: filterTagId } : {}),
+          columns,
+          guests: guests.length,
+        },
         ...(ip ? { ip } : {}),
       },
     });

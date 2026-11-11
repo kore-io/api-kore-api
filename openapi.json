@@ -3601,11 +3601,12 @@
             "name": "format",
             "required": true,
             "in": "query",
-            "description": "xlsx (o PDF entra com a feature/67-exportacao-pdf).",
+            "description": "xlsx ou pdf (RN01).",
             "schema": {
               "type": "string",
               "enum": [
-                "xlsx"
+                "xlsx",
+                "pdf"
               ]
             }
           },
@@ -3665,6 +3666,12 @@
                   "type": "string",
                   "format": "binary"
                 }
+              },
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
               }
             }
           },
@@ -3672,6 +3679,11 @@
             "description": "",
             "content": {
               "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              },
+              "application/pdf": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
                 }
@@ -3685,6 +3697,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
                 }
+              },
+              "application/pdf": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
               }
             }
           },
@@ -3692,6 +3709,11 @@
             "description": "",
             "content": {
               "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              },
+              "application/pdf": {
                 "schema": {
                   "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
                 }
@@ -3705,6 +3727,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/NothingToExportErrorBody"
                 }
+              },
+              "application/pdf": {
+                "schema": {
+                  "$ref": "#/components/schemas/NothingToExportErrorBody"
+                }
               }
             }
           },
@@ -3712,6 +3739,11 @@
             "description": "",
             "content": {
               "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              },
+              "application/pdf": {
                 "schema": {
                   "$ref": "#/components/schemas/RateLimitedErrorBody"
                 }

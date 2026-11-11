@@ -19,7 +19,7 @@ import { ExportController } from './presentation/export.controller';
 import { ExportGuests } from './application/export-guests.use-case';
 import { EXPORT_READER, EXPORT_RENDERER } from './application/ports/export-reader.port';
 import { PrismaExportReader } from './infrastructure/prisma-export.reader';
-import { ExceljsExportRenderer } from './infrastructure/exceljs-export-renderer';
+import { FileExportRenderer } from './infrastructure/file-export-renderer';
 import { ImportPastedList, PreviewPastedList } from './application/import-paste.use-cases';
 import {
   ImportSpreadsheet,
@@ -93,7 +93,7 @@ import { MoveGuest } from './application/move-guest.use-case';
     ImportSpreadsheet,
     SpreadsheetUploadGuard,
     { provide: EXPORT_READER, useClass: PrismaExportReader },
-    { provide: EXPORT_RENDERER, useClass: ExceljsExportRenderer },
+    { provide: EXPORT_RENDERER, useClass: FileExportRenderer },
     ExportGuests,
   ],
 })

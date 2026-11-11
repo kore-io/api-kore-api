@@ -6,6 +6,7 @@ import {
   EXPORT_FORMATS,
   EXPORT_WHO,
   type ExportColumn,
+  type ExportFormat,
   type ExportWho,
 } from '../domain/export';
 
@@ -19,8 +20,8 @@ const splitList = ({ value }: { value: unknown }): unknown =>
     : value;
 
 export class ExportGuestsQuery {
-  /** xlsx (o PDF entra com a feature/67-exportacao-pdf). */
-  @ApiProperty({ enum: EXPORT_FORMATS }) @IsIn(EXPORT_FORMATS) format: 'xlsx';
+  /** xlsx ou pdf (RN01). */
+  @ApiProperty({ enum: EXPORT_FORMATS }) @IsIn(EXPORT_FORMATS) format: ExportFormat;
 
   @ApiProperty({ enum: EXPORT_WHO }) @IsIn(EXPORT_WHO) who: ExportWho;
 
