@@ -1,6 +1,6 @@
-import { Controller, Get, Param, Res } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Req, Res } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { isValidSlugFormat } from '../../access/domain/wedding-signup';
 import {
   ApiErrorResponses,
@@ -10,9 +10,20 @@ import { Public } from '../../../shared/http/public.decorator';
 import { SiteRoute } from '../../../shared/http/site-route.decorator';
 import { validationError } from '../../../shared/http/validation-errors';
 import { GetPublicSite, GetSiteLinkPreview } from '../application/public-site.use-cases';
-import { SiteDraftErrorBody, SiteNotFoundErrorBody } from './site-error.dto';
+import { StartPartySession } from '../application/start-party-session.use-case';
+import { clearPartyCookie, setPartyCookie } from './party-cookie';
+import {
+  SiteDraftErrorBody,
+  SiteLinkInvalidErrorBody,
+  SiteNotFoundErrorBody,
+} from './site-error.dto';
 import { toHttpError } from './site-http-errors';
-import { PublicSiteResponse, SiteLinkPreviewResponse } from './public-site.dto';
+import {
+  PartySessionBody,
+  PartySessionResponse,
+  PublicSiteResponse,
+  SiteLinkPreviewResponse,
+} from './public-site.dto';
 
 /** Fora dos buscadores em todo o site do casal na F2 (Site público RN02). */
 const NO_INDEX = 'noindex, nofollow';
@@ -26,7 +37,10 @@ const NO_INDEX = 'noindex, nofollow';
 @SiteRoute()
 @Public()
 export class PublicSiteController {
-  constructor(private readonly getSite: GetPublicSite) {}
+  constructor(
+    private readonly getSite: GetPublicSite,
+    private readonly startPartySession: StartPartySession,
+  ) {}
 
   /**
    * O site, com o recorte do visitante feito no servidor (RN05). Nenhum cache
@@ -36,13 +50,53 @@ export class PublicSiteController {
   @ApiErrorResponses(...commonErrors({}), SiteNotFoundErrorBody, SiteDraftErrorBody)
   async get(
     @Param('slug') slug: string,
+    @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ): Promise<PublicSiteResponse> {
     // Os cabeçalhos valem também para os erros.
     response.setHeader('Cache-Control', 'private, no-store');
     response.setHeader('X-Robots-Tag', NO_INDEX);
     try {
-      return await this.getSite.execute({ slug: slug.toLowerCase() });
+      const { view, staleCookie } = await this.getSite.execute({
+        slug: slug.toLowerCase(),
+        cookies: (request.cookies ?? {}) as Record<string, string | undefined>,
+      });
+      if (staleCookie) clearPartyCookie({ response, name: staleCookie });
+      return view;
+    } catch (error) {
+      throw toHttpError(error);
+    }
+  }
+
+  /**
+   * Troca o token do link do grupo pelo cookie assinado do grupo (RN06;
+   * ADR-36). A página tira o token do endereço depois. Limite `party_link`:
+   * 20 falhas por minuto por IP.
+   */
+  @Post('party-session')
+  @HttpCode(HttpStatus.OK)
+  @ApiErrorResponses(
+    ...commonErrors({ validated: true, write: true }),
+    SiteLinkInvalidErrorBody,
+    SiteDraftErrorBody,
+    SiteNotFoundErrorBody,
+  )
+  async partySession(
+    @Param('slug') slug: string,
+    @Body() body: PartySessionBody,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<PartySessionResponse> {
+    response.setHeader('Cache-Control', 'private, no-store');
+    response.setHeader('X-Robots-Tag', NO_INDEX);
+    try {
+      const session = await this.startPartySession.execute({
+        slug: slug.toLowerCase(),
+        token: body.token,
+        ip: request.ip ?? 'unknown',
+      });
+      setPartyCookie({ response, ...session.cookie });
+      return { slug: session.slug, party: session.party };
     } catch (error) {
       throw toHttpError(error);
     }

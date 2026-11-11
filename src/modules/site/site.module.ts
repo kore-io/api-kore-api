@@ -13,6 +13,10 @@ import { UpdateSiteAppearance } from './application/update-site-appearance.use-c
 import { UpdateSiteBasics } from './application/update-site-basics.use-case';
 import { PrismaSiteReader } from './infrastructure/prisma-site.reader';
 import { PrismaSiteStore } from './infrastructure/prisma-site.store';
+import { PartyLinkFailures } from '../../shared/rate-limit/party-link-failures';
+import { PARTY_COOKIES } from './application/ports/party-cookies.port';
+import { StartPartySession } from './application/start-party-session.use-case';
+import { HmacPartyCookies } from './infrastructure/hmac-party-cookies';
 import { PUBLIC_SITE_READER } from './application/ports/public-site-reader.port';
 import { GetPublicSite, GetSiteLinkPreview } from './application/public-site.use-cases';
 import { PrismaPublicSiteReader } from './infrastructure/prisma-public-site.reader';
@@ -48,6 +52,9 @@ import { SiteImagesController } from './presentation/site-images.controller';
     UpdateSiteSection,
     { provide: PUBLIC_SITE_READER, useClass: PrismaPublicSiteReader },
     GetPublicSite,
+    { provide: PARTY_COOKIES, useClass: HmacPartyCookies },
+    PartyLinkFailures,
+    StartPartySession,
     GetSiteLinkPreview,
     SiteImageRateLimitGuard,
   ],

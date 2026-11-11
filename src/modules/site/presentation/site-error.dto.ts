@@ -97,3 +97,11 @@ export class SiteDraftErrorBody {
   @ApiProperty({ enum: ['SITE_DRAFT'] }) error: 'SITE_DRAFT';
   @ApiProperty() message: string;
 }
+
+/** "Este link não funciona mais. Peça um novo link ao casal." (Site público RN06). */
+export class SiteLinkInvalidErrorBody {
+  static readonly status = 404;
+  @ApiProperty({ enum: [404] }) statusCode: 404;
+  @ApiProperty({ enum: ['LINK_INVALID'] }) error: 'LINK_INVALID';
+  @ApiProperty() message: string;
+}

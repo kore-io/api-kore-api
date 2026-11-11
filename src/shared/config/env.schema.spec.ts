@@ -19,6 +19,7 @@ const validConfig = {
   APP_URL: 'http://localhost:5173',
   SITE_URL: 'http://localhost:5174',
   KMS_LOCAL_MASTER_KEY: '258+JWcuRfDrsS0xeKuTKgRV7p+kFlSMaIu3PErymmo=',
+  PARTY_COOKIE_KEY: 'Qk7j0cX6vJ2m3nL9pR5tW8yZ1aB4dE7gH0kM3nP6qS8=',
   STORAGE_ENDPOINT: 'http://localhost:9000',
   STORAGE_ACCESS_KEY_ID: 'kore',
   STORAGE_SECRET_ACCESS_KEY: 'kore-minio-local',

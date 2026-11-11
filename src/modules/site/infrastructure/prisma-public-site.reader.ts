@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
-import type { PublicSiteReader, PublicSiteRow } from '../application/ports/public-site-reader.port';
+import type {
+  PartyByToken,
+  PartySiteView,
+  PublicSiteReader,
+  PublicSiteRow,
+} from '../application/ports/public-site-reader.port';
 import { LIVE_SITE_STATUSES } from '../domain/public-site';
 
 /**
@@ -20,5 +25,25 @@ export class PrismaPublicSiteReader implements PublicSiteReader {
     const status = String(site.status);
     if (!LIVE_SITE_STATUSES.includes(status)) return { status, live: false };
     return { ...(site as Omit<PublicSiteRow & { live: true }, 'live'>), status, live: true };
+  }
+
+  async partyByToken({ token }: { token: string }): Promise<PartyByToken | null> {
+    const [row] = await this.prisma.$queryRaw<[{ party: PartyByToken | null }]>`
+      SELECT site_party_by_token(${token}) AS party`;
+    return row?.party ?? null;
+  }
+
+  async partyView({
+    weddingId,
+    partyId,
+    linkVersion,
+  }: {
+    weddingId: string;
+    partyId: string;
+    linkVersion: number;
+  }): Promise<PartySiteView | null> {
+    const [row] = await this.prisma.$queryRaw<[{ view: PartySiteView | null }]>`
+      SELECT site_party_view(${weddingId}::uuid, ${partyId}::uuid, ${linkVersion}::int) AS view`;
+    return row?.view ?? null;
   }
 }

@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { Client } from 'pg';
 import { BackofficePrismaService } from '../../src/shared/database/backoffice-prisma.service';
 import { createTestApp } from '../support/create-test-app';
@@ -88,5 +88,45 @@ describe('Função site_public_by_slug (banco real, usuário kore_api sem sessã
     const slug = await wedding('published');
     const { rows } = await api.query('SELECT id FROM weddings WHERE slug = $1::citext', [slug]);
     expect(rows).toEqual([]);
+  });
+
+  it('ADR-36 item 2 - site_party_view só devolve com o grupo do casamento, fora da lixeira e com a versão do link', async () => {
+    const slug = await wedding('published');
+    const other = await wedding('published');
+    const [weddingId, otherId] = await Promise.all(
+      [slug, other].map(
+        async (value) => (await db.wedding.findFirstOrThrow({ where: { slug: value } })).id,
+      ),
+    );
+    const party = await db.party.create({
+      data: {
+        weddingId,
+        name: 'Família Moreira',
+        linkToken: randomBytes(16).toString('base64url'),
+      },
+    });
+    const view = async (wedding: string, version: number) =>
+      (
+        await api.query('SELECT site_party_view($1::uuid, $2::uuid, $3::int) AS view', [
+          wedding,
+          party.id,
+          version,
+        ])
+      ).rows[0]?.view as Record<string, unknown> | null;
+
+    expect(await view(weddingId, 1)).toMatchObject({
+      partyName: 'Família Moreira',
+      contactWhatsapp: '+5519998764521',
+      venues: [expect.objectContaining({ address: 'Rua X, 1' })],
+    });
+    expect(await view(weddingId, 2)).toBeNull();
+    expect(await view(otherId, 1)).toBeNull();
+    const byToken = async () =>
+      (await api.query('SELECT site_party_by_token($1) AS party', [party.linkToken])).rows[0]
+        ?.party as Record<string, unknown> | null;
+    expect(await byToken()).toMatchObject({ partyId: party.id, slug, linkVersion: 1 });
+    await db.party.update({ where: { id: party.id }, data: { deletedAt: new Date() } });
+    expect(await view(weddingId, 1)).toBeNull();
+    expect(await byToken()).toBeNull();
   });
 });

@@ -113,3 +113,16 @@ export class SiteNotFoundError extends Error {
 export class SiteDraftError extends Error {
   override name = 'SiteDraftError';
 }
+
+/**
+ * Token inexistente, regenerado ou de grupo na lixeira, num site publicado
+ * (404 LINK_INVALID; Site público RN06): "Este link não funciona mais."
+ */
+export class SiteLinkInvalidError extends Error {
+  override name = 'SiteLinkInvalidError';
+}
+
+/** Falhas demais do mesmo IP no link do grupo (429 RATE_LIMITED; Site público RN06). */
+export class PartyLinkRateLimitedError extends Error {
+  override name = 'PartyLinkRateLimitedError';
+}
