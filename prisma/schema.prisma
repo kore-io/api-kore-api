@@ -556,6 +556,10 @@ model Party {
   // Igual ao número de Guest isPlusOne ativos do grupo (RN07).
   plusOneSlots      Int                 @default(0) @map("plus_one_slots")
   deliveryStatus    PartyDeliveryStatus @default(not_sent) @map("delivery_status")
+  // Envio e primeira visualização (Fase 4): o status de envio volta a eles
+  // quando um grupo respondido passa a ter pendente (Grupos RN10).
+  sentAt            DateTime?           @map("sent_at") @db.Timestamptz(3)
+  firstViewedAt     DateTime?           @map("first_viewed_at") @db.Timestamptz(3)
   respondedAt       DateTime?           @map("responded_at") @db.Timestamptz(3)
   deletedAt         DateTime?           @map("deleted_at") @db.Timestamptz(3)
 

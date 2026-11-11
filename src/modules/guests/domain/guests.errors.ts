@@ -23,3 +23,29 @@ export class GuestFieldsInvalidError extends Error {
 export class PartyNotFoundError extends Error {
   override name = 'PartyNotFoundError';
 }
+
+/** O convidado não existe neste casamento ou está na lixeira (404 GUEST_NOT_FOUND). */
+export class GuestNotFoundError extends Error {
+  override name = 'GuestNotFoundError';
+}
+
+/** O último convidado com nome não sai do grupo (409 LAST_GUEST; Grupos RN08). */
+export class LastGuestError extends Error {
+  override name = 'LastGuestError';
+}
+
+/** Vaga de acompanhante vazia não se move nem vai à lixeira (409 EMPTY_PLUS_ONE; RN10). */
+export class EmptyPlusOneError extends Error {
+  override name = 'EmptyPlusOneError';
+}
+
+/** As vagas pedidas ficam abaixo das já preenchidas ou respondidas (409 PLUS_ONES_IN_USE; RN07). */
+export class PlusOnesInUseError extends Error {
+  override name = 'PlusOnesInUseError';
+  readonly inUse: number;
+
+  constructor({ inUse }: { inUse: number }) {
+    super();
+    this.inUse = inUse;
+  }
+}

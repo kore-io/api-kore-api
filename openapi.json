@@ -1781,6 +1781,127 @@
         "tags": [
           "parties"
         ]
+      },
+      "patch": {
+        "operationId": "PartiesController_update_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "partyId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePartyBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PartyNotFoundErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlusOnesInUseErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Editar grupo (Grupos RN09): não tira convidado; vale a última gravação.",
+        "tags": [
+          "parties"
+        ]
       }
     },
     "/v1/weddings/{weddingId}/parties/{partyId}/regenerate-link": {
@@ -1873,6 +1994,136 @@
         "summary": "Regenerar link: o antigo para na hora (Grupos RN12).",
         "tags": [
           "parties"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/guests/{guestId}/move": {
+      "post": {
+        "operationId": "GuestsController_move_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "guestId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveGuestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MoveGuestResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/GuestNotFoundErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/LastGuestErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/EmptyPlusOneErrorBody"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mover de grupo: mantém a resposta e as tags (Grupos RN10).",
+        "tags": [
+          "guests"
         ]
       }
     }
@@ -4096,6 +4347,122 @@
           "message"
         ]
       },
+      "PlusOnesInUseErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PLUS_ONES_IN_USE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "inUse": {
+            "type": "number",
+            "description": "\"Já há {n} acompanhantes com resposta neste grupo.\""
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "inUse"
+        ]
+      },
+      "UpdatePartyGuestBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Obrigatório no convidado novo; não aceita null.",
+            "maxLength": 80
+          },
+          "ageGroup": {
+            "nullable": true,
+            "enum": [
+              "adult",
+              "child",
+              "baby"
+            ],
+            "type": "string"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "null ou vazio apaga.",
+            "maxLength": 40,
+            "example": "(19) 99876-1402"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true,
+            "description": "null ou vazio apaga.",
+            "maxLength": 254,
+            "format": "email"
+          },
+          "id": {
+            "type": "string",
+            "description": "Com id, edita o convidado com nome deste grupo; sem id, cria um novo (pendente).",
+            "format": "uuid"
+          },
+          "tagIds": {
+            "description": "A lista completa das tags do convidado (substitui a anterior; Tags RN07).",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "UpdatePartyBody": {
+        "type": "object",
+        "properties": {
+          "guests": {
+            "description": "Os editados (com id) e os novos (sem id). Não tira convidado: tirar é a lixeira.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpdatePartyGuestBody"
+            }
+          },
+          "plusOneSlots": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 5
+          },
+          "internalNote": {
+            "type": "string",
+            "nullable": true,
+            "description": "null ou vazio apaga.",
+            "maxLength": 500
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "contactGuestId": {
+            "type": "string",
+            "description": "Convidado com nome do grupo, com telefone ou e-mail (RN06).",
+            "format": "uuid"
+          },
+          "tagIds": {
+            "description": "A lista completa das tags do grupo (substitui a anterior).",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
       "RegeneratePartyLinkResponse": {
         "type": "object",
         "properties": {
@@ -4111,6 +4478,113 @@
         "required": [
           "url",
           "regeneratedAt"
+        ]
+      },
+      "GuestNotFoundErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "GUEST_NOT_FOUND"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "LastGuestErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "LAST_GUEST"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "EmptyPlusOneErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "EMPTY_PLUS_ONE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "MoveGuestBody": {
+        "type": "object",
+        "properties": {
+          "partyId": {
+            "type": "string",
+            "description": "O grupo de destino: ativo, do mesmo casamento e diferente do atual.",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "partyId"
+        ]
+      },
+      "MoveGuestResponse": {
+        "type": "object",
+        "properties": {
+          "guestId": {
+            "type": "string"
+          },
+          "fromPartyId": {
+            "type": "string"
+          },
+          "toPartyId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "guestId",
+          "fromPartyId",
+          "toPartyId"
         ]
       }
     }

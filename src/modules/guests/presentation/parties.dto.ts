@@ -106,6 +106,110 @@ export class CreatePartyBody {
   internalNote?: string;
 }
 
+/** No PATCH, texto vazio apaga (vira null); ausente não muda. */
+const trimToNull = ({ value }: { value: unknown }): unknown =>
+  typeof value === 'string' ? value.trim() || null : value;
+
+const normalizeEmailToNull = ({ value }: { value: unknown }): unknown =>
+  typeof value === 'string' ? value.trim().toLowerCase() || null : value;
+
+export class UpdatePartyGuestBody {
+  /** Com id, edita o convidado com nome deste grupo; sem id, cria um novo (pendente). */
+  @IsOptional() @IsUUID() id?: string;
+
+  /** Obrigatório no convidado novo; não aceita null. */
+  @ApiProperty({ required: false, type: String })
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(GUEST_NAME_MAX)
+  name?: string;
+
+  @ApiProperty({ enum: AGE_GROUPS, required: false, nullable: true, type: String })
+  @IsOptional()
+  @IsIn(AGE_GROUPS)
+  ageGroup?: AgeGroup | null;
+
+  /** null ou vazio apaga. */
+  @ApiProperty({ required: false, nullable: true, type: String, example: '(19) 99876-1402' })
+  @IsOptional()
+  @Transform(trimToNull)
+  @IsString()
+  @MaxLength(40)
+  phone?: string | null;
+
+  /** null ou vazio apaga. */
+  @ApiProperty({ required: false, nullable: true, type: String })
+  @IsOptional()
+  @Transform(normalizeEmailToNull)
+  @IsEmail()
+  @MaxLength(254)
+  email?: string | null;
+
+  /** A lista completa das tags do convidado (substitui a anterior; Tags RN07). */
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(TAGS_MAX)
+  @IsUUID('all', { each: true })
+  tagIds?: string[];
+}
+
+/** Editar grupo (RN09): todos os campos opcionais; os que não vêm não mudam. */
+export class UpdatePartyBody {
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(PARTY_NAME_MAX)
+  name?: string;
+
+  /** Os editados (com id) e os novos (sem id). Não tira convidado: tirar é a lixeira. */
+  @ApiProperty({ type: [UpdatePartyGuestBody], required: false })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(GUESTS_PER_PARTY_MAX)
+  @ValidateNested({ each: true })
+  @Type(() => UpdatePartyGuestBody)
+  guests?: UpdatePartyGuestBody[];
+
+  /** Convidado com nome do grupo, com telefone ou e-mail (RN06). */
+  @IsOptional() @IsUUID() contactGuestId?: string;
+
+  @ApiProperty({ required: false, minimum: 0, maximum: PLUS_ONE_SLOTS_MAX })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(PLUS_ONE_SLOTS_MAX)
+  plusOneSlots?: number;
+
+  /** A lista completa das tags do grupo (substitui a anterior). */
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(TAGS_MAX)
+  @IsUUID('all', { each: true })
+  tagIds?: string[];
+
+  /** null ou vazio apaga. */
+  @ApiProperty({ required: false, nullable: true, type: String })
+  @IsOptional()
+  @Transform(trimToNull)
+  @IsString()
+  @MaxLength(INTERNAL_NOTE_MAX)
+  internalNote?: string | null;
+}
+
+export class MoveGuestBody {
+  /** O grupo de destino: ativo, do mesmo casamento e diferente do atual. */
+  @IsUUID() partyId: string;
+}
+
+export class MoveGuestResponse {
+  guestId: string;
+  fromPartyId: string;
+  toPartyId: string;
+}
+
 export class ListPartiesQuery {
   /** Nome do grupo ou de um convidado, sem diferenciar maiúsculas nem acentos (RN13). */
   @IsOptional() @Transform(trimOptional) @IsString() @MaxLength(80) q?: string;

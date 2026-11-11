@@ -188,6 +188,23 @@ describe('Migration da F1: convidados (banco real, usuário kore_api)', () => {
       });
     });
 
+    it('RN07 - a API apaga de vez só a vaga vazia pendente; convidado com nome ou vaga respondida, não', async () => {
+      await as(ana, async () => {
+        const partyId = await insertParty();
+        const celia = await insertGuest({ partyId });
+        const slot = await insertGuest({ partyId, name: null, isPlusOne: true });
+        const answered = await insertGuest({ partyId, name: null, isPlusOne: true });
+        await api.query(`UPDATE guests SET rsvp_status = 'declined' WHERE id = $1`, [answered]);
+
+        const deleted = await api.query(`DELETE FROM guests WHERE id = ANY($1::uuid[])`, [
+          [celia, slot, answered],
+        ]);
+
+        expect(deleted.rowCount).toBe(1);
+        expect(await count('guests')).toBe(2);
+      });
+    });
+
     it('a API não troca o casamento de uma linha (GRANT por coluna)', async () => {
       await as(ana, async () => {
         const partyId = await insertParty();

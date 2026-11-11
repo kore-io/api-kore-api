@@ -8,6 +8,12 @@ export type PhoneParseResult =
 
 const E164_MIN_DIGITS = 8;
 const E164_MAX_DIGITS = 15;
+const BR_MIN_DIGITS = 10;
+const BR_MAX_DIGITS = 11;
+
+function isBrazilianLength(national: string): boolean {
+  return national.length >= BR_MIN_DIGITS && national.length <= BR_MAX_DIGITS;
+}
 
 /**
  * O parser único do telefone (Grupos RN04; decisão 189, item 4), para o
@@ -29,14 +35,17 @@ export function parsePhone({ raw }: { raw: string | number }): PhoneParseResult 
     if (n < E164_MIN_DIGITS || n > E164_MAX_DIGITS) return invalid({ n });
     const parsed = parsePhoneNumberFromString(`+${digits}`);
     if (!parsed) return invalid({ n });
+    // Um +55 segue a regra do Brasil: DDD + número, 10 ou 11 dígitos.
+    if (parsed.countryCallingCode === '55' && !isBrazilianLength(parsed.nationalNumber))
+      return invalid({ n });
     return { ok: true, e164: parsed.number };
   }
 
   if (digits.startsWith('0')) digits = digits.slice(1);
   if ((digits.length === 12 || digits.length === 13) && digits.startsWith('55'))
     digits = digits.slice(2);
-  if (digits.length < 10) return { ok: false, code: 'PHONE_TOO_SHORT', params: { n } };
-  if (digits.length > 11) return { ok: false, code: 'PHONE_TOO_LONG', params: { n } };
+  if (digits.length < BR_MIN_DIGITS) return { ok: false, code: 'PHONE_TOO_SHORT', params: { n } };
+  if (digits.length > BR_MAX_DIGITS) return { ok: false, code: 'PHONE_TOO_LONG', params: { n } };
   return { ok: true, e164: `+55${digits}` };
 }
 
