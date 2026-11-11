@@ -70,6 +70,7 @@ export class PrismaExportReader implements ExportReader {
     const rows = await this.tenant.client().$queryRaw<
       {
         name: string;
+        party_id: string;
         party: string;
         age_group: AgeGroup | null;
         dietary_restriction: string | null;
@@ -78,7 +79,7 @@ export class PrismaExportReader implements ExportReader {
         tags: string[] | null;
       }[]
     >`
-      SELECT g.name, p.name AS party, g.age_group, g.dietary_restriction, g.rsvp_status, g.phone,
+      SELECT g.name, p.id AS party_id, p.name AS party, g.age_group, g.dietary_restriction, g.rsvp_status, g.phone,
         (SELECT array_agg(name ORDER BY source, created_at) FROM (
            SELECT DISTINCT ON (t.id) t.name, s.source, s.created_at FROM (
              SELECT pt.tag_id, 0 AS source, pt.created_at FROM party_tags pt WHERE pt.party_id = p.id
@@ -94,6 +95,7 @@ export class PrismaExportReader implements ExportReader {
       ORDER BY lower(f_unaccent(p.name)), p.id, g.is_plus_one, g.joined_party_at, g.id`;
     return rows.map((row) => ({
       name: row.name,
+      partyId: row.party_id,
       party: row.party,
       ageGroup: row.age_group,
       dietaryRestriction: row.dietary_restriction,

@@ -340,4 +340,31 @@ describe('Exportação de convidados (banco real)', () => {
       columns: 'name',
     }).expect(404);
   });
+
+  it('RN07 - a dona de outro casamento não exporta este (404), e a tag de outro casamento é recusada (400)', async () => {
+    const first = await anaWedding();
+    const second = await anaWedding();
+    const json = (body: Buffer) =>
+      JSON.parse(body.toString('utf8')) as {
+        error: string;
+        errors?: { path: string; code: string }[];
+      };
+
+    const foreign = await exportGuests(second.ana.cookie, first.weddingId, {
+      format: 'xlsx',
+      who: 'all',
+      columns: 'name',
+    }).expect(404);
+    expect(json(foreign.body as Buffer).error).toBe('WEDDING_NOT_FOUND');
+
+    const foreignTag = await exportGuests(first.ana.cookie, first.weddingId, {
+      format: 'xlsx',
+      who: 'tag',
+      tag: second.pajens.id,
+      columns: 'name',
+    }).expect(400);
+    expect(json(foreignTag.body as Buffer).errors).toEqual([
+      { path: 'tag', code: 'TAG_NOT_FOUND', params: {} },
+    ]);
+  });
 });

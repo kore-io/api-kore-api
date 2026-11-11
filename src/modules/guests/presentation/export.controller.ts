@@ -1,5 +1,5 @@
 import { Controller, Get, Header, Param, Query, Req, Res, StreamableFile } from '@nestjs/common';
-import { ApiProduces, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiProduces, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import {
   ApiErrorResponses,
@@ -11,7 +11,7 @@ import { CurrentSession } from '../../access/presentation/current-session.decora
 import { ExportGuests } from '../application/export-guests.use-case';
 import { NothingToExportErrorBody } from './guests-error.dto';
 import { toHttpError } from './guests-http-errors';
-import { ExportGuestsQuery } from './export.dto';
+import { EXPORT_COLUMNS_QUERY, ExportGuestsQuery } from './export.dto';
 
 const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -24,6 +24,7 @@ export class ExportController {
   @Get('export')
   @Header('Cache-Control', 'no-store')
   @ApiProduces(XLSX, 'application/pdf')
+  @ApiQuery(EXPORT_COLUMNS_QUERY)
   @ApiResponse({
     status: 200,
     description: 'O arquivo.',

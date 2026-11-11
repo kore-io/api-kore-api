@@ -43,6 +43,8 @@ const RSVP_LABELS: Record<RsvpStatus, string> = {
 /** Um convidado com nome, como sai no arquivo (RN03). */
 export interface ExportGuest {
   name: string;
+  /** O grupo: o nome não é único (decisão 184(12)), então o PDF agrupa pelo id. */
+  partyId: string;
   party: string;
   ageGroup: AgeGroup | null;
   dietaryRestriction: string | null;

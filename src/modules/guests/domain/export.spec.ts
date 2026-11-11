@@ -12,6 +12,7 @@ import {
 
 const pedro: ExportGuest = {
   name: 'Pedro Moreira',
+  partyId: 'moreira',
   party: 'Família Moreira',
   ageGroup: 'child',
   dietaryRestriction: null,
