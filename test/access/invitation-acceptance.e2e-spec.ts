@@ -465,6 +465,45 @@ describe('Convites de acesso: ler, aceitar e recusar (banco real; decisões 168 
       });
     });
 
+    it('RN10 (decisão 211) - com 55 códigos do mesmo nome em uso, o aceite pega o próximo número; dois aceites juntos pegam números diferentes', async () => {
+      // Um nome por rodada, para não somar os códigos das rodadas anteriores.
+      const name = `Clara ${randomUUID().slice(0, 8)}`;
+      const base = name.toLowerCase().replace(' ', '-');
+      const taken = [base, ...Array.from({ length: 54 }, (_, i) => `${base}-${i + 2}`)];
+      for (const referralCode of taken) {
+        const user = await db.user.create({ data: { email: `${referralCode}@kore.local` } });
+        await db.referrer.create({
+          data: { userId: user.id, kind: 'planner', referralCode, ratePercent: 20 },
+        });
+      }
+      async function plannerAccepts() {
+        const { ana, weddingId } = await anaWedding();
+        const clara = await signedInUser({ app, name });
+        const { token } = await seedInvitation({
+          db,
+          weddingId,
+          kind: 'planner',
+          email: (await db.user.findUniqueOrThrow({ where: { id: clara.userId } })).email,
+          invitedByUserId: ana.userId,
+        });
+        return { accept: () => accept(token, clara.cookie), userId: clara.userId };
+      }
+      const code = async (userId: string) =>
+        (await db.referrer.findUniqueOrThrow({ where: { userId } })).referralCode;
+
+      const first = await plannerAccepts();
+      await first.accept().expect(200);
+      expect(await code(first.userId)).toBe(`${base}-56`);
+
+      const [second, third] = [await plannerAccepts(), await plannerAccepts()];
+      const responses = await Promise.all([second.accept(), third.accept()]);
+      expect(responses.map((response) => response.status)).toEqual([200, 200]);
+      expect([await code(second.userId), await code(third.userId)].sort()).toEqual([
+        `${base}-57`,
+        `${base}-58`,
+      ]);
+    });
+
     it('RN10 - casamento que já tem indicador: a cerimonialista entra sem atribuição', async () => {
       const { referrerUserId } = await plannerWedding();
       const { ana, weddingId } = await anaWedding();

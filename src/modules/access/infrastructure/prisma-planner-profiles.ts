@@ -3,10 +3,7 @@ import { PrismaService } from '../../../shared/database/prisma.service';
 import { TenantTransaction } from '../../../shared/database/tenant-transaction';
 import { uuidV7 } from '../../../shared/ids/uuid-v7';
 import type { PlannerProfiles } from '../application/ports/planner-profiles.port';
-import { referralCodeCandidates } from '../domain/invitation-acceptance';
-
-/** Tentativas de código livre antes de desistir (cada uma é um INSERT). */
-const MAX_CODE_ATTEMPTS = 50;
+import { nextReferralCode, referralCodeBase } from '../domain/invitation-acceptance';
 
 /** Tabelas da indicação: sem RLS de casamento; a API lê e cria (migration referrals). */
 @Injectable()
@@ -42,9 +39,18 @@ export class PrismaPlannerProfiles implements PlannerProfiles {
       select: { defaultRatePercent: true },
     });
     const referrerId = uuidV7({ now: now.getTime() });
-    let attempts = 0;
-    for (const referralCode of referralCodeCandidates({ name })) {
-      if (attempts++ >= MAX_CODE_ATTEMPTS) throw new Error('Sem código de indicação livre.');
+    const base = referralCodeBase({ name });
+    // O próximo sufixo livre, sem teto (decisão 211). Se outro aceite pegar o
+    // mesmo código entre a leitura e o INSERT, lê de novo e tenta o seguinte.
+    for (;;) {
+      const taken = await db.referrer.findMany({
+        where: { OR: [{ referralCode: base }, { referralCode: { startsWith: `${base}-` } }] },
+        select: { referralCode: true },
+      });
+      const referralCode = nextReferralCode({
+        base,
+        taken: taken.map((referrer) => referrer.referralCode),
+      });
       // ON CONFLICT DO NOTHING: um código já usado não aborta a transação.
       const { count } = await db.referrer.createMany({
         data: {
