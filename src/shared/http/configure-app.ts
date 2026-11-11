@@ -47,8 +47,14 @@ export function configureApp({
   );
 
   // O app chama a API de outra origem com o cookie de sessão: só as origens da
-  // lista recebem os cabeçalhos de CORS (a mesma lista do OriginGuard).
-  app.enableCors({ origin: [...allowedOrigins], credentials: true });
+  // lista recebem os cabeçalhos de CORS (a mesma lista do OriginGuard). O
+  // Content-Disposition fica legível no fetch do app, para o nome do arquivo
+  // da exportação (decisão 212(4)).
+  app.enableCors({
+    origin: [...allowedOrigins],
+    credentials: true,
+    exposedHeaders: ['Content-Disposition'],
+  });
 
   // O cookie de sessão (HttpOnly) é lido pelo SessionGuard.
   app.use(cookieParser());

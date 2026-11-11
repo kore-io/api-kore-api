@@ -130,6 +130,16 @@ describe('configureApp', () => {
     expect(response.headers['access-control-allow-credentials']).toBe('true');
   });
 
+  it('decisão 212(4) - dada uma origem da lista, quando a resposta chega, então o Content-Disposition fica legível no app', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/v1/echo')
+      .set('Origin', APP_ORIGIN)
+      .send({ name: 'Ana' })
+      .expect(201);
+
+    expect(response.headers['access-control-expose-headers']).toBe('Content-Disposition');
+  });
+
   it('dada uma origem fora da lista, quando faz o preflight, então não libera o CORS', async () => {
     const response = await request(app.getHttpServer())
       .options('/v1/echo')
