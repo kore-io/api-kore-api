@@ -12,6 +12,10 @@ export type DeliveryStatus = (typeof DELIVERY_STATUSES)[number];
 export const TAG_COLORS = ['wine', 'champagne', 'green', 'amber', 'red', 'blue'] as const;
 export type TagColor = (typeof TAG_COLORS)[number];
 
+/** Tags ativas por casamento (Tags RN01) e tamanho do nome (RN02; decisão 185(6)). */
+export const TAGS_PER_WEDDING_MAX = 10;
+export const TAG_NAME_MAX = 40;
+
 /** Limites da RN04 e da RN07 (decisão 184, itens 10 e 12). */
 export const PARTY_NAME_MAX = 80;
 export const GUEST_NAME_MAX = 80;
