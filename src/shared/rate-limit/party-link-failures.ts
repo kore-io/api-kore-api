@@ -31,8 +31,9 @@ export class PartyLinkFailures {
   async recordFailure({ ip }: { ip: string }): Promise<void> {
     try {
       const key = this.key({ ip });
-      const count = await this.redis.incr(key);
-      if (count === 1) await this.redis.pexpire(key, RATE_LIMIT_WINDOW_MS);
+      // Juntos e atômicos: sem prazo, a chave nunca venceria e o IP ficaria
+      // bloqueado para sempre. O NX mantém a janela da primeira falha.
+      await this.redis.multi().incr(key).pexpire(key, RATE_LIMIT_WINDOW_MS, 'NX').exec();
     } catch (error) {
       logger.warn(`Limite party_link sem Redis: ${(error as Error).name}`);
     }
