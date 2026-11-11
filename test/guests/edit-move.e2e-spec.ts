@@ -162,6 +162,24 @@ describe('Editar e mover (banco real)', () => {
       expect((await party(familia.id)).name).toBe('Família Moreira');
     });
 
+    it('RN09 - o mesmo convidado duas vezes no pedido é recusado, e nada é gravado', async () => {
+      const { ana, weddingId, familia, celia } = await moreira();
+
+      const response = await patch(ana.cookie, weddingId, familia.id, {
+        guests: [
+          { id: celia.id, name: 'Célia A.' },
+          { id: celia.id, name: 'Célia B.' },
+        ],
+      }).expect(400);
+
+      expect(response.body.errors).toEqual([
+        { path: 'guests.1.id', code: 'DUPLICATE_GUEST', params: {} },
+      ]);
+      expect((await db.guest.findUniqueOrThrow({ where: { id: celia.id } })).name).toBe(
+        'Célia Moreira',
+      );
+    });
+
     it('RN06 - trocar o contato à mão; contato sem telefone nem e-mail é recusado', async () => {
       const { ana, weddingId, familia, luiz, pedro } = await moreira();
 
@@ -328,17 +346,12 @@ describe('Editar e mover (banco real)', () => {
     });
 
     it('RN16 - mover muda só os grupos pendentes', async () => {
-      const { ana, weddingId, familia, padrinhos, luiz, celia, pedro } = await moreira();
+      const { ana, weddingId, padrinhos, luiz, celia, pedro } = await moreira();
       // Na Família Moreira só Pedro está pendente; Padrinhos não tem pendente.
       await db.guest.updateMany({
         where: { id: { in: [luiz.id, celia.id, padrinhos.guests[0].id] } },
         data: { rsvpStatus: 'confirmed' },
       });
-      await db.party.updateMany({
-        where: { id: { in: [familia.id, padrinhos.id] } },
-        data: { deliveryStatus: 'viewed', firstViewedAt: new Date() },
-      });
-      await db.party.update({ where: { id: padrinhos.id }, data: { deliveryStatus: 'responded' } });
       await db.weddingStats.update({ where: { weddingId }, data: { partiesPending: 1 } });
       const before = await stats(weddingId);
 
@@ -349,9 +362,43 @@ describe('Editar e mover (banco real)', () => {
         pending: before.pending,
         partiesPending: 1,
       });
-      // RN10: o status de envio dos dois grupos é recalculado (decisão 199(1)).
+    });
+
+    it('RN10 - mover recalcula o status de envio: a origem fica respondida e o destino deixa de estar', async () => {
+      const { ana, weddingId, familia, padrinhos, luiz, celia, pedro } = await moreira();
+      // Na Família Moreira só Pedro está pendente; Padrinhos respondeu, com uma
+      // vaga ainda pendente, que não segura o "respondido" (decisão 199(1)).
+      await db.guest.updateMany({
+        where: { id: { in: [luiz.id, celia.id, padrinhos.guests[0].id] } },
+        data: { rsvpStatus: 'confirmed' },
+      });
+      await patch(ana.cookie, weddingId, padrinhos.id, { plusOneSlots: 1 }).expect(200);
+      await db.party.update({
+        where: { id: familia.id },
+        data: { deliveryStatus: 'viewed', sentAt: new Date(), firstViewedAt: new Date() },
+      });
+      await db.party.update({
+        where: { id: padrinhos.id },
+        data: { deliveryStatus: 'responded', sentAt: new Date() },
+      });
+
+      await move(ana.cookie, weddingId, pedro.id, padrinhos.id).expect(200);
+
       expect((await party(familia.id)).deliveryStatus).toBe('responded');
-      expect((await party(padrinhos.id)).deliveryStatus).toBe('viewed');
+      // Sem visualização gravada, volta a enviado.
+      expect((await party(padrinhos.id)).deliveryStatus).toBe('sent');
+    });
+
+    it('RN10 - um grupo ainda não enviado continua não enviado, mesmo sem pendente', async () => {
+      const { ana, weddingId, familia, padrinhos, luiz, celia, pedro } = await moreira();
+      await db.guest.updateMany({
+        where: { id: { in: [luiz.id, celia.id] } },
+        data: { rsvpStatus: 'confirmed' },
+      });
+
+      await move(ana.cookie, weddingId, pedro.id, padrinhos.id).expect(200);
+
+      expect((await party(familia.id)).deliveryStatus).toBe('not_sent');
     });
 
     it('RN06 - o contato sai e o próximo com contato assume; o movido vira contato de um grupo sem contato', async () => {
