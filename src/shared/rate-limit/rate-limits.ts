@@ -43,3 +43,11 @@ export const SITE_IMAGE_PER_MINUTE = 30;
  */
 export const PARTY_LINK_THROTTLER = 'party_link';
 export const PARTY_LINK_FAILURES_PER_MINUTE = 20;
+
+/**
+ * Métricas do simulador (Simule RN11): 30 por minuto por IP. O IP só entra na
+ * chave do limite, no Redis (kore:<env>:rl:simulator_event:<ip>), que vence em
+ * 1 minuto; não vai ao evento nem ao log.
+ */
+export const SIMULATOR_EVENT_THROTTLER = 'simulator_event';
+export const SIMULATOR_EVENTS_PER_MINUTE = 30;

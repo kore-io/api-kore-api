@@ -1,4 +1,4 @@
-import { validateEnv } from './env.schema';
+import { simulatorEnabled, validateEnv } from './env.schema';
 
 const validConfig = {
   APP_ENV: 'local',
@@ -44,6 +44,7 @@ describe('validateEnv', () => {
       TERMS_VERSION: '2026-09',
       STORAGE_REGION: 'auto',
       STORAGE_FORCE_PATH_STYLE: false,
+      SIMULATOR_ENABLED: true,
     });
   });
 
@@ -126,5 +127,17 @@ describe('validateEnv', () => {
         config: { ...validConfig, ALLOWED_ORIGINS: 'http://localhost:5173, http://localhost:5174' },
       }),
     ).toThrow(/ALLOWED_ORIGINS: não pode ter a origem do SITE_URL/);
+  });
+
+  it('Simule RN01 - sem a variável, o simulador fica ligado em local e test e desligado nos outros', () => {
+    expect(validateEnv({ config: validConfig }).SIMULATOR_ENABLED).toBe(true);
+    expect(
+      validateEnv({ config: { ...validConfig, SIMULATOR_ENABLED: 'false' } }).SIMULATOR_ENABLED,
+    ).toBe(false);
+    // Fora de local e test o ambiente inteiro não valida aqui (a chave KMS local); o padrão sim.
+    expect(simulatorEnabled({ appEnv: 'test', value: undefined })).toBe(true);
+    expect(simulatorEnabled({ appEnv: 'homolog', value: undefined })).toBe(false);
+    expect(simulatorEnabled({ appEnv: 'production', value: undefined })).toBe(false);
+    expect(simulatorEnabled({ appEnv: 'homolog', value: 'true' })).toBe(true);
   });
 });

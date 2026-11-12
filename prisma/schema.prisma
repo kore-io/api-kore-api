@@ -198,6 +198,12 @@ enum ProductEventName {
   // F1: Importação RN14 e Exportação RN08.
   importacao
   exportacao_buffet
+  // F2: o funil do Simule o site (Simule RN11), sem casamento e sem props.
+  simule_iniciado
+  simule_nomes
+  simule_pronto
+  simule_outra_cor_aberta
+  simule_outra_cor_desistiu
 
   @@map("product_event_name")
 }
