@@ -64,7 +64,11 @@ export class PrismaTrashStore implements TrashStore {
       where: { partyId, deletedAt: null },
       data: { deletedAt: now, trashBatchId: batchId },
     });
-    await tx.party.updateMany({ where: { id: partyId }, data: { deletedAt: now } });
+    // A versão sobe (RSVP RN11): o formulário aberto não grava por cima.
+    await tx.party.updateMany({
+      where: { id: partyId },
+      data: { deletedAt: now, version: { increment: 1 } },
+    });
   }
 
   async trashGuest({ guestId, now }: { guestId: string; now: Date }): Promise<void> {
@@ -197,7 +201,10 @@ export class PrismaTrashStore implements TrashStore {
     guestIds: readonly string[];
   }): Promise<void> {
     const tx = this.tenant.client();
-    await tx.party.updateMany({ where: { id: partyId }, data: { deletedAt: null } });
+    await tx.party.updateMany({
+      where: { id: partyId },
+      data: { deletedAt: null, version: { increment: 1 } },
+    });
     if (guestIds.length > 0)
       await tx.guest.updateMany({
         where: { id: { in: [...guestIds] } },
