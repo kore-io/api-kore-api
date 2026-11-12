@@ -19,6 +19,14 @@ export interface NewWedding {
   utmMedium: string | null;
   utmCampaign: string | null;
   termsVersion: string;
+  /** A aparência do simulador (Simule RN10), já conferida; null nasce com o padrão. */
+  appearance: {
+    fontPairKey: string;
+    starterPaletteKey: string | null;
+    primaryColor: string;
+    accentColor: string;
+    backgroundMode: string;
+  } | null;
   now: Date;
 }
 

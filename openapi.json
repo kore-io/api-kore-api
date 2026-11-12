@@ -170,6 +170,60 @@
         ]
       }
     },
+    "/v1/product-events/simulator": {
+      "post": {
+        "operationId": "SimulatorEventsController_record_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulatorEventBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "product-events"
+        ]
+      }
+    },
     "/v1/auth/logout": {
       "post": {
         "operationId": "AuthController_logout_v1",
@@ -849,6 +903,16 @@
                       "$ref": "#/components/schemas/TermsVersionOutdatedErrorBody"
                     }
                   ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContrastTooLowErrorBody"
                 }
               }
             },
@@ -4985,56 +5049,6 @@
           "message"
         ]
       },
-      "SessionExpiredErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              401
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "SESSION_EXPIRED"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
-        ]
-      },
-      "OriginNotAllowedErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              403
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "ORIGIN_NOT_ALLOWED"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
-        ]
-      },
       "FieldErrorBody": {
         "type": "object",
         "properties": {
@@ -5095,6 +5109,74 @@
           "error",
           "message",
           "errors"
+        ]
+      },
+      "OriginNotAllowedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              403
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SimulatorEventBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": [
+              "simule_iniciado",
+              "simule_nomes",
+              "simule_pronto",
+              "simule_outra_cor_aberta",
+              "simule_outra_cor_desistiu"
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "SessionExpiredErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              401
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SESSION_EXPIRED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
         ]
       },
       "TooSoonErrorBody": {
@@ -5787,6 +5869,98 @@
           "message"
         ]
       },
+      "ContrastTooLowErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "CONTRAST_TOO_LOW"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "check": {
+            "enum": [
+              "primary_foreground",
+              "primary_background"
+            ],
+            "type": "string"
+          },
+          "ratio": {
+            "type": "number",
+            "description": "A razão medida, com duas casas para baixo."
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "check",
+          "ratio"
+        ]
+      },
+      "UpdateSiteAppearanceBody": {
+        "type": "object",
+        "properties": {
+          "fontPairKey": {
+            "enum": [
+              "romantico",
+              "classico",
+              "leve",
+              "moderno"
+            ],
+            "type": "string"
+          },
+          "starterPaletteKey": {
+            "nullable": true,
+            "description": "Null é \"cor própria\"; se não bater com as cores, o servidor grava null (RN07).",
+            "enum": [
+              "terracota",
+              "salvia",
+              "rose",
+              "marfim",
+              "marinho",
+              "areia",
+              "por-do-sol",
+              "grafite",
+              "noite"
+            ],
+            "type": "string"
+          },
+          "primaryColor": {
+            "type": "string",
+            "description": "`#RRGGBB`, sem diferenciar maiúsculas; gravada em maiúsculas (RN06).",
+            "example": "#A94F37"
+          },
+          "accentColor": {
+            "type": "string",
+            "example": "#7A8B69"
+          },
+          "backgroundMode": {
+            "enum": [
+              "light",
+              "cream",
+              "dark"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "fontPairKey",
+          "starterPaletteKey",
+          "primaryColor",
+          "accentColor",
+          "backgroundMode"
+        ]
+      },
       "CreateWeddingBody": {
         "type": "object",
         "properties": {
@@ -5855,6 +6029,14 @@
               "made_with_kore"
             ],
             "type": "string"
+          },
+          "appearance": {
+            "description": "A aparência do simulador (Simule RN10; opcional): as regras e o guarda-corpo\nda Aparência do site. Sem ela, Romântico + Terracota + Creme.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UpdateSiteAppearanceBody"
+              }
+            ]
           },
           "myName": {
             "type": "string",
@@ -8903,98 +9085,6 @@
           "content",
           "enabled",
           "empty"
-        ]
-      },
-      "ContrastTooLowErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              422
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "CONTRAST_TOO_LOW"
-            ]
-          },
-          "message": {
-            "type": "string"
-          },
-          "check": {
-            "enum": [
-              "primary_foreground",
-              "primary_background"
-            ],
-            "type": "string"
-          },
-          "ratio": {
-            "type": "number",
-            "description": "A razão medida, com duas casas para baixo."
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message",
-          "check",
-          "ratio"
-        ]
-      },
-      "UpdateSiteAppearanceBody": {
-        "type": "object",
-        "properties": {
-          "fontPairKey": {
-            "enum": [
-              "romantico",
-              "classico",
-              "leve",
-              "moderno"
-            ],
-            "type": "string"
-          },
-          "starterPaletteKey": {
-            "nullable": true,
-            "description": "Null é \"cor própria\"; se não bater com as cores, o servidor grava null (RN07).",
-            "enum": [
-              "terracota",
-              "salvia",
-              "rose",
-              "marfim",
-              "marinho",
-              "areia",
-              "por-do-sol",
-              "grafite",
-              "noite"
-            ],
-            "type": "string"
-          },
-          "primaryColor": {
-            "type": "string",
-            "description": "`#RRGGBB`, sem diferenciar maiúsculas; gravada em maiúsculas (RN06).",
-            "example": "#A94F37"
-          },
-          "accentColor": {
-            "type": "string",
-            "example": "#7A8B69"
-          },
-          "backgroundMode": {
-            "enum": [
-              "light",
-              "cream",
-              "dark"
-            ],
-            "type": "string"
-          }
-        },
-        "required": [
-          "fontPairKey",
-          "starterPaletteKey",
-          "primaryColor",
-          "accentColor",
-          "backgroundMode"
         ]
       },
       "AppearanceWarning": {

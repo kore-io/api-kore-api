@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
+import { UpdateSiteAppearanceBody } from '../../site/presentation/site-appearance.dto';
 import {
   IsIn,
   IsISO8601,
@@ -9,6 +10,7 @@ import {
   Length,
   Matches,
   MaxLength,
+  ValidateNested,
 } from 'class-validator';
 import type { CreatedWedding } from '../application/create-wedding.use-case';
 import type { SlugAvailability } from '../application/check-slug-availability.use-case';
@@ -68,6 +70,16 @@ export class CreateWeddingBody {
   @IsOptional() @IsString() @MaxLength(200) utmSource?: string;
   @IsOptional() @IsString() @MaxLength(200) utmMedium?: string;
   @IsOptional() @IsString() @MaxLength(200) utmCampaign?: string;
+
+  /**
+   * A aparência do simulador (Simule RN10; opcional): as regras e o guarda-corpo
+   * da Aparência do site. Sem ela, Romântico + Terracota + Creme.
+   */
+  @ApiProperty({ type: UpdateSiteAppearanceBody, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => UpdateSiteAppearanceBody)
+  appearance?: UpdateSiteAppearanceBody;
 }
 
 class CreatedWeddingReferrer {

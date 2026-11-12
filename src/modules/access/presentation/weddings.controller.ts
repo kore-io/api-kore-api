@@ -4,6 +4,7 @@ import {
   ApiErrorResponses,
   commonErrors,
 } from '../../../shared/http/api-error-responses.decorator';
+import { ContrastTooLowErrorBody } from '../../site/presentation/site-error.dto';
 import { CheckSlugAvailability } from '../application/check-slug-availability.use-case';
 import { CreateWedding } from '../application/create-wedding.use-case';
 import type { AuthenticatedSession } from '../domain/authenticated-session';
@@ -56,6 +57,7 @@ export class WeddingsController {
     SlugUnavailableErrorBody,
     AlreadyOwnerErrorBody,
     TermsVersionOutdatedErrorBody,
+    ContrastTooLowErrorBody,
   )
   async create(
     @CurrentSession() session: AuthenticatedSession,
@@ -80,6 +82,7 @@ export class WeddingsController {
           utmSource: body.utmSource ?? null,
           utmMedium: body.utmMedium ?? null,
           utmCampaign: body.utmCampaign ?? null,
+          appearance: body.appearance ?? null,
         },
       });
       return CreateWeddingResponse.from({ wedding });

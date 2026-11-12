@@ -50,6 +50,9 @@ export class PrismaWeddingSignupStore implements WeddingSignupStore {
           utmSource: wedding.utmSource,
           utmMedium: wedding.utmMedium,
           utmCampaign: wedding.utmCampaign,
+          // Do simulador, a aparência e o item Aparência do Checklist já feito
+          // (Simule RN10; Aparência RN10); sem ela, os padrões da coluna.
+          ...(wedding.appearance && { ...wedding.appearance, appearanceSetAt: wedding.now }),
         },
       });
     } catch (error) {

@@ -25,6 +25,18 @@ export type ProductEvent =
         quem: 'owner' | 'collaborator';
         filtro: 'all' | 'confirmed' | 'tag';
       };
-    };
+    }
+  /** Simule RN11: o funil do simulador, anônimo: sem casamento, sem props e sem o IP. */
+  | { name: SimulatorEventName };
 
 export type ProductEventName = ProductEvent['name'];
+
+/** Os nomes do funil do Simule o site (Simule RN11; decisão 205, D26). */
+export const SIMULATOR_EVENT_NAMES = [
+  'simule_iniciado',
+  'simule_nomes',
+  'simule_pronto',
+  'simule_outra_cor_aberta',
+  'simule_outra_cor_desistiu',
+] as const;
+export type SimulatorEventName = (typeof SIMULATOR_EVENT_NAMES)[number];

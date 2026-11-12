@@ -135,6 +135,66 @@ describe('Cadastro do casal: POST /v1/weddings e GET /v1/weddings/slug-availabil
     expect(wedding.eventDate).toBeNull();
   });
 
+  it('Simule RN10 - vindo do simulador: a aparência dele, o appearanceSetAt e a origem; o cadastro cria também as 6 seções', async () => {
+    const { cookie } = await signedInUser({ app });
+
+    const response = await create(
+      cookie,
+      body({
+        signupSource: 'made_with_kore',
+        appearance: {
+          fontPairKey: 'moderno',
+          starterPaletteKey: 'marinho',
+          primaryColor: '#1f2a44',
+          accentColor: '#b08d57',
+          backgroundMode: 'light',
+        },
+      }),
+    ).expect(201);
+
+    const wedding = await db.wedding.findUniqueOrThrow({ where: { id: response.body.weddingId } });
+    expect(wedding).toMatchObject({
+      signupSource: 'made_with_kore',
+      fontPairKey: 'moderno',
+      starterPaletteKey: 'marinho',
+      primaryColor: '#1F2A44',
+      accentColor: '#B08D57',
+      backgroundMode: 'light',
+    });
+    expect(wedding.appearanceSetAt).not.toBeNull();
+    expect(await db.section.count({ where: { weddingId: wedding.id } })).toBe(6);
+  });
+
+  it('Simule RN10 - sem a aparência, o padrão e sem appearanceSetAt; aparência adulterada: 422 CONTRAST_TOO_LOW, sem criar', async () => {
+    const { cookie } = await signedInUser({ app });
+    const other = await signedInUser({ app });
+
+    const plain = await create(cookie, body({ signupSource: 'simulator' })).expect(201);
+    const refused = await create(
+      other.cookie,
+      body({
+        appearance: {
+          fontPairKey: 'romantico',
+          starterPaletteKey: null,
+          primaryColor: '#F5F5F5',
+          accentColor: '#7A8B69',
+          backgroundMode: 'light',
+        },
+      }),
+    ).expect(422);
+
+    expect(
+      await db.wedding.findUniqueOrThrow({ where: { id: plain.body.weddingId } }),
+    ).toMatchObject({
+      signupSource: 'simulator',
+      fontPairKey: 'romantico',
+      primaryColor: '#A94F37',
+      appearanceSetAt: null,
+    });
+    expect(refused.body).toMatchObject({ error: 'CONTRAST_TOO_LOW', check: 'primary_background' });
+    expect(await db.membership.count({ where: { userId: other.userId } })).toBe(0);
+  });
+
   it('Grupos RN16 (decisão 188) - o cadastro cria a linha zerada dos números do casamento', async () => {
     const { cookie } = await signedInUser({ app });
 

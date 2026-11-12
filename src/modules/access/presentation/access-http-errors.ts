@@ -1,3 +1,4 @@
+import { ContrastTooLowError } from '../../site/domain/site.errors';
 import {
   BadRequestException,
   ConflictException,
@@ -7,6 +8,7 @@ import {
   HttpStatus,
   NotFoundException,
   UnauthorizedException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import {
   InvalidLoginCodeError,
@@ -115,6 +117,16 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 404,
       error: 'REFERRAL_NOT_FOUND',
       message: 'Referral not found.',
+    });
+  }
+  // A aparência do simulador no cadastro (Simule RN10): o mesmo 422 do Editor.
+  if (error instanceof ContrastTooLowError) {
+    return new UnprocessableEntityException({
+      statusCode: 422,
+      error: 'CONTRAST_TOO_LOW',
+      message: 'The color does not reach the minimum contrast.',
+      check: error.check,
+      ratio: error.ratio,
     });
   }
   if (error instanceof SlugUnavailableError) {

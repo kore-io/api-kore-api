@@ -86,6 +86,9 @@ export const envSchema = z
     // Chave do HMAC do cookie da prévia, kore_site_preview_<weddingId>
     // (Pré-visualização RN03).
     PREVIEW_COOKIE_KEY: base64Key32,
+    // O simulador do site (Simule RN01; decisão 207, item 9): desligado em
+    // homologação e produção até o PO liberar. Sem a variável, ligado só em local e test.
+    SIMULATOR_ENABLED: z.enum(['true', 'false']).optional(),
     // Versão vigente dos Termos e da Política (RN11 de Cadastro; decisão 166).
     TERMS_VERSION: z.string().min(1).default('2026-09'),
     // Armazenamento compatível com S3 (Imagens do site, RN06): MinIO no local,
@@ -157,7 +160,23 @@ export const envSchema = z
         message: 'obrigatória com KMS_PROVIDER=local',
       });
     }
-  });
+  })
+  // Sem a variável, o simulador fica ligado só em local e test (Simule RN01).
+  .transform((env) => ({
+    ...env,
+    SIMULATOR_ENABLED: simulatorEnabled({ appEnv: env.APP_ENV, value: env.SIMULATOR_ENABLED }),
+  }));
+
+/** O simulador: o valor da variável; sem ela, ligado só em local e test (Simule RN01). */
+export function simulatorEnabled({
+  appEnv,
+  value,
+}: {
+  appEnv: AppEnv;
+  value: 'true' | 'false' | undefined;
+}): boolean {
+  return value === undefined ? LOCAL_KEY_ENVS.includes(appEnv) : value === 'true';
+}
 
 export type Env = z.infer<typeof envSchema>;
 
