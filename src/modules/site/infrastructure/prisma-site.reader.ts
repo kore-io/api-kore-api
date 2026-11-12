@@ -49,6 +49,7 @@ export class PrismaSiteReader implements SiteReader {
       contactWhatsapp: wedding.contactWhatsapp,
       contactEmail: wedding.contactEmail,
       coverImageId: wedding.coverImageId,
+      songQuestion: { enabled: wedding.songQuestionEnabled, text: wedding.songQuestionText },
       // Fora da lápide, a aparência nunca é nula (chk_weddings_site_tombstone).
       appearance: {
         fontPairKey: wedding.fontPairKey ?? 'romantico',

@@ -53,6 +53,19 @@ export interface SiteStore {
     now: Date;
   }): Promise<void>;
 
+  /** A pergunta de música (Música RN01): ligada e o texto (nulo = o padrão), com o `siteUpdatedAt`. */
+  updateSongQuestion({
+    weddingId,
+    enabled,
+    text,
+    now,
+  }: {
+    weddingId: string;
+    enabled: boolean;
+    text: string | null;
+    now: Date;
+  }): Promise<void>;
+
   /** Grava a seção inteira (ligada, título e o conteúdo `pt-BR`) e o `siteUpdatedAt`. */
   updateSection({
     weddingId,

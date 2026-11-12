@@ -10,6 +10,9 @@ import {
 import { validationError } from '../../../shared/http/validation-errors';
 import { toHttpError as toSiteHttpError } from '../../site/presentation/site-http-errors';
 import {
+  NoSongsToExportError,
+  SongCursorInvalidError,
+  SongQuestionDisabledError,
   DeliveriesClosedError,
   DeliveryNotAllowedError,
   DeliveryPartyNotFoundError,
@@ -28,6 +31,20 @@ import {
 
 /** Erros do RSVP para HTTP; os do endereço (SITE_NOT_FOUND, SITE_DRAFT) seguem o mapa do Site. */
 export function toHttpError(error: unknown): unknown {
+  if (error instanceof SongQuestionDisabledError)
+    return new NotFoundException({
+      statusCode: 404,
+      error: 'SONG_QUESTION_DISABLED',
+      message: 'The song question is turned off.',
+    });
+  if (error instanceof NoSongsToExportError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'NOTHING_TO_EXPORT',
+      message: 'There are no song suggestions to export.',
+    });
+  if (error instanceof SongCursorInvalidError)
+    return validationError({ errors: [{ path: 'cursor', code: 'INVALID_CURSOR', params: {} }] });
   if (error instanceof DeliveriesClosedError)
     return new ConflictException({
       statusCode: 409,

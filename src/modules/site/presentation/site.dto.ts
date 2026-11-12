@@ -150,6 +150,25 @@ class SiteEditableResponse {
   slug: boolean;
 }
 
+/** A pergunta de música (Música RN01). */
+export class SiteSongQuestionResponse {
+  /** "Fazer a pergunta no RSVP"; desligada por padrão. */
+  enabled: boolean;
+  /** O texto do casal, ou o padrão "Que música não pode faltar na festa?". */
+  text: string;
+}
+
+/** A pergunta de música, gravada pelo Salvar do Editor (Música RN01). */
+export class UpdateSongQuestionBody {
+  @IsBoolean() enabled: boolean;
+
+  /** Até 120, sem espaços nas pontas; vazio ou nulo volta ao padrão. */
+  @ApiProperty({ type: String, nullable: true, maxLength: 120 })
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  text: string | null;
+}
+
 /** A tela Publicar o site (Publicação RN01; decisão 217(13)). */
 export class SitePublicationResponse {
   /** A chave do servidor; o app só esconde o botão, quem decide é o servidor. */
@@ -178,6 +197,7 @@ export class SiteEditorResponse {
   @ApiProperty({ type: [SiteSectionResponse] }) sections: SiteSectionResponse[];
   @ApiProperty({ type: SiteEditableResponse }) editable: SiteEditableResponse;
   @ApiProperty({ type: SitePublicationResponse }) publication: SitePublicationResponse;
+  @ApiProperty({ type: SiteSongQuestionResponse }) songQuestion: SiteSongQuestionResponse;
 
   static from({ view }: { view: SiteEditorView }): SiteEditorResponse {
     return {

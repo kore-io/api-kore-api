@@ -85,6 +85,23 @@ export class PrismaSiteStore implements SiteStore {
     });
   }
 
+  async updateSongQuestion({
+    weddingId,
+    enabled,
+    text,
+    now,
+  }: {
+    weddingId: string;
+    enabled: boolean;
+    text: string | null;
+    now: Date;
+  }): Promise<void> {
+    await this.tenant.client().wedding.updateMany({
+      where: { id: weddingId },
+      data: { songQuestionEnabled: enabled, songQuestionText: text, siteUpdatedAt: now },
+    });
+  }
+
   async updateSection({
     weddingId,
     type,

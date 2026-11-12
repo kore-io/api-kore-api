@@ -122,3 +122,18 @@ export class DeliveryNotAllowedError extends Error {
     this.partyIds = partyIds;
   }
 }
+
+/** A pergunta de música está desligada (404 SONG_QUESTION_DISABLED; Música RN03). */
+export class SongQuestionDisabledError extends Error {
+  override name = 'SongQuestionDisabledError';
+}
+
+/** Sem sugestões para exportar (409 NOTHING_TO_EXPORT; Música RN06). */
+export class NoSongsToExportError extends Error {
+  override name = 'NoSongsToExportError';
+}
+
+/** O cursor da lista de músicas não é válido (400 INVALID_CURSOR). */
+export class SongCursorInvalidError extends Error {
+  override name = 'SongCursorInvalidError';
+}
