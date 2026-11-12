@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { AFTER_COMMIT, type AfterCommit } from '../../../shared/database/after-commit.port';
 import { uuidV7 } from '../../../shared/ids/uuid-v7';
 import {
   APPLICATION_LOG_WRITER,
@@ -13,6 +14,10 @@ import {
 } from '../domain/access.errors';
 import { removalRefusal } from '../domain/membership-removal';
 import {
+  COLLABORATION_NOTICE_MAILER,
+  type CollaborationNoticeMailer,
+} from './ports/collaboration-notice-mailer.port';
+import {
   WEDDING_MEMBERS_STORE,
   type WeddingMembersStore,
 } from './ports/wedding-members-store.port';
@@ -21,8 +26,9 @@ import { WeddingAuthorization } from './wedding-authorization.service';
 /**
  * Encerra um vínculo e corta o acesso na hora (RN06, RN07 e RN10 de Papéis). O
  * registro no log da aplicação vai na mesma transação da remoção: os dois valem
- * juntos ou nenhum (decisão 179). O aviso ao casal quando o cerimonialista sai
- * fica para Notificações (decisão 177, item 9).
+ * juntos ou nenhum (decisão 179). Quando a cerimonialista sai por conta
+ * própria, as pessoas donas recebem um e-mail depois do commit (Papéis RN06;
+ * Notificações da cerimonialista RN09; D19).
  */
 @Injectable()
 export class RemoveMembership {
@@ -30,6 +36,8 @@ export class RemoveMembership {
     private readonly authorization: WeddingAuthorization,
     @Inject(WEDDING_MEMBERS_STORE) private readonly store: WeddingMembersStore,
     @Inject(APPLICATION_LOG_WRITER) private readonly log: ApplicationLogWriter,
+    @Inject(COLLABORATION_NOTICE_MAILER) private readonly mailer: CollaborationNoticeMailer,
+    @Inject(AFTER_COMMIT) private readonly afterCommit: AfterCommit,
   ) {}
 
   async execute({
@@ -62,8 +70,14 @@ export class RemoveMembership {
     if (refusal === 'wedding_has_no_owner') throw new WeddingHasNoOwnerError();
     if (refusal) throw new WeddingActionForbiddenError();
 
-    await this.store.remove({ membershipId, removedByUserId: userId, now });
     const leaving = target.userId === userId;
+    // Lido antes da remoção: depois, a RLS já não mostra o casamento a ela.
+    // Só a cerimonialista com Planner; o vendedor não sai por conta própria.
+    const notices =
+      leaving && target.role === 'collaborator'
+        ? await this.store.plannerLeftNotices({ weddingId, userId })
+        : [];
+    await this.store.remove({ membershipId, removedByUserId: userId, now });
     if (leaving && target.role === 'owner') await this.store.releasePartnerLogin({ weddingId });
     // Notificações da cerimonialista RN04: o dono removeu a colaboradora; quando
     // ela sai por conta própria, nada.
@@ -85,5 +99,9 @@ export class RemoveMembership {
         ...(ip ? { ip } : {}),
       },
     });
+    if (notices.length > 0)
+      this.afterCommit.schedule(async () => {
+        for (const notice of notices) await this.mailer.plannerLeft({ notice });
+      });
   }
 }

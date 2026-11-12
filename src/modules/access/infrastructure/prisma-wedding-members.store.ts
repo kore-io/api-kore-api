@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { TenantTransaction } from '../../../shared/database/tenant-transaction';
+import type { PlannerLeftNotice } from '../application/ports/collaboration-notice-mailer.port';
+import { firstName } from '../domain/access-invitation';
+import { creditNameForSite } from '../domain/planner-profile';
 import type {
   PendingAccessInvitation,
   WeddingMember,
@@ -72,5 +75,57 @@ export class PrismaWeddingMembersStore implements WeddingMembersStore {
   }): Promise<void> {
     await this.tenant.client().$queryRaw`
       SELECT notify_membership_removed(${membershipId}::uuid, ${notificationId}::uuid)`;
+  }
+
+  async plannerLeftNotices({
+    weddingId,
+    userId,
+  }: {
+    weddingId: string;
+    userId: string;
+  }): Promise<PlannerLeftNotice[]> {
+    const tx = this.tenant.client();
+    const planner = await tx.user.findUnique({
+      where: { id: userId },
+      select: {
+        name: true,
+        referrer: {
+          select: { kind: true, status: true, planner: { select: { creditName: true } } },
+        },
+      },
+    });
+    const referrer = planner?.referrer;
+    if (referrer?.kind !== 'planner' || referrer.status !== 'active' || !referrer.planner)
+      return [];
+    const partners = await tx.partner.findMany({
+      where: { weddingId },
+      orderBy: { slot: 'asc' },
+      select: { displayName: true, userId: true },
+    });
+    const owners = await tx.membership.findMany({
+      where: { weddingId, role: 'owner', removedAt: null },
+      orderBy: { createdAt: 'asc' },
+      select: { userId: true, user: { select: { email: true, name: true } } },
+    });
+    const partnerNames: [string, string] = [
+      firstName({ name: partners[0]?.displayName ?? '' }),
+      firstName({ name: partners[1]?.displayName ?? '' }),
+    ];
+    const plannerName = (planner?.name ?? '').trim();
+    // O nome da assessoria como o site e o convite mostram (Assinatura RN03); o
+    // que não passa no predicado cai no nome dela.
+    const agencyName = creditNameForSite({ raw: referrer.planner.creditName }) ?? plannerName;
+    return owners.map((owner) => ({
+      to: owner.user.email,
+      ownerName: firstName({
+        name:
+          partners.find((partner) => partner.userId === owner.userId)?.displayName ??
+          owner.user.name ??
+          '',
+      }),
+      plannerName,
+      agencyName,
+      partnerNames,
+    }));
   }
 }
