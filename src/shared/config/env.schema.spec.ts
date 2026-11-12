@@ -46,6 +46,8 @@ describe('validateEnv', () => {
       STORAGE_FORCE_PATH_STYLE: false,
       SIMULATOR_ENABLED: true,
       COURTESY_PUBLICATION_ENABLED: false,
+      PLANNER_SIGNUP_ENABLED: false,
+      REFERRAL_LINK_URL: 'https://kore.com.br/i',
     });
   });
 
@@ -163,6 +165,27 @@ describe('validateEnv', () => {
         config: { ...validConfig, APP_ENV: 'production', COURTESY_PUBLICATION_ENABLED: 'false' },
       }),
     ).not.toThrow(/COURTESY_PUBLICATION_ENABLED/);
+  });
+
+  it.each([
+    ['local', true],
+    ['test', true],
+    ['homolog', false],
+    ['production', false],
+  ])(
+    'Cadastro e perfil RN02 - com APP_ENV %s e PLANNER_SIGNUP_ENABLED=true, aceita: %s',
+    (appEnv, accepted) => {
+      const config = { ...validConfig, APP_ENV: appEnv, PLANNER_SIGNUP_ENABLED: 'true' };
+      if (accepted) expect(validateEnv({ config }).PLANNER_SIGNUP_ENABLED).toBe(true);
+      else
+        expect(() => validateEnv({ config })).toThrow(
+          /PLANNER_SIGNUP_ENABLED: o cadastro de cerimonialista só pode ser ligado/,
+        );
+    },
+  );
+
+  it('Cadastro e perfil RN02 - sem valor, o cadastro de cerimonialista vem desligado', () => {
+    expect(validateEnv({ config: validConfig }).PLANNER_SIGNUP_ENABLED).toBe(false);
   });
 
   it('E-mail e push RN07 - as chaves VAPID são opcionais em local e test e obrigatórias em homolog e production', () => {

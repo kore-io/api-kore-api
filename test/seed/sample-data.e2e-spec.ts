@@ -23,7 +23,8 @@ describe('Dados de exemplo do Kore (seed da Fase 0; banco real)', () => {
     await app?.close();
   });
 
-  const run = () => seedSampleData({ db, appEnv: 'test', appUrl, now: new Date() });
+  const run = () =>
+    seedSampleData({ db, termsVersion: '2026-09', appEnv: 'test', appUrl, now: new Date() });
   const sampleWeddings = { createdBy: { email: { endsWith: `@${SAMPLE_EMAIL_DOMAIN}` } } };
 
   it('decisão 181 - rodar duas vezes deixa o mesmo estado (idempotente), com os mesmos links em local e test', async () => {
@@ -197,7 +198,8 @@ describe('Dados de exemplo do Kore (seed da Fase 0; banco real)', () => {
   });
 
   it('decisão 181 - em homologação, tokens aleatórios a cada execução, e o anterior deixa de valer', async () => {
-    const homolog = () => seedSampleData({ db, appEnv: 'homolog', appUrl, now: new Date() });
+    const homolog = () =>
+      seedSampleData({ db, termsVersion: '2026-09', appEnv: 'homolog', appUrl, now: new Date() });
     const tokenOf = (url: string) => new URL(url).pathname.split('/').pop() ?? '';
 
     const first = await homolog();
@@ -252,7 +254,13 @@ describe('Dados de exemplo do Kore (seed da Fase 0; banco real)', () => {
 
       try {
         await expect(
-          seedSampleData({ db, appEnv: 'homolog', appUrl, now: new Date() }),
+          seedSampleData({
+            db,
+            termsVersion: '2026-09',
+            appEnv: 'homolog',
+            appUrl,
+            now: new Date(),
+          }),
         ).rejects.toThrow(/lucas-andrade.*não é de exemplo/);
         expect(await codeOf(strangerId)).toBe('lucas-andrade');
         expect(await codeOf(lucasId)).not.toBe('lucas-andrade');
@@ -265,7 +273,13 @@ describe('Dados de exemplo do Kore (seed da Fase 0; banco real)', () => {
 
   it('decisão 181 - recusa produção', async () => {
     await expect(
-      seedSampleData({ db, appEnv: 'production', appUrl, now: new Date() }),
+      seedSampleData({
+        db,
+        termsVersion: '2026-09',
+        appEnv: 'production',
+        appUrl,
+        now: new Date(),
+      }),
     ).rejects.toThrow(/production/);
   });
 });

@@ -1,3 +1,4 @@
+import type { AppConfigService } from '../../../shared/config/app-config.service';
 import type { AuthenticatedSession } from '../domain/authenticated-session';
 import { GetMe } from './get-me.use-case';
 import type { ProfileDirectory } from './ports/profile-directory.port';
@@ -11,7 +12,7 @@ const session: AuthenticatedSession = {
   activeProfile: null,
 };
 
-function getMe() {
+function getMe({ plannerSignupEnabled = false }: { plannerSignupEnabled?: boolean } = {}) {
   const users = {
     findProfileById: jest
       .fn()
@@ -23,7 +24,8 @@ function getMe() {
       .fn()
       .mockResolvedValue({ memberships: [], profiles: ['couple'], planner: null, referrer: null }),
   } satisfies ProfileDirectory;
-  return new GetMe(users, profiles);
+  const config = { get: () => plannerSignupEnabled } as unknown as AppConfigService;
+  return new GetMe(users, profiles, config);
 }
 
 describe('GetMe (GET /v1/me)', () => {
@@ -51,5 +53,15 @@ describe('GetMe (GET /v1/me)', () => {
         })
       ).activeProfile,
     ).toBe('couple');
+  });
+
+  it('Cadastro e perfil RN02 - plannerSignupEnabled diz se o cadastro de cerimonialista está aberto', async () => {
+    expect(
+      (await getMe().execute({ session, lastProfileOnDevice: null })).plannerSignupEnabled,
+    ).toBe(false);
+    expect(
+      (await getMe({ plannerSignupEnabled: true }).execute({ session, lastProfileOnDevice: null }))
+        .plannerSignupEnabled,
+    ).toBe(true);
   });
 });

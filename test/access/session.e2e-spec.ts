@@ -40,6 +40,7 @@ describe('Sessão (Login sem senha e sessão)', () => {
         lastProfileOnDevice: null,
         referrer: null,
         authenticatedAt: expect.any(String),
+        plannerSignupEnabled: true,
       });
     });
 

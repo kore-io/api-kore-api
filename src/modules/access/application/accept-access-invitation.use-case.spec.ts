@@ -92,6 +92,10 @@ function setup({
   const profiles = {
     referrerKind: jest.fn().mockResolvedValue(referrerKind),
     createMinimal: jest.fn().mockResolvedValue(undefined),
+    create: jest.fn(),
+    findOwn: jest.fn(),
+    update: jest.fn(),
+    updateAccount: jest.fn(),
   } satisfies PlannerProfiles;
   const productEvents: ProductEventRecorder = { record: jest.fn().mockResolvedValue(undefined) };
   const scheduled: (() => Promise<void>)[] = [];

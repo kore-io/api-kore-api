@@ -41,6 +41,8 @@ export class MeResponse {
   @ApiProperty({ enum: PROFILE_KINDS, nullable: true }) lastProfileOnDevice: ProfileKind | null;
   @ApiProperty({ type: MeReferrerResponse, nullable: true }) referrer: MeReferrerResponse | null;
   authenticatedAt: string;
+  /** O cadastro próprio de cerimonialista está aberto (Cadastro e perfil RN02). */
+  plannerSignupEnabled: boolean;
 
   static from({ me }: { me: Me }): MeResponse {
     return {
@@ -55,6 +57,7 @@ export class MeResponse {
       lastProfileOnDevice: me.lastProfileOnDevice,
       referrer: me.referrer,
       authenticatedAt: me.authenticatedAt.toISOString(),
+      plannerSignupEnabled: me.plannerSignupEnabled,
     };
   }
 }

@@ -47,18 +47,21 @@ export async function seedSampleData({
   db,
   appEnv,
   appUrl,
+  termsVersion,
   now,
 }: {
   db: PrismaClient;
   appEnv: string;
   appUrl: string;
+  /** Os Termos vigentes (TERMS_VERSION): a cerimonialista do seed já os aceitou. */
+  termsVersion: string;
   now: Date;
 }): Promise<SeededInvitation[]> {
   assertSeedAllowed({ appEnv });
   return db.$transaction(
     async (tx) => {
       const users = await upsertAccounts({ tx });
-      const referrers = await upsertReferrers({ tx, users, appEnv });
+      const referrers = await upsertReferrers({ tx, users, appEnv, termsVersion, now });
       const weddings = new Map<string, string>();
       for (const wedding of SAMPLE_WEDDINGS) {
         weddings.set(
@@ -162,10 +165,14 @@ async function upsertReferrers({
   tx,
   users,
   appEnv,
+  termsVersion,
+  now,
 }: {
   tx: Tx;
   users: Map<string, string>;
   appEnv: string;
+  termsVersion: string;
+  now: Date;
 }): Promise<{ planner: string }> {
   const { defaultRatePercent } = await tx.referralSettings.findFirstOrThrow({
     select: { defaultRatePercent: true },
@@ -188,10 +195,25 @@ async function upsertReferrers({
     update: { kind: 'planner', referralCode: SAMPLE_PLANNER.referralCode, status: 'active' },
     select: { id: true },
   });
+  const plannerProfile = {
+    creditName: SAMPLE_PLANNER.creditName,
+    phone: SAMPLE_PLANNER.phone,
+    whatsapp: SAMPLE_PLANNER.whatsapp,
+    cities: [...SAMPLE_PLANNER.cities],
+  };
   await tx.planner.upsert({
     where: { referrerId: planner.id },
-    create: { referrerId: planner.id, creditName: SAMPLE_PLANNER.creditName },
-    update: { creditName: SAMPLE_PLANNER.creditName },
+    create: { referrerId: planner.id, ...plannerProfile },
+    update: plannerProfile,
+  });
+  // Idempotente: o aceite só muda quando a versão vigente muda.
+  await tx.user.updateMany({
+    where: { id: julianaId, NOT: { termsVersion } },
+    data: { termsVersion, termsAcceptedAt: now },
+  });
+  await tx.user.updateMany({
+    where: { id: julianaId, termsVersion: null },
+    data: { termsVersion, termsAcceptedAt: now },
   });
   const organization =
     (await tx.organization.findFirst({

@@ -12,6 +12,7 @@ import type { AuthenticatedSession } from '../domain/authenticated-session';
 import {
   AlreadyMemberErrorBody,
   SelfReferralErrorBody,
+  PlannerProfileExistsErrorBody,
   AlreadyOwnerErrorBody,
   EmailMismatchErrorBody,
   InvitationInvalidErrorBody,
@@ -71,6 +72,7 @@ export class InvitationAcceptanceController {
     PlannerAlreadyErrorBody,
     SellerCannotBePlannerErrorBody,
     SelfReferralErrorBody,
+    PlannerProfileExistsErrorBody,
     InvitationInvalidErrorBody,
   )
   async accept(

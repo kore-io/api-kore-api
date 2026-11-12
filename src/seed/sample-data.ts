@@ -83,11 +83,18 @@ export const SAMPLE_ACCOUNTS: SampleAccount[] = [
   { key: 'henrique', name: 'Henrique Matos', email: email('henrique.matos') },
 ];
 
-/** A cerimonialista: perfil Prado Assessoria, link juliana-prado. */
+/**
+ * A cerimonialista: perfil Prado Assessoria, link juliana-prado. Com o perfil
+ * completo (cidades e Termos), porque em homologação o cadastro fica fechado e
+ * a Área do cerimonialista se testa com ela (Cadastro e perfil RN02; decisão 224(8)).
+ */
 export const SAMPLE_PLANNER = {
   account: 'juliana',
   referralCode: 'juliana-prado',
   creditName: 'Prado Assessoria',
+  phone: '1933334444',
+  whatsapp: '19999998888',
+  cities: ['Campinas (SP)', 'Valinhos (SP)', 'Vinhedo (SP)'],
 } as const;
 
 /** O vendedor (Vendas · Kore), cadastrado pela Admin Renata Lima. */

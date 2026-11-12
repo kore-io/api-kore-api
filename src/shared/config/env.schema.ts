@@ -92,6 +92,15 @@ export const envSchema = z
     // Publicação por Cortesia (Publicação RN01; decisão 216, D1): sem valor,
     // desligada. Recusada em homolog e production (decisão 217(11)): ligar lá é
     // publicar para o público, e exige mudança de código e decisão do PO.
+    // Cadastro próprio de cerimonialista (Cadastro e perfil RN02; decisão 223,
+    // D23): sem valor, desligado; só liga em local e test até o termo de parceria.
+    PLANNER_SIGNUP_ENABLED: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
+    // Base do Link de indicação (Link de indicação RN01): o redirect /i/{código}
+    // fica no Site Institucional (RN07), fora da API.
+    REFERRAL_LINK_URL: z.url({ protocol: /^https?$/ }).default('https://kore.com.br/i'),
     COURTESY_PUBLICATION_ENABLED: z
       .enum(['true', 'false'])
       .default('false')
@@ -138,6 +147,14 @@ export const envSchema = z
         code: 'custom',
         path: ['ALLOWED_ORIGINS'],
         message: 'não pode ter a origem do SITE_URL (a origem do site vale só nas rotas do site)',
+      });
+    }
+    if (env.PLANNER_SIGNUP_ENABLED && !LOCAL_KEY_ENVS.includes(env.APP_ENV)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['PLANNER_SIGNUP_ENABLED'],
+        message:
+          'o cadastro de cerimonialista só pode ser ligado com APP_ENV local ou test (decisão 224(8))',
       });
     }
     if (env.COURTESY_PUBLICATION_ENABLED && !LOCAL_KEY_ENVS.includes(env.APP_ENV)) {

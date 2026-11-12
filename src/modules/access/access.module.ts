@@ -38,6 +38,12 @@ import { VerifyLoginChallenge } from './application/verify-login-challenge.use-c
 import { EndAllSessions } from './application/end-all-sessions.use-case';
 import { EndSession } from './application/end-session.use-case';
 import { GetMe } from './application/get-me.use-case';
+import {
+  CreatePlannerProfile,
+  GetMyReferrer,
+  GetPlannerProfile,
+  UpdatePlannerProfile,
+} from './application/planner-profile.use-cases';
 import { SetActiveProfile } from './application/set-active-profile.use-case';
 import { ListWeddingMembers } from './application/list-wedding-members.use-case';
 import { RemoveMembership } from './application/remove-membership.use-case';
@@ -74,6 +80,7 @@ import { GoogleLoginController } from './presentation/google-login.controller';
 import { GoogleLoginCookie } from './presentation/google-login-cookie';
 import { LoginController } from './presentation/login.controller';
 import { MeController } from './presentation/me.controller';
+import { PlannerController } from './presentation/planner.controller';
 import { ReferralController } from './presentation/referral.controller';
 import { WeddingsController } from './presentation/weddings.controller';
 import { AccessInvitationsController } from './presentation/access-invitations.controller';
@@ -90,6 +97,7 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     LoginController,
     GoogleLoginController,
     MeController,
+    PlannerController,
     ReferralController,
     WeddingsController,
     AccessInvitationsController,
@@ -162,6 +170,10 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     EndAllSessions,
     GetMe,
     SetActiveProfile,
+    CreatePlannerProfile,
+    GetPlannerProfile,
+    UpdatePlannerProfile,
+    GetMyReferrer,
     ListWeddingMembers,
     RemoveMembership,
     GetReferral,

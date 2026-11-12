@@ -700,6 +700,293 @@
         ]
       }
     },
+    "/v1/me/planner": {
+      "post": {
+        "operationId": "PlannerController_create_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlannerProfileBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatePlannerProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PlannerSignupDisabledErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PlannerProfileExistsErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SellerCannotBePlannerErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/TermsVersionOutdatedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Cria o perfil de cerimonialista na conta da sessão (RN02 a RN05).",
+        "tags": [
+          "me"
+        ]
+      },
+      "get": {
+        "operationId": "PlannerController_profile_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlannerProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlannerNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Meu perfil (RN09 e RN10).",
+        "tags": [
+          "me"
+        ]
+      },
+      "patch": {
+        "operationId": "PlannerController_update_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlannerProfileBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlannerProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlannerNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TermsVersionOutdatedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Salva o Meu perfil, com as validações do cadastro (RN09 e RN10).",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/v1/me/referrer": {
+      "get": {
+        "operationId": "PlannerController_referrer_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyReferrerResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "O link de indicação e o desconto do casal (Link de indicação RN01 e RN02).",
+        "tags": [
+          "me"
+        ]
+      }
+    },
     "/v1/referrals/{code}": {
       "get": {
         "operationId": "ReferralController_referral_v1",
@@ -1289,6 +1576,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/SelfReferralErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PlannerProfileExistsErrorBody"
                     }
                   ]
                 }
@@ -7733,6 +8023,10 @@
           },
           "authenticatedAt": {
             "type": "string"
+          },
+          "plannerSignupEnabled": {
+            "type": "boolean",
+            "description": "O cadastro próprio de cerimonialista está aberto (Cadastro e perfil RN02)."
           }
         },
         "required": [
@@ -7743,7 +8037,8 @@
           "lastProfileOnDevice",
           "referrer",
           "user",
-          "authenticatedAt"
+          "authenticatedAt",
+          "plannerSignupEnabled"
         ]
       },
       "ProfileNotOwnedErrorBody": {
@@ -7806,6 +8101,330 @@
         "required": [
           "activeProfile",
           "home"
+        ]
+      },
+      "PlannerSignupDisabledErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PLANNER_SIGNUP_DISABLED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PlannerProfileExistsErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PLANNER_PROFILE_EXISTS"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SellerCannotBePlannerErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SELLER_CANNOT_BE_PLANNER"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "TermsVersionOutdatedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "TERMS_VERSION_OUTDATED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "CreatePlannerProfileBody": {
+        "type": "object",
+        "properties": {
+          "creditName": {
+            "type": "string",
+            "description": "Nome da assessoria: de 2 a 80, sem link, e-mail nem telefone (RN04).",
+            "maxLength": 300,
+            "example": "Prado Assessoria"
+          },
+          "name": {
+            "type": "string",
+            "description": "Seu nome: só quando a conta não tem nome (RN04).",
+            "maxLength": 300,
+            "example": "Juliana Prado"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "DDD e número; guardado só com os dígitos. Nulo ou vazio apaga.",
+            "maxLength": 300,
+            "example": "(11) 3333-4444"
+          },
+          "whatsapp": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 300,
+            "example": "(11) 99999-8888"
+          },
+          "cities": {
+            "description": "\"Cidade (UF)\", pelo menos 1, até 50, sem repetir.",
+            "example": [
+              "Campinas (SP)",
+              "Valinhos (SP)"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 300
+            }
+          },
+          "termsVersion": {
+            "type": "string",
+            "description": "A versão dos Termos que o app mostrou (RN04).",
+            "minLength": 1,
+            "maxLength": 32,
+            "example": "2026-09"
+          }
+        },
+        "required": [
+          "termsVersion"
+        ]
+      },
+      "CreatePlannerProfileResponse": {
+        "type": "object",
+        "properties": {
+          "referralCode": {
+            "type": "string",
+            "example": "juliana-prado"
+          },
+          "home": {
+            "type": "string",
+            "example": "/cerimonialista"
+          }
+        },
+        "required": [
+          "referralCode",
+          "home"
+        ]
+      },
+      "PlannerNotFoundErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PLANNER_NOT_FOUND"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PlannerProfileResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "creditName": {
+            "type": "string",
+            "example": "Prado Assessoria"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "example": "1133334444"
+          },
+          "whatsapp": {
+            "type": "string",
+            "nullable": true,
+            "example": "11999998888"
+          },
+          "cities": {
+            "example": [
+              "Campinas (SP)"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "email": {
+            "type": "string"
+          },
+          "profileComplete": {
+            "type": "boolean",
+            "description": "Com cidade, os Termos vigentes e o nome que passa no predicado (RN10)."
+          },
+          "termsAccepted": {
+            "type": "boolean"
+          },
+          "creditHidden": {
+            "type": "boolean",
+            "description": "O Admin ocultou a assinatura (Assinatura RN06); o motivo não sai da API."
+          }
+        },
+        "required": [
+          "name",
+          "creditName",
+          "phone",
+          "whatsapp",
+          "cities",
+          "email",
+          "profileComplete",
+          "termsAccepted",
+          "creditHidden"
+        ]
+      },
+      "UpdatePlannerProfileBody": {
+        "type": "object",
+        "properties": {
+          "creditName": {
+            "type": "string",
+            "description": "Nome da assessoria: de 2 a 80, sem link, e-mail nem telefone (RN04).",
+            "maxLength": 300,
+            "example": "Prado Assessoria"
+          },
+          "name": {
+            "type": "string",
+            "description": "Seu nome: só quando a conta não tem nome (RN04).",
+            "maxLength": 300,
+            "example": "Juliana Prado"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "DDD e número; guardado só com os dígitos. Nulo ou vazio apaga.",
+            "maxLength": 300,
+            "example": "(11) 3333-4444"
+          },
+          "whatsapp": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 300,
+            "example": "(11) 99999-8888"
+          },
+          "cities": {
+            "description": "\"Cidade (UF)\", pelo menos 1, até 50, sem repetir.",
+            "example": [
+              "Campinas (SP)",
+              "Valinhos (SP)"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 300
+            }
+          },
+          "termsVersion": {
+            "type": "string",
+            "description": "Obrigatório quando os Termos vigentes ainda não foram aceitos (RN10).",
+            "minLength": 1,
+            "maxLength": 32,
+            "example": "2026-09"
+          }
+        }
+      },
+      "MyReferrerResponse": {
+        "type": "object",
+        "properties": {
+          "referralCode": {
+            "type": "string",
+            "example": "juliana-prado"
+          },
+          "link": {
+            "type": "string",
+            "example": "https://kore.com.br/i/juliana-prado"
+          },
+          "discountPercent": {
+            "type": "number",
+            "nullable": true,
+            "description": "Nulo com o desconto de indicação desligado. Sem o percentual da comissão (D4).",
+            "example": 10
+          }
+        },
+        "required": [
+          "referralCode",
+          "link",
+          "discountPercent"
         ]
       },
       "ReferralNotFoundErrorBody": {
@@ -7954,31 +8573,6 @@
           "error",
           "message",
           "weddingId"
-        ]
-      },
-      "TermsVersionOutdatedErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              409
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "TERMS_VERSION_OUTDATED"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
         ]
       },
       "ContrastTooLowErrorBody": {
@@ -8702,31 +9296,6 @@
             "type": "string",
             "enum": [
               "ALREADY_MEMBER"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
-        ]
-      },
-      "SellerCannotBePlannerErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              409
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "SELLER_CANNOT_BE_PLANNER"
             ]
           },
           "message": {

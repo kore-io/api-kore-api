@@ -20,7 +20,13 @@ async function main(): Promise<void> {
     adapter: new PrismaPg({ connectionString, options: `-c role=${BACKOFFICE_DB_ROLE}` }),
   });
   try {
-    const invitations = await seedSampleData({ db, appEnv, appUrl, now: new Date() });
+    const invitations = await seedSampleData({
+      db,
+      appEnv,
+      appUrl,
+      termsVersion: process.env.TERMS_VERSION ?? '2026-09',
+      now: new Date(),
+    });
     console.log('Dados de exemplo gravados. Convites de acesso pendentes:');
     for (const { key, url } of invitations) console.log(`- ${key}: ${url}`);
   } finally {
