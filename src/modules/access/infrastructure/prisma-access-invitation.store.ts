@@ -100,7 +100,8 @@ export class PrismaAccessInvitationStore implements AccessInvitationStore {
     if (!invitationIds.length) return;
     await this.tenant.client().accessInvitation.updateMany({
       where: { id: { in: invitationIds }, ...PENDING },
-      data: { supersededAt: now },
+      // O token cifrado do link sai junto (N1(b), condição 2).
+      data: { supersededAt: now, tokenEncrypted: null },
     });
   }
 
@@ -147,7 +148,7 @@ export class PrismaAccessInvitationStore implements AccessInvitationStore {
   async revoke({ invitationId, now }: { invitationId: string; now: Date }): Promise<void> {
     await this.tenant.client().accessInvitation.updateMany({
       where: { id: invitationId, ...PENDING },
-      data: { revokedAt: now },
+      data: { revokedAt: now, tokenEncrypted: null },
     });
   }
 }

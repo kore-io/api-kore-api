@@ -37,6 +37,8 @@ export interface NewAccessInvitation {
   tokenHash: string;
   invitedByUserId: string;
   expiresAt: Date;
+  /** Só no link do casal sem e-mail: o token cifrado (N1(b), decisão 224). */
+  tokenEncrypted: string | null;
 }
 
 export interface StoredInvitation {

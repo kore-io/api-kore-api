@@ -22,18 +22,24 @@ export class PurgeEndedAccess {
     @Inject(APPLICATION_LOG_WRITER) private readonly applicationLog: ApplicationLogWriter,
   ) {}
 
-  async execute({ now }: { now: Date }): Promise<{ sessions: number; loginChallenges: number }> {
+  async execute({
+    now,
+  }: {
+    now: Date;
+  }): Promise<{ sessions: number; loginChallenges: number; coupleLinkTokens: number }> {
     const sessions = await this.cleanup.deleteEndedSessions({ now });
     const loginChallenges = await this.cleanup.deleteLoginChallengesCreatedBefore({
       createdBefore: new Date(now.getTime() - LOGIN_REQUEST_WINDOW_MS),
     });
+    // N1(b), condição 2: o token cifrado do link vencido sai na limpeza diária.
+    const coupleLinkTokens = await this.cleanup.clearExpiredCoupleLinkTokens({ now });
     await this.applicationLog.record({
       entry: {
         action: ACCESS_CLEANUP_PURGED_ACTION,
         actorKind: 'system',
-        data: { sessions, loginChallenges, now: now.toISOString() },
+        data: { sessions, loginChallenges, coupleLinkTokens, now: now.toISOString() },
       },
     });
-    return { sessions, loginChallenges };
+    return { sessions, loginChallenges, coupleLinkTokens };
   }
 }
