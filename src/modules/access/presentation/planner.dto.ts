@@ -22,14 +22,16 @@ const GUARD_CITIES = 200;
 class PlannerProfileFields {
   /** Nome da assessoria: de 2 a 80, sem link, e-mail nem telefone (RN04). */
   @ApiProperty({ required: false, example: 'Prado Assessoria' })
-  @IsOptional()
+  // Ausente não muda; null não é ausente: cai no IsString/IsArray (400), não no domínio.
+  @ValidateIf((_, value) => value !== undefined)
   @IsString()
   @MaxLength(GUARD_LENGTH)
   creditName?: string;
 
   /** Seu nome: só quando a conta não tem nome (RN04). */
   @ApiProperty({ required: false, example: 'Juliana Prado' })
-  @IsOptional()
+  // Ausente não muda; null não é ausente: cai no IsString/IsArray (400), não no domínio.
+  @ValidateIf((_, value) => value !== undefined)
   @IsString()
   @MaxLength(GUARD_LENGTH)
   name?: string;
@@ -51,7 +53,8 @@ class PlannerProfileFields {
 
   /** "Cidade (UF)", pelo menos 1, até 50, sem repetir. */
   @ApiProperty({ type: [String], required: false, example: ['Campinas (SP)', 'Valinhos (SP)'] })
-  @IsOptional()
+  // Ausente não muda; null não é ausente: cai no IsString/IsArray (400), não no domínio.
+  @ValidateIf((_, value) => value !== undefined)
   @IsArray()
   @ArrayMaxSize(GUARD_CITIES)
   @IsString({ each: true })

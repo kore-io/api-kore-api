@@ -380,6 +380,27 @@ describe('Cadastro e perfil do cerimonialista (banco real; decisões 223 e 224)'
     });
   });
 
+  it.each([
+    ['POST', { creditName: null }, 'creditName', 'IS_STRING'],
+    ['POST', { cities: null }, 'cities', 'IS_ARRAY'],
+    ['PATCH', { creditName: null }, 'creditName', 'IS_STRING'],
+    ['PATCH', { name: null }, 'name', 'IS_STRING'],
+    ['PATCH', { cities: null }, 'cities', 'IS_ARRAY'],
+  ] as const)(
+    'RN04 - %s com null em campo não anulável (%j): 400, não 500',
+    async (method, body, path, code) => {
+      const juliana = await person();
+      if (method === 'PATCH') await signup(juliana.cookie, profile()).expect(201);
+
+      const response =
+        method === 'POST'
+          ? await signup(juliana.cookie, profile(body)).expect(400)
+          : await save(juliana.cookie, body).expect(400);
+
+      expect(response.body.errors).toContainEqual(expect.objectContaining({ path, code }));
+    },
+  );
+
   describe('GET /v1/me/referrer (Link de indicação RN01 e RN02)', () => {
     it('o link e o desconto do casal, sem o percentual da comissão', async () => {
       const juliana = await person();
