@@ -9,6 +9,7 @@ import { SITE_READER } from './application/ports/site-reader.port';
 import { SITE_STORE } from './application/ports/site-store.port';
 import { GetSiteEditor, SiteEditorViews } from './application/site-editor-view';
 import { UpdateSiteSection } from './application/update-site-section.use-case';
+import { UpdateSongQuestion } from './application/update-song-question.use-case';
 import { UpdateSiteAppearance } from './application/update-site-appearance.use-case';
 import { UpdateSiteBasics } from './application/update-site-basics.use-case';
 import { PrismaSiteReader } from './infrastructure/prisma-site.reader';
@@ -70,6 +71,7 @@ import { SiteImagesController } from './presentation/site-images.controller';
     UpdateSiteBasics,
     UpdateSiteAppearance,
     UpdateSiteSection,
+    UpdateSongQuestion,
     { provide: PUBLIC_SITE_READER, useClass: PrismaPublicSiteReader },
     GetPublicSite,
     { provide: PARTY_COOKIES, useClass: HmacPartyCookies },

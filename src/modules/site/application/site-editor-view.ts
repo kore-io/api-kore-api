@@ -6,6 +6,7 @@ import {
 import { AppConfigService } from '../../../shared/config/app-config.service';
 import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
 import { endDateRange } from '../domain/publication';
+import { DEFAULT_SONG_QUESTION } from '../domain/public-site';
 import { isSectionEmpty, sectionImageIds, type SiteSectionType } from '../domain/site-sections';
 import {
   SITE_READER,
@@ -32,8 +33,10 @@ export interface SiteEditorSection {
 
 export interface SiteEditorView extends Omit<
   SiteSnapshot,
-  'eventDate' | 'endDate' | 'coverImageId' | 'sections'
+  'eventDate' | 'endDate' | 'coverImageId' | 'sections' | 'songQuestion'
 > {
+  /** A pergunta de música (Música RN01), com o texto padrão quando vazio. */
+  songQuestion: { enabled: boolean; text: string };
   eventDate: string | null;
   cover: SiteImageRef | null;
   sections: SiteEditorSection[];
@@ -106,6 +109,11 @@ export class SiteEditorViews {
         eventDate: identity,
         state: identity,
         slug: identity && site.publishedAt === null,
+      },
+      // O texto vazio vale o padrão (Música RN01).
+      songQuestion: {
+        enabled: site.songQuestion.enabled,
+        text: site.songQuestion.text ?? DEFAULT_SONG_QUESTION,
       },
       publication: {
         courtesyEnabled: this.config.get({ key: 'COURTESY_PUBLICATION_ENABLED' }),

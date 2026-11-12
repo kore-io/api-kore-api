@@ -25,6 +25,18 @@ import { DownloadQrCodes } from './application/qr-codes.use-case';
 import { QR_RENDERER } from './application/ports/qr-renderer.port';
 import { QrcodeRenderer } from './infrastructure/qrcode-renderer';
 import { QrCodesController } from './presentation/qr-codes.controller';
+import {
+  ExportSongSuggestions,
+  ListSongSuggestions,
+  SongSuggestionsAccess,
+} from './application/song-suggestions.use-cases';
+import {
+  SONG_SUGGESTIONS_FILE,
+  SONG_SUGGESTION_READER,
+} from './application/ports/song-suggestion-reader.port';
+import { PrismaSongSuggestionReader } from './infrastructure/prisma-song-suggestion.reader';
+import { SongSuggestionsXlsx } from './infrastructure/song-suggestions-xlsx';
+import { SongSuggestionsController } from './presentation/song-suggestions.controller';
 import { PARTY_LINKS } from '../guests/application/ports/party-links.port';
 import { RandomPartyLinks } from '../guests/infrastructure/random-party-links';
 import { RSVP_STORE } from './application/ports/rsvp-store.port';
@@ -42,6 +54,7 @@ import { RsvpController } from './presentation/rsvp.controller';
     MessageTemplatesController,
     DeliveriesController,
     QrCodesController,
+    SongSuggestionsController,
   ],
   providers: [
     { provide: RSVP_STORE, useClass: PrismaRsvpStore },
@@ -63,6 +76,11 @@ import { RsvpController } from './presentation/rsvp.controller';
     MarkDeliveries,
     { provide: QR_RENDERER, useClass: QrcodeRenderer },
     DownloadQrCodes,
+    { provide: SONG_SUGGESTION_READER, useClass: PrismaSongSuggestionReader },
+    { provide: SONG_SUGGESTIONS_FILE, useClass: SongSuggestionsXlsx },
+    SongSuggestionsAccess,
+    ListSongSuggestions,
+    ExportSongSuggestions,
   ],
 })
 export class RsvpModule {}

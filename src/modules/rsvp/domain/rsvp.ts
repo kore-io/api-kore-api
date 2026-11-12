@@ -4,8 +4,7 @@ import { GUEST_NAME_MAX, type AgeGroup, type RsvpStatus } from '../../guests/dom
 /** Restrição alimentar (RSVP RN03; decisão 189(9)) e sugestão de música (Música RN04). */
 export const DIETARY_RESTRICTION_MAX = 200;
 export const SONG_SUGGESTION_MAX = 120;
-/** A pergunta de música padrão (Música RN01; decisão 91 a). */
-export const DEFAULT_SONG_QUESTION = 'Que música não pode faltar na festa?';
+export { DEFAULT_SONG_QUESTION } from '../../site/domain/public-site';
 /** Teto de gravações por grupo por dia, no fuso do casamento (RSVP RN10). */
 export const RSVP_DAILY_LIMIT = 50;
 

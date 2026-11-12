@@ -15,6 +15,8 @@ export interface SiteSnapshot {
   contactWhatsapp: string | null;
   contactEmail: string | null;
   coverImageId: string | null;
+  /** A pergunta de música (Música RN01); o texto nulo vale o padrão. */
+  songQuestion: { enabled: boolean; text: string | null };
   appearance: {
     fontPairKey: string;
     starterPaletteKey: string | null;

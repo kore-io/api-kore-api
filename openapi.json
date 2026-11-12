@@ -4060,6 +4060,104 @@
         ]
       }
     },
+    "/v1/weddings/{weddingId}/site/song-question": {
+      "put": {
+        "operationId": "SiteController_songQuestion_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSongQuestionBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteSongQuestionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "A pergunta de música do RSVP: ligada e o texto (Música RN01 e RN02).",
+        "tags": [
+          "site"
+        ]
+      }
+    },
     "/v1/weddings/{weddingId}/site/sections/{type}": {
       "put": {
         "operationId": "SiteController_section_v1",
@@ -6162,6 +6260,193 @@
           }
         },
         "summary": "Gera o arquivo e marca o envio do convite dos grupos, com o canal QR.\n`POST` (R4-1): nenhum `GET` marca grupo, e não há choque com `GET parties/:partyId`.",
+        "tags": [
+          "rsvp"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/song-suggestions": {
+      "get": {
+        "operationId": "SongSuggestionsController_page_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "O `nextCursor` da página anterior.",
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SongSuggestionsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SongQuestionDisabledErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "A página Músicas (Música RN05).",
+        "tags": [
+          "rsvp"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/song-suggestions/export": {
+      "get": {
+        "operationId": "SongSuggestionsController_export_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "O arquivo.",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SongQuestionDisabledErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NothingToExportErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Exportar para o DJ: o .xlsx na hora, sem cache (Música RN06).",
         "tags": [
           "rsvp"
         ]
@@ -10288,6 +10573,41 @@
           "expiresAt"
         ]
       },
+      "UpdateSongQuestionBody": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "nullable": true,
+            "description": "Até 120, sem espaços nas pontas; vazio ou nulo volta ao padrão.",
+            "maxLength": 120
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "text",
+          "enabled"
+        ]
+      },
+      "SiteSongQuestionResponse": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "\"Fazer a pergunta no RSVP\"; desligada por padrão."
+          },
+          "text": {
+            "type": "string",
+            "description": "O texto do casal, ou o padrão \"Que música não pode faltar na festa?\"."
+          }
+        },
+        "required": [
+          "enabled",
+          "text"
+        ]
+      },
       "UpdateSiteSectionBody": {
         "type": "object",
         "properties": {
@@ -10639,6 +10959,9 @@
           "publication": {
             "$ref": "#/components/schemas/SitePublicationResponse"
           },
+          "songQuestion": {
+            "$ref": "#/components/schemas/SiteSongQuestionResponse"
+          },
           "status": {
             "type": "string"
           }
@@ -10659,6 +10982,7 @@
           "sections",
           "editable",
           "publication",
+          "songQuestion",
           "status"
         ]
       },
@@ -12613,6 +12937,86 @@
         "required": [
           "format",
           "partyIds"
+        ]
+      },
+      "SongQuestionDisabledErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SONG_QUESTION_DISABLED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SongSuggestionResponse": {
+        "type": "object",
+        "properties": {
+          "guestName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Quem sugeriu."
+          },
+          "suggestedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "guestId": {
+            "type": "string"
+          },
+          "song": {
+            "type": "string",
+            "description": "Como o convidado escreveu."
+          },
+          "partyName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "guestName",
+          "suggestedAt",
+          "guestId",
+          "song",
+          "partyName"
+        ]
+      },
+      "SongSuggestionsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Da mais antiga para a mais nova, 50 por vez, sem juntar repetidas (Música RN05).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SongSuggestionResponse"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor",
+          "total"
         ]
       },
       "SpreadsheetTemplateHeaders": {
