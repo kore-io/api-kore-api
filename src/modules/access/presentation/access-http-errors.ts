@@ -24,6 +24,8 @@ import {
   ProfileNotOwnedError,
   CannotRemoveOwnerError,
   LastOwnerError,
+  WeddingHasNoOwnerError,
+  SelfReferralError,
   MembershipNotFoundError,
   SellerCannotBePlannerError,
   InvitationNotDeclinableError,
@@ -249,6 +251,20 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 409,
       error: 'LAST_OWNER',
       message: 'The last owner cannot leave the wedding.',
+    });
+  }
+  if (error instanceof WeddingHasNoOwnerError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'WEDDING_HAS_NO_OWNER',
+      message: 'The wedding has no owner yet; delete it instead of leaving.',
+    });
+  }
+  if (error instanceof SelfReferralError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'SELF_REFERRAL',
+      message: 'The referrer of this wedding cannot accept its couple invitation.',
     });
   }
   if (error instanceof MembershipNotFoundError) {

@@ -8,6 +8,7 @@ import {
   LastOwnerError,
   MembershipNotFoundError,
   WeddingActionForbiddenError,
+  WeddingHasNoOwnerError,
 } from '../domain/access.errors';
 import { removalRefusal } from '../domain/membership-removal';
 import {
@@ -57,6 +58,7 @@ export class RemoveMembership {
     });
     if (refusal === 'last_owner') throw new LastOwnerError();
     if (refusal === 'cannot_remove_owner') throw new CannotRemoveOwnerError();
+    if (refusal === 'wedding_has_no_owner') throw new WeddingHasNoOwnerError();
     if (refusal) throw new WeddingActionForbiddenError();
 
     await this.store.remove({ membershipId, removedByUserId: userId, now });

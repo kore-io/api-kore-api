@@ -1,5 +1,9 @@
 import type { ApplicationLogWriter } from '../../logs/application/ports/application-log-writer.port';
-import { LastOwnerError, MembershipNotFoundError } from '../domain/access.errors';
+import {
+  LastOwnerError,
+  MembershipNotFoundError,
+  WeddingHasNoOwnerError,
+} from '../domain/access.errors';
 import type { WeddingMember, WeddingMembersStore } from './ports/wedding-members-store.port';
 import { RemoveMembership } from './remove-membership.use-case';
 import type { WeddingAuthorization } from './wedding-authorization.service';
@@ -85,6 +89,17 @@ describe('RemoveMembership (DELETE /v1/weddings/{weddingId}/memberships/{id})', 
       useCase.execute({ userId: 'u-ana', weddingId: 'w1', membershipId: 'm-ana', ip: null, now }),
     ).rejects.toThrow(LastOwnerError);
     expect(store.remove).not.toHaveBeenCalled();
+  });
+
+  it('decisão 224 (1) - a cerimonialista não sai de casamento sem dono: WEDDING_HAS_NO_OWNER, sem log', async () => {
+    const { useCase, store, log } = setup({ members: [juliana], role: 'collaborator' });
+
+    await expect(
+      useCase.execute({ userId: 'u-j', weddingId: 'w1', membershipId: 'm-j', ip: null, now }),
+    ).rejects.toThrow(WeddingHasNoOwnerError);
+    expect(store.lockWedding).toHaveBeenCalledWith({ weddingId: 'w1' });
+    expect(store.remove).not.toHaveBeenCalled();
+    expect(log.record).not.toHaveBeenCalled();
   });
 
   it('vínculo que não está entre os ativos do casamento: MEMBERSHIP_NOT_FOUND', async () => {

@@ -22,6 +22,7 @@ import {
   ActionNotAllowedErrorBody,
   CannotRemoveOwnerErrorBody,
   LastOwnerErrorBody,
+  WeddingHasNoOwnerErrorBody,
   MembershipNotFoundErrorBody,
   WeddingNotFoundErrorBody,
 } from './access-error.dto';
@@ -63,6 +64,7 @@ export class WeddingMembersController {
     MembershipNotFoundErrorBody,
     CannotRemoveOwnerErrorBody,
     LastOwnerErrorBody,
+    WeddingHasNoOwnerErrorBody,
   )
   async remove(
     @CurrentSession() session: AuthenticatedSession,

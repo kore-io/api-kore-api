@@ -9,11 +9,12 @@ import { TenantTransaction } from '../../src/shared/database/tenant-transaction'
 import { uuidV7 } from '../../src/shared/ids/uuid-v7';
 import { createTestApp } from '../support/create-test-app';
 import { seedInvitation } from '../support/invitations';
-import { seedWedding } from '../support/weddings';
+import { seedReferrer } from '../support/referrers';
+import { seedReferrerWedding, seedWedding } from '../support/weddings';
 
 /**
  * As barreiras de accept_access_invitation chegam à API pelo SQLSTATE próprio
- * (KA001 a KA004), sem depender do texto da mensagem: o adapter, na transação
+ * (KA001 a KA005), sem depender do texto da mensagem: o adapter, na transação
  * da requisição, devolve a recusa certa mesmo quando o domínio não a pegou antes.
  */
 describe('Barreiras do aceite pelo SQLSTATE (banco real, adapter do aceite)', () => {
@@ -120,5 +121,22 @@ describe('Barreiras do aceite pelo SQLSTATE (banco real, adapter do aceite)', ()
     });
 
     expect(await acceptAs({ userId: await user(), token, slot: null })).toBe('planner_already');
+  });
+
+  it('KA005 (decisão 224) - o indicador do casamento aceitando o link do casal: self_referral', async () => {
+    const { userId } = await seedReferrer({ db, kind: 'planner', name: 'Juliana Prado' });
+    const { weddingId } = await seedReferrerWedding({ db, referrerUserId: userId });
+    // Sem o vínculo, como se tivesse saído por outro caminho: a barreira é do banco.
+    await db.membership.updateMany({ where: { weddingId }, data: { removedAt: new Date() } });
+    const { token } = await seedInvitation({
+      db,
+      weddingId,
+      kind: 'couple',
+      email: null,
+      invitedByUserId: userId,
+    });
+
+    expect(await acceptAs({ userId, token, slot: 1 })).toBe('self_referral');
+    expect(await db.membership.count({ where: { weddingId, role: 'owner' } })).toBe(0);
   });
 });

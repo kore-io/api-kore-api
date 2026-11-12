@@ -13,10 +13,16 @@ import {
   InvitationInvalidError,
   OwnersFullError,
   PlannerAlreadyError,
+  SelfReferralError,
   SellerCannotBePlannerError,
   SessionExpiredError,
 } from '../domain/access.errors';
-import { emailDiffers, invalidReason, partnerChoice } from '../domain/invitation-acceptance';
+import {
+  emailDiffers,
+  invalidReason,
+  isSelfReferral,
+  partnerChoice,
+} from '../domain/invitation-acceptance';
 import type { MembershipRole } from '../domain/wedding-authorization';
 import { cleanText, type PartnerTitle } from '../domain/wedding-signup';
 import {
@@ -96,6 +102,8 @@ export class AcceptAccessInvitation {
     if (mismatch && !acceptance.confirmOtherAccount) throw new EmailMismatchError();
 
     const { weddingId, wedding } = invitation;
+    // Decisão 224(2): a regra vem antes do ALREADY_MEMBER, para não depender do vínculo.
+    if (isSelfReferral({ invitation, userId })) throw new SelfReferralError();
     // Decisão 172(3) revista: quem já tem vínculo neste casamento, dono ou não.
     if (await this.store.activeRole({ userId, weddingId })) throw new AlreadyMemberError();
 
@@ -132,6 +140,7 @@ export class AcceptAccessInvitation {
     if (result === 'not_pending') throw new InvitationInvalidError({ reason: 'used' });
     if (result === 'owners_full' || result === 'partner_taken') throw new OwnersFullError();
     if (result === 'planner_already') throw new PlannerAlreadyError();
+    if (result === 'self_referral') throw new SelfReferralError();
 
     // Decisão 178: quem vira dono passa ao perfil de casal nesta sessão, como no cadastro (171).
     if (invitation.role === 'owner')

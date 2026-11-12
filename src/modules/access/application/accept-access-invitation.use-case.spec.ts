@@ -4,6 +4,7 @@ import {
   AlreadyOwnerError,
   EmailMismatchError,
   InvitationInvalidError,
+  SelfReferralError,
   SellerCannotBePlannerError,
 } from '../domain/access.errors';
 import type { InvitationSnapshot } from '../domain/invitation-acceptance';
@@ -256,5 +257,40 @@ describe('AcceptAccessInvitation (POST /v1/access-invitations/{token}/accept)', 
     ).rejects.toThrow(SellerCannotBePlannerError);
     expect(profiles.createMinimal).not.toHaveBeenCalled();
     expect(store.accept).not.toHaveBeenCalled();
+  });
+
+  it('decisão 224 (2) - o indicador do casamento não aceita o link do casal: SELF_REFERRAL antes do ALREADY_MEMBER', async () => {
+    const invitation: InvitationSnapshot = {
+      ...coupleLink,
+      referrer: {
+        referrerId: 'r-lucas',
+        userId: 'u-lucas',
+        referralCode: 'lucas',
+        kind: 'seller',
+        status: 'active',
+        accountStatus: 'active',
+        displayName: 'Lucas',
+        referralDiscountEnabled: true,
+      },
+    };
+    const { useCase, store } = setup({
+      invitation,
+      user: { id: 'u-lucas', name: 'Lucas', email: 'l@x.com', platformRole: 'none' },
+    });
+    store.activeRole.mockResolvedValue('collaborator');
+
+    await expect(
+      useCase.execute({ token: 't', userId: 'u-lucas', sessionId: 's1', acceptance, now }),
+    ).rejects.toThrow(SelfReferralError);
+    expect(store.accept).not.toHaveBeenCalled();
+  });
+
+  it('decisão 224 (2) - a barreira da função do banco (KA005) também vira SELF_REFERRAL', async () => {
+    const { useCase, store } = setup();
+    store.accept.mockResolvedValue('self_referral');
+
+    await expect(
+      useCase.execute({ token: 't', userId: 'u-f', sessionId: 's1', acceptance, now }),
+    ).rejects.toThrow(SelfReferralError);
   });
 });

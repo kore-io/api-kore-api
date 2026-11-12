@@ -32,12 +32,13 @@ function toSnapshot(raw: Json): InvitationSnapshot {
   };
 }
 
-/** As barreiras da função accept_access_invitation, pelo SQLSTATE (migration invitation_barrier_codes). */
+/** As barreiras da função accept_access_invitation, pelo SQLSTATE (migrations invitation_barrier_codes e self_referral). */
 const REFUSALS: Record<string, AcceptRefusal> = {
   KA001: 'not_pending',
   KA002: 'owners_full',
   KA003: 'partner_taken',
   KA004: 'planner_already',
+  KA005: 'self_referral',
 };
 
 /**

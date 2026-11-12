@@ -11,6 +11,7 @@ import { GetAccessInvitation } from '../application/get-access-invitation.use-ca
 import type { AuthenticatedSession } from '../domain/authenticated-session';
 import {
   AlreadyMemberErrorBody,
+  SelfReferralErrorBody,
   AlreadyOwnerErrorBody,
   EmailMismatchErrorBody,
   InvitationInvalidErrorBody,
@@ -69,6 +70,7 @@ export class InvitationAcceptanceController {
     OwnersFullErrorBody,
     PlannerAlreadyErrorBody,
     SellerCannotBePlannerErrorBody,
+    SelfReferralErrorBody,
     InvitationInvalidErrorBody,
   )
   async accept(

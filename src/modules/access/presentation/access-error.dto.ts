@@ -185,6 +185,20 @@ export class CannotRemoveOwnerErrorBody {
   @ApiProperty() message: string;
 }
 
+export class WeddingHasNoOwnerErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['WEDDING_HAS_NO_OWNER'] }) error: 'WEDDING_HAS_NO_OWNER';
+  @ApiProperty() message: string;
+}
+
+export class SelfReferralErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['SELF_REFERRAL'] }) error: 'SELF_REFERRAL';
+  @ApiProperty() message: string;
+}
+
 export class LastOwnerErrorBody {
   static readonly status = 409;
   @ApiProperty({ enum: [409] }) statusCode: 409;

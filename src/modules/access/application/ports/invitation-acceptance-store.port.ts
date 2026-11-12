@@ -1,7 +1,8 @@
 import type { InvitationSnapshot } from '../../domain/invitation-acceptance';
 import type { PartnerTitle } from '../../domain/wedding-signup';
 
-export type AcceptRefusal = 'not_pending' | 'owners_full' | 'partner_taken' | 'planner_already';
+export type AcceptRefusal =
+  'not_pending' | 'owners_full' | 'partner_taken' | 'planner_already' | 'self_referral';
 
 /**
  * Aceite e recusa pelo token (decisão 172): a pessoa ainda não tem vínculo, então
