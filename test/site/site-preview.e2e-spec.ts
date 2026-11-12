@@ -214,7 +214,11 @@ describe('Pré-visualização do site (banco real)', () => {
     expect(body).toMatchObject({
       slug: wedding.slug,
       names: 'Ana & Marcos',
-      viewer: { kind: 'preview', party: null, preview: { as: 'visitor' } },
+      viewer: {
+        kind: 'preview',
+        party: null,
+        preview: { as: 'visitor', published: false, audience: 'couple' },
+      },
       contact: null,
     });
     expect(body.sections).toContainEqual({
@@ -239,13 +243,41 @@ describe('Pré-visualização do site (banco real)', () => {
     ).expect(200);
 
     expect(body).toMatchObject({
-      viewer: { kind: 'preview', party: { name: 'Família Duarte' }, preview: { as: 'party' } },
+      viewer: {
+        kind: 'preview',
+        party: { name: 'Família Duarte' },
+        preview: { as: 'party', published: false, audience: 'couple' },
+      },
       contact: { whatsapp: '+5519998764521', email: null },
     });
     expect(JSON.stringify(body)).toContain(ADDRESS);
     expect(
       (await db.party.findUniqueOrThrow({ where: { id: wedding.duarte.id } })).firstViewedAt,
     ).toBeNull();
+  });
+
+  it('RN06 - a barra sabe se o site já foi publicado e fala com quem gerou: casal ou cerimonialista', async () => {
+    const wedding = await draftWedding();
+    const fromJuliana = await openPreview({ cookie: wedding.juliana.cookie, ...wedding });
+
+    const draft = await site(wedding.slug, fromJuliana).expect(200);
+    expect(draft.body.viewer.preview).toEqual({
+      as: 'visitor',
+      published: false,
+      audience: 'planner',
+    });
+
+    await db.wedding.update({
+      where: { id: wedding.weddingId },
+      data: { status: 'published', publishedAt: new Date() },
+    });
+    const fromAna = await openPreview({ cookie: wedding.ana.cookie, ...wedding });
+    const published = await site(wedding.slug, fromAna).expect(200);
+    expect(published.body.viewer.preview).toEqual({
+      as: 'visitor',
+      published: true,
+      audience: 'couple',
+    });
   });
 
   it('RN06 e RN08 - a barra troca o modo e regrava o cookie com o mesmo vencimento', async () => {

@@ -58,6 +58,20 @@ export class WeddingAuthorization {
    * Exige a ação: sem vínculo, WeddingNotFoundError (404, RN01); com vínculo e
    * sem permissão, WeddingActionForbiddenError (403). Devolve o papel.
    */
+  /** O papel da pessoa quando ela pode a ação; senão, nulo (sem lançar). */
+  async allowedRole({
+    userId,
+    weddingId,
+    action,
+  }: {
+    userId: string;
+    weddingId: string;
+    action: WeddingAction;
+  }): Promise<MembershipRole | null> {
+    const role = await this.memberships.activeRole({ userId, weddingId });
+    return role !== null && roleAllows({ role, action }) ? role : null;
+  }
+
   async require({
     userId,
     weddingId,
