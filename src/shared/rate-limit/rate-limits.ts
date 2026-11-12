@@ -51,3 +51,11 @@ export const PARTY_LINK_FAILURES_PER_MINUTE = 20;
  */
 export const SIMULATOR_EVENT_THROTTLER = 'simulator_event';
 export const SIMULATOR_EVENTS_PER_MINUTE = 30;
+
+/**
+ * Gravação do RSVP (RSVP RN10; revisão técnica R2-8): 20 por minuto pela chave
+ * IP + grupo, para não barrar convidados de verdade atrás do mesmo IP de
+ * operadora (CGNAT). O teto do dia por grupo é contado no banco.
+ */
+export const RSVP_WRITE_THROTTLER = 'rsvp_write';
+export const RSVP_WRITES_PER_MINUTE = 20;

@@ -76,6 +76,26 @@ describe('Status de envio (Grupos RN10; decisão 199(1))', () => {
     ).toBe('not_sent');
   });
 
+  it('RSVP RN07 e decisão 217(2) - a resposta leva o grupo não enviado a respondido', () => {
+    expect(
+      deliveryStatusAfter({
+        current: 'not_sent',
+        firstViewedAt: null,
+        members: [confirmed, emptySlot],
+        afterResponse: true,
+      }),
+    ).toBe('responded');
+    // Com convidado com nome pendente, continua não enviado.
+    expect(
+      deliveryStatusAfter({
+        current: 'not_sent',
+        firstViewedAt: null,
+        members: [confirmed, pending],
+        afterResponse: true,
+      }),
+    ).toBe('not_sent');
+  });
+
   it('RN16 - a vaga pendente conta como pendente do grupo (decisão 199(1))', () => {
     expect(hasPending({ members: [confirmed, emptySlot] })).toBe(true);
     expect(hasPending({ members: [confirmed] })).toBe(false);

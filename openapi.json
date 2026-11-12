@@ -5153,6 +5153,201 @@
           "site"
         ]
       }
+    },
+    "/v1/sites/{slug}/rsvp": {
+      "get": {
+        "operationId": "RsvpController_get_v1",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RsvpResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartySessionInvalidErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/SiteNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteDraftErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "O formulário com as respostas atuais (RN03 e RN08).",
+        "tags": [
+          "sites"
+        ]
+      },
+      "put": {
+        "operationId": "RsvpController_put_v1",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutRsvpBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RsvpResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartySessionInvalidErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PreviewReadOnlyErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/SiteNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteDraftErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RsvpChangedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RsvpClosedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RateLimitedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RsvpRateLimitedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Grava as respostas do grupo (RN04 a RN13).",
+        "tags": [
+          "sites"
+        ]
+      }
     }
   },
   "info": {
@@ -10530,6 +10725,346 @@
           "publishedAt",
           "endDate",
           "publicationSource"
+        ]
+      },
+      "PartySessionInvalidErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              401
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PARTY_SESSION_INVALID"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "RsvpPartyResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "version"
+        ]
+      },
+      "RsvpGuestResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nulo na vaga vazia."
+          },
+          "rsvpStatus": {
+            "enum": [
+              "pending",
+              "confirmed",
+              "declined"
+            ],
+            "type": "string"
+          },
+          "dietaryRestriction": {
+            "type": "string",
+            "nullable": true
+          },
+          "songSuggestion": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "type": "string"
+          },
+          "isPlusOne": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "rsvpStatus",
+          "dietaryRestriction",
+          "songSuggestion",
+          "id",
+          "isPlusOne"
+        ]
+      },
+      "RsvpSongQuestionResponse": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "text": {
+            "type": "string",
+            "description": "O texto do casal, ou o padrão \"Que música não pode faltar na festa?\"."
+          }
+        },
+        "required": [
+          "enabled",
+          "text"
+        ]
+      },
+      "RsvpContactResponse": {
+        "type": "object",
+        "properties": {
+          "whatsapp": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "whatsapp",
+          "email"
+        ]
+      },
+      "RsvpResponse": {
+        "type": "object",
+        "properties": {
+          "party": {
+            "$ref": "#/components/schemas/RsvpPartyResponse"
+          },
+          "guests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RsvpGuestResponse"
+            }
+          },
+          "rsvpDeadline": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-15"
+          },
+          "state": {
+            "enum": [
+              "open",
+              "deadline_passed",
+              "post_event",
+              "preview"
+            ],
+            "type": "string"
+          },
+          "songQuestion": {
+            "$ref": "#/components/schemas/RsvpSongQuestionResponse"
+          },
+          "contact": {
+            "$ref": "#/components/schemas/RsvpContactResponse"
+          },
+          "plusOneSlots": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "party",
+          "guests",
+          "rsvpDeadline",
+          "state",
+          "songQuestion",
+          "contact",
+          "plusOneSlots"
+        ]
+      },
+      "PreviewReadOnlyErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              403
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PREVIEW_READ_ONLY"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "RsvpChangedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "RSVP_CHANGED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "current": {
+            "$ref": "#/components/schemas/RsvpResponse"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "current"
+        ]
+      },
+      "RsvpClosedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "RSVP_CLOSED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "reason": {
+            "enum": [
+              "deadline_passed",
+              "post_event"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "reason"
+        ]
+      },
+      "RsvpRateLimitedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              429
+            ]
+          },
+          "error": {
+            "enum": [
+              "RSVP_RATE_LIMITED",
+              "RSVP_LIMIT"
+            ],
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "RsvpAnswerBody": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "description": "`pending` só na vaga.",
+            "enum": [
+              "pending",
+              "confirmed",
+              "declined"
+            ],
+            "type": "string"
+          },
+          "dietaryRestriction": {
+            "type": "string",
+            "nullable": true
+          },
+          "songSuggestion": {
+            "type": "string",
+            "nullable": true,
+            "description": "Ignorada com Não vou e com a pergunta desligada (Música RN04)."
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Só na vaga: o nome do acompanhante com Vou levar (RN05)."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "status",
+          "id"
+        ]
+      },
+      "PutRsvpBody": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "description": "A `version` do grupo lida no GET (decisão 216, D11).",
+            "minimum": 1
+          },
+          "signedByGuestId": {
+            "type": "string",
+            "description": "Quem está respondendo: um convidado com nome do grupo (RN04).",
+            "format": "uuid"
+          },
+          "guests": {
+            "description": "Todos os convidados com nome do grupo; a vaga pode faltar.",
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RsvpAnswerBody"
+            }
+          }
+        },
+        "required": [
+          "version",
+          "signedByGuestId",
+          "guests"
         ]
       },
       "SpreadsheetTemplateHeaders": {

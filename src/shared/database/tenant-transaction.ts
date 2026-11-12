@@ -17,6 +17,8 @@ export interface PartyTransactionContext {
   publishedAt: string | null;
   songQuestionEnabled: boolean;
   songQuestionText: string | null;
+  contactWhatsapp: string | null;
+  contactEmail: string | null;
 }
 
 /**

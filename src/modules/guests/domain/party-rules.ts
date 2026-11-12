@@ -36,7 +36,11 @@ export function contactAfter({
 }
 
 /** O grupo tem algum convidado ou vaga pendente (partiesPending, RN16). */
-export function hasPending({ members }: { members: readonly GroupMember[] }): boolean {
+export function hasPending({
+  members,
+}: {
+  members: readonly Pick<GroupMember, 'rsvpStatus'>[];
+}): boolean {
   return members.some((member) => member.rsvpStatus === 'pending');
 }
 
@@ -44,18 +48,22 @@ export function hasPending({ members }: { members: readonly GroupMember[] }): bo
  * Status de envio depois de uma mudança no grupo (RN10; decisão 199(1)): conta
  * só os convidados com nome; a vaga não segura o "respondido". Sem pendente,
  * um grupo já enviado fica respondido; com pendente, um respondido volta a
- * visualizado ou enviado. Um grupo não enviado não muda.
+ * visualizado ou enviado. Um grupo não enviado não muda, exceto numa resposta
+ * (`afterResponse`): a resposta leva a `responded` a partir de qualquer
+ * status, inclusive `not_sent` (decisão 217(2), que revê a 199(1) só aí).
  */
 export function deliveryStatusAfter({
   current,
   firstViewedAt,
   members,
+  afterResponse = false,
 }: {
   current: DeliveryStatus;
   firstViewedAt: Date | null;
-  members: readonly GroupMember[];
+  members: readonly Pick<GroupMember, 'name' | 'rsvpStatus'>[];
+  afterResponse?: boolean;
 }): DeliveryStatus {
-  if (current === 'not_sent') return current;
+  if (current === 'not_sent' && !afterResponse) return current;
   const namedPending = members.some(
     (member) => member.name !== null && member.rsvpStatus === 'pending',
   );

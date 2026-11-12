@@ -88,5 +88,7 @@ import { SiteImagesController } from './presentation/site-images.controller';
     { provide: PUBLICATION_STORE, useClass: PrismaPublicationStore },
     PublishWedding,
   ],
+  // O RSVP (F4) usa o endereço, o cookie do grupo e a prévia do site.
+  exports: [PUBLIC_SITE_READER, PARTY_COOKIES, PreviewSessions],
 })
 export class SiteModule {}
