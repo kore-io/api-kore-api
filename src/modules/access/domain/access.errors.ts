@@ -213,6 +213,11 @@ export class OwnerlessWeddingsLimitError extends Error {
   override name = 'OwnerlessWeddingsLimitError';
 }
 
+/** Meus casamentos RN11: o casal já aceitou; o casamento não pode mais ser excluído. */
+export class WeddingHasOwnerError extends Error {
+  override name = 'WeddingHasOwnerError';
+}
+
 /** Decisão 224(1): o colaborador não sai de um casamento sem dono ativo. */
 export class WeddingHasNoOwnerError extends Error {
   override name = 'WeddingHasNoOwnerError';

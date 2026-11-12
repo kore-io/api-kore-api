@@ -1193,6 +1193,87 @@
         ]
       }
     },
+    "/v1/weddings/{weddingId}": {
+      "delete": {
+        "operationId": "WeddingsController_remove_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingHasOwnerErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Excluir este casamento (Meus casamentos RN11): só a cerimonialista que o\ncriou, em rascunho ou aguardando o casal, sem dono ativo. Abre as próprias\ntransações: a autorização sob a RLS e a exclusão pelo backoffice.",
+        "tags": [
+          "weddings"
+        ]
+      }
+    },
     "/v1/weddings/slug-availability": {
       "get": {
         "operationId": "WeddingsController_slugAvailability_v1",
@@ -8985,6 +9066,81 @@
           "discountPercent"
         ]
       },
+      "WeddingNotFoundErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "WEDDING_NOT_FOUND"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "ActionNotAllowedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              403
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "ACTION_NOT_ALLOWED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "WeddingHasOwnerErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "WEDDING_HAS_OWNER"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
       "SlugAvailabilityResponse": {
         "type": "object",
         "properties": {
@@ -9216,56 +9372,6 @@
           "weddingId",
           "slug",
           "timezone"
-        ]
-      },
-      "ActionNotAllowedErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              403
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "ACTION_NOT_ALLOWED"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
-        ]
-      },
-      "WeddingNotFoundErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              404
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "WEDDING_NOT_FOUND"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
         ]
       },
       "OwnersFullErrorBody": {

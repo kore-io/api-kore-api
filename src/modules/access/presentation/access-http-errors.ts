@@ -28,6 +28,7 @@ import {
   SelfReferralError,
   SelfInvitationError,
   OwnerlessWeddingsLimitError,
+  WeddingHasOwnerError,
   MembershipNotFoundError,
   SellerCannotBePlannerError,
   InvitationNotDeclinableError,
@@ -288,6 +289,13 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 409,
       error: 'WEDDING_HAS_NO_OWNER',
       message: 'The wedding has no owner yet; delete it instead of leaving.',
+    });
+  }
+  if (error instanceof WeddingHasOwnerError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'WEDDING_HAS_OWNER',
+      message: 'The couple has already accepted; the wedding cannot be deleted.',
     });
   }
   if (error instanceof OwnerlessWeddingsLimitError) {
