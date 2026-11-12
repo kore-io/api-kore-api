@@ -10,7 +10,7 @@ import {
 } from '../../access/application/ports/planner-profiles.port';
 import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
 import { coupleLinkCipherContext } from '../../access/domain/access-invitation';
-import { ProfileNotOwnedError, WeddingNotFoundError } from '../../access/domain/access.errors';
+import { WeddingNotFoundError } from '../../access/domain/access.errors';
 import { INVITATION_PATH } from '../../access/infrastructure/outbox-invitation-mailer';
 import {
   compareWeddings,
@@ -28,6 +28,7 @@ import {
   type PendingCoupleInvitation,
   type PlannerWeddingsReader,
 } from './ports/planner-weddings-reader.port';
+import { requirePlannerProfile } from './planner-gate';
 
 export interface MyWeddingItem {
   weddingId: string;
@@ -84,17 +85,6 @@ function itemOf({ row, userId }: { row: CollaborationRow; userId: string }): MyW
     origin: originOf({ row, userId }),
     createdByMe: row.createdByUserId === userId,
   };
-}
-
-/** As rotas da cerimonialista exigem ter o perfil (decisão 224(3)), não estar nele. */
-async function requirePlannerProfile({
-  profiles,
-  userId,
-}: {
-  profiles: PlannerProfiles;
-  userId: string;
-}): Promise<void> {
-  if (!(await profiles.findOwn({ userId }))) throw new ProfileNotOwnedError();
 }
 
 /**
