@@ -90,6 +90,9 @@ export class UpdateSiteBasics {
     const issues: SiteFieldIssue[] = [];
     const changes: SiteBasicsChanges = {};
     if (changed.eventDate) changes.eventDate = toDate(input.eventDate ?? null);
+    // Decisão 219 (Publicação RN11): publicado, a data não fica em branco.
+    if (changed.eventDate && changes.eventDate === null && site.endDate)
+      issues.push({ path: 'eventDate', code: 'EVENT_DATE_REQUIRED_WHEN_PUBLISHED', params: {} });
     if (input.city !== undefined) changes.city = input.city;
     if (changed.state && input.state) {
       changes.state = input.state;
@@ -130,8 +133,8 @@ export class UpdateSiteBasics {
     if (issues.length > 0) throw new SiteFieldsInvalidError({ issues });
 
     // Publicação RN11 (revisão técnica R1-5): num casamento publicado, a data
-    // nova não pode deixar a data de saída do ar fora dos limites da RN04.
-    // Sem data, não há limite, e a gravação também é recusada.
+    // nova não pode deixar a data de saída do ar fora dos limites da RN04. A
+    // data em branco já foi recusada acima (decisão 219).
     if (changed.eventDate && site.endDate) {
       const range = endDateRange({
         eventDate: dayOf(changes.eventDate ?? null),
