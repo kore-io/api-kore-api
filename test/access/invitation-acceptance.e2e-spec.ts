@@ -6,7 +6,9 @@ import {
   PLANNER_PROFILES,
   type PlannerProfiles,
 } from '../../src/modules/access/application/ports/planner-profiles.port';
+import { PlannerProfileExistsError } from '../../src/modules/access/domain/access.errors';
 import { BackofficePrismaService } from '../../src/shared/database/backoffice-prisma.service';
+import { TenantTransaction } from '../../src/shared/database/tenant-transaction';
 import { createTestApp } from '../support/create-test-app';
 import { createTestWorker } from '../support/create-test-worker';
 import { seedInvitation } from '../support/invitations';
@@ -506,12 +508,17 @@ describe('Convites de acesso: ler, aceitar e recusar (banco real; decisões 168 
         `${base}-57`,
         `${base}-58`,
       ]);
-      // Quem já tem perfil de indicador não entra num laço: o erro é claro.
+      // Quem já tem perfil de indicador não entra num laço: o erro é o do
+      // PLANNER_PROFILE_EXISTS (Cadastro e perfil RN03), na transação da pessoa.
       await expect(
-        app
-          .get<PlannerProfiles>(PLANNER_PROFILES)
-          .createMinimal({ userId: first.userId, name, now: new Date() }),
-      ).rejects.toThrow('A pessoa já tem perfil de indicador.');
+        app.get(TenantTransaction).run({
+          userId: first.userId,
+          work: () =>
+            app
+              .get<PlannerProfiles>(PLANNER_PROFILES)
+              .createMinimal({ userId: first.userId, name, now: new Date() }),
+        }),
+      ).rejects.toThrow(PlannerProfileExistsError);
     });
 
     it('RN10 - casamento que já tem indicador: a cerimonialista entra sem atribuição', async () => {

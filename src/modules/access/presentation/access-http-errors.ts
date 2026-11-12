@@ -38,6 +38,10 @@ import {
   AlreadyOwnerError,
   SlugUnavailableError,
   TermsVersionOutdatedError,
+  PlannerSignupDisabledError,
+  PlannerProfileExistsError,
+  PlannerNotFoundError,
+  PlannerProfileInvalidError,
   SessionExpiredError,
   UserBlockedError,
   WeddingActionForbiddenError,
@@ -146,6 +150,30 @@ export function toHttpError(error: unknown): unknown {
       message: 'You already own an active wedding.',
       weddingId: error.weddingId,
     });
+  }
+  if (error instanceof PlannerSignupDisabledError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'PLANNER_SIGNUP_DISABLED',
+      message: 'The planner signup is not open yet.',
+    });
+  }
+  if (error instanceof PlannerProfileExistsError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'PLANNER_PROFILE_EXISTS',
+      message: 'This account already has the planner profile.',
+    });
+  }
+  if (error instanceof PlannerNotFoundError) {
+    return new NotFoundException({
+      statusCode: 404,
+      error: 'PLANNER_NOT_FOUND',
+      message: 'This account has no planner profile.',
+    });
+  }
+  if (error instanceof PlannerProfileInvalidError) {
+    return validationError({ errors: error.issues });
   }
   if (error instanceof TermsVersionOutdatedError) {
     return new ConflictException({

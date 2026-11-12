@@ -1,0 +1,110 @@
+import { ApiProperty } from '@nestjs/swagger';
+import {
+  ArrayMaxSize,
+  IsArray,
+  IsOptional,
+  IsString,
+  Length,
+  MaxLength,
+  ValidateIf,
+} from 'class-validator';
+import type { PlannerProfileView } from '../application/planner-profile.use-cases';
+
+/**
+ * O DTO só confere a forma e põe um teto no tamanho do pedido; as regras dos
+ * Dados profissionais (REQUIRED, TOO_LONG, CREDIT_NAME_INVALID, PHONE_INVALID,
+ * INVALID, DUPLICATE, TOO_MANY) ficam no domínio (Cadastro e perfil RN04).
+ */
+const GUARD_LENGTH = 300;
+/** Acima do teto de 50 da regra, só para não aceitar uma lista sem fim. */
+const GUARD_CITIES = 200;
+
+class PlannerProfileFields {
+  /** Nome da assessoria: de 2 a 80, sem link, e-mail nem telefone (RN04). */
+  @ApiProperty({ required: false, example: 'Prado Assessoria' })
+  // Ausente não muda; null não é ausente: cai no IsString/IsArray (400), não no domínio.
+  @ValidateIf((_, value) => value !== undefined)
+  @IsString()
+  @MaxLength(GUARD_LENGTH)
+  creditName?: string;
+
+  /** Seu nome: só quando a conta não tem nome (RN04). */
+  @ApiProperty({ required: false, example: 'Juliana Prado' })
+  // Ausente não muda; null não é ausente: cai no IsString/IsArray (400), não no domínio.
+  @ValidateIf((_, value) => value !== undefined)
+  @IsString()
+  @MaxLength(GUARD_LENGTH)
+  name?: string;
+
+  /** DDD e número; guardado só com os dígitos. Nulo ou vazio apaga. */
+  @ApiProperty({ type: String, required: false, nullable: true, example: '(11) 3333-4444' })
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  @MaxLength(GUARD_LENGTH)
+  phone?: string | null;
+
+  @ApiProperty({ type: String, required: false, nullable: true, example: '(11) 99999-8888' })
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  @MaxLength(GUARD_LENGTH)
+  whatsapp?: string | null;
+
+  /** "Cidade (UF)", pelo menos 1, até 50, sem repetir. */
+  @ApiProperty({ type: [String], required: false, example: ['Campinas (SP)', 'Valinhos (SP)'] })
+  // Ausente não muda; null não é ausente: cai no IsString/IsArray (400), não no domínio.
+  @ValidateIf((_, value) => value !== undefined)
+  @IsArray()
+  @ArrayMaxSize(GUARD_CITIES)
+  @IsString({ each: true })
+  @MaxLength(GUARD_LENGTH, { each: true })
+  cities?: string[];
+}
+
+/** POST /v1/me/planner (RN03 a RN05). */
+export class CreatePlannerProfileBody extends PlannerProfileFields {
+  /** A versão dos Termos que o app mostrou (RN04). */
+  @ApiProperty({ example: '2026-09' }) @IsString() @Length(1, 32) termsVersion: string;
+}
+
+/** PATCH /v1/me/planner (RN09 e RN10): todos opcionais. */
+export class UpdatePlannerProfileBody extends PlannerProfileFields {
+  /** Obrigatório quando os Termos vigentes ainda não foram aceitos (RN10). */
+  @ApiProperty({ required: false, example: '2026-09' })
+  @IsOptional()
+  @IsString()
+  @Length(1, 32)
+  termsVersion?: string;
+}
+
+export class CreatePlannerProfileResponse {
+  @ApiProperty({ example: 'juliana-prado' }) referralCode: string;
+  @ApiProperty({ example: '/cerimonialista' }) home: string;
+}
+
+export class PlannerProfileResponse {
+  email: string;
+  @ApiProperty({ type: String, nullable: true }) name: string | null;
+  @ApiProperty({ example: 'Prado Assessoria' }) creditName: string;
+  @ApiProperty({ type: String, nullable: true, example: '1133334444' }) phone: string | null;
+  @ApiProperty({ type: String, nullable: true, example: '11999998888' }) whatsapp: string | null;
+  @ApiProperty({ type: [String], example: ['Campinas (SP)'] }) cities: string[];
+  /** Com cidade, os Termos vigentes e o nome que passa no predicado (RN10). */
+  profileComplete: boolean;
+  termsAccepted: boolean;
+  /** O Admin ocultou a assinatura (Assinatura RN06); o motivo não sai da API. */
+  creditHidden: boolean;
+
+  static from({ view }: { view: PlannerProfileView }): PlannerProfileResponse {
+    return { ...view };
+  }
+}
+
+/** GET /v1/me/referrer (Link de indicação RN01 e RN02). */
+export class MyReferrerResponse {
+  @ApiProperty({ example: 'juliana-prado' }) referralCode: string;
+  @ApiProperty({ example: 'https://kore.com.br/i/juliana-prado' }) link: string;
+  /** Nulo com o desconto de indicação desligado. Sem o percentual da comissão (D4). */
+  @ApiProperty({ type: Number, nullable: true, example: 10 }) discountPercent: number | null;
+}

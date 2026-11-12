@@ -1,3 +1,4 @@
+import { RESERVED_REFERRAL_CODES } from './planner-profile';
 import type { AccessInvitationKind } from './access-invitation';
 import type { ReferrerRecord } from './referral';
 import type { MembershipRole } from './wedding-authorization';
@@ -166,7 +167,8 @@ export function nextReferralCode({
   base: string;
   taken: readonly string[];
 }): string {
-  if (!taken.includes(base)) return base;
+  // Os códigos reservados valem como repetidos (Cadastro e perfil RN05).
+  if (!taken.includes(base) && !RESERVED_REFERRAL_CODES.has(base)) return base;
   // A base só tem a-z, 0-9 e hífen: nada a escapar na expressão.
   const suffix = new RegExp(`^${base}-(\\d+)$`);
   const highest = taken.reduce((max, code) => {

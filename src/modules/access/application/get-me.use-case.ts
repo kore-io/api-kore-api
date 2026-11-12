@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { AppConfigService } from '../../../shared/config/app-config.service';
 import { SessionExpiredError } from '../domain/access.errors';
 import type { AuthenticatedSession, ProfileKind } from '../domain/authenticated-session';
 import {
@@ -18,6 +19,8 @@ export interface Me extends AccountOverview {
   /** O último perfil escolhido neste aparelho, se ainda for da conta (RN14). */
   lastProfileOnDevice: ProfileKind | null;
   authenticatedAt: Date;
+  /** O cadastro próprio de cerimonialista está aberto (Cadastro e perfil RN02). */
+  plannerSignupEnabled: boolean;
 }
 
 /** Quem está conectado, os perfis e os vínculos (GET /v1/me; RN08, RN14). */
@@ -26,6 +29,7 @@ export class GetMe {
   constructor(
     @Inject(USER_REPOSITORY) private readonly users: UserRepository,
     @Inject(PROFILE_DIRECTORY) private readonly profiles: ProfileDirectory,
+    private readonly config: AppConfigService,
   ) {}
 
   async execute({
@@ -53,6 +57,7 @@ export class GetMe {
           ? lastProfileOnDevice
           : null,
       authenticatedAt: session.authenticatedAt,
+      plannerSignupEnabled: this.config.get({ key: 'PLANNER_SIGNUP_ENABLED' }),
     };
   }
 }

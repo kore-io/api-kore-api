@@ -217,3 +217,33 @@ export class SelfReferralError extends Error {
 export class MembershipNotFoundError extends Error {
   override name = 'MembershipNotFoundError';
 }
+
+/** Cadastro e perfil RN02: o cadastro próprio de cerimonialista está desligado. */
+export class PlannerSignupDisabledError extends Error {
+  override name = 'PlannerSignupDisabledError';
+}
+
+/** Cadastro e perfil RN03: a conta já tem o perfil de cerimonialista. */
+export class PlannerProfileExistsError extends Error {
+  override name = 'PlannerProfileExistsError';
+}
+
+/** GET e PATCH /v1/me/planner sem o perfil de cerimonialista. */
+export class PlannerNotFoundError extends Error {
+  override name = 'PlannerNotFoundError';
+}
+
+/** Cadastro e perfil RN04: os Dados profissionais não passam (formato da decisão 190). */
+export class PlannerProfileInvalidError extends Error {
+  override name = 'PlannerProfileInvalidError';
+  readonly issues: readonly { path: string; code: string; params: Record<string, unknown> }[];
+
+  constructor({
+    issues,
+  }: {
+    issues: readonly { path: string; code: string; params: Record<string, unknown> }[];
+  }) {
+    super('Dados profissionais inválidos.');
+    this.issues = issues;
+  }
+}
