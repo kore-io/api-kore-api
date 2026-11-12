@@ -1,5 +1,5 @@
 import type { PrismaService } from './prisma.service';
-import { TenantTransaction } from './tenant-transaction';
+import { PartyTransactionRevokedError, TenantTransaction } from './tenant-transaction';
 
 function tenantWith({ commits }: { commits: boolean }) {
   const tx = { $queryRaw: jest.fn().mockResolvedValue([]) };
@@ -70,5 +70,63 @@ describe('TenantTransaction (decisões 153 e 170)', () => {
     expect(() => tenantWith({ commits: true }).schedule(() => Promise.resolve())).toThrow(
       /fora da transação/,
     );
+  });
+
+  describe('transação do grupo (RSVP RN13; decisão 217(a))', () => {
+    function partyTenant({ context }: { context: unknown }) {
+      const calls: unknown[][] = [];
+      const tx = {
+        $queryRaw: jest.fn((strings: TemplateStringsArray, ...values: unknown[]) => {
+          calls.push([strings.join('?'), ...values]);
+          return Promise.resolve(
+            strings.join('').includes('party_transaction_context') ? [{ context }] : [],
+          );
+        }),
+        $executeRaw: jest.fn((strings: TemplateStringsArray) => {
+          calls.push([strings.join('?')]);
+          return Promise.resolve(0);
+        }),
+      };
+      const prisma = {
+        $transaction: jest.fn((work: (client: typeof tx) => Promise<unknown>) => work(tx)),
+      } as unknown as PrismaService;
+      return { tenant: new TenantTransaction(prisma), calls };
+    }
+
+    it('define o casamento e o grupo, sem pessoa, entra no papel do grupo e reconfere o grupo antes do trabalho', async () => {
+      const context = { status: 'published' };
+      const { tenant, calls } = partyTenant({ context });
+      const task = jest.fn().mockResolvedValue(undefined);
+
+      const result = await tenant.runAsParty({
+        weddingId: 'w1',
+        partyId: 'p1',
+        linkVersion: 2,
+        work: (received) => {
+          tenant.schedule(task);
+          return Promise.resolve(received);
+        },
+      });
+
+      expect(result).toBe(context);
+      expect(calls.map((call) => call.slice(1))).toEqual([
+        ['app.wedding_id', 'w1'],
+        ['app.party_id', 'p1'],
+        [],
+        [2],
+      ]);
+      expect(calls[2][0]).toBe('SET LOCAL ROLE kore_party');
+      expect(task).toHaveBeenCalled();
+    });
+
+    it('RN11 - grupo que não vale mais: nada roda', async () => {
+      const { tenant } = partyTenant({ context: null });
+      const work = jest.fn();
+
+      await expect(
+        tenant.runAsParty({ weddingId: 'w1', partyId: 'p1', linkVersion: 1, work }),
+      ).rejects.toBeInstanceOf(PartyTransactionRevokedError);
+      expect(work).not.toHaveBeenCalled();
+    });
   });
 });
