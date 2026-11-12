@@ -125,3 +125,16 @@ export function isPendingAt({
 export function firstName({ name }: { name: string }): string {
   return name.trim().split(/\s+/)[0] ?? name;
 }
+
+/**
+ * Onde mora o token cifrado do link do casal (Meus casamentos RN09; N1(b),
+ * decisão 224): tabela, coluna e casamento entram no dado autenticado, então o
+ * valor copiado para outro convite ou casamento não decifra.
+ */
+export function coupleLinkCipherContext({ weddingId }: { weddingId: string }): {
+  table: string;
+  column: string;
+  weddingId: string;
+} {
+  return { table: 'access_invitations', column: 'token_encrypted', weddingId };
+}

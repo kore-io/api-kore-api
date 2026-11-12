@@ -78,6 +78,27 @@ export class AlreadyOwnerErrorBody {
   @ApiProperty() weddingId: string;
 }
 
+export class PlannerSignupDisabledErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['PLANNER_SIGNUP_DISABLED'] }) error: 'PLANNER_SIGNUP_DISABLED';
+  @ApiProperty() message: string;
+}
+
+export class PlannerProfileExistsErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['PLANNER_PROFILE_EXISTS'] }) error: 'PLANNER_PROFILE_EXISTS';
+  @ApiProperty() message: string;
+}
+
+export class PlannerNotFoundErrorBody {
+  static readonly status = 404;
+  @ApiProperty({ enum: [404] }) statusCode: 404;
+  @ApiProperty({ enum: ['PLANNER_NOT_FOUND'] }) error: 'PLANNER_NOT_FOUND';
+  @ApiProperty() message: string;
+}
+
 export class TermsVersionOutdatedErrorBody {
   static readonly status = 409;
   @ApiProperty({ enum: [409] }) statusCode: 409;
@@ -182,6 +203,41 @@ export class CannotRemoveOwnerErrorBody {
   static readonly status = 409;
   @ApiProperty({ enum: [409] }) statusCode: 409;
   @ApiProperty({ enum: ['CANNOT_REMOVE_OWNER'] }) error: 'CANNOT_REMOVE_OWNER';
+  @ApiProperty() message: string;
+}
+
+export class WeddingHasNoOwnerErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['WEDDING_HAS_NO_OWNER'] }) error: 'WEDDING_HAS_NO_OWNER';
+  @ApiProperty() message: string;
+}
+
+export class WeddingHasOwnerErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['WEDDING_HAS_OWNER'] }) error: 'WEDDING_HAS_OWNER';
+  @ApiProperty() message: string;
+}
+
+export class OwnerlessWeddingsLimitErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['OWNERLESS_WEDDINGS_LIMIT'] }) error: 'OWNERLESS_WEDDINGS_LIMIT';
+  @ApiProperty() message: string;
+}
+
+export class SelfInvitationErrorBody {
+  static readonly status = 422;
+  @ApiProperty({ enum: [422] }) statusCode: 422;
+  @ApiProperty({ enum: ['SELF_INVITATION'] }) error: 'SELF_INVITATION';
+  @ApiProperty() message: string;
+}
+
+export class SelfReferralErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['SELF_REFERRAL'] }) error: 'SELF_REFERRAL';
   @ApiProperty() message: string;
 }
 

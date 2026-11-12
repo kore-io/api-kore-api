@@ -46,6 +46,7 @@ describe('Site público do casal: visitante e prévia do link (banco real)', () 
     await db.siteImage.create({
       data: {
         id,
+        keyToken: id,
         weddingId,
         status: 'ready',
         storageKey: `site/${id}/display.jpg`,
@@ -157,6 +158,8 @@ describe('Site público do casal: visitante e prévia do link (banco real)', () 
       cover: { url: image(cover).url, width: 2560, height: 1707 },
       viewer: { kind: 'visitor', party: null, preview: null },
       contact: null,
+      // Sem cerimonialista colaboradora, sem assinatura (Assinatura RN02).
+      plannerCredit: null,
       sections: [
         { type: 'countdown' },
         {

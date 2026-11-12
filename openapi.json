@@ -170,6 +170,70 @@
         ]
       }
     },
+    "/v1/product-events/simulator": {
+      "post": {
+        "operationId": "SimulatorEventsController_record_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulatorEventBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulatorDisabledErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "product-events"
+        ]
+      }
+    },
     "/v1/auth/logout": {
       "post": {
         "operationId": "AuthController_logout_v1",
@@ -646,6 +710,448 @@
         ]
       }
     },
+    "/v1/me/weddings": {
+      "post": {
+        "operationId": "PlannerController_createPlannerWedding_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlannerWeddingBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatePlannerWeddingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/SlugUnavailableErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/OwnerlessWeddingsLimitErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContrastTooLowErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Novo casamento pela cerimonialista (Novo casamento RN01 a RN04): sem dono,\ncom ela colaboradora. Exige ter o perfil; não muda o perfil ativo.",
+        "tags": [
+          "me"
+        ]
+      },
+      "get": {
+        "operationId": "MyWeddingsController_list_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyWeddingsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "planner"
+        ]
+      }
+    },
+    "/v1/me/planner": {
+      "post": {
+        "operationId": "PlannerController_create_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlannerProfileBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatePlannerProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PlannerSignupDisabledErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PlannerProfileExistsErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SellerCannotBePlannerErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/TermsVersionOutdatedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Cria o perfil de cerimonialista na conta da sessão (RN02 a RN05).",
+        "tags": [
+          "me"
+        ]
+      },
+      "get": {
+        "operationId": "PlannerController_profile_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlannerProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlannerNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Meu perfil (RN09 e RN10).",
+        "tags": [
+          "me"
+        ]
+      },
+      "patch": {
+        "operationId": "PlannerController_update_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlannerProfileBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlannerProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlannerNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TermsVersionOutdatedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Salva o Meu perfil, com as validações do cadastro (RN09 e RN10).",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/v1/me/referrer": {
+      "get": {
+        "operationId": "PlannerController_referrer_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyReferrerResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "O link de indicação e o desconto do casal (Link de indicação RN01 e RN02).",
+        "tags": [
+          "me"
+        ]
+      }
+    },
     "/v1/referrals/{code}": {
       "get": {
         "operationId": "ReferralController_referral_v1",
@@ -694,6 +1200,87 @@
         "summary": "Indicador do link de indicação, para o destaque do cadastro (RN08, RN09 de Cadastro).",
         "tags": [
           "referrals"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}": {
+      "delete": {
+        "operationId": "WeddingsController_remove_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingHasOwnerErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Excluir este casamento (Meus casamentos RN11): só a cerimonialista que o\ncriou, em rascunho ou aguardando o casal, sem dono ativo. Abre as próprias\ntransações: a autorização sob a RLS e a exclusão pelo backoffice.",
+        "tags": [
+          "weddings"
         ]
       }
     },
@@ -854,6 +1441,16 @@
             },
             "description": ""
           },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContrastTooLowErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
           "429": {
             "content": {
               "application/json": {
@@ -967,6 +1564,16 @@
                       "$ref": "#/components/schemas/CoupleInvitationsFullErrorBody"
                     }
                   ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelfInvitationErrorBody"
                 }
               }
             },
@@ -1109,6 +1716,16 @@
               }
             }
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelfReferralErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
           "410": {
             "content": {
               "application/json": {
@@ -1222,6 +1839,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/SellerCannotBePlannerErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SelfReferralErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PlannerProfileExistsErrorBody"
                     }
                   ]
                 }
@@ -1460,6 +2083,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/LastOwnerErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingHasNoOwnerErrorBody"
                     }
                   ]
                 }
@@ -1909,6 +2535,32 @@
                 "sent",
                 "viewed",
                 "responded"
+              ]
+            }
+          },
+          {
+            "name": "remind",
+            "required": false,
+            "in": "query",
+            "description": "A fila do lembrete: enviados com convidado com nome pendente (Envios RN04; Prazo RN07).",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            }
+          },
+          {
+            "name": "saveTheDate",
+            "required": false,
+            "in": "query",
+            "description": "O filtro do save the date: enviado ou não (Envios RN03).",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "sent",
+                "not_sent"
               ]
             }
           },
@@ -3764,6 +4416,16 @@
               }
             }
           },
+          "201": {
+            "description": "Processada agora.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteImageResponse"
+                }
+              }
+            }
+          },
           "400": {
             "content": {
               "application/json": {
@@ -3967,6 +4629,104 @@
         "summary": "Autorização de envio direto ao armazenamento (Imagens do site RN04 e RN07).",
         "tags": [
           "site-images"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/site/song-question": {
+      "put": {
+        "operationId": "SiteController_songQuestion_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSongQuestionBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteSongQuestionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "A pergunta de música do RSVP: ligada e o texto (Música RN01 e RN02).",
+        "tags": [
+          "site"
         ]
       }
     },
@@ -4371,6 +5131,16 @@
                       "$ref": "#/components/schemas/SiteSlugUnavailableErrorBody"
                     }
                   ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndDateOutOfRangeErrorBody"
                 }
               }
             },
@@ -4948,6 +5718,2540 @@
           "site"
         ]
       }
+    },
+    "/v1/weddings/{weddingId}/publication": {
+      "post": {
+        "operationId": "PublicationController_create_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishWeddingBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/CourtesyDisabledErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NotDraftErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteSlugMissingErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/EventDateMissingErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndDateOutOfRangeErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Publica o site sem pagamento, com a data de saída do ar (Publicação RN01 a RN06).",
+        "tags": [
+          "site"
+        ]
+      }
+    },
+    "/v1/sites/{slug}/rsvp": {
+      "get": {
+        "operationId": "RsvpController_get_v1",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RsvpResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartySessionInvalidErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/SiteNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteDraftErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "O formulário com as respostas atuais (RN03 e RN08).",
+        "tags": [
+          "sites"
+        ]
+      },
+      "put": {
+        "operationId": "RsvpController_put_v1",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutRsvpBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RsvpResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartySessionInvalidErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PreviewReadOnlyErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/SiteNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteDraftErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RsvpChangedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RsvpClosedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RateLimitedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RsvpRateLimitedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Grava as respostas do grupo (RN04 a RN13).",
+        "tags": [
+          "sites"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/rsvp-deadline": {
+      "put": {
+        "operationId": "CoupleResponsesController_deadline_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RsvpDeadlineBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RsvpDeadlineResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/DeadlineAfterEventErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DeadlineInPastErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Define, muda, reabre ou tira o prazo de resposta (Prazo RN01 a RN03).",
+        "tags": [
+          "rsvp"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/guests/{guestId}/response": {
+      "put": {
+        "operationId": "CoupleResponsesController_response_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "guestId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuestResponseBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuestResponseResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/GuestNotFoundErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuestResponseChangedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Alterar resposta pelo casal (Prazo RN04).",
+        "tags": [
+          "rsvp"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/message-templates": {
+      "get": {
+        "operationId": "MessageTemplatesController_all_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageTemplatesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "As três mensagens, com o padrão quando o casal não editou.",
+        "tags": [
+          "rsvp"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/message-templates/{kind}": {
+      "put": {
+        "operationId": "MessageTemplatesController_put_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": [
+                "invite",
+                "save_the_date",
+                "reminder"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveMessageTemplateBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageTemplateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkPlaceholderMissingErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Grava a mensagem de um tipo, ou volta ao padrão com `reset`.",
+        "tags": [
+          "rsvp"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/deliveries/queue": {
+      "get": {
+        "operationId": "DeliveriesController_getQueue_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "invite",
+                "save_the_date",
+                "reminder"
+              ]
+            }
+          },
+          {
+            "name": "partyIds",
+            "required": true,
+            "in": "query",
+            "description": "Ids separados por vírgula, até 200.",
+            "schema": {
+              "minItems": 1,
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryQueueResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveriesClosedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "A fila de envio, com as URLs prontas e o contato inteiro só nelas (RN07 e RN11).",
+        "tags": [
+          "rsvp"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/deliveries": {
+      "post": {
+        "operationId": "DeliveriesController_mark_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkDeliveriesBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkDeliveriesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DeliveryPartyNotFoundErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveriesClosedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryNotAllowedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Marca o envio dos grupos (o clique no canal; RN07 e RN08).",
+        "tags": [
+          "rsvp"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/parties/qr-codes": {
+      "post": {
+        "operationId": "QrCodesController_create_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QrCodesBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "O arquivo: PNG de 1024 × 1024 com 1 grupo; PDF A4 com um QR por página.",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DeliveryPartyNotFoundErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveriesClosedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Gera o arquivo e marca o envio do convite dos grupos, com o canal QR.\n`POST` (R4-1): nenhum `GET` marca grupo, e não há choque com `GET parties/:partyId`.",
+        "tags": [
+          "rsvp"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/song-suggestions": {
+      "get": {
+        "operationId": "SongSuggestionsController_page_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "O `nextCursor` da página anterior.",
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SongSuggestionsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SongQuestionDisabledErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "A página Músicas (Música RN05).",
+        "tags": [
+          "rsvp"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/song-suggestions/export": {
+      "get": {
+        "operationId": "SongSuggestionsController_export_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "O arquivo.",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SongQuestionDisabledErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NothingToExportErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Exportar para o DJ: o .xlsx na hora, sem cache (Música RN06).",
+        "tags": [
+          "rsvp"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/dashboard": {
+      "get": {
+        "operationId": "DashboardController_get_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Os cartões, o Checklist e a Atividade recente, numa chamada; sem cache (RN08).",
+        "tags": [
+          "rsvp"
+        ]
+      }
+    },
+    "/v1/me/notifications": {
+      "get": {
+        "operationId": "NotificationsController_list_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "planner"
+              ]
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "description": "Filtro por tipo (casal: Respostas; cerimonialista: os 3).",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "rsvp",
+                "wedding_published",
+                "membership_removed"
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "O `nextCursor` da página anterior.",
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "A página Notificações do casamento ativo (Central RN06), ou a da\ncerimonialista com `scope=planner` (Notificações da cerimonialista RN05).",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/v1/me/notifications/unread-count": {
+      "get": {
+        "operationId": "NotificationsController_unread_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "planner"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadCountResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "O contador do sino, a cada 60 s com a aba visível (Central RN06; R7-5).",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/v1/me/notifications/read-all": {
+      "post": {
+        "operationId": "NotificationsController_readAll_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "planner"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Marcar todas como lidas (Central RN06).",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/v1/me/notifications/{id}/read": {
+      "post": {
+        "operationId": "NotificationsController_read_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Abrir marca como lida (Central RN05).",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/v1/me/notification-preferences": {
+      "get": {
+        "operationId": "NotificationsController_getPreferences_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Configurações › Notificações (Central RN07). Sem `weddingId`, a preferência\ngeral da cerimonialista (Notificações da cerimonialista RN06).",
+        "tags": [
+          "notifications"
+        ]
+      },
+      "put": {
+        "operationId": "NotificationsController_savePreference_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavePreferenceBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferenceResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Grava o e-mail de um tipo, na hora (Central RN07).",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/v1/me/push-subscriptions": {
+      "post": {
+        "operationId": "PushSubscriptionsController_subscribe_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushSubscriptionBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ValidationErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PushEndpointNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Liga o push neste aparelho: grava ou atualiza pelo endpoint, presa à sessão atual.",
+        "tags": [
+          "notifications"
+        ]
+      },
+      "delete": {
+        "operationId": "PushSubscriptionsController_unsubscribe_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushUnsubscribeBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Desliga o push neste aparelho.",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/v1/me/weddings/{id}": {
+      "get": {
+        "operationId": "MyWeddingsController_detail_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyWeddingDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "planner"
+        ]
+      }
+    },
+    "/v1/me/referrer/weddings": {
+      "get": {
+        "operationId": "ReferredWeddingsController_list_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReferredWeddingResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Casais que vieram pelo seu link (Link de indicação RN03 a RN05).",
+        "tags": [
+          "planner"
+        ]
+      }
+    },
+    "/v1/me/planner-templates": {
+      "get": {
+        "operationId": "PlannerTemplatesController_list_v1",
+        "parameters": [
+          {
+            "name": "kind",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "section_content",
+                "faq",
+                "appearance"
+              ]
+            }
+          },
+          {
+            "name": "sectionType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "story",
+                "lodging",
+                "dress_code"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PlannerTemplateResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "planner"
+        ]
+      },
+      "post": {
+        "operationId": "PlannerTemplatesController_create_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlannerTemplateBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlannerTemplateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplatesLimitErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContrastTooLowErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "planner"
+        ]
+      }
+    },
+    "/v1/me/planner-templates/{id}": {
+      "patch": {
+        "operationId": "PlannerTemplatesController_update_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlannerTemplateBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlannerTemplateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContrastTooLowErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "planner"
+        ]
+      },
+      "delete": {
+        "operationId": "PlannerTemplatesController_remove_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "planner"
+        ]
+      }
     }
   },
   "info": {
@@ -4973,56 +8277,6 @@
             "type": "string",
             "enum": [
               "RATE_LIMITED"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
-        ]
-      },
-      "SessionExpiredErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              401
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "SESSION_EXPIRED"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
-        ]
-      },
-      "OriginNotAllowedErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              403
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "ORIGIN_NOT_ALLOWED"
             ]
           },
           "message": {
@@ -5095,6 +8349,92 @@
           "error",
           "message",
           "errors"
+        ]
+      },
+      "OriginNotAllowedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              403
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "ORIGIN_NOT_ALLOWED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SimulatorDisabledErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "message"
+        ]
+      },
+      "SimulatorEventBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": [
+              "simule_iniciado",
+              "simule_nomes",
+              "simule_pronto",
+              "simule_outra_cor_aberta",
+              "simule_outra_cor_desistiu"
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "SessionExpiredErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              401
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SESSION_EXPIRED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
         ]
       },
       "TooSoonErrorBody": {
@@ -5539,6 +8879,10 @@
           },
           "authenticatedAt": {
             "type": "string"
+          },
+          "plannerSignupEnabled": {
+            "type": "boolean",
+            "description": "O cadastro próprio de cerimonialista está aberto (Cadastro e perfil RN02)."
           }
         },
         "required": [
@@ -5549,7 +8893,8 @@
           "lastProfileOnDevice",
           "referrer",
           "user",
-          "authenticatedAt"
+          "authenticatedAt",
+          "plannerSignupEnabled"
         ]
       },
       "ProfileNotOwnedErrorBody": {
@@ -5614,6 +8959,586 @@
           "home"
         ]
       },
+      "SlugUnavailableErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SLUG_UNAVAILABLE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "suggestion": {
+            "type": "string",
+            "nullable": true,
+            "description": "Alternativa livre, com o ano ou um número (RN05)."
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "suggestion"
+        ]
+      },
+      "OwnerlessWeddingsLimitErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "OWNERLESS_WEDDINGS_LIMIT"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "ContrastTooLowErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "CONTRAST_TOO_LOW"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "check": {
+            "enum": [
+              "primary_foreground",
+              "primary_background"
+            ],
+            "type": "string"
+          },
+          "ratio": {
+            "type": "number",
+            "description": "A razão medida, com duas casas para baixo."
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "check",
+          "ratio"
+        ]
+      },
+      "UpdateSiteAppearanceBody": {
+        "type": "object",
+        "properties": {
+          "fontPairKey": {
+            "enum": [
+              "romantico",
+              "classico",
+              "leve",
+              "moderno"
+            ],
+            "type": "string"
+          },
+          "starterPaletteKey": {
+            "nullable": true,
+            "description": "Null é \"cor própria\"; se não bater com as cores, o servidor grava null (RN07).",
+            "enum": [
+              "terracota",
+              "salvia",
+              "rose",
+              "marfim",
+              "marinho",
+              "areia",
+              "por-do-sol",
+              "grafite",
+              "noite"
+            ],
+            "type": "string"
+          },
+          "primaryColor": {
+            "type": "string",
+            "description": "`#RRGGBB`, sem diferenciar maiúsculas; gravada em maiúsculas (RN06).",
+            "example": "#A94F37"
+          },
+          "accentColor": {
+            "type": "string",
+            "example": "#7A8B69"
+          },
+          "backgroundMode": {
+            "enum": [
+              "light",
+              "cream",
+              "dark"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "fontPairKey",
+          "starterPaletteKey",
+          "primaryColor",
+          "accentColor",
+          "backgroundMode"
+        ]
+      },
+      "CreatePlannerWeddingBody": {
+        "type": "object",
+        "properties": {
+          "partner1Name": {
+            "type": "string",
+            "description": "A pessoa 1 do casal; o título é escolhido no aceite (decisão 172).",
+            "minLength": 1,
+            "maxLength": 80,
+            "example": "Fernanda Alves"
+          },
+          "partner2Name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "example": "João Lima"
+          },
+          "eventDate": {
+            "type": "string",
+            "description": "Opcional, com as regras do Cadastro do casal.",
+            "example": "2027-03-20"
+          },
+          "state": {
+            "enum": [
+              "AC",
+              "AM",
+              "RR",
+              "RO",
+              "MT",
+              "MS",
+              "PA",
+              "AP",
+              "TO",
+              "MA",
+              "PI",
+              "CE",
+              "RN",
+              "PB",
+              "PE",
+              "AL",
+              "SE",
+              "BA",
+              "GO",
+              "DF",
+              "MG",
+              "ES",
+              "RJ",
+              "SP",
+              "PR",
+              "SC",
+              "RS"
+            ],
+            "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Minúsculas, como no Editor (sugestão do Crivo): \"Fernanda-E-Joao\" vale \"fernanda-e-joao\".",
+            "minLength": 3,
+            "maxLength": 40,
+            "example": "fernanda-e-joao"
+          },
+          "appearance": {
+            "description": "A Aparência do passo 2 (RN03), com o guarda-corpo do contraste.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UpdateSiteAppearanceBody"
+              }
+            ]
+          },
+          "city": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        },
+        "required": [
+          "partner1Name",
+          "partner2Name",
+          "state",
+          "slug",
+          "city"
+        ]
+      },
+      "CreatePlannerWeddingResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft"
+            ]
+          },
+          "weddingId": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "weddingId",
+          "slug",
+          "timezone"
+        ]
+      },
+      "PlannerSignupDisabledErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PLANNER_SIGNUP_DISABLED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PlannerProfileExistsErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PLANNER_PROFILE_EXISTS"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SellerCannotBePlannerErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SELLER_CANNOT_BE_PLANNER"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "TermsVersionOutdatedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "TERMS_VERSION_OUTDATED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "CreatePlannerProfileBody": {
+        "type": "object",
+        "properties": {
+          "creditName": {
+            "type": "string",
+            "description": "Nome da assessoria: de 2 a 80, sem link, e-mail nem telefone (RN04).",
+            "maxLength": 300,
+            "example": "Prado Assessoria"
+          },
+          "name": {
+            "type": "string",
+            "description": "Seu nome: só quando a conta não tem nome (RN04).",
+            "maxLength": 300,
+            "example": "Juliana Prado"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "DDD e número; guardado só com os dígitos. Nulo ou vazio apaga.",
+            "maxLength": 300,
+            "example": "(11) 3333-4444"
+          },
+          "whatsapp": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 300,
+            "example": "(11) 99999-8888"
+          },
+          "cities": {
+            "description": "\"Cidade (UF)\", pelo menos 1, até 50, sem repetir.",
+            "example": [
+              "Campinas (SP)",
+              "Valinhos (SP)"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 300
+            }
+          },
+          "termsVersion": {
+            "type": "string",
+            "description": "A versão dos Termos que o app mostrou (RN04).",
+            "minLength": 1,
+            "maxLength": 32,
+            "example": "2026-09"
+          }
+        },
+        "required": [
+          "termsVersion"
+        ]
+      },
+      "CreatePlannerProfileResponse": {
+        "type": "object",
+        "properties": {
+          "referralCode": {
+            "type": "string",
+            "example": "juliana-prado"
+          },
+          "home": {
+            "type": "string",
+            "example": "/cerimonialista"
+          }
+        },
+        "required": [
+          "referralCode",
+          "home"
+        ]
+      },
+      "PlannerNotFoundErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PLANNER_NOT_FOUND"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PlannerProfileResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "creditName": {
+            "type": "string",
+            "example": "Prado Assessoria"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "example": "1133334444"
+          },
+          "whatsapp": {
+            "type": "string",
+            "nullable": true,
+            "example": "11999998888"
+          },
+          "cities": {
+            "example": [
+              "Campinas (SP)"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "email": {
+            "type": "string"
+          },
+          "profileComplete": {
+            "type": "boolean",
+            "description": "Com cidade, os Termos vigentes e o nome que passa no predicado (RN10)."
+          },
+          "termsAccepted": {
+            "type": "boolean"
+          },
+          "creditHidden": {
+            "type": "boolean",
+            "description": "O Admin ocultou a assinatura (Assinatura RN06); o motivo não sai da API."
+          }
+        },
+        "required": [
+          "name",
+          "creditName",
+          "phone",
+          "whatsapp",
+          "cities",
+          "email",
+          "profileComplete",
+          "termsAccepted",
+          "creditHidden"
+        ]
+      },
+      "UpdatePlannerProfileBody": {
+        "type": "object",
+        "properties": {
+          "creditName": {
+            "type": "string",
+            "description": "Nome da assessoria: de 2 a 80, sem link, e-mail nem telefone (RN04).",
+            "maxLength": 300,
+            "example": "Prado Assessoria"
+          },
+          "name": {
+            "type": "string",
+            "description": "Seu nome: só quando a conta não tem nome (RN04).",
+            "maxLength": 300,
+            "example": "Juliana Prado"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "DDD e número; guardado só com os dígitos. Nulo ou vazio apaga.",
+            "maxLength": 300,
+            "example": "(11) 3333-4444"
+          },
+          "whatsapp": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 300,
+            "example": "(11) 99999-8888"
+          },
+          "cities": {
+            "description": "\"Cidade (UF)\", pelo menos 1, até 50, sem repetir.",
+            "example": [
+              "Campinas (SP)",
+              "Valinhos (SP)"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 300
+            }
+          },
+          "termsVersion": {
+            "type": "string",
+            "description": "Obrigatório quando os Termos vigentes ainda não foram aceitos (RN10).",
+            "minLength": 1,
+            "maxLength": 32,
+            "example": "2026-09"
+          }
+        }
+      },
+      "MyReferrerResponse": {
+        "type": "object",
+        "properties": {
+          "referralCode": {
+            "type": "string",
+            "example": "juliana-prado"
+          },
+          "link": {
+            "type": "string",
+            "example": "https://kore.com.br/i/juliana-prado"
+          },
+          "discountPercent": {
+            "type": "number",
+            "nullable": true,
+            "description": "Nulo com o desconto de indicação desligado. Sem o percentual da comissão (D4).",
+            "example": 10
+          }
+        },
+        "required": [
+          "referralCode",
+          "link",
+          "discountPercent"
+        ]
+      },
       "ReferralNotFoundErrorBody": {
         "type": "object",
         "properties": {
@@ -5671,6 +9596,81 @@
           "discountPercent"
         ]
       },
+      "WeddingNotFoundErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "WEDDING_NOT_FOUND"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "ActionNotAllowedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              403
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "ACTION_NOT_ALLOWED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "WeddingHasOwnerErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "WEDDING_HAS_OWNER"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
       "SlugAvailabilityResponse": {
         "type": "object",
         "properties": {
@@ -5701,37 +9701,6 @@
           "available"
         ]
       },
-      "SlugUnavailableErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              409
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "SLUG_UNAVAILABLE"
-            ]
-          },
-          "message": {
-            "type": "string"
-          },
-          "suggestion": {
-            "type": "string",
-            "nullable": true,
-            "description": "Alternativa livre, com o ano ou um número (RN05)."
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message",
-          "suggestion"
-        ]
-      },
       "AlreadyOwnerErrorBody": {
         "type": "object",
         "properties": {
@@ -5760,31 +9729,6 @@
           "error",
           "message",
           "weddingId"
-        ]
-      },
-      "TermsVersionOutdatedErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              409
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "TERMS_VERSION_OUTDATED"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
         ]
       },
       "CreateWeddingBody": {
@@ -5855,6 +9799,14 @@
               "made_with_kore"
             ],
             "type": "string"
+          },
+          "appearance": {
+            "description": "A aparência do simulador (Simule RN10; opcional): as regras e o guarda-corpo\nda Aparência do site. Sem ela, Romântico + Terracota + Creme.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UpdateSiteAppearanceBody"
+              }
+            ]
           },
           "myName": {
             "type": "string",
@@ -5952,56 +9904,6 @@
           "timezone"
         ]
       },
-      "ActionNotAllowedErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              403
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "ACTION_NOT_ALLOWED"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
-        ]
-      },
-      "WeddingNotFoundErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              404
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "WEDDING_NOT_FOUND"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
-        ]
-      },
       "OwnersFullErrorBody": {
         "type": "object",
         "properties": {
@@ -6065,6 +9967,31 @@
             "type": "string",
             "enum": [
               "COUPLE_INVITATIONS_FULL"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SelfInvitationErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SELF_INVITATION"
             ]
           },
           "message": {
@@ -6244,6 +10171,43 @@
           "reason"
         ]
       },
+      "SelfReferralErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SELF_REFERRAL"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "InvitationPlannerCreditResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Prado Assessoria"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
       "InvitationReferrerResponse": {
         "type": "object",
         "properties": {
@@ -6337,6 +10301,16 @@
             "type": "object",
             "nullable": true
           },
+          "plannerCredit": {
+            "nullable": true,
+            "description": "Só no do casal: \"Assessoria: {name}\" na prévia do aceite (Assinatura RN04).",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/InvitationPlannerCreditResponse"
+              }
+            ]
+          },
           "referrer": {
             "nullable": true,
             "description": "Só no do casal.",
@@ -6408,31 +10382,6 @@
             "type": "string",
             "enum": [
               "ALREADY_MEMBER"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
-        ]
-      },
-      "SellerCannotBePlannerErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              409
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "SELLER_CANNOT_BE_PLANNER"
             ]
           },
           "message": {
@@ -6687,6 +10636,31 @@
           "message"
         ]
       },
+      "WeddingHasNoOwnerErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "WEDDING_HAS_NO_OWNER"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
       "TrashPartiesBody": {
         "type": "object",
         "properties": {
@@ -6849,6 +10823,33 @@
           "guestId"
         ]
       },
+      "PartyLastResponseResponse": {
+        "type": "object",
+        "properties": {
+          "actor": {
+            "enum": [
+              "party",
+              "couple"
+            ],
+            "type": "string"
+          },
+          "signedByName": {
+            "type": "string",
+            "nullable": true,
+            "description": "O nome do convidado que assinou; nulo sem assinante ou na alteração do casal."
+          },
+          "actorName": {
+            "type": "string",
+            "nullable": true,
+            "description": "O nome de quem alterou pelo casal."
+          }
+        },
+        "required": [
+          "actor",
+          "signedByName",
+          "actorName"
+        ]
+      },
       "TagSummaryResponse": {
         "type": "object",
         "properties": {
@@ -6932,10 +10933,21 @@
             "nullable": true,
             "format": "date-time"
           },
+          "lastResponse": {
+            "nullable": true,
+            "description": "A coluna Respondido em (Prazo RN07): \"· por Célia\" (grupo, quem assinou) ou\n\"· alterada por Ana\" (casal, quem alterou). Nula enquanto o grupo não está respondido.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartyLastResponseResponse"
+              }
+            ]
+          },
           "respondedBy": {
             "type": "string",
             "nullable": true,
-            "description": "Fase 4."
+            "description": "Obsoleto: o nome de `lastResponse` (quem assinou ou quem alterou).",
+            "deprecated": true
           },
           "tags": {
             "description": "Só as do grupo.",
@@ -6963,6 +10975,7 @@
           "firstGuestName",
           "deliveryStatus",
           "respondedAt",
+          "lastResponse",
           "respondedBy",
           "tags",
           "id",
@@ -7192,20 +11205,87 @@
           "isPlusOne"
         ]
       },
+      "PartyHistoryGuestResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "confirmed",
+              "declined"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "status"
+        ]
+      },
       "PartyHistoryEntryResponse": {
         "type": "object",
         "properties": {
           "kind": {
             "enum": [
               "sent",
+              "save_the_date",
+              "reminder",
               "viewed",
-              "responded"
+              "response"
             ],
             "type": "string"
           },
           "at": {
             "type": "string",
             "format": "date-time"
+          },
+          "channel": {
+            "description": "Nos envios.",
+            "enum": [
+              "whatsapp",
+              "email",
+              "link",
+              "qr"
+            ],
+            "type": "string"
+          },
+          "actor": {
+            "description": "Nas respostas: o grupo pelo RSVP ou o casal pelo Painel.",
+            "enum": [
+              "party",
+              "couple"
+            ],
+            "type": "string"
+          },
+          "signedBy": {
+            "type": "string",
+            "nullable": true,
+            "description": "Quem assinou pelo grupo; nulo sem assinante (\"Respondido pelo grupo\")."
+          },
+          "actorName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Quem alterou pelo casal."
+          },
+          "confirmed": {
+            "type": "number"
+          },
+          "declined": {
+            "type": "number"
+          },
+          "guest": {
+            "nullable": true,
+            "description": "Na alteração do casal: o convidado e a resposta.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartyHistoryGuestResponse"
+              }
+            ]
           }
         },
         "required": [
@@ -7266,7 +11346,7 @@
             }
           },
           "history": {
-            "description": "Do mais novo para o mais antigo; vazio até a Fase 4.",
+            "description": "Do mais novo para o mais antigo, as 50 linhas mais recentes (Prazo RN05).",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PartyHistoryEntryResponse"
@@ -7277,6 +11357,10 @@
           },
           "name": {
             "type": "string"
+          },
+          "version": {
+            "type": "number",
+            "description": "A versão do grupo, para o Alterar resposta (Prazo RN04)."
           },
           "plusOneSlots": {
             "type": "number"
@@ -7294,6 +11378,7 @@
           "history",
           "id",
           "name",
+          "version",
           "plusOneSlots",
           "link"
         ]
@@ -8841,6 +12926,41 @@
           "expiresAt"
         ]
       },
+      "UpdateSongQuestionBody": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "nullable": true,
+            "description": "Até 120, sem espaços nas pontas; vazio ou nulo volta ao padrão.",
+            "maxLength": 120
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "text",
+          "enabled"
+        ]
+      },
+      "SiteSongQuestionResponse": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "\"Fazer a pergunta no RSVP\"; desligada por padrão."
+          },
+          "text": {
+            "type": "string",
+            "description": "O texto do casal, ou o padrão \"Que música não pode faltar na festa?\"."
+          }
+        },
+        "required": [
+          "enabled",
+          "text"
+        ]
+      },
       "UpdateSiteSectionBody": {
         "type": "object",
         "properties": {
@@ -8903,98 +13023,6 @@
           "content",
           "enabled",
           "empty"
-        ]
-      },
-      "ContrastTooLowErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              422
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "CONTRAST_TOO_LOW"
-            ]
-          },
-          "message": {
-            "type": "string"
-          },
-          "check": {
-            "enum": [
-              "primary_foreground",
-              "primary_background"
-            ],
-            "type": "string"
-          },
-          "ratio": {
-            "type": "number",
-            "description": "A razão medida, com duas casas para baixo."
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message",
-          "check",
-          "ratio"
-        ]
-      },
-      "UpdateSiteAppearanceBody": {
-        "type": "object",
-        "properties": {
-          "fontPairKey": {
-            "enum": [
-              "romantico",
-              "classico",
-              "leve",
-              "moderno"
-            ],
-            "type": "string"
-          },
-          "starterPaletteKey": {
-            "nullable": true,
-            "description": "Null é \"cor própria\"; se não bater com as cores, o servidor grava null (RN07).",
-            "enum": [
-              "terracota",
-              "salvia",
-              "rose",
-              "marfim",
-              "marinho",
-              "areia",
-              "por-do-sol",
-              "grafite",
-              "noite"
-            ],
-            "type": "string"
-          },
-          "primaryColor": {
-            "type": "string",
-            "description": "`#RRGGBB`, sem diferenciar maiúsculas; gravada em maiúsculas (RN06).",
-            "example": "#A94F37"
-          },
-          "accentColor": {
-            "type": "string",
-            "example": "#7A8B69"
-          },
-          "backgroundMode": {
-            "enum": [
-              "light",
-              "cream",
-              "dark"
-            ],
-            "type": "string"
-          }
-        },
-        "required": [
-          "fontPairKey",
-          "starterPaletteKey",
-          "primaryColor",
-          "accentColor",
-          "backgroundMode"
         ]
       },
       "AppearanceWarning": {
@@ -9185,6 +13213,60 @@
           "slug"
         ]
       },
+      "SitePublicationResponse": {
+        "type": "object",
+        "properties": {
+          "endDateMin": {
+            "type": "string",
+            "nullable": true,
+            "description": "O dia seguinte ao casamento; nulo sem data ou sem fuso.",
+            "example": "2026-11-15"
+          },
+          "endDateMax": {
+            "type": "string",
+            "nullable": true,
+            "description": "12 meses depois do casamento (29/02 → 28/02); nulo sem data ou sem fuso.",
+            "example": "2027-11-14"
+          },
+          "courtesyEnabled": {
+            "type": "boolean",
+            "description": "A chave do servidor; o app só esconde o botão, quem decide é o servidor."
+          }
+        },
+        "required": [
+          "endDateMin",
+          "endDateMax",
+          "courtesyEnabled"
+        ]
+      },
+      "SitePlannerCreditResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nulo quando o nome não passa no predicado (Assinatura RN03).",
+            "example": "Prado Assessoria"
+          },
+          "showPlannerCredit": {
+            "type": "boolean"
+          },
+          "hiddenByKore": {
+            "type": "boolean",
+            "description": "O Kore ocultou a assinatura (RN06); o motivo não sai da API."
+          },
+          "canChange": {
+            "type": "boolean",
+            "description": "Só o dono muda (manage_planner_credit)."
+          }
+        },
+        "required": [
+          "name",
+          "showPlannerCredit",
+          "hiddenByKore",
+          "canChange"
+        ]
+      },
       "SiteEditorResponse": {
         "type": "object",
         "properties": {
@@ -9255,6 +13337,22 @@
           "editable": {
             "$ref": "#/components/schemas/SiteEditableResponse"
           },
+          "publication": {
+            "$ref": "#/components/schemas/SitePublicationResponse"
+          },
+          "songQuestion": {
+            "$ref": "#/components/schemas/SiteSongQuestionResponse"
+          },
+          "plannerCredit": {
+            "nullable": true,
+            "description": "Nulo sem cerimonialista colaboradora: o Switch não aparece (Assinatura RN05).",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SitePlannerCreditResponse"
+              }
+            ]
+          },
           "status": {
             "type": "string"
           }
@@ -9274,6 +13372,9 @@
           "appearance",
           "sections",
           "editable",
+          "publication",
+          "songQuestion",
+          "plannerCredit",
           "status"
         ]
       },
@@ -9302,7 +13403,8 @@
               "enum": [
                 "eventDate",
                 "state",
-                "slug"
+                "slug",
+                "showPlannerCredit"
               ]
             }
           }
@@ -9375,6 +13477,43 @@
           "message",
           "reason",
           "suggestion"
+        ]
+      },
+      "EndDateOutOfRangeErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "END_DATE_OUT_OF_RANGE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "endDateMin": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-11-15"
+          },
+          "endDateMax": {
+            "type": "string",
+            "nullable": true,
+            "example": "2027-11-14"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "endDateMin",
+          "endDateMax"
         ]
       },
       "SitePartnerBody": {
@@ -9471,6 +13610,10 @@
             "nullable": true,
             "description": "Imagem `ready` deste casamento, ou null para tirar a capa (RN09).",
             "format": "uuid"
+          },
+          "showPlannerCredit": {
+            "type": "boolean",
+            "description": "Mostrar a assinatura da assessoria no rodapé (Assinatura RN05). Aceito\nmesmo sem colaboradora; só o dono muda (o valor igual ao atual não é erro)."
           }
         }
       },
@@ -9788,10 +13931,24 @@
               "party"
             ],
             "type": "string"
+          },
+          "audience": {
+            "description": "A voz da barra pelo papel de quem gerou a prévia: dono → couple, colaborador → planner (RN06).",
+            "enum": [
+              "couple",
+              "planner"
+            ],
+            "type": "string"
+          },
+          "published": {
+            "type": "boolean",
+            "description": "O site já foi publicado: \"Prévia do site.\" em vez de \"O site ainda não foi publicado.\" (RN06)."
           }
         },
         "required": [
-          "as"
+          "as",
+          "audience",
+          "published"
         ]
       },
       "PublicViewerResponse": {
@@ -9881,6 +14038,18 @@
           "type"
         ]
       },
+      "PublicPlannerCreditResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Prado Assessoria"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
       "PublicSiteResponse": {
         "type": "object",
         "properties": {
@@ -9921,6 +14090,16 @@
               "$ref": "#/components/schemas/PublicSectionResponse"
             }
           },
+          "plannerCredit": {
+            "nullable": true,
+            "description": "\"Assessoria: {name}\" no rodapé, sem link (Assinatura RN01 a RN03); nulo sem assinatura.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublicPlannerCreditResponse"
+              }
+            ]
+          },
           "slug": {
             "type": "string"
           },
@@ -9945,6 +14124,7 @@
           "viewer",
           "contact",
           "sections",
+          "plannerCredit",
           "slug",
           "names",
           "city",
@@ -10115,6 +14295,2330 @@
           "url"
         ]
       },
+      "CourtesyDisabledErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "COURTESY_DISABLED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "NotDraftErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "NOT_DRAFT"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "EventDateMissingErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "EVENT_DATE_MISSING"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PublishWeddingBody": {
+        "type": "object",
+        "properties": {
+          "endDate": {
+            "type": "string",
+            "description": "`AAAA-MM-DD`: do dia seguinte ao casamento até 12 meses depois dele.",
+            "example": "2027-02-14"
+          }
+        },
+        "required": [
+          "endDate"
+        ]
+      },
+      "PublicationResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "published"
+            ]
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endDate": {
+            "type": "string",
+            "example": "2027-02-14"
+          },
+          "publicationSource": {
+            "type": "string",
+            "enum": [
+              "courtesy"
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "publishedAt",
+          "endDate",
+          "publicationSource"
+        ]
+      },
+      "PartySessionInvalidErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              401
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PARTY_SESSION_INVALID"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "RsvpPartyResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "version"
+        ]
+      },
+      "RsvpGuestResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nulo na vaga vazia."
+          },
+          "rsvpStatus": {
+            "enum": [
+              "pending",
+              "confirmed",
+              "declined"
+            ],
+            "type": "string"
+          },
+          "dietaryRestriction": {
+            "type": "string",
+            "nullable": true
+          },
+          "songSuggestion": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "type": "string"
+          },
+          "isPlusOne": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "rsvpStatus",
+          "dietaryRestriction",
+          "songSuggestion",
+          "id",
+          "isPlusOne"
+        ]
+      },
+      "RsvpSongQuestionResponse": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "text": {
+            "type": "string",
+            "description": "O texto do casal, ou o padrão \"Que música não pode faltar na festa?\"."
+          }
+        },
+        "required": [
+          "enabled",
+          "text"
+        ]
+      },
+      "RsvpContactResponse": {
+        "type": "object",
+        "properties": {
+          "whatsapp": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "whatsapp",
+          "email"
+        ]
+      },
+      "RsvpResponse": {
+        "type": "object",
+        "properties": {
+          "party": {
+            "$ref": "#/components/schemas/RsvpPartyResponse"
+          },
+          "guests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RsvpGuestResponse"
+            }
+          },
+          "rsvpDeadline": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-15"
+          },
+          "state": {
+            "enum": [
+              "open",
+              "deadline_passed",
+              "post_event",
+              "preview"
+            ],
+            "type": "string"
+          },
+          "songQuestion": {
+            "$ref": "#/components/schemas/RsvpSongQuestionResponse"
+          },
+          "contact": {
+            "$ref": "#/components/schemas/RsvpContactResponse"
+          },
+          "plusOneSlots": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "party",
+          "guests",
+          "rsvpDeadline",
+          "state",
+          "songQuestion",
+          "contact",
+          "plusOneSlots"
+        ]
+      },
+      "PreviewReadOnlyErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              403
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PREVIEW_READ_ONLY"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "RsvpChangedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "RSVP_CHANGED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "current": {
+            "$ref": "#/components/schemas/RsvpResponse"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "current"
+        ]
+      },
+      "RsvpClosedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "RSVP_CLOSED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "reason": {
+            "enum": [
+              "deadline_passed",
+              "post_event"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "reason"
+        ]
+      },
+      "RsvpRateLimitedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              429
+            ]
+          },
+          "error": {
+            "enum": [
+              "RSVP_RATE_LIMITED",
+              "RSVP_LIMIT"
+            ],
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "RsvpAnswerBody": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "description": "`pending` só na vaga.",
+            "enum": [
+              "pending",
+              "confirmed",
+              "declined"
+            ],
+            "type": "string"
+          },
+          "dietaryRestriction": {
+            "type": "string",
+            "nullable": true
+          },
+          "songSuggestion": {
+            "type": "string",
+            "nullable": true,
+            "description": "Ignorada com Não vou e com a pergunta desligada (Música RN04)."
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Só na vaga: o nome do acompanhante com Vou levar (RN05)."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "status",
+          "id"
+        ]
+      },
+      "PutRsvpBody": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "description": "A `version` do grupo lida no GET (decisão 216, D11).",
+            "minimum": 1
+          },
+          "signedByGuestId": {
+            "type": "string",
+            "description": "Quem está respondendo: um convidado com nome do grupo (RN04).",
+            "format": "uuid"
+          },
+          "guests": {
+            "description": "Todos os convidados com nome do grupo; a vaga pode faltar.",
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RsvpAnswerBody"
+            }
+          }
+        },
+        "required": [
+          "version",
+          "signedByGuestId",
+          "guests"
+        ]
+      },
+      "DeadlineAfterEventErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "DEADLINE_AFTER_EVENT"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "eventDate": {
+            "type": "string",
+            "example": "2026-11-14"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "eventDate"
+        ]
+      },
+      "DeadlineInPastErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "DEADLINE_IN_PAST"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "RsvpDeadlineBody": {
+        "type": "object",
+        "properties": {
+          "rsvpDeadline": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-15"
+          }
+        },
+        "required": [
+          "rsvpDeadline"
+        ]
+      },
+      "RsvpDeadlineResponse": {
+        "type": "object",
+        "properties": {
+          "rsvpDeadline": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-15"
+          }
+        },
+        "required": [
+          "rsvpDeadline"
+        ]
+      },
+      "GuestResponseResponse": {
+        "type": "object",
+        "properties": {
+          "partyId": {
+            "type": "string"
+          },
+          "version": {
+            "type": "number",
+            "description": "A versão nova do grupo."
+          }
+        },
+        "required": [
+          "partyId",
+          "version"
+        ]
+      },
+      "GuestResponseChangedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "RSVP_CHANGED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "current": {
+            "$ref": "#/components/schemas/GuestResponseResponse"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "current"
+        ]
+      },
+      "GuestResponseBody": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "enum": [
+              "confirmed",
+              "declined"
+            ],
+            "type": "string"
+          },
+          "dietaryRestriction": {
+            "type": "string",
+            "nullable": true,
+            "description": "Até 200; apagada com Não vai."
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Só na vaga: até 80, obrigatório com Vai."
+          },
+          "version": {
+            "type": "number",
+            "description": "A `version` do grupo lida no Painel (R3-7).",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "status",
+          "version"
+        ]
+      },
+      "MessageTemplateResponse": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "invite",
+              "save_the_date",
+              "reminder"
+            ],
+            "type": "string"
+          },
+          "subject": {
+            "type": "string",
+            "description": "O assunto do e-mail (o padrão quando o casal não escreveu um)."
+          },
+          "body": {
+            "type": "string"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Sem mensagem guardada: é a padrão."
+          }
+        },
+        "required": [
+          "kind",
+          "subject",
+          "body",
+          "isDefault"
+        ]
+      },
+      "MessageTemplatesResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "As três: convite, save the date e lembrete.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageTemplateResponse"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "LinkPlaceholderMissingErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "LINK_PLACEHOLDER_MISSING"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SaveMessageTemplateBody": {
+        "type": "object",
+        "properties": {
+          "reset": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "subject": {
+            "type": "string",
+            "nullable": true,
+            "description": "Sem quebra de linha.",
+            "maxLength": 120,
+            "pattern": "^[^\\r\\n]*$"
+          }
+        }
+      },
+      "DeliveriesClosedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "DELIVERIES_CLOSED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "reason": {
+            "enum": [
+              "not_published",
+              "deadline_passed",
+              "post_event"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "reason"
+        ]
+      },
+      "DeliveryContactResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "phoneMasked": {
+            "type": "string",
+            "nullable": true,
+            "example": "(19) 9****-3310"
+          },
+          "emailMasked": {
+            "type": "string",
+            "nullable": true,
+            "example": "ce***@gmail.com"
+          },
+          "guestId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "phoneMasked",
+          "emailMasked",
+          "guestId"
+        ]
+      },
+      "DeliveryQueueItemResponse": {
+        "type": "object",
+        "properties": {
+          "deliveryStatus": {
+            "enum": [
+              "not_sent",
+              "sent",
+              "viewed",
+              "responded"
+            ],
+            "type": "string"
+          },
+          "sentAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "O 1º envio do convite; não muda nos reenvios.",
+            "format": "date-time"
+          },
+          "lastChannel": {
+            "nullable": true,
+            "enum": [
+              "whatsapp",
+              "email",
+              "link",
+              "qr"
+            ],
+            "type": "string"
+          },
+          "saveTheDateSentAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "lastReminderAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "contact": {
+            "nullable": true,
+            "description": "O convidado de contato, mascarado; o inteiro vai só dentro das URLs (RN11).",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeliveryContactResponse"
+              }
+            ]
+          },
+          "whatsappUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "`https://wa.me/<E.164 sem +>?text=…`; nulo sem telefone."
+          },
+          "mailtoUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "`mailto:<e-mail>?subject=…&body=…`; nulo sem e-mail."
+          },
+          "name": {
+            "type": "string"
+          },
+          "copyText": {
+            "type": "string",
+            "description": "A mensagem com os marcadores trocados, para Copiar mensagem e a prévia."
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "deliveryStatus",
+          "sentAt",
+          "lastChannel",
+          "saveTheDateSentAt",
+          "lastReminderAt",
+          "contact",
+          "whatsappUrl",
+          "mailtoUrl",
+          "name",
+          "copyText",
+          "id"
+        ]
+      },
+      "DeliveryQueueResponse": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "invite",
+              "save_the_date",
+              "reminder"
+            ],
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeliveryQueueItemResponse"
+            }
+          },
+          "skippedPartyIds": {
+            "description": "Pedidos que não entram: fora do lembrete, na lixeira ou de outro casamento (RN04).",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "subject": {
+            "type": "string",
+            "description": "O assunto do e-mail."
+          }
+        },
+        "required": [
+          "kind",
+          "items",
+          "skippedPartyIds",
+          "subject"
+        ]
+      },
+      "DeliveryPartyNotFoundErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PARTY_NOT_FOUND"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "partyIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "partyIds"
+        ]
+      },
+      "DeliveryNotAllowedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "enum": [
+              "PARTY_NOT_REMINDABLE",
+              "QR_ONLY_FOR_INVITE"
+            ],
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "partyIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "partyIds"
+        ]
+      },
+      "MarkDeliveriesBody": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "invite",
+              "save_the_date",
+              "reminder"
+            ],
+            "type": "string"
+          },
+          "channel": {
+            "enum": [
+              "whatsapp",
+              "email",
+              "link",
+              "qr"
+            ],
+            "type": "string"
+          },
+          "partyIds": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "kind",
+          "channel",
+          "partyIds"
+        ]
+      },
+      "DeliveredPartyResponse": {
+        "type": "object",
+        "properties": {
+          "deliveryStatus": {
+            "enum": [
+              "not_sent",
+              "sent",
+              "viewed",
+              "responded"
+            ],
+            "type": "string"
+          },
+          "sentAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "O 1º envio do convite; não muda nos reenvios.",
+            "format": "date-time"
+          },
+          "lastChannel": {
+            "nullable": true,
+            "enum": [
+              "whatsapp",
+              "email",
+              "link",
+              "qr"
+            ],
+            "type": "string"
+          },
+          "saveTheDateSentAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "lastReminderAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "deliveryStatus",
+          "sentAt",
+          "lastChannel",
+          "saveTheDateSentAt",
+          "lastReminderAt",
+          "id"
+        ]
+      },
+      "MarkDeliveriesResponse": {
+        "type": "object",
+        "properties": {
+          "parties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeliveredPartyResponse"
+            }
+          }
+        },
+        "required": [
+          "parties"
+        ]
+      },
+      "QrCodesBody": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "enum": [
+              "png",
+              "pdf"
+            ],
+            "type": "string"
+          },
+          "partyIds": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "format",
+          "partyIds"
+        ]
+      },
+      "SongQuestionDisabledErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SONG_QUESTION_DISABLED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SongSuggestionResponse": {
+        "type": "object",
+        "properties": {
+          "guestName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Quem sugeriu."
+          },
+          "suggestedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "guestId": {
+            "type": "string"
+          },
+          "song": {
+            "type": "string",
+            "description": "Como o convidado escreveu."
+          },
+          "partyName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "guestName",
+          "suggestedAt",
+          "guestId",
+          "song",
+          "partyName"
+        ]
+      },
+      "SongSuggestionsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Da mais antiga para a mais nova, 50 por vez, sem juntar repetidas (Música RN05).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SongSuggestionResponse"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor",
+          "total"
+        ]
+      },
+      "DashboardStatsResponse": {
+        "type": "object",
+        "properties": {
+          "guestsTotal": {
+            "type": "number",
+            "description": "Pessoas e vagas (Grupos RN13)."
+          },
+          "confirmed": {
+            "type": "number"
+          },
+          "declined": {
+            "type": "number"
+          },
+          "pending": {
+            "type": "number"
+          },
+          "adultsConfirmed": {
+            "type": "number"
+          },
+          "childrenConfirmed": {
+            "type": "number"
+          },
+          "babiesConfirmed": {
+            "type": "number"
+          },
+          "partiesPending": {
+            "type": "number"
+          },
+          "rsvpPercent": {
+            "type": "number",
+            "description": "(confirmados + recusados) ÷ total, em porcentagem."
+          },
+          "partiesTotal": {
+            "type": "number",
+            "description": "A soma do `delivery` (R6-5)."
+          }
+        },
+        "required": [
+          "guestsTotal",
+          "confirmed",
+          "declined",
+          "pending",
+          "adultsConfirmed",
+          "childrenConfirmed",
+          "babiesConfirmed",
+          "partiesPending",
+          "rsvpPercent",
+          "partiesTotal"
+        ]
+      },
+      "DashboardDeliveryResponse": {
+        "type": "object",
+        "properties": {
+          "notSent": {
+            "type": "number"
+          },
+          "sent": {
+            "type": "number"
+          },
+          "viewed": {
+            "type": "number"
+          },
+          "responded": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "notSent",
+          "sent",
+          "viewed",
+          "responded"
+        ]
+      },
+      "DashboardReminderQueueResponse": {
+        "type": "object",
+        "properties": {
+          "parties": {
+            "type": "number",
+            "description": "Grupos já enviados com convidado com nome pendente."
+          },
+          "guests": {
+            "type": "number",
+            "description": "Os convidados com nome pendentes nesses grupos (a vaga não conta)."
+          },
+          "notReminded": {
+            "type": "number",
+            "description": "Grupos da fila sem lembrete depois do convite."
+          }
+        },
+        "required": [
+          "parties",
+          "guests",
+          "notReminded"
+        ]
+      },
+      "DashboardSiteResponse": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "nullable": true
+          },
+          "publishedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "endDate": {
+            "type": "string",
+            "nullable": true,
+            "description": "A data de saída do ar (\"No ar até {data}.\").",
+            "example": "2027-02-14"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "publishedAt",
+          "endDate",
+          "status"
+        ]
+      },
+      "ChecklistProgressResponse": {
+        "type": "object",
+        "properties": {
+          "done": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "done",
+          "total"
+        ]
+      },
+      "ChecklistItemResponse": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "enum": [
+              "guests",
+              "appearance",
+              "publish",
+              "invites",
+              "reminders"
+            ],
+            "type": "string"
+          },
+          "progress": {
+            "nullable": true,
+            "description": "Envios: grupos enviados de todos; lembrete: grupos da fila já lembrados.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChecklistProgressResponse"
+              }
+            ]
+          },
+          "done": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "progress",
+          "done"
+        ]
+      },
+      "ActivityGroupResponse": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "partyId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "confirmed": {
+            "type": "number"
+          },
+          "declined": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "at",
+          "partyId",
+          "name",
+          "confirmed",
+          "declined"
+        ]
+      },
+      "ActivityResponse": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "description": "A notificação do dono, ou a gravação do grupo para a colaboradora (até a F6).",
+            "enum": [
+              "notification",
+              "submission"
+            ],
+            "type": "string"
+          },
+          "groups": {
+            "description": "Só o grupo e os números: sem restrição nem nome de convidado.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActivityGroupResponse"
+            }
+          },
+          "readAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string"
+          },
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "source",
+          "groups",
+          "readAt",
+          "at",
+          "id",
+          "count"
+        ]
+      },
+      "DashboardResponse": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "description": "Quem lê: a colaboradora vê a faixa \"Você colabora neste casamento.\" (RN01).",
+            "enum": [
+              "owner",
+              "collaborator"
+            ],
+            "type": "string"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/DashboardStatsResponse"
+          },
+          "delivery": {
+            "$ref": "#/components/schemas/DashboardDeliveryResponse"
+          },
+          "reminderQueue": {
+            "$ref": "#/components/schemas/DashboardReminderQueueResponse"
+          },
+          "site": {
+            "$ref": "#/components/schemas/DashboardSiteResponse"
+          },
+          "rsvpDeadline": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-15"
+          },
+          "eventDate": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-11-14"
+          },
+          "daysUntilEvent": {
+            "type": "number",
+            "nullable": true,
+            "description": "Dias até o casamento, no fuso dele; 0 no dia; negativo depois; nulo sem data."
+          },
+          "checklist": {
+            "description": "Na ordem da RN03; o lembrete aparece depois do 1º envio.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChecklistItemResponse"
+            }
+          },
+          "recentActivity": {
+            "description": "Até 5, da mais recente para a mais antiga (RN04).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActivityResponse"
+            }
+          }
+        },
+        "required": [
+          "role",
+          "stats",
+          "delivery",
+          "reminderQueue",
+          "site",
+          "rsvpDeadline",
+          "eventDate",
+          "daysUntilEvent",
+          "checklist",
+          "recentActivity"
+        ]
+      },
+      "NotificationEntryResponse": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "partyId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "description": "O nome do grupo."
+          },
+          "confirmed": {
+            "type": "number"
+          },
+          "declined": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "at",
+          "partyId",
+          "name",
+          "confirmed",
+          "declined"
+        ]
+      },
+      "NotificationResponse": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "rsvp",
+              "wedding_published",
+              "membership_removed"
+            ],
+            "type": "string"
+          },
+          "partnerNames": {
+            "description": "Os primeiros nomes do casal; o app junta.",
+            "example": [
+              "Ana",
+              "Marcos"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "payload": {
+            "description": "rsvp: por grupo, sem restrição, música nem nome de convidado (Central RN04).\nwedding_published e membership_removed: [{ partnerNames }] (revisão C8-3).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationEntryResponse"
+            }
+          },
+          "readAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string"
+          },
+          "weddingId": {
+            "type": "string",
+            "description": "A central da cerimonialista junta vários casamentos (revisão C8-5)."
+          },
+          "count": {
+            "type": "number",
+            "description": "Grupos distintos (1: \"Família Moreira respondeu o convite\"; mais: \"{n} grupos responderam\")."
+          }
+        },
+        "required": [
+          "type",
+          "partnerNames",
+          "payload",
+          "readAt",
+          "updatedAt",
+          "id",
+          "weddingId",
+          "count"
+        ]
+      },
+      "NotificationsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Mais novas primeiro (pelo `updatedAt`), 20 por vez.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationResponse"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "UnreadCountResponse": {
+        "type": "object",
+        "properties": {
+          "unreadCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "unreadCount"
+        ]
+      },
+      "NotificationNotFoundErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "NOTIFICATION_NOT_FOUND"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PreferenceResponse": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "rsvp",
+              "wedding_published",
+              "membership_removed"
+            ],
+            "type": "string"
+          },
+          "email": {
+            "enum": [
+              "off",
+              "immediate",
+              "daily"
+            ],
+            "type": "string"
+          },
+          "inApp": {
+            "type": "boolean",
+            "description": "Sempre ligada no casal."
+          },
+          "push": {
+            "type": "boolean",
+            "description": "Vai a false só quando sai a última assinatura da pessoa (RN07; 217(8))."
+          }
+        },
+        "required": [
+          "type",
+          "email",
+          "inApp",
+          "push"
+        ]
+      },
+      "PushStateResponse": {
+        "type": "object",
+        "properties": {
+          "vapidPublicKey": {
+            "type": "string",
+            "nullable": true,
+            "description": "A chave pública VAPID; nula com o push desligado no ambiente."
+          },
+          "subscribed": {
+            "type": "boolean",
+            "description": "Este aparelho tem assinatura de push."
+          }
+        },
+        "required": [
+          "vapidPublicKey",
+          "subscribed"
+        ]
+      },
+      "PreferencesResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PreferenceResponse"
+            }
+          },
+          "push": {
+            "$ref": "#/components/schemas/PushStateResponse"
+          }
+        },
+        "required": [
+          "items",
+          "push"
+        ]
+      },
+      "SavePreferenceBody": {
+        "type": "object",
+        "properties": {
+          "weddingId": {
+            "type": "string",
+            "description": "Sem `weddingId`, a preferência geral da cerimonialista (RN06).",
+            "format": "uuid"
+          },
+          "type": {
+            "enum": [
+              "rsvp",
+              "wedding_published",
+              "membership_removed"
+            ],
+            "type": "string"
+          },
+          "email": {
+            "enum": [
+              "off",
+              "immediate",
+              "daily"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "email"
+        ]
+      },
+      "PushEndpointNotAllowedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              400
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PUSH_ENDPOINT_NOT_ALLOWED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PushKeysBody": {
+        "type": "object",
+        "properties": {
+          "p256dh": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "auth": {
+            "type": "string",
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "p256dh",
+          "auth"
+        ]
+      },
+      "PushSubscriptionBody": {
+        "type": "object",
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "keys": {
+            "$ref": "#/components/schemas/PushKeysBody"
+          }
+        },
+        "required": [
+          "endpoint",
+          "keys"
+        ]
+      },
+      "PushUnsubscribeBody": {
+        "type": "object",
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "endpoint"
+        ]
+      },
+      "MyWeddingsSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "active": {
+            "type": "number",
+            "description": "Todos menos pós-evento e expirado (RN03)."
+          },
+          "awaitingCouple": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "active",
+          "awaitingCouple"
+        ]
+      },
+      "PendingResponsesAlertResponse": {
+        "type": "object",
+        "properties": {
+          "partnerNames": {
+            "description": "Os primeiros nomes; o app junta (revisão, transversal \"Nomes do casal\").",
+            "example": [
+              "Ana",
+              "Marcos"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "rsvpDeadline": {
+            "type": "string",
+            "example": "2026-11-16"
+          },
+          "weddingId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "partnerNames",
+          "rsvpDeadline",
+          "weddingId"
+        ]
+      },
+      "InvitationsNotSentAlertResponse": {
+        "type": "object",
+        "properties": {
+          "partnerNames": {
+            "example": [
+              "Ana",
+              "Marcos"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "eventDate": {
+            "type": "string",
+            "example": "2027-01-30"
+          },
+          "weddingId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "partnerNames",
+          "eventDate",
+          "weddingId"
+        ]
+      },
+      "MyWeddingsAlertsResponse": {
+        "type": "object",
+        "properties": {
+          "pendingResponses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PendingResponsesAlertResponse"
+            }
+          },
+          "invitationsNotSent": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvitationsNotSentAlertResponse"
+            }
+          }
+        },
+        "required": [
+          "pendingResponses",
+          "invitationsNotSent"
+        ]
+      },
+      "MyWeddingItemResponse": {
+        "type": "object",
+        "properties": {
+          "partnerNames": {
+            "example": [
+              "Ana",
+              "Marcos"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "eventDate": {
+            "type": "string",
+            "nullable": true,
+            "example": "2027-01-30"
+          },
+          "status": {
+            "enum": [
+              "awaiting_couple",
+              "draft",
+              "published",
+              "post_event",
+              "grace",
+              "expired"
+            ],
+            "type": "string"
+          },
+          "rsvpPercent": {
+            "type": "number",
+            "description": "WeddingStats.rsvpPercent; com 0 convidados, o app mostra \"—\" (RN02).",
+            "example": 62
+          },
+          "origin": {
+            "enum": [
+              "created_by_me",
+              "referral_link",
+              "couple_invite"
+            ],
+            "type": "string"
+          },
+          "weddingId": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "guestsTotal": {
+            "type": "number"
+          },
+          "createdByMe": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "partnerNames",
+          "eventDate",
+          "status",
+          "rsvpPercent",
+          "origin",
+          "weddingId",
+          "city",
+          "state",
+          "guestsTotal",
+          "createdByMe"
+        ]
+      },
+      "MyWeddingsResponse": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "$ref": "#/components/schemas/MyWeddingsSummaryResponse"
+          },
+          "alerts": {
+            "$ref": "#/components/schemas/MyWeddingsAlertsResponse"
+          },
+          "weddings": {
+            "description": "A lista inteira, sem paginação, já na ordem da RN02.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MyWeddingItemResponse"
+            }
+          }
+        },
+        "required": [
+          "summary",
+          "alerts",
+          "weddings"
+        ]
+      },
+      "MyWeddingStatsResponse": {
+        "type": "object",
+        "properties": {
+          "guestsTotal": {
+            "type": "number"
+          },
+          "confirmed": {
+            "type": "number"
+          },
+          "declined": {
+            "type": "number"
+          },
+          "pending": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "guestsTotal",
+          "confirmed",
+          "declined",
+          "pending"
+        ]
+      },
+      "CoupleInvitationResponse": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "email",
+              "link"
+            ],
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "description": "Só no convite por e-mail."
+          },
+          "sentAt": {
+            "type": "string"
+          },
+          "state": {
+            "description": "Só no link: vigente ou vencido.",
+            "enum": [
+              "active",
+              "expired"
+            ],
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "nullable": true,
+            "description": "Só no link, só para quem o gerou e enquanto vale (RN09, N1(b))."
+          },
+          "id": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "expiresAt"
+        ]
+      },
+      "MyWeddingDetailResponse": {
+        "type": "object",
+        "properties": {
+          "partnerNames": {
+            "example": [
+              "Ana",
+              "Marcos"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "eventDate": {
+            "type": "string",
+            "nullable": true,
+            "example": "2027-01-30"
+          },
+          "status": {
+            "enum": [
+              "awaiting_couple",
+              "draft",
+              "published",
+              "post_event",
+              "grace",
+              "expired"
+            ],
+            "type": "string"
+          },
+          "rsvpPercent": {
+            "type": "number",
+            "description": "WeddingStats.rsvpPercent; com 0 convidados, o app mostra \"—\" (RN02).",
+            "example": 62
+          },
+          "origin": {
+            "enum": [
+              "created_by_me",
+              "referral_link",
+              "couple_invite"
+            ],
+            "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "nullable": true
+          },
+          "stats": {
+            "$ref": "#/components/schemas/MyWeddingStatsResponse"
+          },
+          "coupleInvitations": {
+            "description": "Só quando ela criou o casamento.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CoupleInvitationResponse"
+            }
+          },
+          "hasOwner": {
+            "type": "boolean"
+          },
+          "canEditIdentity": {
+            "type": "boolean",
+            "description": "A data, a UF e o endereço (Novo casamento RN08)."
+          },
+          "weddingId": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "guestsTotal": {
+            "type": "number"
+          },
+          "createdByMe": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "partnerNames",
+          "eventDate",
+          "status",
+          "rsvpPercent",
+          "origin",
+          "slug",
+          "stats",
+          "coupleInvitations",
+          "hasOwner",
+          "canEditIdentity",
+          "weddingId",
+          "city",
+          "state",
+          "guestsTotal",
+          "createdByMe"
+        ]
+      },
+      "ReferredWeddingResponse": {
+        "type": "object",
+        "properties": {
+          "weddingId": {
+            "type": "string",
+            "nullable": true
+          },
+          "partnerNames": {
+            "example": [
+              "Ana",
+              "Marcos"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "awaiting_couple",
+              "draft",
+              "published",
+              "post_event",
+              "grace",
+              "expired"
+            ]
+          }
+        },
+        "required": [
+          "weddingId",
+          "partnerNames",
+          "status"
+        ]
+      },
+      "PlannerTemplateResponse": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "section_content",
+              "faq",
+              "appearance"
+            ],
+            "type": "string"
+          },
+          "sectionType": {
+            "nullable": true,
+            "enum": [
+              "story",
+              "lodging",
+              "dress_code"
+            ],
+            "type": "string"
+          },
+          "locale": {
+            "type": "string",
+            "example": "pt-BR"
+          },
+          "content": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Por tipo: section_content → { text }; faq → { questions: [{ question, answer }] }; appearance → { fontPairKey, starterPaletteKey?, primaryColor, accentColor, backgroundMode }."
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "sectionType",
+          "locale",
+          "content",
+          "id",
+          "name",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "TemplatesLimitErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "TEMPLATES_LIMIT"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "CreatePlannerTemplateBody": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "section_content",
+              "faq",
+              "appearance"
+            ],
+            "type": "string"
+          },
+          "sectionType": {
+            "description": "Só nos Textos (section_content), e obrigatório lá.",
+            "enum": [
+              "story",
+              "lodging",
+              "dress_code"
+            ],
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "example": "Nossa história clássica"
+          },
+          "content": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Por tipo: section_content → { text }; faq → { questions: [{ question, answer }] }; appearance → { fontPairKey, starterPaletteKey?, primaryColor, accentColor, backgroundMode }."
+          }
+        },
+        "required": [
+          "kind",
+          "name",
+          "content"
+        ]
+      },
+      "TemplateNotFoundErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "TEMPLATE_NOT_FOUND"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "UpdatePlannerTemplateBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "content": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Por tipo: section_content → { text }; faq → { questions: [{ question, answer }] }; appearance → { fontPairKey, starterPaletteKey?, primaryColor, accentColor, backgroundMode }."
+          }
+        }
+      },
       "SpreadsheetTemplateHeaders": {
         "type": "string",
         "enum": [
@@ -10165,6 +16669,13 @@
           "favicon"
         ],
         "description": "Endereços que nenhum casamento pode usar, porque são rotas do Kore na raiz de kore.com.br. A comparação não diferencia maiúsculas de minúsculas (Dados básicos RN07)."
+      },
+      "AppearanceContrastFixtureSha256": {
+        "type": "string",
+        "enum": [
+          "42cd6ed77302f384ab3ab3d8c92c4d0ef1c0f7441831f3ce31b4f37fad57601b"
+        ],
+        "description": "O sha256 (hex) da appearance-contrast.fixture.json da API. A cópia do web precisa ter o mesmo (Aparência RN01)."
       }
     }
   }

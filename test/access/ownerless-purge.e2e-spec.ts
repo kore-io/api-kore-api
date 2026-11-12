@@ -195,12 +195,19 @@ describe('Expurgo do casamento sem dono (RN13 de Convites; decisões 136 e 180; 
   // (e, se for apagada, no cenário do segundo caso).
   const PURGED_TABLES = [
     'access_invitations',
+    'guest_responses',
     'guest_tags',
     'guests',
     'memberships',
+    'message_templates',
+    'notification_email_states',
+    'notification_preferences',
+    'notifications',
     'parties',
     'partners',
+    'party_deliveries',
     'party_tags',
+    'rsvp_submissions',
     'section_contents',
     'sections',
     'site_images',
@@ -241,10 +248,12 @@ describe('Expurgo do casamento sem dono (RN13 de Convites; decisões 136 e 180; 
       await db.partyTag.create({ data: { weddingId, partyId: party.id, tagId: tag.id } });
       await db.guestTag.create({ data: { weddingId, guestId: luiz.id, tagId: tag.id } });
       const imageId = uuidV7();
-      const keys = siteImageKeys({ imageId });
+      const keyToken = randomBytes(16).toString('hex');
+      const keys = siteImageKeys({ keyToken });
       await db.siteImage.create({
         data: {
           id: imageId,
+          keyToken,
           weddingId,
           status: 'ready',
           storageKey: keys.display,
@@ -256,11 +265,11 @@ describe('Expurgo do casamento sem dono (RN13 de Convites; decisões 136 e 180; 
           readyAt: new Date(),
         },
       });
+      const owner = await db.membership.findFirstOrThrow({ where: { weddingId } });
       const body = Buffer.from('jpg');
       await storage.put({ bucket: 'private', key: keys.original, body, contentType: 'image/jpeg' });
       for (const key of [keys.display, keys.thumb, keys.og])
         await storage.put({ bucket: 'public', key, body, contentType: 'image/jpeg' });
-      const owner = await db.membership.findFirstOrThrow({ where: { weddingId } });
       await db.sitePreviewToken.create({
         data: {
           weddingId,
@@ -270,9 +279,55 @@ describe('Expurgo do casamento sem dono (RN13 de Convites; decisões 136 e 180; 
           expiresAt: new Date(),
         },
       });
+      // As F4 e F5: histórico de respostas e de envios, mensagem pronta e notificações.
+      const submission = await db.rsvpSubmission.create({
+        data: {
+          weddingId,
+          partyId: party.id,
+          actor: 'party',
+          signedByGuestId: luiz.id,
+          confirmedCount: 1,
+          declinedCount: 0,
+        },
+      });
+      await db.guestResponse.create({
+        data: {
+          weddingId,
+          guestId: luiz.id,
+          partyId: party.id,
+          submissionId: submission.id,
+          status: 'confirmed',
+          signedByGuestId: luiz.id,
+          actor: 'party',
+        },
+      });
+      await db.partyDelivery.create({
+        data: { weddingId, partyId: party.id, kind: 'invite', channel: 'whatsapp' },
+      });
+      await db.messageTemplate.create({
+        data: { weddingId, kind: 'invite', body: 'Oi, {nome_do_grupo}! {link}' },
+      });
+      await db.notification.create({
+        data: {
+          userId: owner.userId,
+          weddingId,
+          type: 'rsvp',
+          groupKey: `rsvp:${weddingId}`,
+          payload: [{ partyId: party.id, name: party.name, confirmed: 1, declined: 0 }],
+        },
+      });
+      await db.notificationPreference.create({
+        data: { userId: owner.userId, weddingId, type: 'rsvp', email: 'immediate' },
+      });
+      await db.notificationEmailState.create({
+        data: { userId: owner.userId, weddingId, emailedThrough: new Date() },
+      });
       await db.wedding.update({
         where: { id: weddingId },
         data: {
+          rsvpDeadline: new Date('2014-10-15'),
+          songQuestionEnabled: true,
+          songQuestionText: 'Qual música não pode faltar?',
           contactEmail: 'casal@exemplo.kore.local',
           contactWhatsapp: '+5519998763310',
           coverImageId: imageId,
@@ -346,6 +401,9 @@ describe('Expurgo do casamento sem dono (RN13 de Convites; decisões 136 e 180; 
       accentColor: null,
       backgroundMode: null,
       appearanceSetAt: null,
+      rsvpDeadline: null,
+      songQuestionEnabled: false,
+      songQuestionText: null,
     });
     expect(await stored(keys)).toBe(0);
     expect(await counts(other.weddingId)).toEqual(otherBefore);

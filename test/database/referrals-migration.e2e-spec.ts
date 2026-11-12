@@ -73,6 +73,8 @@ describe('Tabelas da indicação (banco real, usuário kore_api)', () => {
   it('a API cria indicadores, mas não altera nem apaga', async () => {
     await rolledBack(api, async () => {
       const userId = await insertUser(api);
+      // Desde a F6, só o próprio indicador (RLS de referrers).
+      await api.query(`SELECT set_config('app.user_id', $1, true)`, [userId]);
       await api.query(
         `INSERT INTO referrers (id, updated_at, user_id, kind, referral_code, rate_percent)
          VALUES ($1, now(), $2, 'planner', $3, 20)`,
@@ -84,6 +86,21 @@ describe('Tabelas da indicação (banco real, usuário kore_api)', () => {
       );
       await api.query('ROLLBACK TO SAVEPOINT s');
       await expect(api.query('DELETE FROM referrers')).rejects.toThrow(/permission denied/);
+    });
+  });
+
+  it('F6 - a pessoa não cria indicador para outra conta (RLS de referrers)', async () => {
+    await rolledBack(api, async () => {
+      const userId = await insertUser(api);
+      const other = await insertUser(api);
+      await api.query(`SELECT set_config('app.user_id', $1, true)`, [userId]);
+      await expect(
+        api.query(
+          `INSERT INTO referrers (id, updated_at, user_id, kind, referral_code, rate_percent)
+           VALUES ($1, now(), $2, 'planner', $3, 20)`,
+          [randomUUID(), other, `codigo-${randomUUID()}`],
+        ),
+      ).rejects.toThrow(/row-level security/);
     });
   });
 
@@ -120,6 +137,8 @@ describe('Tabelas da indicação (banco real, usuário kore_api)', () => {
   it('decisão 113 - assessoria mínima: event_staff existe no modelo, e a pessoa tem um vínculo ativo por assessoria', async () => {
     await rolledBack(api, async () => {
       const userId = await insertUser(api);
+      // A assessoria tem RLS desde a F6: a pessoa cria a própria (revisão C1-2).
+      await api.query(`SELECT set_config('app.user_id', $1, true)`, [userId]);
       const organizationId = randomUUID();
       await api.query(
         `INSERT INTO organizations (id, name, created_by_user_id) VALUES ($1, 'Juliana Prado', $2)`,

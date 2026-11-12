@@ -9,6 +9,7 @@ export interface SiteBasicsChanges {
   contactWhatsapp?: string | null;
   contactEmail?: string | null;
   coverImageId?: string | null;
+  showPlannerCredit?: boolean;
 }
 
 /** Gravações do Editor do site, na transação da requisição (RLS). */
@@ -50,6 +51,19 @@ export interface SiteStore {
   }: {
     weddingId: string;
     appearance: SiteAppearanceChanges;
+    now: Date;
+  }): Promise<void>;
+
+  /** A pergunta de música (Música RN01): ligada e o texto (nulo = o padrão), com o `siteUpdatedAt`. */
+  updateSongQuestion({
+    weddingId,
+    enabled,
+    text,
+    now,
+  }: {
+    weddingId: string;
+    enabled: boolean;
+    text: string | null;
     now: Date;
   }): Promise<void>;
 

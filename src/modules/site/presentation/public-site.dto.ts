@@ -31,6 +31,10 @@ class PublicPartyResponse {
 
 class PublicPreviewModeResponse {
   @ApiProperty({ enum: ['visitor', 'party'] }) as: 'visitor' | 'party';
+  /** O site já foi publicado: "Prévia do site." em vez de "O site ainda não foi publicado." (RN06). */
+  published: boolean;
+  /** A voz da barra pelo papel de quem gerou a prévia: dono → couple, colaborador → planner (RN06). */
+  @ApiProperty({ enum: ['couple', 'planner'] }) audience: 'couple' | 'planner';
 }
 
 class PublicViewerResponse {
@@ -39,6 +43,10 @@ class PublicViewerResponse {
   @ApiProperty({ type: PublicPartyResponse, nullable: true }) party: PublicPartyResponse | null;
   @ApiProperty({ type: PublicPreviewModeResponse, nullable: true })
   preview: PublicPreviewModeResponse | null;
+}
+
+class PublicPlannerCreditResponse {
+  @ApiProperty({ example: 'Prado Assessoria' }) name: string;
 }
 
 class PublicContactResponse {
@@ -74,6 +82,9 @@ export class PublicSiteResponse {
   contact: PublicContactResponse | null;
   /** Só as ligadas e com conteúdo, na ordem fixa. */
   @ApiProperty({ type: [PublicSectionResponse] }) sections: PublicSectionResponse[];
+  /** "Assessoria: {name}" no rodapé, sem link (Assinatura RN01 a RN03); nulo sem assinatura. */
+  @ApiProperty({ type: PublicPlannerCreditResponse, nullable: true })
+  plannerCredit: PublicPlannerCreditResponse | null;
 }
 
 class LinkPreviewImageResponse {

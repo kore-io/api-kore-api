@@ -11,6 +11,8 @@ import { GetAccessInvitation } from '../application/get-access-invitation.use-ca
 import type { AuthenticatedSession } from '../domain/authenticated-session';
 import {
   AlreadyMemberErrorBody,
+  SelfReferralErrorBody,
+  PlannerProfileExistsErrorBody,
   AlreadyOwnerErrorBody,
   EmailMismatchErrorBody,
   InvitationInvalidErrorBody,
@@ -41,7 +43,7 @@ export class InvitationAcceptanceController {
   @Get()
   @Public()
   @OptionalSession()
-  @ApiErrorResponses(...commonErrors({}), InvitationInvalidErrorBody)
+  @ApiErrorResponses(...commonErrors({}), InvitationInvalidErrorBody, SelfReferralErrorBody)
   async read(
     @Param('token') token: string,
     @Req() request: AuthenticatedRequest,
@@ -69,6 +71,8 @@ export class InvitationAcceptanceController {
     OwnersFullErrorBody,
     PlannerAlreadyErrorBody,
     SellerCannotBePlannerErrorBody,
+    SelfReferralErrorBody,
+    PlannerProfileExistsErrorBody,
     InvitationInvalidErrorBody,
   )
   async accept(

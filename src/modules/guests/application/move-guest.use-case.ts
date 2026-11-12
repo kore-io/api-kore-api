@@ -13,6 +13,8 @@ import {
 import {
   contactAfter,
   deliveryStatusAfter,
+  respondedAtAfter,
+  sameInstant,
   hasPending,
   isEmptySlot,
   type GroupMember,
@@ -148,7 +150,8 @@ export class MoveGuest {
     contact: string | null;
     plusOneSlots?: number;
   }): PartyChanges {
-    const changes: PartyChanges = {};
+    // Os dois grupos mudaram: a versão sobe (RSVP RN11).
+    const changes: PartyChanges = { bumpVersion: true };
     if (contact !== party.contactGuestId) changes.contactGuestId = contact;
     if (plusOneSlots !== undefined) changes.plusOneSlots = plusOneSlots;
     const delivery = deliveryStatusAfter({
@@ -157,6 +160,9 @@ export class MoveGuest {
       members,
     });
     if (delivery !== party.deliveryStatus) changes.deliveryStatus = delivery;
+    // O "Respondido em" do grupo (Prazo RN06): a resposta mais recente de quem ficou.
+    const respondedAt = respondedAtAfter({ delivery, members });
+    if (!sameInstant(respondedAt, party.respondedAt)) changes.respondedAt = respondedAt;
     return changes;
   }
 }

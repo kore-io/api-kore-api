@@ -14,13 +14,16 @@ describe('PurgeEndedAccess (limpeza de sessões e pedidos de login)', () => {
       const cleanup: AccessCleanup = {
         deleteEndedSessions: jest.fn().mockResolvedValue(sessions),
         deleteLoginChallengesCreatedBefore: jest.fn().mockResolvedValue(loginChallenges),
+        clearExpiredCoupleLinkTokens: jest.fn().mockResolvedValue(2),
       };
       const record = jest.fn().mockResolvedValue(undefined);
       const applicationLog: ApplicationLogWriter = { record };
 
       const result = await new PurgeEndedAccess(cleanup, applicationLog).execute({ now });
 
-      expect(result).toEqual({ sessions, loginChallenges });
+      expect(result).toEqual({ sessions, loginChallenges, coupleLinkTokens: 2 });
+      // N1(b): o token cifrado do link vencido sai na mesma limpeza.
+      expect(cleanup.clearExpiredCoupleLinkTokens).toHaveBeenCalledWith({ now });
       expect(cleanup.deleteEndedSessions).toHaveBeenCalledWith({ now });
       // RN04: o pedido da última hora ainda conta no limite e fica.
       expect(cleanup.deleteLoginChallengesCreatedBefore).toHaveBeenCalledWith({
@@ -30,7 +33,7 @@ describe('PurgeEndedAccess (limpeza de sessões e pedidos de login)', () => {
         entry: {
           action: 'access_cleanup.purged',
           actorKind: 'system',
-          data: { sessions, loginChallenges, now: now.toISOString() },
+          data: { sessions, loginChallenges, coupleLinkTokens: 2, now: now.toISOString() },
         },
       });
     },

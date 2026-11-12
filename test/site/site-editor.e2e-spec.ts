@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { BackofficePrismaService } from '../../src/shared/database/backoffice-prisma.service';
 import { uuidV7 } from '../../src/shared/ids/uuid-v7';
@@ -63,6 +63,7 @@ describe('Editor do site: leitura e Dados básicos (banco real)', () => {
     await db.siteImage.create({
       data: {
         id,
+        keyToken: id,
         weddingId,
         status: 'ready',
         storageKey: `site/${id}/display.jpg`,
@@ -144,6 +145,7 @@ describe('Editor do site: leitura e Dados básicos (banco real)', () => {
       await db.siteImage.create({
         data: {
           id: failed,
+          keyToken: randomBytes(16).toString('hex'),
           weddingId,
           status: 'failed',
           storageKey: `site/${failed}/display.jpg`,
@@ -328,6 +330,148 @@ describe('Editor do site: leitura e Dados básicos (banco real)', () => {
 
       const refused = await patch(ana.cookie, weddingId, { coverImageId: foreign }).expect(404);
       expect(refused.body.error).toBe('IMAGE_NOT_FOUND');
+    });
+  });
+
+  describe('DoD da F2 (Dados básicos RN02 a RN08)', () => {
+    const availability = (cookie: string, query: Record<string, string>) =>
+      request(app.getHttpServer())
+        .get('/v1/weddings/slug-availability')
+        .query(query)
+        .set('Cookie', cookie)
+        .expect(200);
+    const identity = (weddingId: string) =>
+      db.wedding.findUniqueOrThrow({
+        where: { id: weddingId },
+        select: { slug: true, city: true, state: true, contactEmail: true, siteUpdatedAt: true },
+      });
+
+    it('RN04 - sem vínculo, o PATCH dá 404 WEDDING_NOT_FOUND e nada é gravado', async () => {
+      const { weddingId } = await anaWedding();
+      const estranha = await signedInUser({ app, name: 'Estranha' });
+      const before = await identity(weddingId);
+
+      const response = await patch(estranha.cookie, weddingId, { city: 'Valinhos' }).expect(404);
+
+      expect(response.body.error).toBe('WEDDING_NOT_FOUND');
+      expect(await identity(weddingId)).toEqual(before);
+    });
+
+    it('RN04 e RN06 - o weddingId de outro casamento não libera o endereço dele', async () => {
+      const { ana } = await anaWedding();
+      const other = await anaWedding();
+
+      expect(
+        (await availability(ana.cookie, { slug: other.slug, weddingId: other.weddingId })).body,
+      ).toMatchObject({ available: false, reason: 'taken' });
+    });
+
+    it('RN02, RN03 e RN08 - pelo pipe: null na cidade, na UF, no endereço e nos nomes, e-mail inválido ou longo e cidade longa dão 400 no campo; nada muda', async () => {
+      const { ana, weddingId } = await anaWedding();
+      const before = await identity(weddingId);
+      const errorsOf = async (body: object) =>
+        (await patch(ana.cookie, weddingId, body).expect(400)).body.errors as {
+          path: string;
+          code: string;
+        }[];
+      const paths = async (body: object) => [
+        ...new Set((await errorsOf(body)).map((error) => error.path)),
+      ];
+
+      for (const field of ['city', 'state', 'slug', 'partners'])
+        expect(await paths({ [field]: null })).toEqual([field]);
+      expect(await errorsOf({ contactEmail: 'ana@' })).toEqual([
+        expect.objectContaining({ path: 'contactEmail', code: 'IS_EMAIL' }),
+      ]);
+      // 255 caracteres, com o formato de e-mail (o teto é 254).
+      const longEmail = `${'a'.repeat(64)}@${'b'.repeat(63)}.${'c'.repeat(63)}.${'d'.repeat(59)}.br`;
+      expect(longEmail).toHaveLength(255);
+      expect(await errorsOf({ contactEmail: longEmail })).toContainEqual(
+        expect.objectContaining({ path: 'contactEmail', code: 'MAX_LENGTH' }),
+      );
+      expect(await errorsOf({ city: 'a'.repeat(81) })).toEqual([
+        expect.objectContaining({ path: 'city', code: 'MAX_LENGTH' }),
+      ]);
+      expect(await identity(weddingId)).toEqual(before);
+    });
+
+    it('RN06 - trocar o endereço deixa o antigo livre para outra pessoa, e o link dos grupos passa a usar o novo', async () => {
+      const { ana, weddingId, slug } = await anaWedding();
+      const bia = await signedInUser({ app, name: 'Bia' });
+      const party = await db.party.create({
+        data: {
+          weddingId,
+          name: 'Família Moreira',
+          linkToken: randomBytes(16).toString('base64url'),
+        },
+      });
+      const linkOf = async () =>
+        (
+          await request(app.getHttpServer())
+            .get(`/v1/weddings/${weddingId}/parties/${party.id}`)
+            .set('Cookie', ana.cookie)
+            .expect(200)
+        ).body.link.url as string;
+      expect(await linkOf()).toContain(`/${slug}/grupo/${party.linkToken}`);
+      const novo = `novo-${randomUUID().slice(0, 8)}`;
+
+      await patch(ana.cookie, weddingId, { slug: novo }).expect(200);
+
+      expect((await availability(bia.cookie, { slug })).body).toMatchObject({ available: true });
+      expect(await linkOf()).toContain(`/${novo}/grupo/${party.linkToken}`);
+    });
+
+    it('RN02, RN04 e RN09 - a dona apaga a data; a cerimonialista grava o contato e a capa', async () => {
+      const { ana, juliana, weddingId } = await anaWedding();
+      await db.wedding.update({
+        where: { id: weddingId },
+        data: { eventDate: new Date('2027-05-01T00:00:00Z') },
+      });
+      const cover = await readyImage(weddingId);
+
+      expect(
+        (await patch(ana.cookie, weddingId, { eventDate: null }).expect(200)).body.eventDate,
+      ).toBeNull();
+      expect(
+        (await db.wedding.findUniqueOrThrow({ where: { id: weddingId } })).eventDate,
+      ).toBeNull();
+      const { body } = await patch(juliana.cookie, weddingId, {
+        contactEmail: 'casal@exemplo.kore.local',
+        coverImageId: cover,
+      }).expect(200);
+      expect(body).toMatchObject({
+        contactEmail: 'casal@exemplo.kore.local',
+        cover: { id: cover },
+      });
+    });
+
+    it('RN11 - abrir o Editor conta como atividade do casamento (lastActivityAt, decisão 180)', async () => {
+      const { ana, weddingId } = await anaWedding();
+      await db.wedding.update({
+        where: { id: weddingId },
+        data: { lastActivityAt: new Date('2026-01-01T00:00:00Z') },
+      });
+
+      await get(ana.cookie, weddingId).expect(200);
+
+      expect(
+        (await db.wedding.findUniqueOrThrow({ where: { id: weddingId } })).lastActivityAt.getTime(),
+      ).toBeGreaterThan(Date.now() - 60_000);
+    });
+
+    it('RN06 e RN03 - depois do 409 reserved e do 400 de nome vazio, o endereço e o nome continuam os mesmos', async () => {
+      const { ana, weddingId, slug } = await anaWedding();
+      const [noiva] = (await get(ana.cookie, weddingId).expect(200)).body.partners as {
+        id: string;
+        name: string;
+      }[];
+
+      await patch(ana.cookie, weddingId, { slug: 'simule' }).expect(409);
+      await patch(ana.cookie, weddingId, { partners: [{ id: noiva.id, name: ' ' }] }).expect(400);
+
+      const after = (await get(ana.cookie, weddingId).expect(200)).body;
+      expect(after.slug).toBe(slug);
+      expect(after.partners[0]).toMatchObject({ id: noiva.id, name: noiva.name });
     });
   });
 

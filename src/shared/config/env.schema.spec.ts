@@ -1,4 +1,4 @@
-import { validateEnv } from './env.schema';
+import { simulatorEnabled, validateEnv } from './env.schema';
 
 const validConfig = {
   APP_ENV: 'local',
@@ -44,6 +44,10 @@ describe('validateEnv', () => {
       TERMS_VERSION: '2026-09',
       STORAGE_REGION: 'auto',
       STORAGE_FORCE_PATH_STYLE: false,
+      SIMULATOR_ENABLED: true,
+      COURTESY_PUBLICATION_ENABLED: false,
+      PLANNER_SIGNUP_ENABLED: false,
+      REFERRAL_LINK_URL: 'https://kore.com.br/i',
     });
   });
 
@@ -126,5 +130,71 @@ describe('validateEnv', () => {
         config: { ...validConfig, ALLOWED_ORIGINS: 'http://localhost:5173, http://localhost:5174' },
       }),
     ).toThrow(/ALLOWED_ORIGINS: não pode ter a origem do SITE_URL/);
+  });
+
+  it('Simule RN01 - sem a variável, o simulador fica ligado em local e test e desligado nos outros', () => {
+    expect(validateEnv({ config: validConfig }).SIMULATOR_ENABLED).toBe(true);
+    expect(
+      validateEnv({ config: { ...validConfig, SIMULATOR_ENABLED: 'false' } }).SIMULATOR_ENABLED,
+    ).toBe(false);
+    // Fora de local e test o ambiente inteiro não valida aqui (a chave KMS local); o padrão sim.
+    expect(simulatorEnabled({ appEnv: 'test', value: undefined })).toBe(true);
+    expect(simulatorEnabled({ appEnv: 'homolog', value: undefined })).toBe(false);
+    expect(simulatorEnabled({ appEnv: 'production', value: undefined })).toBe(false);
+    expect(simulatorEnabled({ appEnv: 'homolog', value: 'true' })).toBe(true);
+  });
+
+  it('Publicação RN01 - a Cortesia vem desligada sem valor e liga em local e test', () => {
+    expect(validateEnv({ config: validConfig }).COURTESY_PUBLICATION_ENABLED).toBe(false);
+    expect(
+      validateEnv({ config: { ...validConfig, COURTESY_PUBLICATION_ENABLED: 'true' } })
+        .COURTESY_PUBLICATION_ENABLED,
+    ).toBe(true);
+  });
+
+  it('Publicação RN01 e decisão 217(11) - dado APP_ENV production ou homolog com a Cortesia ligada, a API não sobe', () => {
+    for (const appEnv of ['production', 'homolog'])
+      expect(() =>
+        validateEnv({
+          config: { ...validConfig, APP_ENV: appEnv, COURTESY_PUBLICATION_ENABLED: 'true' },
+        }),
+      ).toThrow(/COURTESY_PUBLICATION_ENABLED: a Cortesia só pode ser ligada/);
+    // Desligada, a variável não é motivo de recusa nesses ambientes.
+    expect(() =>
+      validateEnv({
+        config: { ...validConfig, APP_ENV: 'production', COURTESY_PUBLICATION_ENABLED: 'false' },
+      }),
+    ).not.toThrow(/COURTESY_PUBLICATION_ENABLED/);
+  });
+
+  it.each([
+    ['local', true],
+    ['test', true],
+    ['homolog', false],
+    ['production', false],
+  ])(
+    'Cadastro e perfil RN02 - com APP_ENV %s e PLANNER_SIGNUP_ENABLED=true, aceita: %s',
+    (appEnv, accepted) => {
+      const config = { ...validConfig, APP_ENV: appEnv, PLANNER_SIGNUP_ENABLED: 'true' };
+      if (accepted) expect(validateEnv({ config }).PLANNER_SIGNUP_ENABLED).toBe(true);
+      else
+        expect(() => validateEnv({ config })).toThrow(
+          /PLANNER_SIGNUP_ENABLED: o cadastro de cerimonialista só pode ser ligado/,
+        );
+    },
+  );
+
+  it('Cadastro e perfil RN02 - sem valor, o cadastro de cerimonialista vem desligado', () => {
+    expect(validateEnv({ config: validConfig }).PLANNER_SIGNUP_ENABLED).toBe(false);
+  });
+
+  it('E-mail e push RN07 - as chaves VAPID são opcionais em local e test e obrigatórias em homolog e production', () => {
+    expect(() => validateEnv({ config: validConfig })).not.toThrow();
+    expect(() => validateEnv({ config: { ...validConfig, APP_ENV: 'homolog' } })).toThrow(
+      /VAPID_PUBLIC_KEY: obrigatória/,
+    );
+    expect(() =>
+      validateEnv({ config: { ...validConfig, VAPID_SUBJECT: 'kore@kore.com.br' } }),
+    ).toThrow(/VAPID_SUBJECT/);
   });
 });

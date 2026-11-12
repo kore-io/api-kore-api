@@ -17,6 +17,7 @@ export interface GroupRow {
   plusOneSlots: number;
   deliveryStatus: DeliveryStatus;
   firstViewedAt: Date | null;
+  respondedAt: Date | null;
   members: GroupMemberRow[];
 }
 
@@ -26,6 +27,13 @@ export interface PartyChanges {
   contactGuestId?: string | null;
   plusOneSlots?: number;
   deliveryStatus?: DeliveryStatus;
+  /** O "Respondido em" recalculado (Prazo RN06). */
+  respondedAt?: Date | null;
+  /**
+   * Sobe a Party.version (decisão 216, D11; RSVP RN11): o formulário de RSVP
+   * aberto antes da mudança recebe 409 RSVP_CHANGED.
+   */
+  bumpVersion?: true;
 }
 
 export interface GuestChanges {

@@ -21,17 +21,18 @@ export const STORED_SITE_IMAGE_STATUSES: readonly SiteImageStatus[] = [
 ];
 
 /**
- * Chaves de uma imagem (S4 RN06): sem o weddingId (um UUIDv7, que revela a data
- * de criação do casamento). O original fica no bucket privado; as três versões,
- * no público, servidas pelo CDN.
+ * Chaves de uma imagem (S4 RN06; decisão 229(f)): pelo token aleatório da
+ * imagem, sem o weddingId nem o id da imagem (UUIDv7, que revelam a data de
+ * criação do casamento e a hora do envio). O original fica no bucket privado;
+ * as três versões, no público, servidas pelo CDN.
  */
-export function siteImageKeys({ imageId }: { imageId: string }): {
+export function siteImageKeys({ keyToken }: { keyToken: string }): {
   original: string;
   display: string;
   thumb: string;
   og: string;
 } {
-  const base = `site/${imageId}`;
+  const base = `site/${keyToken}`;
   return {
     original: `${base}/original`,
     display: `${base}/display.jpg`,
@@ -39,6 +40,9 @@ export function siteImageKeys({ imageId }: { imageId: string }): {
     og: `${base}/og.jpg`,
   };
 }
+
+/** Bytes do token das chaves: 128 bits aleatórios (decisão 229(f)). */
+export const SITE_IMAGE_KEY_TOKEN_BYTES = 16;
 
 /** Lado maior da versão servida (S4 RN03 e RN05). */
 export const SITE_IMAGE_DISPLAY_MAX_PX = 2560;

@@ -1,6 +1,6 @@
 import { Body, Controller, HttpStatus, Param, Post, Res, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import {
   ApiErrorResponses,
   commonErrors,
@@ -47,6 +47,7 @@ export class SiteImagesController {
    */
   @Post()
   @OwnTransactions()
+  @ApiCreatedResponse({ type: SiteImageResponse, description: 'Processada agora.' })
   @ApiOkResponse({ type: SiteImageResponse, description: 'Já estava pronta (idempotente).' })
   @ApiErrorResponses(
     ...commonErrors({ validated: true, session: true, write: true }),

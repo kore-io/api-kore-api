@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
+import { UpdateSiteAppearanceBody } from '../../site/presentation/site-appearance.dto';
 import {
   IsIn,
   IsISO8601,
@@ -9,6 +10,7 @@ import {
   Length,
   Matches,
   MaxLength,
+  ValidateNested,
 } from 'class-validator';
 import type { CreatedWedding } from '../application/create-wedding.use-case';
 import type { SlugAvailability } from '../application/check-slug-availability.use-case';
@@ -26,11 +28,11 @@ import {
 /** Data do casamento, só o dia (YYYY-MM-DD) e existente no calendário. */
 export const DATE_ONLY = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 
-const trim = ({ value }: { value: unknown }): unknown =>
+export const trim = ({ value }: { value: unknown }): unknown =>
   typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : value;
 
 /** RN04: 3 a 40 caracteres, a-z, 0-9 e hífen, sem hífen no começo, no fim ou repetido. */
-const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export class CreateWeddingBody {
   @Transform(trim) @IsString() @Length(1, 80) myName: string;
@@ -68,6 +70,16 @@ export class CreateWeddingBody {
   @IsOptional() @IsString() @MaxLength(200) utmSource?: string;
   @IsOptional() @IsString() @MaxLength(200) utmMedium?: string;
   @IsOptional() @IsString() @MaxLength(200) utmCampaign?: string;
+
+  /**
+   * A aparência do simulador (Simule RN10; opcional): as regras e o guarda-corpo
+   * da Aparência do site. Sem ela, Romântico + Terracota + Creme.
+   */
+  @ApiProperty({ type: UpdateSiteAppearanceBody, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => UpdateSiteAppearanceBody)
+  appearance?: UpdateSiteAppearanceBody;
 }
 
 class CreatedWeddingReferrer {

@@ -6,6 +6,32 @@ import { PrismaService } from './prisma.service';
 
 const logger = new Logger('TenantTransaction');
 
+/** O casamento no ar, lido na primeira consulta da transação do grupo (RSVP RN13). */
+export interface PartyTransactionContext {
+  status: 'published' | 'post_event' | 'grace';
+  timezone: string | null;
+  /** AAAA-MM-DD. */
+  eventDate: string | null;
+  /** AAAA-MM-DD. */
+  rsvpDeadline: string | null;
+  publishedAt: string | null;
+  songQuestionEnabled: boolean;
+  songQuestionText: string | null;
+  contactWhatsapp: string | null;
+  contactEmail: string | null;
+}
+
+/**
+ * O grupo do cookie deixou de valer entre a leitura e a escrita: link
+ * regenerado, grupo na lixeira ou casamento fora do ar (RSVP RN11).
+ */
+export class PartyTransactionRevokedError extends Error {
+  constructor() {
+    super('O grupo do cookie não vale mais.');
+    this.name = 'PartyTransactionRevokedError';
+  }
+}
+
 interface RequestTransaction {
   tx: Prisma.TransactionClient;
   afterCommit: (() => Promise<void>)[];
@@ -41,11 +67,24 @@ export class TenantTransaction implements AfterCommit {
     weddingId?: string;
     work: () => Promise<T>;
   }): Promise<T> {
+    return this.transaction({
+      settings: { 'app.user_id': userId, ...(weddingId ? { 'app.wedding_id': weddingId } : {}) },
+      work: () => work(),
+    });
+  }
+
+  private async transaction<T>({
+    settings,
+    work,
+  }: {
+    settings: Record<string, string>;
+    work: (tx: Prisma.TransactionClient) => Promise<T>;
+  }): Promise<T> {
     const afterCommit: (() => Promise<void>)[] = [];
     const result = await this.prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT set_config('app.user_id', ${userId}, true)`;
-      if (weddingId) await tx.$queryRaw`SELECT set_config('app.wedding_id', ${weddingId}, true)`;
-      return this.current.run({ tx, afterCommit }, work);
+      for (const [key, value] of Object.entries(settings))
+        await tx.$queryRaw`SELECT set_config(${key}, ${value}, true)`;
+      return this.current.run({ tx, afterCommit }, () => work(tx));
     });
     // Depois do commit: a falha de um envio não desfaz o que já foi gravado
     // nem muda a resposta; fica no log (só o tipo do erro, decisão 134).
@@ -57,6 +96,38 @@ export class TenantTransaction implements AfterCommit {
       }
     }
     return result;
+  }
+
+  /**
+   * Transação do grupo (RSVP RN13; decisão 217(a)): sem pessoa, com
+   * app.wedding_id e app.party_id, no papel kore_party, sob as policies
+   * *_party_* daquele grupo. A
+   * primeira consulta reconfere casamento, grupo, versão do link, lixeira e o
+   * casamento no ar; se não vale mais, nada roda e sai
+   * PartyTransactionRevokedError. O schedule() vale como na run().
+   */
+  async runAsParty<T>({
+    weddingId,
+    partyId,
+    linkVersion,
+    work,
+  }: {
+    weddingId: string;
+    partyId: string;
+    linkVersion: number;
+    work: (context: PartyTransactionContext) => Promise<T>;
+  }): Promise<T> {
+    return this.transaction({
+      settings: { 'app.wedding_id': weddingId, 'app.party_id': partyId },
+      work: async (tx) => {
+        // O papel do grupo: só os GRANTs e as policies *_party_* (sem herdar o kore_app).
+        await tx.$executeRaw`SET LOCAL ROLE kore_party`;
+        const [row] = await tx.$queryRaw<[{ context: PartyTransactionContext | null }]>`
+          SELECT party_transaction_context(${linkVersion}::int) AS context`;
+        if (!row?.context) throw new PartyTransactionRevokedError();
+        return work(row.context);
+      },
+    });
   }
 
   client(): Prisma.TransactionClient {

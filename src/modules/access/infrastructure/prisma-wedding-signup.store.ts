@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '../../../generated/prisma/client';
 import { TenantTransaction } from '../../../shared/database/tenant-transaction';
 import type {
+  NewPlannerWedding,
   NewWedding,
   WeddingSignupStore,
 } from '../application/ports/wedding-signup-store.port';
@@ -50,6 +51,9 @@ export class PrismaWeddingSignupStore implements WeddingSignupStore {
           utmSource: wedding.utmSource,
           utmMedium: wedding.utmMedium,
           utmCampaign: wedding.utmCampaign,
+          // Do simulador, a aparência e o item Aparência do Checklist já feito
+          // (Simule RN10; Aparência RN10); sem ela, os padrões da coluna.
+          ...(wedding.appearance && { ...wedding.appearance, appearanceSetAt: wedding.now }),
         },
       });
     } catch (error) {
@@ -90,6 +94,63 @@ export class PrismaWeddingSignupStore implements WeddingSignupStore {
     await tx.session.updateMany({
       where: { id: wedding.sessionId, userId: wedding.userId },
       data: { activeProfile: 'couple' },
+    });
+    return 'created';
+  }
+
+  async lockPlannerWeddings({ userId }: { userId: string }): Promise<void> {
+    await this.tenant.client()
+      .$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`planner-weddings:${userId}`}, 0))`;
+  }
+
+  async countOwnerlessCreated(): Promise<number> {
+    // A função do banco resolve a pessoa por current_user_id(); a lápide não
+    // guarda quem criou, então os expurgados já ficam de fora.
+    const [row] = await this.tenant.client().$queryRaw<[{ total: number }]>`
+      SELECT count(*)::int AS total FROM planner_ownerless_wedding_ids()`;
+    return row.total;
+  }
+
+  async createForPlanner({
+    wedding,
+  }: {
+    wedding: NewPlannerWedding;
+  }): Promise<'created' | 'slug_taken'> {
+    const tx = this.tenant.client();
+    try {
+      // As policies da F6 (migration f6_model): a atribuição só ao Referrer
+      // dela (restritiva), o vínculo collaborator e os noivos sem login.
+      await tx.wedding.createMany({
+        data: {
+          id: wedding.weddingId,
+          slug: wedding.slug,
+          status: 'draft',
+          eventDate: wedding.eventDate,
+          timezone: wedding.timezone,
+          city: wedding.city,
+          state: wedding.state,
+          createdByUserId: wedding.userId,
+          lastActivityAt: wedding.now,
+          referrerId: wedding.referrerId,
+          referralSource: 'created_by_planner',
+          signupSource: 'planner',
+          ...(wedding.appearance && { ...wedding.appearance, appearanceSetAt: wedding.now }),
+        },
+      });
+    } catch (error) {
+      if (isSlugConflict(error)) return 'slug_taken';
+      throw error;
+    }
+    await tx.membership.createMany({
+      data: { weddingId: wedding.weddingId, userId: wedding.userId, role: 'collaborator' },
+    });
+    // Sem login e sem título: o título é escolhido no aceite (decisão 172).
+    await tx.partner.createMany({
+      data: wedding.partnerNames.map((displayName, index) => ({
+        weddingId: wedding.weddingId,
+        slot: index + 1,
+        displayName,
+      })),
     });
     return 'created';
   }

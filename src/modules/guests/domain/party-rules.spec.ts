@@ -1,4 +1,10 @@
-import { contactAfter, deliveryStatusAfter, hasPending, type GroupMember } from './party-rules';
+import {
+  contactAfter,
+  deliveryStatusAfter,
+  hasPending,
+  respondedAtAfter,
+  type GroupMember,
+} from './party-rules';
 
 const member = (overrides: Partial<GroupMember> & { id: string }): GroupMember => ({
   name: 'Alguém',
@@ -76,8 +82,42 @@ describe('Status de envio (Grupos RN10; decisão 199(1))', () => {
     ).toBe('not_sent');
   });
 
+  it('RSVP RN07 e decisão 217(2) - a resposta leva o grupo não enviado a respondido', () => {
+    expect(
+      deliveryStatusAfter({
+        current: 'not_sent',
+        firstViewedAt: null,
+        members: [confirmed, emptySlot],
+        afterResponse: true,
+      }),
+    ).toBe('responded');
+    // Com convidado com nome pendente, continua não enviado.
+    expect(
+      deliveryStatusAfter({
+        current: 'not_sent',
+        firstViewedAt: null,
+        members: [confirmed, pending],
+        afterResponse: true,
+      }),
+    ).toBe('not_sent');
+  });
+
   it('RN16 - a vaga pendente conta como pendente do grupo (decisão 199(1))', () => {
     expect(hasPending({ members: [confirmed, emptySlot] })).toBe(true);
     expect(hasPending({ members: [confirmed] })).toBe(false);
+  });
+});
+
+describe('Respondido em do grupo (Prazo RN06)', () => {
+  it('RN06 - a resposta mais recente dos convidados com nome; a vaga não entra; nulo fora do respondido', () => {
+    const members = [
+      { isPlusOne: false, respondedAt: new Date('2026-09-10T00:00:00Z') },
+      { isPlusOne: false, respondedAt: new Date('2026-09-12T00:00:00Z') },
+      { isPlusOne: true, respondedAt: new Date('2026-09-20T00:00:00Z') },
+    ];
+    expect(respondedAtAfter({ delivery: 'responded', members })).toEqual(
+      new Date('2026-09-12T00:00:00Z'),
+    );
+    expect(respondedAtAfter({ delivery: 'viewed', members })).toBeNull();
   });
 });

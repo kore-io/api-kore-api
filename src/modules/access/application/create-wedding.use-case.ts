@@ -14,6 +14,9 @@ import {
   type ClientSignupSource,
   type PartnerTitle,
 } from '../domain/wedding-signup';
+import { evaluateAppearance, floorRatio, keptStarterPalette } from '../../site/domain/appearance';
+import { ContrastTooLowError } from '../../site/domain/site.errors';
+import type { SiteAppearanceInput } from '../../site/application/update-site-appearance.use-case';
 import { REFERRAL_DIRECTORY, type ReferralDirectory } from './ports/referral-directory.port';
 import { TERMS_VERSION } from './ports/terms-version.port';
 import { SLUG_REGISTRY, type SlugRegistry } from './ports/slug-registry.port';
@@ -34,6 +37,8 @@ export interface WeddingSignup {
   utmSource: string | null;
   utmMedium: string | null;
   utmCampaign: string | null;
+  /** A aparência do simulador (Simule RN10; opcional). */
+  appearance: SiteAppearanceInput | null;
 }
 
 export interface CreatedWedding {
@@ -72,6 +77,9 @@ export class CreateWedding {
     now: Date;
   }): Promise<CreatedWedding> {
     if (signup.termsVersion !== this.currentTermsVersion) throw new TermsVersionOutdatedError();
+    // A aparência do simulador passa pelo mesmo guarda-corpo do Editor (Simule
+    // RN10; Aparência RN05): um rascunho adulterado é recusado antes de gravar.
+    const appearance = signup.appearance && checkedAppearance({ input: signup.appearance });
 
     await this.store.lockOwner({ userId });
     const ownedWeddingId = await this.store.findActiveOwnedWeddingId({ userId });
@@ -107,6 +115,7 @@ export class CreateWedding {
         utmMedium: signup.utmMedium,
         utmCampaign: signup.utmCampaign,
         termsVersion: signup.termsVersion,
+        appearance,
         now,
       },
     });
@@ -147,4 +156,32 @@ export class CreateWedding {
       discountPercent: referral.discountPercent,
     };
   }
+}
+
+/** As cores em maiúsculas, o contraste conferido e a paleta só com as cores dela (Aparência RN04 a RN07). */
+export function checkedAppearance({
+  input,
+}: {
+  input: SiteAppearanceInput;
+}): NonNullable<Parameters<WeddingSignupStore['create']>[0]['wedding']['appearance']> {
+  const primaryColor = input.primaryColor.toUpperCase();
+  const accentColor = input.accentColor.toUpperCase();
+  const { blocked } = evaluateAppearance({
+    primaryColor,
+    accentColor,
+    backgroundMode: input.backgroundMode,
+  });
+  if (blocked)
+    throw new ContrastTooLowError({ check: blocked.check, ratio: floorRatio(blocked.ratio) });
+  return {
+    fontPairKey: input.fontPairKey,
+    starterPaletteKey: keptStarterPalette({
+      starterPaletteKey: input.starterPaletteKey,
+      primaryColor,
+      accentColor,
+    }),
+    primaryColor,
+    accentColor,
+    backgroundMode: input.backgroundMode,
+  };
 }

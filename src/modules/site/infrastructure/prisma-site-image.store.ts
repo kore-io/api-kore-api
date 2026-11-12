@@ -28,18 +28,28 @@ export class PrismaSiteImageStore implements SiteImageStore {
   async createUploading({
     id,
     weddingId,
+    keyToken,
     storageKey,
     sizeBytes,
     uploadedByUserId,
   }: {
     id: string;
     weddingId: string;
+    keyToken: string;
     storageKey: string;
     sizeBytes: number;
     uploadedByUserId: string;
   }): Promise<void> {
     await this.tenant.client().siteImage.create({
-      data: { id, weddingId, storageKey, sizeBytes, uploadedByUserId, status: 'uploading' },
+      data: {
+        id,
+        weddingId,
+        keyToken,
+        storageKey,
+        sizeBytes,
+        uploadedByUserId,
+        status: 'uploading',
+      },
       select: { id: true },
     });
   }
@@ -50,12 +60,14 @@ export class PrismaSiteImageStore implements SiteImageStore {
   }: {
     weddingId: string;
     imageId: string;
-  }): Promise<boolean> {
-    const { count } = await this.tenant.client().siteImage.updateMany({
+  }): Promise<{ keyToken: string } | null> {
+    const tx = this.tenant.client();
+    const { count } = await tx.siteImage.updateMany({
       where: { id: imageId, weddingId, status: 'uploading' },
       data: { status: 'processing' },
     });
-    return count === 1;
+    if (count !== 1) return null;
+    return tx.siteImage.findUniqueOrThrow({ where: { id: imageId }, select: { keyToken: true } });
   }
 
   find({

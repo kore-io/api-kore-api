@@ -27,4 +27,15 @@ export class PrismaMembershipReader implements MembershipReader {
     });
     return owners > 0;
   }
+
+  weddingOrigin({
+    weddingId,
+  }: {
+    weddingId: string;
+  }): Promise<{ createdByUserId: string | null; referralSource: string | null } | null> {
+    return this.tenant.client().wedding.findFirst({
+      where: { id: weddingId },
+      select: { createdByUserId: true, referralSource: true },
+    });
+  }
 }

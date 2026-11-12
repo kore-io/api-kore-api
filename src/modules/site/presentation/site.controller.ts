@@ -19,6 +19,7 @@ import { UpdateSiteAppearance } from '../application/update-site-appearance.use-
 import { SiteAppearanceResponse, UpdateSiteAppearanceBody } from './site-appearance.dto';
 import {
   ContrastTooLowErrorBody,
+  EndDateOutOfRangeErrorBody,
   SiteFieldNotAllowedErrorBody,
   SiteImageNotFoundErrorBody,
   SiteSlugLockedErrorBody,
@@ -28,9 +29,12 @@ import { toHttpError } from './site-http-errors';
 import {
   SiteEditorResponse,
   SiteSectionResponse,
+  SiteSongQuestionResponse,
   UpdateSiteBody,
   UpdateSiteSectionBody,
+  UpdateSongQuestionBody,
 } from './site.dto';
+import { UpdateSongQuestion } from '../application/update-song-question.use-case';
 
 /** Editor do site (F2): leitura e Dados básicos. */
 @ApiTags('site')
@@ -41,7 +45,33 @@ export class SiteController {
     private readonly updateBasics: UpdateSiteBasics,
     private readonly updateAppearance: UpdateSiteAppearance,
     private readonly updateSection: UpdateSiteSection,
+    private readonly updateSongQuestion: UpdateSongQuestion,
   ) {}
+
+  /** A pergunta de música do RSVP: ligada e o texto (Música RN01 e RN02). */
+  @Put('song-question')
+  @ApiErrorResponses(
+    ...commonErrors({ validated: true, session: true, write: true }),
+    ActionNotAllowedErrorBody,
+    WeddingNotFoundErrorBody,
+  )
+  async songQuestion(
+    @CurrentSession() session: AuthenticatedSession,
+    @Param('weddingId') weddingId: string,
+    @Body() body: UpdateSongQuestionBody,
+  ): Promise<SiteSongQuestionResponse> {
+    try {
+      return await this.updateSongQuestion.execute({
+        userId: session.userId,
+        weddingId,
+        enabled: body.enabled,
+        text: body.text,
+        now: new Date(),
+      });
+    } catch (error) {
+      throw toHttpError(error);
+    }
+  }
 
   /** Grava uma seção inteira: ligada, título e conteúdo (Seções RN04 a RN13). */
   @Put('sections/:type')
@@ -135,6 +165,7 @@ export class SiteController {
     SiteImageNotFoundErrorBody,
     SiteSlugLockedErrorBody,
     SiteSlugUnavailableErrorBody,
+    EndDateOutOfRangeErrorBody,
   )
   async patch(
     @CurrentSession() session: AuthenticatedSession,

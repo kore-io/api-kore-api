@@ -1,12 +1,13 @@
 import { maskEmail } from '../domain/email';
 import { maskPhone } from '../domain/phone';
-import type { PartyDetailsRow, PartyGuestRow } from './ports/party-reader.port';
+import type { PartyDetailsRow, PartyGuestRow, PartyHistoryEntry } from './ports/party-reader.port';
 import type { PartyLinks } from './ports/party-links.port';
 
 /** O grupo como o Painel e o Editar grupo leem (GET /parties/:partyId; RN14). */
 export interface PartyView {
   id: string;
   name: string;
+  version: number;
   contactGuestId: string | null;
   plusOneSlots: number;
   internalNote: string | null;
@@ -15,8 +16,8 @@ export interface PartyView {
   deliveryStatus: PartyDetailsRow['deliveryStatus'];
   /** Com o telefone e o e-mail inteiros (o Editar grupo) e mascarados (o painel; 202(3)). */
   guests: (PartyGuestRow & { phoneMasked: string | null; emailMasked: string | null })[];
-  /** Envio, visualização e respostas: vazio até a Fase 4. */
-  history: never[];
+  /** Envios, visualização e respostas, os 50 mais recentes (Prazo RN05). */
+  history: PartyHistoryEntry[];
 }
 
 export function toPartyView({
@@ -29,6 +30,7 @@ export function toPartyView({
   return {
     id: row.id,
     name: row.name,
+    version: row.version,
     contactGuestId: row.contactGuestId,
     plusOneSlots: row.plusOneSlots,
     internalNote: row.internalNote,
@@ -43,6 +45,6 @@ export function toPartyView({
       phoneMasked: guest.phone ? maskPhone({ e164: guest.phone }) : null,
       emailMasked: guest.email ? maskEmail({ email: guest.email }) : null,
     })),
-    history: [],
+    history: row.history,
   };
 }

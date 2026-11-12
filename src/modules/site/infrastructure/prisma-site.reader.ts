@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { TenantTransaction } from '../../../shared/database/tenant-transaction';
 import type {
+  PlannerCollaboratorCredit,
   ReadySiteImage,
   SiteReader,
   SiteSnapshot,
@@ -10,6 +11,8 @@ import {
   type SectionContent,
   type SiteSectionType,
 } from '../domain/site-sections';
+
+import { creditNameForSite } from '../../access/domain/planner-profile';
 
 const LOCALE = 'pt-BR';
 
@@ -34,6 +37,7 @@ export class PrismaSiteReader implements SiteReader {
     return {
       status: wedding.status,
       publishedAt: wedding.publishedAt,
+      endDate: wedding.endDate,
       siteUpdatedAt: wedding.siteUpdatedAt,
       partners: wedding.partners.map((partner) => ({
         id: partner.id,
@@ -48,6 +52,8 @@ export class PrismaSiteReader implements SiteReader {
       contactWhatsapp: wedding.contactWhatsapp,
       contactEmail: wedding.contactEmail,
       coverImageId: wedding.coverImageId,
+      songQuestion: { enabled: wedding.songQuestionEnabled, text: wedding.songQuestionText },
+      showPlannerCredit: wedding.showPlannerCredit,
       // Fora da lápide, a aparência nunca é nula (chk_weddings_site_tombstone).
       appearance: {
         fontPairKey: wedding.fontPairKey ?? 'romantico',
@@ -63,6 +69,16 @@ export class PrismaSiteReader implements SiteReader {
         content: (section.contents[0]?.content ?? {}) as SectionContent,
       })),
     };
+  }
+
+  async plannerCollaborator(): Promise<PlannerCollaboratorCredit | null> {
+    // A mesma base da wedding_planner_credit (Assinatura RN02): uma regra só.
+    const [row] = await this.tenant.client().$queryRaw<
+      { credit_name: string | null; hidden_by_kore: boolean }[]
+    >`SELECT credit_name, hidden_by_kore FROM session_wedding_planner_collaborator()`;
+    return row
+      ? { name: creditNameForSite({ raw: row.credit_name }), hiddenByKore: row.hidden_by_kore }
+      : null;
   }
 
   async readyImages({

@@ -24,6 +24,8 @@ import {
   deliveryStatusAfter,
   hasPending,
   isEmptySlot,
+  respondedAtAfter,
+  sameInstant,
   type GroupMember,
 } from '../domain/party-rules';
 import { purgeAt } from '../domain/trash';
@@ -289,7 +291,8 @@ export class TrashGuest {
 
     await support.trash.trashGuest({ guestId, now });
     const after = group.members.filter((member) => member.id !== guestId);
-    const changes: PartyChanges = {};
+    // O grupo mudou: a versão sobe (RSVP RN11).
+    const changes: PartyChanges = { bumpVersion: true };
     const contact = contactAfter({ currentContactId: group.contactGuestId, members: after });
     if (contact !== group.contactGuestId) changes.contactGuestId = contact;
     if (guest.isPlusOne) changes.plusOneSlots = group.plusOneSlots - 1;
@@ -299,6 +302,8 @@ export class TrashGuest {
       members: after,
     });
     if (delivery !== group.deliveryStatus) changes.deliveryStatus = delivery;
+    const respondedAt = respondedAtAfter({ delivery, members: after });
+    if (!sameInstant(respondedAt, group.respondedAt)) changes.respondedAt = respondedAt;
     await support.groups.updateParty({ partyId: group.id, changes });
     await support.parties.applyStats({
       weddingId,
@@ -498,7 +503,8 @@ export class RestoreTrashItem {
     await support.trash.restoreGuest({ guestId, asRegular });
     const back = this.asMember({ guest, asRegular });
     const after = [...group.members, back];
-    const changes: PartyChanges = {};
+    // O grupo mudou: a versão sobe (RSVP RN11).
+    const changes: PartyChanges = { bumpVersion: true };
     // O contato só volta se o grupo estiver sem contato.
     if (group.contactGuestId === null && canBeContact(back)) changes.contactGuestId = guestId;
     const delivery = deliveryStatusAfter({
@@ -507,6 +513,8 @@ export class RestoreTrashItem {
       members: after,
     });
     if (delivery !== group.deliveryStatus) changes.deliveryStatus = delivery;
+    const respondedAt = respondedAtAfter({ delivery, members: after });
+    if (!sameInstant(respondedAt, group.respondedAt)) changes.respondedAt = respondedAt;
     await support.groups.updateParty({ partyId: group.id, changes });
     await support.parties.applyStats({
       weddingId,
@@ -569,6 +577,7 @@ export class RestoreTrashItem {
       rsvpStatus: guest.rsvpStatus,
       phone: guest.phone,
       email: guest.email,
+      respondedAt: guest.respondedAt,
     };
   }
 }

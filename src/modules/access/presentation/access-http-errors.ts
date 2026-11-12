@@ -1,3 +1,4 @@
+import { ContrastTooLowError } from '../../site/domain/site.errors';
 import {
   BadRequestException,
   ConflictException,
@@ -7,6 +8,7 @@ import {
   HttpStatus,
   NotFoundException,
   UnauthorizedException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import {
   InvalidLoginCodeError,
@@ -22,6 +24,11 @@ import {
   ProfileNotOwnedError,
   CannotRemoveOwnerError,
   LastOwnerError,
+  WeddingHasNoOwnerError,
+  SelfReferralError,
+  SelfInvitationError,
+  OwnerlessWeddingsLimitError,
+  WeddingHasOwnerError,
   MembershipNotFoundError,
   SellerCannotBePlannerError,
   InvitationNotDeclinableError,
@@ -34,6 +41,10 @@ import {
   AlreadyOwnerError,
   SlugUnavailableError,
   TermsVersionOutdatedError,
+  PlannerSignupDisabledError,
+  PlannerProfileExistsError,
+  PlannerNotFoundError,
+  PlannerProfileInvalidError,
   SessionExpiredError,
   UserBlockedError,
   WeddingActionForbiddenError,
@@ -117,6 +128,16 @@ export function toHttpError(error: unknown): unknown {
       message: 'Referral not found.',
     });
   }
+  // A aparência do simulador no cadastro (Simule RN10): o mesmo 422 do Editor.
+  if (error instanceof ContrastTooLowError) {
+    return new UnprocessableEntityException({
+      statusCode: 422,
+      error: 'CONTRAST_TOO_LOW',
+      message: 'The color does not reach the minimum contrast.',
+      check: error.check,
+      ratio: error.ratio,
+    });
+  }
   if (error instanceof SlugUnavailableError) {
     return new ConflictException({
       statusCode: 409,
@@ -132,6 +153,30 @@ export function toHttpError(error: unknown): unknown {
       message: 'You already own an active wedding.',
       weddingId: error.weddingId,
     });
+  }
+  if (error instanceof PlannerSignupDisabledError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'PLANNER_SIGNUP_DISABLED',
+      message: 'The planner signup is not open yet.',
+    });
+  }
+  if (error instanceof PlannerProfileExistsError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'PLANNER_PROFILE_EXISTS',
+      message: 'This account already has the planner profile.',
+    });
+  }
+  if (error instanceof PlannerNotFoundError) {
+    return new NotFoundException({
+      statusCode: 404,
+      error: 'PLANNER_NOT_FOUND',
+      message: 'This account has no planner profile.',
+    });
+  }
+  if (error instanceof PlannerProfileInvalidError) {
+    return validationError({ errors: error.issues });
   }
   if (error instanceof TermsVersionOutdatedError) {
     return new ConflictException({
@@ -237,6 +282,41 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 409,
       error: 'LAST_OWNER',
       message: 'The last owner cannot leave the wedding.',
+    });
+  }
+  if (error instanceof WeddingHasNoOwnerError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'WEDDING_HAS_NO_OWNER',
+      message: 'The wedding has no owner yet; delete it instead of leaving.',
+    });
+  }
+  if (error instanceof WeddingHasOwnerError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'WEDDING_HAS_OWNER',
+      message: 'The couple has already accepted; the wedding cannot be deleted.',
+    });
+  }
+  if (error instanceof OwnerlessWeddingsLimitError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'OWNERLESS_WEDDINGS_LIMIT',
+      message: 'Too many weddings still without the couple.',
+    });
+  }
+  if (error instanceof SelfInvitationError) {
+    return new UnprocessableEntityException({
+      statusCode: 422,
+      error: 'SELF_INVITATION',
+      message: 'This is the e-mail of your account; use the couple e-mail.',
+    });
+  }
+  if (error instanceof SelfReferralError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'SELF_REFERRAL',
+      message: 'The referrer of this wedding cannot accept its couple invitation.',
     });
   }
   if (error instanceof MembershipNotFoundError) {

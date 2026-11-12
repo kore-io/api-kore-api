@@ -7,6 +7,7 @@ import type {
   InvitationAcceptanceStore,
 } from '../application/ports/invitation-acceptance-store.port';
 import type { InvitationSnapshot } from '../domain/invitation-acceptance';
+import { creditNameForSite } from '../domain/planner-profile';
 import type { PartnerTitle } from '../domain/wedding-signup';
 
 type Json = Record<string, unknown>;
@@ -29,15 +30,18 @@ function toSnapshot(raw: Json): InvitationSnapshot {
       activeOwners: Number(wedding.activeOwners),
       activeCollaborators: Number(wedding.activeCollaborators),
     },
+    // Assinatura RN03 e RN04: o predicado do nome, no helper único.
+    plannerCredit: creditNameForSite({ raw: (raw.plannerCredit as string | null) ?? null }),
   };
 }
 
-/** As barreiras da função accept_access_invitation, pelo SQLSTATE (migration invitation_barrier_codes). */
+/** As barreiras da função accept_access_invitation, pelo SQLSTATE (migrations invitation_barrier_codes e self_referral). */
 const REFUSALS: Record<string, AcceptRefusal> = {
   KA001: 'not_pending',
   KA002: 'owners_full',
   KA003: 'partner_taken',
   KA004: 'planner_already',
+  KA005: 'self_referral',
 };
 
 /**

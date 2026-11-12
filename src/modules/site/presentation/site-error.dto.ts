@@ -49,7 +49,8 @@ export class SiteFieldNotAllowedErrorBody {
   @ApiProperty({ enum: [403] }) statusCode: 403;
   @ApiProperty({ enum: ['FIELD_NOT_ALLOWED'] }) error: 'FIELD_NOT_ALLOWED';
   @ApiProperty() message: string;
-  @ApiProperty({ type: [String], enum: ['eventDate', 'state', 'slug'] }) fields: string[];
+  @ApiProperty({ type: [String], enum: ['eventDate', 'state', 'slug', 'showPlannerCredit'] })
+  fields: string[];
 }
 
 /** "O site já foi publicado, então o endereço não muda mais." (Dados básicos RN05). */
@@ -136,4 +137,38 @@ export class PreviewRequiredErrorBody {
   @ApiProperty({ enum: [401] }) statusCode: 401;
   @ApiProperty({ enum: ['PREVIEW_REQUIRED'] }) error: 'PREVIEW_REQUIRED';
   @ApiProperty() message: string;
+}
+
+/** A chave da Cortesia está desligada (Publicação RN01). */
+export class CourtesyDisabledErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['COURTESY_DISABLED'] }) error: 'COURTESY_DISABLED';
+  @ApiProperty() message: string;
+}
+
+/** Só se publica de rascunho: aguardando o casal ou já publicado (Publicação RN03). */
+export class NotDraftErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['NOT_DRAFT'] }) error: 'NOT_DRAFT';
+  @ApiProperty() message: string;
+}
+
+/** Sem data ou sem fuso (UF) do casamento (Publicação RN04). */
+export class EventDateMissingErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['EVENT_DATE_MISSING'] }) error: 'EVENT_DATE_MISSING';
+  @ApiProperty() message: string;
+}
+
+/** "Escolham uma data depois do casamento e até {limite}." (Publicação RN04 e RN11). */
+export class EndDateOutOfRangeErrorBody {
+  static readonly status = 422;
+  @ApiProperty({ enum: [422] }) statusCode: 422;
+  @ApiProperty({ enum: ['END_DATE_OUT_OF_RANGE'] }) error: 'END_DATE_OUT_OF_RANGE';
+  @ApiProperty() message: string;
+  @ApiProperty({ type: String, nullable: true, example: '2026-11-15' }) endDateMin: string | null;
+  @ApiProperty({ type: String, nullable: true, example: '2027-11-14' }) endDateMax: string | null;
 }

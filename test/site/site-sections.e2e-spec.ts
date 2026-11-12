@@ -56,6 +56,7 @@ describe('Seções do site (banco real)', () => {
     await db.siteImage.create({
       data: {
         id,
+        keyToken: id,
         weddingId,
         status,
         storageKey: `site/${id}/display.jpg`,
@@ -144,6 +145,22 @@ describe('Seções do site (banco real)', () => {
     expect(response.body).toMatchObject({ enabled: false, content: ceremony.content });
   });
 
+  it('Imagens do site RN01 - a Nossa história aceita até 12 fotos; a 13ª dá 400 e nada muda', async () => {
+    const { ana, weddingId } = await anaWedding();
+    const before = await db.sectionContent.findMany({ where: { weddingId } });
+
+    const response = await put(ana.cookie, weddingId, 'story', {
+      enabled: true,
+      title: 'Nossa história',
+      content: { text: '', imageIds: Array.from({ length: 13 }, () => uuidV7()) },
+    }).expect(400);
+
+    expect(response.body.errors).toEqual([
+      { path: 'content.imageIds', code: 'ARRAY_MAX_SIZE', params: { max: 12 } },
+    ]);
+    expect(await db.sectionContent.findMany({ where: { weddingId } })).toEqual(before);
+  });
+
   it('RN12 - todos os limites no servidor, com o caminho do campo e o prefixo content.', async () => {
     const { ana, weddingId } = await anaWedding();
     const errorsOf = async (type: string, body: object) =>
@@ -228,6 +245,86 @@ describe('Seções do site (banco real)', () => {
     }).expect(200);
     expect(await unused(first)).not.toBeNull();
     expect(await unused(second)).toBeNull();
+  });
+
+  it('RN12 - os limites de cada campo no servidor: Dress code, locais, FAQ, título e quantidade de locais; nada muda', async () => {
+    const { ana, weddingId } = await anaWedding();
+    const before = await db.sectionContent.findMany({ where: { weddingId } });
+    const errorsOf = async (type: string, body: object) =>
+      (await put(ana.cookie, weddingId, type, body).expect(400)).body.errors as {
+        path: string;
+        code: string;
+        params: Record<string, unknown>;
+      }[];
+    const venue = ceremony.content.venues[0];
+
+    expect(
+      await errorsOf('dress_code', {
+        enabled: true,
+        title: 'Dress code',
+        content: { text: 'a'.repeat(2001), imageId: null },
+      }),
+    ).toEqual([{ path: 'content.text', code: 'MAX_LENGTH', params: { max: 2000 } }]);
+    expect(
+      await errorsOf('ceremony', {
+        ...ceremony,
+        content: {
+          venues: [
+            {
+              ...venue,
+              title: 'a'.repeat(41),
+              placeName: 'b'.repeat(81),
+              address: 'c'.repeat(201),
+            },
+          ],
+        },
+      }),
+    ).toEqual([
+      { path: 'content.venues.0.title', code: 'MAX_LENGTH', params: { max: 40 } },
+      { path: 'content.venues.0.placeName', code: 'MAX_LENGTH', params: { max: 80 } },
+      { path: 'content.venues.0.address', code: 'MAX_LENGTH', params: { max: 200 } },
+    ]);
+    expect(
+      await errorsOf('ceremony', {
+        ...ceremony,
+        content: { venues: Array.from({ length: 5 }, () => venue) },
+      }),
+    ).toEqual([{ path: 'content.venues', code: 'ARRAY_MAX_SIZE', params: { max: 4 } }]);
+    expect(
+      await errorsOf('faq', {
+        enabled: true,
+        title: 'Perguntas frequentes',
+        content: { items: [{ question: 'p'.repeat(201), answer: 'r'.repeat(1001) }] },
+      }),
+    ).toEqual([
+      { path: 'content.items.0.question', code: 'MAX_LENGTH', params: { max: 200 } },
+      { path: 'content.items.0.answer', code: 'MAX_LENGTH', params: { max: 1000 } },
+    ]);
+    expect(
+      await errorsOf('lodging', {
+        enabled: true,
+        title: 't'.repeat(81),
+        content: { text: '' },
+      }),
+    ).toEqual([{ path: 'title', code: 'MAX_LENGTH', params: { max: 80 } }]);
+    expect(await db.sectionContent.findMany({ where: { weddingId } })).toEqual(before);
+  });
+
+  it('RN09 e Imagens RN08 - o Dress code com uma foto pronta do casamento: 200, a foto resolvida e em uso', async () => {
+    const { ana, weddingId } = await anaWedding();
+    const photo = await image(weddingId);
+
+    const response = await put(ana.cookie, weddingId, 'dress_code', {
+      enabled: true,
+      title: 'Dress code',
+      content: { text: 'Esporte fino', imageId: photo },
+    }).expect(200);
+
+    expect(response.body.content).toMatchObject({
+      text: 'Esporte fino',
+      image: { id: photo, url: expect.any(String), thumbUrl: expect.any(String) },
+    });
+    expect((await db.siteImage.findUniqueOrThrow({ where: { id: photo } })).unusedSince).toBeNull();
   });
 
   it('RN12 e Imagens RN10 - foto de outro casamento ou ainda não pronta: 404 IMAGE_NOT_FOUND com os ids', async () => {

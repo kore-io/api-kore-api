@@ -143,6 +143,33 @@ describe('Pré-visualização do site (banco real)', () => {
     await createPreview(ana.cookie, weddingId, { mode: 'party', partyId: moreira.id }).expect(404);
   });
 
+  it('RN09 - sem vínculo, o POST /site-previews dá 404 WEDDING_NOT_FOUND e nenhum token gravado', async () => {
+    const { weddingId } = await draftWedding();
+    const estranha = await signedInUser({ app, name: 'Estranha' });
+
+    const response = await createPreview(estranha.cookie, weddingId, { mode: 'visitor' }).expect(
+      404,
+    );
+
+    expect(response.body.error).toBe('WEDDING_NOT_FOUND');
+    expect(await db.sitePreviewToken.count({ where: { weddingId } })).toBe(0);
+  });
+
+  it('RN05 - o grupo vai para a lixeira durante a prévia: a próxima leitura sai da prévia', async () => {
+    const wedding = await draftWedding();
+    const cookie = await openPreview(
+      { cookie: wedding.ana.cookie, weddingId: wedding.weddingId, slug: wedding.slug },
+      { mode: 'party', partyId: wedding.moreira.id },
+    );
+    expect((await site(wedding.slug, cookie).expect(200)).body.viewer).toMatchObject({
+      kind: 'preview',
+    });
+
+    await db.party.update({ where: { id: wedding.moreira.id }, data: { deletedAt: new Date() } });
+
+    expect((await site(wedding.slug, cookie).expect(404)).body.error).toBe('SITE_DRAFT');
+  });
+
   it('RN03 - troca o token pelo cookie da prévia (30 minutos fixos, só nas rotas do site); o token vale uma vez só', async () => {
     const wedding = await draftWedding();
     const { url } = (
@@ -164,6 +191,8 @@ describe('Pré-visualização do site (banco real)', () => {
     expect(cookie).toMatch(new RegExp(`^kore_site_preview_${wedding.weddingId}=[^;]+;`));
     expect(cookie).toContain('Path=/v1/sites');
     expect(cookie).toContain('HttpOnly');
+    expect(cookie).toContain('Secure');
+    expect(cookie).toContain('SameSite=Lax');
     const expires = new Date(/Expires=([^;]+)/.exec(cookie)?.[1] ?? '').getTime();
     expect(expires - before).toBeGreaterThan(29 * 60 * 1000);
     expect(expires - before).toBeLessThanOrEqual(30 * 60 * 1000 + 1000);
@@ -214,7 +243,11 @@ describe('Pré-visualização do site (banco real)', () => {
     expect(body).toMatchObject({
       slug: wedding.slug,
       names: 'Ana & Marcos',
-      viewer: { kind: 'preview', party: null, preview: { as: 'visitor' } },
+      viewer: {
+        kind: 'preview',
+        party: null,
+        preview: { as: 'visitor', published: false, audience: 'couple' },
+      },
       contact: null,
     });
     expect(body.sections).toContainEqual({
@@ -239,13 +272,41 @@ describe('Pré-visualização do site (banco real)', () => {
     ).expect(200);
 
     expect(body).toMatchObject({
-      viewer: { kind: 'preview', party: { name: 'Família Duarte' }, preview: { as: 'party' } },
+      viewer: {
+        kind: 'preview',
+        party: { name: 'Família Duarte' },
+        preview: { as: 'party', published: false, audience: 'couple' },
+      },
       contact: { whatsapp: '+5519998764521', email: null },
     });
     expect(JSON.stringify(body)).toContain(ADDRESS);
     expect(
       (await db.party.findUniqueOrThrow({ where: { id: wedding.duarte.id } })).firstViewedAt,
     ).toBeNull();
+  });
+
+  it('RN06 - a barra sabe se o site já foi publicado e fala com quem gerou: casal ou cerimonialista', async () => {
+    const wedding = await draftWedding();
+    const fromJuliana = await openPreview({ cookie: wedding.juliana.cookie, ...wedding });
+
+    const draft = await site(wedding.slug, fromJuliana).expect(200);
+    expect(draft.body.viewer.preview).toEqual({
+      as: 'visitor',
+      published: false,
+      audience: 'planner',
+    });
+
+    await db.wedding.update({
+      where: { id: wedding.weddingId },
+      data: { status: 'published', publishedAt: new Date() },
+    });
+    const fromAna = await openPreview({ cookie: wedding.ana.cookie, ...wedding });
+    const published = await site(wedding.slug, fromAna).expect(200);
+    expect(published.body.viewer.preview).toEqual({
+      as: 'visitor',
+      published: true,
+      audience: 'couple',
+    });
   });
 
   it('RN06 e RN08 - a barra troca o modo e regrava o cookie com o mesmo vencimento', async () => {

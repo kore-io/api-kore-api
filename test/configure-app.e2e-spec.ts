@@ -1,3 +1,6 @@
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { Body, Controller, INestApplication, Post } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { Type } from 'class-transformer';
@@ -116,6 +119,19 @@ describe('configureApp', () => {
     expect(response.body.components.schemas.SpreadsheetTemplateHeaders).toEqual({
       type: 'string',
       enum: ['Grupo', 'Nome', 'Telefone', 'E-mail', 'Faixa etária', 'Restrição alimentar', 'Tags'],
+      description: expect.any(String),
+    });
+  });
+
+  it('Aparência RN01 - o documento publica o sha256 da fixture de contraste, para o web conferir a cópia', async () => {
+    const response = await request(app.getHttpServer()).get('/docs-json').expect(200);
+    const fixture = readFileSync(
+      join(__dirname, '../src/modules/site/domain/appearance-contrast.fixture.json'),
+    );
+
+    expect(response.body.components.schemas.AppearanceContrastFixtureSha256).toEqual({
+      type: 'string',
+      enum: [createHash('sha256').update(fixture).digest('hex')],
       description: expect.any(String),
     });
   });

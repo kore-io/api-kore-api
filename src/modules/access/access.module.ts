@@ -29,6 +29,7 @@ import { DeclineAccessInvitation } from './application/decline-access-invitation
 import { INVITATION_ACCEPTANCE_STORE } from './application/ports/invitation-acceptance-store.port';
 import { PLANNER_PROFILES } from './application/ports/planner-profiles.port';
 import { USER_ACCOUNT_NAMES } from './application/ports/user-account-names.port';
+import { COLLABORATION_NOTICE_MAILER } from './application/ports/collaboration-notice-mailer.port';
 import { DECLINE_NOTICE_MAILER } from './application/ports/decline-notice-mailer.port';
 import { WEDDING_SIGNUP_STORE } from './application/ports/wedding-signup-store.port';
 import { PROFILE_DIRECTORY } from './application/ports/profile-directory.port';
@@ -38,6 +39,17 @@ import { VerifyLoginChallenge } from './application/verify-login-challenge.use-c
 import { EndAllSessions } from './application/end-all-sessions.use-case';
 import { EndSession } from './application/end-session.use-case';
 import { GetMe } from './application/get-me.use-case';
+import { DeleteWeddingByCreator } from './application/delete-wedding-by-creator.use-case';
+import { CREATOR_WEDDING_DELETER } from './application/ports/creator-wedding-deletion.port';
+import { PrismaCreatorWeddingDeleter } from './infrastructure/backoffice/prisma-creator-wedding-deleter';
+import { CreatePlannerWedding } from './application/create-planner-wedding.use-case';
+import { PlannerWeddingRateLimitGuard } from '../../shared/rate-limit/user-rate-limit.guard';
+import {
+  CreatePlannerProfile,
+  GetMyReferrer,
+  GetPlannerProfile,
+  UpdatePlannerProfile,
+} from './application/planner-profile.use-cases';
 import { SetActiveProfile } from './application/set-active-profile.use-case';
 import { ListWeddingMembers } from './application/list-wedding-members.use-case';
 import { RemoveMembership } from './application/remove-membership.use-case';
@@ -62,6 +74,7 @@ import { PrismaPlannerProfiles } from './infrastructure/prisma-planner-profiles'
 import { PrismaWeddingMembersStore } from './infrastructure/prisma-wedding-members.store';
 import { PrismaWeddingActivity } from './infrastructure/prisma-wedding-activity';
 import { PrismaUserAccountNames } from './infrastructure/prisma-user-account-names';
+import { OutboxCollaborationNoticeMailer } from './infrastructure/outbox-collaboration-notice-mailer';
 import { OutboxDeclineNoticeMailer } from './infrastructure/outbox-decline-notice-mailer';
 import { PrismaWeddingSignupStore } from './infrastructure/prisma-wedding-signup.store';
 import { PrismaProfileDirectory } from './infrastructure/prisma-profile-directory';
@@ -74,6 +87,7 @@ import { GoogleLoginController } from './presentation/google-login.controller';
 import { GoogleLoginCookie } from './presentation/google-login-cookie';
 import { LoginController } from './presentation/login.controller';
 import { MeController } from './presentation/me.controller';
+import { PlannerController } from './presentation/planner.controller';
 import { ReferralController } from './presentation/referral.controller';
 import { WeddingsController } from './presentation/weddings.controller';
 import { AccessInvitationsController } from './presentation/access-invitations.controller';
@@ -90,6 +104,7 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     LoginController,
     GoogleLoginController,
     MeController,
+    PlannerController,
     ReferralController,
     WeddingsController,
     AccessInvitationsController,
@@ -126,6 +141,7 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     { provide: WEDDING_ACTIVITY, useClass: PrismaWeddingActivity },
     { provide: USER_ACCOUNT_NAMES, useClass: PrismaUserAccountNames },
     { provide: DECLINE_NOTICE_MAILER, useClass: OutboxDeclineNoticeMailer },
+    { provide: COLLABORATION_NOTICE_MAILER, useClass: OutboxCollaborationNoticeMailer },
     // Mesmo gerador opaco da sessão: 256 bits, SHA-256 no banco.
     { provide: INVITATION_TOKENS, useClass: OpaqueSessionTokens },
     {
@@ -162,6 +178,14 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     EndAllSessions,
     GetMe,
     SetActiveProfile,
+    CreatePlannerProfile,
+    GetPlannerProfile,
+    UpdatePlannerProfile,
+    GetMyReferrer,
+    CreatePlannerWedding,
+    DeleteWeddingByCreator,
+    { provide: CREATOR_WEDDING_DELETER, useClass: PrismaCreatorWeddingDeleter },
+    PlannerWeddingRateLimitGuard,
     ListWeddingMembers,
     RemoveMembership,
     GetReferral,
@@ -174,6 +198,12 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     AcceptAccessInvitation,
     DeclineAccessInvitation,
   ],
-  exports: [StartSession, WeddingAuthorization, WeddingScope, CheckSlugAvailability],
+  exports: [
+    StartSession,
+    WeddingAuthorization,
+    WeddingScope,
+    CheckSlugAvailability,
+    PLANNER_PROFILES,
+  ],
 })
 export class AccessModule {}

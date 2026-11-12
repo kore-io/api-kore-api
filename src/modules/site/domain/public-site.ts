@@ -13,3 +13,8 @@ export function coupleNames({ partners }: { partners: readonly string[] }): stri
 export const LIVE_SITE_STATUSES: readonly string[] = ['published', 'post_event', 'grace'];
 /** Rascunho: a página "Este site ainda não foi publicado.", sem dado nenhum (RN04). */
 export const DRAFT_SITE_STATUSES: readonly string[] = ['awaiting_couple', 'draft'];
+
+/** A pergunta de música padrão (Música RN01; decisão 91 a); o texto nulo vale ela. */
+export const DEFAULT_SONG_QUESTION = 'Que música não pode faltar na festa?';
+/** A pergunta e a sugestão vão até 120 caracteres (Música RN01 e RN04; decisão 217(14)). */
+export const SONG_TEXT_MAX = 120;

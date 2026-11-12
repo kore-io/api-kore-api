@@ -61,4 +61,23 @@ describe('Remover ou sair de um vínculo (RN06 e RN07 de Papéis)', () => {
       }),
     ).toBeNull();
   });
+
+  it('decisão 224 (1) - a colaboradora não sai de casamento sem dono (WEDDING_HAS_NO_OWNER); com dono, sai', () => {
+    expect(
+      removalRefusal({
+        requesterId: 'u-juliana',
+        requesterRole: 'collaborator',
+        target: planner,
+        activeOwners: 0,
+      }),
+    ).toBe('wedding_has_no_owner');
+    expect(
+      removalRefusal({
+        requesterId: 'u-juliana',
+        requesterRole: 'collaborator',
+        target: planner,
+        activeOwners: 1,
+      }),
+    ).toBeNull();
+  });
 });

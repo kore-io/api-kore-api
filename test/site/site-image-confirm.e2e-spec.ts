@@ -90,8 +90,11 @@ describe('Imagens do site: confirmação e processamento (banco e MinIO reais)',
       ])
       .jpeg({ quality: 90 });
 
-  const publicObject = (imageId: string, version: string) =>
-    fetch(storage.publicUrl({ key: `site/${imageId}/${version}` }));
+  /** O token das chaves (decisão 229(f)): a chave não leva o id da imagem. */
+  const tokenOf = async (imageId: string) =>
+    (await db.siteImage.findUniqueOrThrow({ where: { id: imageId } })).keyToken;
+  const publicObject = async (imageId: string, version: string) =>
+    fetch(storage.publicUrl({ key: `site/${await tokenOf(imageId)}/${version}` }));
 
   async function served(imageId: string, version: string) {
     const response = await publicObject(imageId, version);
@@ -109,19 +112,24 @@ describe('Imagens do site: confirmação e processamento (banco e MinIO reais)',
 
     const response = await confirm(ana.cookie, weddingId, imageId).expect(201);
 
+    // Decisão 229(f): a URL pública não leva o id (UUIDv7, que revela a hora do envio).
+    const { url, thumbUrl } = response.body as { url: string; thumbUrl: string };
+    expect(url).not.toContain(imageId);
+    expect(thumbUrl).not.toContain(imageId);
+    expect(await tokenOf(imageId)).not.toBe(imageId);
     expect(response.body).toEqual({
       id: imageId,
       status: 'ready',
-      url: storage.publicUrl({ key: `site/${imageId}/display.jpg` }),
-      thumbUrl: storage.publicUrl({ key: `site/${imageId}/thumb.jpg` }),
+      url: storage.publicUrl({ key: `site/${await tokenOf(imageId)}/display.jpg` }),
+      thumbUrl: storage.publicUrl({ key: `site/${await tokenOf(imageId)}/thumb.jpg` }),
       width: 2560,
       height: 1707,
     });
     const image = await db.siteImage.findUniqueOrThrow({ where: { id: imageId } });
     expect(image).toMatchObject({
       status: 'ready',
-      thumbKey: `site/${imageId}/thumb.jpg`,
-      ogKey: `site/${imageId}/og.jpg`,
+      thumbKey: `site/${await tokenOf(imageId)}/thumb.jpg`,
+      ogKey: `site/${await tokenOf(imageId)}/og.jpg`,
       width: 2560,
       height: 1707,
     });
@@ -140,7 +148,9 @@ describe('Imagens do site: confirmação e processamento (banco e MinIO reais)',
     expect(og.length).toBeLessThanOrEqual(300 * 1024);
     expect(await sharp(og).metadata()).toMatchObject({ format: 'jpeg', width: 1200, height: 630 });
     // O original sai do bucket privado.
-    expect(await storage.head({ bucket: 'private', key: `site/${imageId}/original` })).toBeNull();
+    expect(
+      await storage.head({ bucket: 'private', key: `site/${await tokenOf(imageId)}/original` }),
+    ).toBeNull();
   });
 
   it('RN05 - o servidor tira EXIF, XMP e GPS e aplica a orientação antes', async () => {
@@ -263,7 +273,7 @@ describe('Imagens do site: confirmação e processamento (banco e MinIO reais)',
     );
     await storage.put({
       bucket: 'private',
-      key: `site/${imageId}/original`,
+      key: `site/${await tokenOf(imageId)}/original`,
       body: file,
       contentType: 'image/jpeg',
     });
@@ -281,7 +291,7 @@ describe('Imagens do site: confirmação e processamento (banco e MinIO reais)',
     // O R2 pode não impor o tamanho assinado: o objeto maior chega por fora da URL.
     await storage.put({
       bucket: 'private',
-      key: `site/${imageId}/original`,
+      key: `site/${await tokenOf(imageId)}/original`,
       body: Buffer.alloc(6 * 1024 * 1024, 1),
       contentType: 'image/jpeg',
     });
@@ -294,7 +304,9 @@ describe('Imagens do site: confirmação e processamento (banco e MinIO reais)',
     expect((await db.siteImage.findUniqueOrThrow({ where: { id: imageId } })).status).toBe(
       'failed',
     );
-    expect(await storage.head({ bucket: 'private', key: `site/${imageId}/original` })).toBeNull();
+    expect(
+      await storage.head({ bucket: 'private', key: `site/${await tokenOf(imageId)}/original` }),
+    ).toBeNull();
   });
 
   it('RN05 - o tipo vale pelo conteúdo: um PDF enviado como image/jpeg fica "failed"', async () => {
@@ -315,7 +327,9 @@ describe('Imagens do site: confirmação e processamento (banco e MinIO reais)',
     expect((await db.siteImage.findUniqueOrThrow({ where: { id: imageId } })).status).toBe(
       'failed',
     );
-    expect(await storage.head({ bucket: 'private', key: `site/${imageId}/original` })).toBeNull();
+    expect(
+      await storage.head({ bucket: 'private', key: `site/${await tokenOf(imageId)}/original` }),
+    ).toBeNull();
     // Depois de "failed", a imagem não existe para o app.
     expect((await confirm(ana.cookie, weddingId, imageId).expect(404)).body.error).toBe(
       'IMAGE_NOT_FOUND',

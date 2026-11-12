@@ -12,7 +12,14 @@ import {
   type FieldIssue,
 } from '../domain/guests.errors';
 import { canBeContact, type AgeGroup } from '../domain/party';
-import { contactAfter, deliveryStatusAfter, hasPending, isEmptySlot } from '../domain/party-rules';
+import {
+  contactAfter,
+  deliveryStatusAfter,
+  hasPending,
+  isEmptySlot,
+  respondedAtAfter,
+  sameInstant,
+} from '../domain/party-rules';
 import { parsePhone } from '../domain/phone';
 import { guestsDelta, type StatsDelta } from '../domain/wedding-stats';
 import { toPartyView, type PartyView } from './party-view';
@@ -249,6 +256,16 @@ export class UpdateParty {
       members: after,
     });
     if (delivery !== group.deliveryStatus) partyChanges.deliveryStatus = delivery;
+    const respondedAt = respondedAtAfter({ delivery, members: after });
+    if (!sameInstant(respondedAt, group.respondedAt)) partyChanges.respondedAt = respondedAt;
+    // Convidado novo, vaga criada ou apagada e nome trocado mudam o formulário
+    // de RSVP: a versão sobe (RSVP RN11). Contato, telefone, e-mail, faixa
+    // etária, tags, nome do grupo e observação não mexem nele.
+    const renamed = edits.some(
+      (edit) => edit.changes.name !== undefined && edit.changes.name !== edit.member.name,
+    );
+    if (added.length > 0 || newSlots.length > 0 || removedSlots.length > 0 || renamed)
+      partyChanges.bumpVersion = true;
     await this.groups.updateParty({ partyId, changes: partyChanges });
 
     await this.parties.applyStats({

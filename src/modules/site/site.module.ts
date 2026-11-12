@@ -9,6 +9,7 @@ import { SITE_READER } from './application/ports/site-reader.port';
 import { SITE_STORE } from './application/ports/site-store.port';
 import { GetSiteEditor, SiteEditorViews } from './application/site-editor-view';
 import { UpdateSiteSection } from './application/update-site-section.use-case';
+import { UpdateSongQuestion } from './application/update-song-question.use-case';
 import { UpdateSiteAppearance } from './application/update-site-appearance.use-case';
 import { UpdateSiteBasics } from './application/update-site-basics.use-case';
 import { PrismaSiteReader } from './infrastructure/prisma-site.reader';
@@ -16,6 +17,8 @@ import { PrismaSiteStore } from './infrastructure/prisma-site.store';
 import { PartyLinkFailures } from '../../shared/rate-limit/party-link-failures';
 import { PARTY_COOKIES } from './application/ports/party-cookies.port';
 import { StartPartySession } from './application/start-party-session.use-case';
+import { PARTY_VISITS } from './application/ports/party-visits.port';
+import { PrismaPartyVisits } from './infrastructure/prisma-party-visits';
 import { HmacPartyCookies } from './infrastructure/hmac-party-cookies';
 import { PREVIEW_COOKIES } from './application/ports/preview-cookies.port';
 import { SITE_PREVIEW_STORE } from './application/ports/site-preview-store.port';
@@ -37,6 +40,10 @@ import {
   SiteLinkPreviewController,
 } from './presentation/public-site.controller';
 import { SiteController } from './presentation/site.controller';
+import { PublicationController } from './presentation/publication.controller';
+import { PublishWedding } from './application/publish-wedding.use-case';
+import { PUBLICATION_STORE } from './application/ports/publication-store.port';
+import { PrismaPublicationStore } from './infrastructure/prisma-publication.store';
 import { SITE_IMAGE_STORE } from './application/ports/site-image-store.port';
 import { PrismaSiteImageStore } from './infrastructure/prisma-site-image.store';
 import { SiteImagesController } from './presentation/site-images.controller';
@@ -50,6 +57,7 @@ import { SiteImagesController } from './presentation/site-images.controller';
     PublicSiteController,
     SiteLinkPreviewController,
     SitePreviewsController,
+    PublicationController,
   ],
   providers: [
     { provide: SITE_IMAGE_STORE, useClass: PrismaSiteImageStore },
@@ -63,10 +71,12 @@ import { SiteImagesController } from './presentation/site-images.controller';
     UpdateSiteBasics,
     UpdateSiteAppearance,
     UpdateSiteSection,
+    UpdateSongQuestion,
     { provide: PUBLIC_SITE_READER, useClass: PrismaPublicSiteReader },
     GetPublicSite,
     { provide: PARTY_COOKIES, useClass: HmacPartyCookies },
     PartyLinkFailures,
+    { provide: PARTY_VISITS, useClass: PrismaPartyVisits },
     StartPartySession,
     { provide: PREVIEW_COOKIES, useClass: HmacPreviewCookies },
     { provide: SITE_PREVIEW_STORE, useClass: PrismaSitePreviewStore },
@@ -77,6 +87,10 @@ import { SiteImagesController } from './presentation/site-images.controller';
     ListPreviewParties,
     GetSiteLinkPreview,
     SiteImageRateLimitGuard,
+    { provide: PUBLICATION_STORE, useClass: PrismaPublicationStore },
+    PublishWedding,
   ],
+  // O RSVP (F4) usa o endereço, o cookie do grupo e a prévia do site.
+  exports: [PUBLIC_SITE_READER, PARTY_COOKIES, PreviewSessions],
 })
 export class SiteModule {}

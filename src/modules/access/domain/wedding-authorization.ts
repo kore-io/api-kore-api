@@ -20,13 +20,22 @@ export type WeddingAction =
   /** Mandar para a lixeira quem já respondeu (Lixeira RN07): só o dono (184(15)). */
   | 'trash_responded'
   /** Editar o site e enviar imagens (Dados básicos RN04; F2): qualquer vínculo. */
-  | 'manage_site';
+  | 'manage_site'
+  /** Publicar o site (Publicação por Cortesia RN02; F4): só o dono. */
+  | 'publish_site'
+  /** Alterar resposta depois do prazo ou no pós-evento (Prazo RN04; F4): só o dono. */
+  | 'edit_response_after_deadline'
+  /** Mostrar ou ocultar a assinatura da assessoria (Assinatura RN05; F6): só o dono. */
+  | 'manage_planner_credit';
 
 const OWNER_ONLY: ReadonlySet<WeddingAction> = new Set([
   'invite_partner',
   'invite_planner',
   'remove_collaborator',
   'trash_responded',
+  'publish_site',
+  'edit_response_after_deadline',
+  'manage_planner_credit',
 ]);
 
 /**
@@ -47,8 +56,9 @@ export function roleAllows({
 
 /**
  * Mudar a data, a UF e o endereço do site (Dados básicos RN04; decisão 207,
- * item 13): o dono, ou o colaborador com perfil de indicador `seller` num
- * casamento sem dono ativo (decisões 31 e 65). Fica fora do `roleAllows`
+ * item 13): o dono, ou, num casamento sem dono ativo, o colaborador com
+ * perfil de indicador `seller` (decisões 31 e 65) ou a cerimonialista que o
+ * criou (Novo casamento RN08). Fica fora do `roleAllows`
  * porque depende do perfil de indicador e do casamento, não só do papel: o
  * vendedor e a cerimonialista são os dois `collaborator`.
  */
@@ -56,11 +66,19 @@ export function canManageSiteIdentity({
   role,
   referrerKind,
   hasActiveOwner,
+  createdByMe,
+  referralSource,
 }: {
   role: MembershipRole;
   referrerKind: 'planner' | 'seller' | null;
   hasActiveOwner: boolean;
+  createdByMe: boolean;
+  referralSource: string | null;
 }): boolean {
   if (role === 'owner') return true;
-  return referrerKind === 'seller' && !hasActiveOwner;
+  if (hasActiveOwner) return false;
+  if (referrerKind === 'seller') return true;
+  // Novo casamento RN08 (decisão 223, D10): a cerimonialista que criou o
+  // casamento, até o aceite do casal.
+  return referrerKind === 'planner' && createdByMe && referralSource === 'created_by_planner';
 }

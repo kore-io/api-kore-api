@@ -1,8 +1,8 @@
 import { detectSiteImageType, siteImageKeys } from './site-image';
 
 describe('siteImageKeys (Imagens do site RN06)', () => {
-  it('RN06 - as chaves levam só o id da imagem, sem o casamento', () => {
-    expect(siteImageKeys({ imageId: 'abc' })).toEqual({
+  it('RN06 e decisão 229(f) - as chaves levam só o token aleatório, sem o casamento nem o id', () => {
+    expect(siteImageKeys({ keyToken: 'abc' })).toEqual({
       original: 'site/abc/original',
       display: 'site/abc/display.jpg',
       thumb: 'site/abc/thumb.jpg',

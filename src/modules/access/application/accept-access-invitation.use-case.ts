@@ -13,16 +13,27 @@ import {
   InvitationInvalidError,
   OwnersFullError,
   PlannerAlreadyError,
+  SelfReferralError,
   SellerCannotBePlannerError,
   SessionExpiredError,
 } from '../domain/access.errors';
-import { emailDiffers, invalidReason, partnerChoice } from '../domain/invitation-acceptance';
+import { firstName } from '../domain/access-invitation';
+import {
+  emailDiffers,
+  invalidReason,
+  isSelfReferral,
+  partnerChoice,
+} from '../domain/invitation-acceptance';
 import type { MembershipRole } from '../domain/wedding-authorization';
 import { cleanText, type PartnerTitle } from '../domain/wedding-signup';
 import {
   INVITATION_ACCEPTANCE_STORE,
   type InvitationAcceptanceStore,
 } from './ports/invitation-acceptance-store.port';
+import {
+  COLLABORATION_NOTICE_MAILER,
+  type CollaborationNoticeMailer,
+} from './ports/collaboration-notice-mailer.port';
 import { INVITATION_TOKENS, type InvitationTokens } from './ports/invitation-tokens.port';
 import { PLANNER_PROFILES, type PlannerProfiles } from './ports/planner-profiles.port';
 import { USER_ACCOUNT_NAMES, type UserAccountNames } from './ports/user-account-names.port';
@@ -64,6 +75,7 @@ export class AcceptAccessInvitation {
     @Inject(PRODUCT_EVENT_RECORDER) private readonly productEvents: ProductEventRecorder,
     @Inject(AFTER_COMMIT) private readonly afterCommit: AfterCommit,
     @Inject(SESSION_REPOSITORY) private readonly sessions: SessionRepository,
+    @Inject(COLLABORATION_NOTICE_MAILER) private readonly mailer: CollaborationNoticeMailer,
   ) {}
 
   async execute({
@@ -96,6 +108,8 @@ export class AcceptAccessInvitation {
     if (mismatch && !acceptance.confirmOtherAccount) throw new EmailMismatchError();
 
     const { weddingId, wedding } = invitation;
+    // Decisão 224(2): a regra vem antes do ALREADY_MEMBER, para não depender do vínculo.
+    if (isSelfReferral({ invitation, userId })) throw new SelfReferralError();
     // Decisão 172(3) revista: quem já tem vínculo neste casamento, dono ou não.
     if (await this.store.activeRole({ userId, weddingId })) throw new AlreadyMemberError();
 
@@ -132,6 +146,7 @@ export class AcceptAccessInvitation {
     if (result === 'not_pending') throw new InvitationInvalidError({ reason: 'used' });
     if (result === 'owners_full' || result === 'partner_taken') throw new OwnersFullError();
     if (result === 'planner_already') throw new PlannerAlreadyError();
+    if (result === 'self_referral') throw new SelfReferralError();
 
     // Decisão 178: quem vira dono passa ao perfil de casal nesta sessão, como no cadastro (171).
     if (invitation.role === 'owner')
@@ -148,6 +163,24 @@ export class AcceptAccessInvitation {
       this.afterCommit.schedule(() =>
         this.productEvents.record({ event: { name: 'casal_aceitou', weddingId }, occurredAt: now }),
       );
+      // Junto do casal_aceitou, só no criado pela cerimonialista (Notificações da
+      // cerimonialista RN09; D20): o e-mail à indicadora que criou.
+      if (wedding.referralSource === 'created_by_planner') {
+        const creator = await this.users.findProfileById({ userId: wedding.createdByUserId });
+        if (creator) {
+          const [partner1, partner2] = wedding.partners
+            .slice()
+            .sort((a, b) => a.slot - b.slot)
+            .map((partner) => firstName({ name: partner.displayName }));
+          const notice = {
+            to: creator.email,
+            plannerName: firstName({ name: creator.name ?? '' }),
+            partnerNames: [partner1 ?? '', partner2 ?? ''] as [string, string],
+            weddingId,
+          };
+          this.afterCommit.schedule(() => this.mailer.coupleAccepted({ notice }));
+        }
+      }
     }
 
     return {

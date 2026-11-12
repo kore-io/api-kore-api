@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '../../../generated/prisma/client';
 import { TenantTransaction } from '../../../shared/database/tenant-transaction';
 import type {
+  PartyHistoryEntry,
   PartyDetailsRow,
   PartyListQuery,
   PartyListRow,
@@ -9,7 +10,10 @@ import type {
   PartySummaryRow,
   TagSummary,
 } from '../application/ports/party-reader.port';
-import type { DeliveryStatus } from '../domain/party';
+import type { DeliveryStatus, RsvpStatus } from '../domain/party';
+
+/** O histórico do Painel devolve as 50 linhas mais recentes (Prazo RN05; R3-5). */
+const HISTORY_LIMIT = 50;
 
 /** Ordem do grupo (RN17): com nome por joinedPartyAt e id; vagas no fim. */
 const GROUP_ORDER = [
@@ -43,6 +47,8 @@ export class PrismaPartyReader implements PartyReader {
       select: {
         id: true,
         name: true,
+        version: true,
+        firstViewedAt: true,
         contactGuestId: true,
         plusOneSlots: true,
         internalNote: true,
@@ -69,9 +75,10 @@ export class PrismaPartyReader implements PartyReader {
       },
     });
     if (!party) return null;
-    const { wedding, tags, guests, ...rest } = party;
+    const { wedding, tags, guests, firstViewedAt, ...rest } = party;
     return {
       ...rest,
+      history: await this.history({ partyId, firstViewedAt }),
       weddingSlug: wedding.slug,
       tags: tags.map(({ tag }) => tag),
       guests: guests.map(({ tags: guestTags, ...guest }) => ({
@@ -79,6 +86,74 @@ export class PrismaPartyReader implements PartyReader {
         tags: guestTags.map(({ tag }) => tag),
       })),
     };
+  }
+
+  /** As 50 linhas mais recentes do histórico (Prazo RN05; R3-5). */
+  private async history({
+    partyId,
+    firstViewedAt,
+  }: {
+    partyId: string;
+    firstViewedAt: Date | null;
+  }): Promise<PartyHistoryEntry[]> {
+    const tx = this.tenant.client();
+    const [deliveries, submissions] = await Promise.all([
+      tx.partyDelivery.findMany({
+        where: { partyId },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: HISTORY_LIMIT,
+        select: { kind: true, channel: true, createdAt: true },
+      }),
+      tx.$queryRaw<
+        {
+          created_at: Date;
+          actor: 'party' | 'couple';
+          signed_by: string | null;
+          actor_name: string | null;
+          confirmed_count: number;
+          declined_count: number;
+          guest_name: string | null;
+          guest_status: RsvpStatus | null;
+        }[]
+      >`
+        SELECT s.created_at, s.actor, sg.name AS signed_by, u.name AS actor_name,
+               s.confirmed_count, s.declined_count,
+               cg.name AS guest_name, gr.status AS guest_status
+        FROM rsvp_submissions s
+        LEFT JOIN guests sg ON sg.id = s.signed_by_guest_id
+        LEFT JOIN users u ON u.id = s.actor_user_id
+        LEFT JOIN LATERAL (
+          SELECT r.guest_id, r.status FROM guest_responses r
+          WHERE r.submission_id = s.id AND s.actor = 'couple'
+          ORDER BY r.created_at LIMIT 1
+        ) gr ON true
+        LEFT JOIN guests cg ON cg.id = gr.guest_id
+        WHERE s.party_id = ${partyId}::uuid
+        ORDER BY s.created_at DESC, s.id DESC
+        LIMIT ${HISTORY_LIMIT}`,
+    ]);
+    const entries: PartyHistoryEntry[] = [
+      ...deliveries.map(({ kind, channel, createdAt }) => ({
+        kind: kind === 'invite' ? ('sent' as const) : kind,
+        at: createdAt,
+        channel,
+      })),
+      ...(firstViewedAt ? [{ kind: 'viewed' as const, at: firstViewedAt }] : []),
+      ...submissions.map((row) => ({
+        kind: 'response' as const,
+        at: row.created_at,
+        actor: row.actor,
+        signedBy: row.signed_by,
+        actorName: row.actor === 'couple' ? row.actor_name : null,
+        confirmed: row.confirmed_count,
+        declined: row.declined_count,
+        guest:
+          row.actor === 'couple' && row.guest_status
+            ? { name: row.guest_name, status: row.guest_status }
+            : null,
+      })),
+    ];
+    return entries.sort((a, b) => b.at.getTime() - a.at.getTime()).slice(0, HISTORY_LIMIT);
   }
 
   async weddingSlug({ weddingId }: { weddingId: string }): Promise<string | null> {
@@ -121,6 +196,12 @@ export class PrismaPartyReader implements PartyReader {
         AND g.deleted_at IS NULL AND g.rsvp_status = ${query.rsvp}::rsvp_status)`);
     if (query.sent)
       filters.push(Prisma.sql`p.delivery_status = ${query.sent}::party_delivery_status`);
+    if (query.saveTheDate === 'sent') filters.push(Prisma.sql`p.save_the_date_sent_at IS NOT NULL`);
+    if (query.saveTheDate === 'not_sent') filters.push(Prisma.sql`p.save_the_date_sent_at IS NULL`);
+    if (query.remind)
+      filters.push(Prisma.sql`p.delivery_status <> 'not_sent' AND EXISTS (
+        SELECT 1 FROM guests g WHERE g.party_id = p.id AND g.deleted_at IS NULL
+          AND g.name IS NOT NULL AND g.rsvp_status = 'pending')`);
     if (query.tagId)
       // O grupo ou algum convidado ativo dele tem a tag (RN13; Tags RN09).
       filters.push(Prisma.sql`(
@@ -143,10 +224,15 @@ export class PrismaPartyReader implements PartyReader {
         contact_guest_id: string | null;
         delivery_status: DeliveryStatus;
         responded_at: Date | null;
+        last_response_actor: 'party' | 'couple' | null;
+        signed_by_name: string | null;
+        actor_name: string | null;
       }[]
     >`
       SELECT p.id, p.name, lower(f_unaccent(p.name)) AS sort_name, p.contact_guest_id,
-             p.delivery_status, p.responded_at
+             p.delivery_status, p.responded_at, p.last_response_actor,
+             (SELECT sg.name FROM guests sg WHERE sg.id = p.last_signed_by_guest_id) AS signed_by_name,
+             (SELECT u.name FROM users u WHERE u.id = p.last_response_user_id) AS actor_name
       FROM parties p
       WHERE ${where} ${after}
       ORDER BY lower(f_unaccent(p.name)), p.id
@@ -203,6 +289,14 @@ export class PrismaPartyReader implements PartyReader {
           },
           deliveryStatus: party.delivery_status,
           respondedAt: party.responded_at,
+          lastResponse:
+            party.responded_at && party.last_response_actor
+              ? {
+                  actor: party.last_response_actor,
+                  signedByName: party.signed_by_name,
+                  actorName: party.actor_name,
+                }
+              : null,
           tags,
         };
       }),

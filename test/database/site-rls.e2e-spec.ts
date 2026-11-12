@@ -61,6 +61,7 @@ describe('Migration da F2: site (banco real, usuário kore_api)', () => {
     await db.siteImage.create({
       data: {
         id,
+        keyToken: id,
         weddingId: wedding,
         status: 'ready',
         storageKey: `site/${id}/display.jpg`,

@@ -8,14 +8,17 @@ function authorizationFor({
   role,
   referrerKind = null,
   hasActiveOwner = true,
+  origin = { createdByUserId: 'u-ana', referralSource: null },
 }: {
   role: MembershipRole | null;
   referrerKind?: 'planner' | 'seller' | null;
   hasActiveOwner?: boolean;
+  origin?: { createdByUserId: string | null; referralSource: string | null };
 }) {
   const reader: MembershipReader = {
     activeRole: jest.fn().mockResolvedValue(role),
     hasActiveOwner: jest.fn().mockResolvedValue(hasActiveOwner),
+    weddingOrigin: jest.fn().mockResolvedValue(origin),
   };
   const profiles = {
     referrerKind: jest.fn().mockResolvedValue(referrerKind),
@@ -71,14 +74,28 @@ describe('WeddingAuthorization (autorização central; decisão 153)', () => {
       expect(await after.canManageSiteIdentity(target)).toBe(false);
     });
 
-    it('RN04 - a cerimonialista nunca muda, nem num casamento sem dono', async () => {
-      const planner = authorizationFor({
-        role: 'collaborator',
-        referrerKind: 'planner',
-        hasActiveOwner: false,
-      });
+    it('Novo casamento RN08 - a cerimonialista que criou muda até o aceite; a que só colabora, nunca', async () => {
+      const creator = { createdByUserId: target.userId, referralSource: 'created_by_planner' };
+      const planner = (
+        hasActiveOwner: boolean,
+        origin: { createdByUserId: string | null; referralSource: string | null },
+      ) =>
+        authorizationFor({ role: 'collaborator', referrerKind: 'planner', hasActiveOwner, origin });
 
-      expect(await planner.canManageSiteIdentity(target)).toBe(false);
+      expect(await planner(false, creator).canManageSiteIdentity(target)).toBe(true);
+      expect(await planner(true, creator).canManageSiteIdentity(target)).toBe(false);
+      expect(
+        await planner(false, {
+          createdByUserId: 'u-ana',
+          referralSource: null,
+        }).canManageSiteIdentity(target),
+      ).toBe(false);
+      expect(
+        await planner(false, {
+          createdByUserId: target.userId,
+          referralSource: 'referral_link',
+        }).canManageSiteIdentity(target),
+      ).toBe(false);
     });
 
     it('RN04 - sem vínculo, não muda', async () => {

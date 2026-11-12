@@ -19,6 +19,7 @@ const MEMBER_SELECT = {
   ageGroup: true,
   phone: true,
   email: true,
+  respondedAt: true,
   tags: {
     where: { tag: { deletedAt: null } },
     select: { tagId: true },
@@ -68,6 +69,7 @@ export class PrismaGroupStore implements GroupStore {
         plusOneSlots: true,
         deliveryStatus: true,
         firstViewedAt: true,
+        respondedAt: true,
         guests: {
           where: { deletedAt: null },
           orderBy: [{ isPlusOne: 'asc' }, { joinedPartyAt: 'asc' }, { id: 'asc' }],
@@ -101,8 +103,12 @@ export class PrismaGroupStore implements GroupStore {
     partyId: string;
     changes: PartyChanges;
   }): Promise<void> {
-    if (Object.keys(changes).length === 0) return;
-    await this.tenant.client().party.updateMany({ where: { id: partyId }, data: changes });
+    const { bumpVersion, ...fields } = changes;
+    if (Object.keys(fields).length === 0 && !bumpVersion) return;
+    await this.tenant.client().party.updateMany({
+      where: { id: partyId },
+      data: { ...fields, ...(bumpVersion ? { version: { increment: 1 } } : {}) },
+    });
   }
 
   async updateGuest({

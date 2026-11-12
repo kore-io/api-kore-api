@@ -2,6 +2,7 @@ import {
   coupleNames,
   emailDiffers,
   invalidReason,
+  isSelfReferral,
   partnerChoice,
   nextReferralCode,
   referralCodeBase,
@@ -98,5 +99,34 @@ describe('Convites de acesso: regras do aceite', () => {
       'ana-silva-2',
     );
     expect(nextReferralCode({ base, taken: ['ana-silva-3'] })).toBe('ana-silva');
+  });
+
+  it('decisão 224 (2) e Novo casamento RN05 - autoindicação: o indicador ou quem criou, só no convite do casal', () => {
+    const referrer = {
+      referrerId: 'r1',
+      userId: 'u-juliana',
+      referralCode: 'juliana',
+      kind: 'planner' as const,
+      status: 'active' as const,
+      accountStatus: 'active' as const,
+      displayName: 'Prado Assessoria',
+      referralDiscountEnabled: true,
+    };
+    const couple = (createdByUserId: string, withReferrer = true) => ({
+      kind: 'couple' as const,
+      referrer: withReferrer ? referrer : null,
+      wedding: { createdByUserId },
+    });
+
+    expect(isSelfReferral({ invitation: couple('u-lucas'), userId: 'u-juliana' })).toBe(true);
+    expect(isSelfReferral({ invitation: couple('u-lucas', false), userId: 'u-lucas' })).toBe(true);
+    expect(isSelfReferral({ invitation: couple('u-lucas'), userId: 'u-f' })).toBe(false);
+    // RN10: no convite do cerimonialista, é o indicador quem aceita.
+    expect(
+      isSelfReferral({
+        invitation: { kind: 'planner', referrer, wedding: { createdByUserId: 'u-juliana' } },
+        userId: 'u-juliana',
+      }),
+    ).toBe(false);
   });
 });

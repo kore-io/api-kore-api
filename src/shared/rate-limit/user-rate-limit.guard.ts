@@ -9,6 +9,8 @@ import { InjectThrottlerStorage, type ThrottlerStorage } from '@nestjs/throttler
 import {
   GUEST_IMPORT_PER_MINUTE,
   GUEST_IMPORT_THROTTLER,
+  PLANNER_WEDDING_THROTTLER,
+  PLANNER_WEDDINGS_PER_MINUTE,
   RATE_LIMIT_WINDOW_MS,
   SITE_IMAGE_PER_MINUTE,
   SITE_IMAGE_THROTTLER,
@@ -63,6 +65,17 @@ export class GuestImportRateLimitGuard extends UserRateLimitGuard {
 export class SiteImageRateLimitGuard extends UserRateLimitGuard {
   protected readonly throttler = SITE_IMAGE_THROTTLER;
   protected readonly perMinute = SITE_IMAGE_PER_MINUTE;
+
+  constructor(@InjectThrottlerStorage() storage: ThrottlerStorage) {
+    super(storage);
+  }
+}
+
+/** Novo casamento pela cerimonialista (Novo casamento RN04). */
+@Injectable()
+export class PlannerWeddingRateLimitGuard extends UserRateLimitGuard {
+  protected readonly throttler = PLANNER_WEDDING_THROTTLER;
+  protected readonly perMinute = PLANNER_WEDDINGS_PER_MINUTE;
 
   constructor(@InjectThrottlerStorage() storage: ThrottlerStorage) {
     super(storage);

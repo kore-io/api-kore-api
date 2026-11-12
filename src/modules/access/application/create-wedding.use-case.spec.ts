@@ -35,6 +35,7 @@ const signup: WeddingSignup = {
   utmSource: 'instagram',
   utmMedium: null,
   utmCampaign: null,
+  appearance: null,
 };
 
 function setup({
@@ -56,6 +57,9 @@ function setup({
       created.push(wedding);
       return Promise.resolve(createResult);
     }),
+    lockPlannerWeddings: jest.fn(),
+    countOwnerlessCreated: jest.fn(),
+    createForPlanner: jest.fn(),
   };
   const referrals: ReferralDirectory = {
     findByCode: jest.fn().mockResolvedValue(referrer),
@@ -95,6 +99,83 @@ describe('CreateWedding (POST /v1/weddings)', () => {
       termsVersion: '2026-09',
       now,
     });
+  });
+
+  it('Simule RN10 - a aparência do simulador grava em maiúsculas; a paleta só fica com as cores dela; sem ela, nula', async () => {
+    const { useCase, created } = setup();
+
+    await useCase.execute({
+      userId: 'u-ana',
+      sessionId: 's-ana',
+      signup: {
+        ...signup,
+        signupSource: 'simulator',
+        appearance: {
+          fontPairKey: 'leve',
+          starterPaletteKey: 'salvia',
+          primaryColor: '#566c4b',
+          accentColor: '#c9a66b',
+          backgroundMode: 'light',
+        },
+      },
+      now,
+    });
+    await useCase.execute({
+      userId: 'u-ana',
+      sessionId: 's-ana',
+      signup: {
+        ...signup,
+        appearance: {
+          fontPairKey: 'romantico',
+          starterPaletteKey: 'terracota',
+          primaryColor: '#1F2A44',
+          accentColor: '#7A8B69',
+          backgroundMode: 'cream',
+        },
+      },
+      now,
+    });
+    await useCase.execute({ userId: 'u-ana', sessionId: 's-ana', signup, now });
+
+    expect(created[0]).toMatchObject({
+      signupSource: 'simulator',
+      appearance: {
+        fontPairKey: 'leve',
+        starterPaletteKey: 'salvia',
+        primaryColor: '#566C4B',
+        accentColor: '#C9A66B',
+        backgroundMode: 'light',
+      },
+    });
+    // Outra cor: só a primária muda, e a paleta vira "cor própria" (decisão 205, D22).
+    expect(created[1].appearance).toMatchObject({
+      starterPaletteKey: null,
+      primaryColor: '#1F2A44',
+    });
+    expect(created[2].appearance).toBeNull();
+  });
+
+  it('Simule RN10 - a aparência adulterada que não passa no guarda-corpo é recusada (422), sem gravar', async () => {
+    const { useCase, store } = setup();
+
+    await expect(
+      useCase.execute({
+        userId: 'u-ana',
+        sessionId: 's-ana',
+        signup: {
+          ...signup,
+          appearance: {
+            fontPairKey: 'romantico',
+            starterPaletteKey: null,
+            primaryColor: '#777777',
+            accentColor: '#7A8B69',
+            backgroundMode: 'light',
+          },
+        },
+        now,
+      }),
+    ).rejects.toMatchObject({ check: 'primary_foreground', ratio: 4.47 });
+    expect(store.create).not.toHaveBeenCalled();
   });
 
   it('RN11 - dada outra versão dos Termos, então TERMS_VERSION_OUTDATED, sem gravar (decisão 166)', async () => {

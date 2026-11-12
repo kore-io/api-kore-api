@@ -43,3 +43,26 @@ export const SITE_IMAGE_PER_MINUTE = 30;
  */
 export const PARTY_LINK_THROTTLER = 'party_link';
 export const PARTY_LINK_FAILURES_PER_MINUTE = 20;
+
+/**
+ * Métricas do simulador (Simule RN11): 30 por minuto por IP. O IP só entra na
+ * chave do limite, no Redis (kore:<env>:rl:simulator_event:<ip>), que vence em
+ * 1 minuto; não vai ao evento nem ao log.
+ */
+export const SIMULATOR_EVENT_THROTTLER = 'simulator_event';
+export const SIMULATOR_EVENTS_PER_MINUTE = 30;
+
+/**
+ * Gravação do RSVP (RSVP RN10; revisão técnica R2-8): 20 por minuto pela chave
+ * IP + grupo, para não barrar convidados de verdade atrás do mesmo IP de
+ * operadora (CGNAT). O teto do dia por grupo é contado no banco.
+ */
+export const RSVP_WRITE_THROTTLER = 'rsvp_write';
+export const RSVP_WRITES_PER_MINUTE = 20;
+
+/**
+ * Novo casamento pela cerimonialista (Novo casamento RN04; decisão 224(9)):
+ * além do teto de casamentos sem dono, um limite de pedidos por conta.
+ */
+export const PLANNER_WEDDING_THROTTLER = 'planner_wedding';
+export const PLANNER_WEDDINGS_PER_MINUTE = 10;

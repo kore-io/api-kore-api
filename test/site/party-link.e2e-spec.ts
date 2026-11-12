@@ -90,10 +90,85 @@ describe('Site público: o link do grupo (banco real)', () => {
     expect(cookie).toContain('SameSite=Lax');
     expect(response.headers['cache-control']).toBe('private, no-store');
     expect(response.headers['access-control-allow-origin']).toBe(SITE_ORIGIN);
-    // A F2 não grava a visualização (decisão 199).
-    expect(
-      (await db.party.findUniqueOrThrow({ where: { id: party.id } })).firstViewedAt,
-    ).toBeNull();
+  });
+
+  it('RSVP RN02 - abrir o link marca o convite como visualizado; abrir de novo não muda a data', async () => {
+    const { slug, party } = await wedding();
+    await db.party.update({
+      where: { id: party.id },
+      data: { deliveryStatus: 'sent', sentAt: new Date('2026-09-02T13:42:00Z') },
+    });
+    const before = new Date();
+
+    await exchange(slug, party.linkToken).expect(200);
+
+    const viewed = await db.party.findUniqueOrThrow({ where: { id: party.id } });
+    expect(viewed.deliveryStatus).toBe('viewed');
+    expect(viewed.firstViewedAt!.getTime()).toBeGreaterThanOrEqual(before.getTime() - 1000);
+    expect(viewed.version).toBe(1);
+
+    await exchange(slug, party.linkToken).expect(200);
+
+    expect((await db.party.findUniqueOrThrow({ where: { id: party.id } })).firstViewedAt).toEqual(
+      viewed.firstViewedAt,
+    );
+  });
+
+  it('RSVP RN02 - não enviado também fica visualizado; respondido não muda', async () => {
+    const { slug, party } = await wedding();
+    const { party: responded } = await wedding();
+    await db.party.update({ where: { id: responded.id }, data: { deliveryStatus: 'responded' } });
+
+    await exchange(slug, party.linkToken).expect(200);
+    await exchange(
+      (await db.wedding.findUniqueOrThrow({ where: { id: responded.weddingId } })).slug!,
+      responded.linkToken,
+    ).expect(200);
+
+    expect((await db.party.findUniqueOrThrow({ where: { id: party.id } })).deliveryStatus).toBe(
+      'viewed',
+    );
+    const after = await db.party.findUniqueOrThrow({ where: { id: responded.id } });
+    expect(after.deliveryStatus).toBe('responded');
+    expect(after.firstViewedAt).not.toBeNull();
+  });
+
+  it('RSVP RN02 e decisão 216 (D12) - só o POST grava: a URL do link aberta só com GET, o site pelo cookie e a prévia do link não marcam', async () => {
+    const { slug, party } = await wedding();
+    await db.party.update({ where: { id: party.id }, data: { deliveryStatus: 'sent' } });
+    const { party: other } = await wedding();
+    const otherSlug = (await db.wedding.findUniqueOrThrow({ where: { id: other.weddingId } }))
+      .slug!;
+    const [cookie] = cookieOf(await exchange(otherSlug, other.linkToken).expect(200));
+    await db.party.update({
+      where: { id: other.id },
+      data: { firstViewedAt: null, deliveryStatus: 'sent' },
+    });
+
+    // O robô do WhatsApp: GET na URL do link e na prévia do link, sem POST.
+    await request(app.getHttpServer()).get(`/${slug}/grupo/${party.linkToken}`);
+    await request(app.getHttpServer()).get(`/v1/public/sites/${slug}/preview`).expect(200);
+    await site(slug).expect(200);
+    // Entrar depois pelo cookie.
+    await site(otherSlug, cookie.split(';')[0]).expect(200);
+
+    for (const id of [party.id, other.id])
+      expect(await db.party.findUniqueOrThrow({ where: { id } })).toMatchObject({
+        deliveryStatus: 'sent',
+        firstViewedAt: null,
+      });
+  });
+
+  it('RSVP RN02 - no pós-evento, o link identifica o grupo e não marca visita', async () => {
+    const { weddingId, slug, party } = await wedding();
+    await db.wedding.update({ where: { id: weddingId }, data: { status: 'post_event' } });
+
+    await exchange(slug, party.linkToken).expect(200);
+
+    expect(await db.party.findUniqueOrThrow({ where: { id: party.id } })).toMatchObject({
+      deliveryStatus: 'not_sent',
+      firstViewedAt: null,
+    });
   });
 
   it('RN05 - com o cookie, o grupo vê os locais, o contato e a faixa do convite; o visitante, não', async () => {
@@ -201,6 +276,20 @@ describe('Site público: o link do grupo (banco real)', () => {
     await exchange(slug, 'curto').expect(400);
   });
 
+  it('Site público RN04 - fora do ar (expired): SITE_NOT_FOUND na leitura e na troca do link, sem cookie', async () => {
+    const { weddingId, slug, party } = await wedding();
+    await db.wedding.update({ where: { id: weddingId }, data: { status: 'expired' } });
+
+    const read = await request(app.getHttpServer())
+      .get(`/v1/sites/${slug}`)
+      .set('Origin', SITE_ORIGIN)
+      .expect(404);
+    expect(read.body.error).toBe('SITE_NOT_FOUND');
+    const exchanged = await exchange(slug, party.linkToken).expect(404);
+    expect(exchanged.body.error).toBe('SITE_NOT_FOUND');
+    expect(cookieOf(exchanged)).toEqual([]);
+  });
+
   it('RN06 - party_link: 20 falhas por minuto por IP; os acertos não contam, e outro IP não é afetado', async () => {
     const { slug, party } = await wedding();
     const crowded = ip();
@@ -214,6 +303,8 @@ describe('Site público: o link do grupo (banco real)', () => {
       error: 'RATE_LIMITED',
       message: 'Too many requests.',
     });
+    // O bloqueio não grava o cookie do grupo, mesmo com o link certo.
+    expect(cookieOf(blocked)).toEqual([]);
     await exchange(slug, party.linkToken).expect(200);
   });
 

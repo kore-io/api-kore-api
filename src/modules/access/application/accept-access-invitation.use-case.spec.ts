@@ -4,6 +4,7 @@ import {
   AlreadyOwnerError,
   EmailMismatchError,
   InvitationInvalidError,
+  SelfReferralError,
   SellerCannotBePlannerError,
 } from '../domain/access.errors';
 import type { InvitationSnapshot } from '../domain/invitation-acceptance';
@@ -54,6 +55,7 @@ const coupleLink: InvitationSnapshot = {
   },
   referrer: null,
   referralDiscountPercent: 10,
+  plannerCredit: null,
 };
 const acceptance: InvitationAcceptance = {
   confirmOtherAccount: false,
@@ -85,15 +87,23 @@ function setup({
     lockOwner: jest.fn().mockResolvedValue(undefined),
     findActiveOwnedWeddingId: jest.fn().mockResolvedValue(ownedWeddingId),
     create: jest.fn(),
+    lockPlannerWeddings: jest.fn(),
+    countOwnerlessCreated: jest.fn(),
+    createForPlanner: jest.fn(),
   } satisfies WeddingSignupStore;
   const users = { findProfileById: jest.fn().mockResolvedValue(user) } satisfies UserRepository;
   const names = { setName: jest.fn(), nameByEmail: jest.fn() } satisfies UserAccountNames;
   const profiles = {
     referrerKind: jest.fn().mockResolvedValue(referrerKind),
     createMinimal: jest.fn().mockResolvedValue(undefined),
+    create: jest.fn(),
+    findOwn: jest.fn(),
+    update: jest.fn(),
+    updateAccount: jest.fn(),
   } satisfies PlannerProfiles;
   const productEvents: ProductEventRecorder = { record: jest.fn().mockResolvedValue(undefined) };
   const scheduled: (() => Promise<void>)[] = [];
+  const mailer = { plannerLeft: jest.fn(), coupleAccepted: jest.fn().mockResolvedValue(undefined) };
   const sessions = {
     setActiveProfile: jest.fn().mockResolvedValue(undefined),
   } as unknown as SessionRepository;
@@ -107,8 +117,20 @@ function setup({
     productEvents,
     { schedule: (work) => void scheduled.push(work) },
     sessions,
+    mailer,
   );
-  return { useCase, store, owners, names, profiles, productEvents, scheduled, sessions };
+  return {
+    useCase,
+    store,
+    owners,
+    names,
+    profiles,
+    productEvents,
+    scheduled,
+    sessions,
+    mailer,
+    users,
+  };
 }
 
 describe('AcceptAccessInvitation (POST /v1/access-invitations/{token}/accept)', () => {
@@ -256,5 +278,81 @@ describe('AcceptAccessInvitation (POST /v1/access-invitations/{token}/accept)', 
     ).rejects.toThrow(SellerCannotBePlannerError);
     expect(profiles.createMinimal).not.toHaveBeenCalled();
     expect(store.accept).not.toHaveBeenCalled();
+  });
+
+  it('decisão 224 (2) - o indicador do casamento não aceita o link do casal: SELF_REFERRAL antes do ALREADY_MEMBER', async () => {
+    const invitation: InvitationSnapshot = {
+      ...coupleLink,
+      referrer: {
+        referrerId: 'r-lucas',
+        userId: 'u-lucas',
+        referralCode: 'lucas',
+        kind: 'seller',
+        status: 'active',
+        accountStatus: 'active',
+        displayName: 'Lucas',
+        referralDiscountEnabled: true,
+      },
+    };
+    const { useCase, store } = setup({
+      invitation,
+      user: { id: 'u-lucas', name: 'Lucas', email: 'l@x.com', platformRole: 'none' },
+    });
+    store.activeRole.mockResolvedValue('collaborator');
+
+    await expect(
+      useCase.execute({ token: 't', userId: 'u-lucas', sessionId: 's1', acceptance, now }),
+    ).rejects.toThrow(SelfReferralError);
+    expect(store.accept).not.toHaveBeenCalled();
+  });
+
+  it('decisão 224 (2) - a barreira da função do banco (KA005) também vira SELF_REFERRAL', async () => {
+    const { useCase, store } = setup();
+    store.accept.mockResolvedValue('self_referral');
+
+    await expect(
+      useCase.execute({ token: 't', userId: 'u-f', sessionId: 's1', acceptance, now }),
+    ).rejects.toThrow(SelfReferralError);
+  });
+
+  it('RN09 de Notificações - no criado pela cerimonialista, o e-mail à indicadora sai junto do casal_aceitou', async () => {
+    const plannerWedding: InvitationSnapshot = {
+      ...coupleLink,
+      wedding: {
+        ...coupleLink.wedding,
+        createdByUserId: 'u-j',
+        referralSource: 'created_by_planner',
+      },
+    };
+    const { useCase, scheduled, mailer, users } = setup({ invitation: plannerWedding });
+    users.findProfileById.mockImplementation(({ userId }: { userId: string }) =>
+      Promise.resolve(
+        userId === 'u-j'
+          ? { id: 'u-j', name: 'Juliana Prado', email: 'j@x.com', platformRole: 'none' }
+          : { id: 'u-f', name: 'Fernanda', email: 'f@x.com', platformRole: 'none' },
+      ),
+    );
+
+    await useCase.execute({ token: 't', userId: 'u-f', sessionId: 's1', acceptance, now });
+
+    expect(mailer.coupleAccepted).not.toHaveBeenCalled();
+    for (const work of scheduled) await work();
+    expect(mailer.coupleAccepted).toHaveBeenCalledWith({
+      notice: {
+        to: 'j@x.com',
+        plannerName: 'Juliana',
+        partnerNames: ['Fernanda', 'João'],
+        weddingId: 'w1',
+      },
+    });
+  });
+
+  it('RN09 de Notificações - no criado pelo vendedor, nenhum e-mail de aceite', async () => {
+    const { useCase, scheduled, mailer } = setup();
+
+    await useCase.execute({ token: 't', userId: 'u-f', sessionId: 's1', acceptance, now });
+    for (const work of scheduled) await work();
+
+    expect(mailer.coupleAccepted).not.toHaveBeenCalled();
   });
 });

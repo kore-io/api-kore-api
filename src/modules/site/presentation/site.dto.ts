@@ -106,6 +106,15 @@ export class UpdateSiteBody {
   @IsOptional()
   @IsUUID()
   coverImageId?: string | null;
+
+  /**
+   * Mostrar a assinatura da assessoria no rodapé (Assinatura RN05). Aceito
+   * mesmo sem colaboradora; só o dono muda (o valor igual ao atual não é erro).
+   */
+  @ApiProperty({ required: false })
+  @OptionalNotNull()
+  @IsBoolean()
+  showPlannerCredit?: boolean;
 }
 
 class SitePartnerResponse {
@@ -150,6 +159,45 @@ class SiteEditableResponse {
   slug: boolean;
 }
 
+/** A pergunta de música (Música RN01). */
+export class SiteSongQuestionResponse {
+  /** "Fazer a pergunta no RSVP"; desligada por padrão. */
+  enabled: boolean;
+  /** O texto do casal, ou o padrão "Que música não pode faltar na festa?". */
+  text: string;
+}
+
+/** A pergunta de música, gravada pelo Salvar do Editor (Música RN01). */
+export class UpdateSongQuestionBody {
+  @IsBoolean() enabled: boolean;
+
+  /** Até 120, sem espaços nas pontas; vazio ou nulo volta ao padrão. */
+  @ApiProperty({ type: String, nullable: true, maxLength: 120 })
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  text: string | null;
+}
+
+/** A tela Publicar o site (Publicação RN01; decisão 217(13)). */
+export class SitePublicationResponse {
+  /** A chave do servidor; o app só esconde o botão, quem decide é o servidor. */
+  courtesyEnabled: boolean;
+  /** O dia seguinte ao casamento; nulo sem data ou sem fuso. */
+  @ApiProperty({ type: String, nullable: true, example: '2026-11-15' }) endDateMin: string | null;
+  /** 12 meses depois do casamento (29/02 → 28/02); nulo sem data ou sem fuso. */
+  @ApiProperty({ type: String, nullable: true, example: '2027-11-14' }) endDateMax: string | null;
+}
+
+class SitePlannerCreditResponse {
+  /** Nulo quando o nome não passa no predicado (Assinatura RN03). */
+  @ApiProperty({ type: String, nullable: true, example: 'Prado Assessoria' }) name: string | null;
+  showPlannerCredit: boolean;
+  /** O Kore ocultou a assinatura (RN06); o motivo não sai da API. */
+  hiddenByKore: boolean;
+  /** Só o dono muda (manage_planner_credit). */
+  canChange: boolean;
+}
+
 export class SiteEditorResponse {
   status: string;
   @ApiProperty({ type: String, nullable: true, format: 'date-time' }) publishedAt: string | null;
@@ -167,6 +215,11 @@ export class SiteEditorResponse {
   @ApiProperty({ type: SiteEditorAppearanceResponse }) appearance: SiteEditorAppearanceResponse;
   @ApiProperty({ type: [SiteSectionResponse] }) sections: SiteSectionResponse[];
   @ApiProperty({ type: SiteEditableResponse }) editable: SiteEditableResponse;
+  @ApiProperty({ type: SitePublicationResponse }) publication: SitePublicationResponse;
+  @ApiProperty({ type: SiteSongQuestionResponse }) songQuestion: SiteSongQuestionResponse;
+  /** Nulo sem cerimonialista colaboradora: o Switch não aparece (Assinatura RN05). */
+  @ApiProperty({ type: SitePlannerCreditResponse, nullable: true })
+  plannerCredit: SitePlannerCreditResponse | null;
 
   static from({ view }: { view: SiteEditorView }): SiteEditorResponse {
     return {

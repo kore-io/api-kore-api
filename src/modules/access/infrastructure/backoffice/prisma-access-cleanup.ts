@@ -31,6 +31,17 @@ export class PrismaAccessCleanup implements AccessCleanup {
     );
   }
 
+  clearExpiredCoupleLinkTokens({ now }: { now: Date }): Promise<number> {
+    return this.inBatches(
+      () => this.prisma.$executeRaw`
+        UPDATE access_invitations SET token_encrypted = NULL WHERE id IN (
+          SELECT id FROM access_invitations
+          WHERE token_encrypted IS NOT NULL AND expires_at <= ${now}
+          LIMIT ${DELETE_BATCH_SIZE}
+        )`,
+    );
+  }
+
   private async inBatches(deleteBatch: () => Promise<number>): Promise<number> {
     let total = 0;
     for (;;) {

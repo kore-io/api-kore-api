@@ -1,4 +1,5 @@
 import type { AccessInvitationKind } from '../../domain/access-invitation';
+import type { PlannerLeftNotice } from './collaboration-notice-mailer.port';
 import type { MembershipRole } from '../../domain/wedding-authorization';
 
 export interface WeddingMember {
@@ -34,6 +35,30 @@ export interface WeddingMembersStore {
   }): Promise<void>;
   /** Dono que saiu: o noivo dele perde o login (decisão 177, item 10). */
   releasePartnerLogin({ weddingId }: { weddingId: string }): Promise<void>;
+  /**
+   * O aviso membership_removed à cerimonialista que o dono removeu
+   * (Notificações da cerimonialista RN04), na transação da remoção. A função
+   * do banco ignora o colaborador sem Planner (o vendedor).
+   */
+  notifyRemoved({
+    membershipId,
+    notificationId,
+  }: {
+    membershipId: string;
+    notificationId: string;
+  }): Promise<void>;
+  /**
+   * Os avisos "a cerimonialista saiu", um por pessoa dona (Notificações da
+   * cerimonialista RN09; D19). Vazio quando quem sai não tem Planner (o
+   * vendedor). Lido antes da remoção: depois, a RLS já não mostra o casamento.
+   */
+  plannerLeftNotices({
+    weddingId,
+    userId,
+  }: {
+    weddingId: string;
+    userId: string;
+  }): Promise<PlannerLeftNotice[]>;
 }
 
 export const WEDDING_MEMBERS_STORE = Symbol('WeddingMembersStore');

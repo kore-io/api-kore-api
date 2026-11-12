@@ -3,7 +3,10 @@ import {
   OBJECT_STORAGE,
   type ObjectStorage,
 } from '../../../shared/storage/application/object-storage.port';
+import { AppConfigService } from '../../../shared/config/app-config.service';
 import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
+import { endDateRange } from '../domain/publication';
+import { DEFAULT_SONG_QUESTION } from '../domain/public-site';
 import { isSectionEmpty, sectionImageIds, type SiteSectionType } from '../domain/site-sections';
 import {
   SITE_READER,
@@ -30,12 +33,30 @@ export interface SiteEditorSection {
 
 export interface SiteEditorView extends Omit<
   SiteSnapshot,
-  'eventDate' | 'coverImageId' | 'sections'
+  'eventDate' | 'endDate' | 'coverImageId' | 'sections' | 'songQuestion' | 'showPlannerCredit'
 > {
+  /**
+   * A assinatura da assessoria (Assinatura RN05 e RN06): nula sem cerimonialista
+   * colaboradora; o `name`, nulo quando não passa no predicado (RN03).
+   */
+  plannerCredit: {
+    name: string | null;
+    showPlannerCredit: boolean;
+    hiddenByKore: boolean;
+    canChange: boolean;
+  } | null;
+  /** A pergunta de música (Música RN01), com o texto padrão quando vazio. */
+  songQuestion: { enabled: boolean; text: string };
   eventDate: string | null;
   cover: SiteImageRef | null;
   sections: SiteEditorSection[];
   editable: { names: boolean; eventDate: boolean; state: boolean; slug: boolean };
+  /**
+   * A tela Publicar o site (Publicação RN01; decisão 217(13)): a chave do
+   * servidor e os limites da data de saída do ar, calculados aqui no fuso do
+   * casamento; nulos sem data ou sem fuso. O app não repete a conta.
+   */
+  publication: { courtesyEnabled: boolean; endDateMin: string | null; endDateMax: string | null };
 }
 
 /**
@@ -49,6 +70,7 @@ export class SiteEditorViews {
     private readonly authorization: WeddingAuthorization,
     @Inject(SITE_READER) private readonly reader: SiteReader,
     @Inject(OBJECT_STORAGE) private readonly storage: ObjectStorage,
+    private readonly config: AppConfigService,
   ) {}
 
   async build({
@@ -75,7 +97,19 @@ export class SiteEditorViews {
     };
     const readyIds = new Set(ready.keys());
 
-    const { coverImageId, sections, eventDate, ...rest } = site;
+    // A data de saída do ar não está no contrato do Editor (Publicação RN01).
+    const { coverImageId, sections, eventDate, showPlannerCredit, ...snapshot } = site;
+    const collaborator = await this.reader.plannerCollaborator();
+    const canChangeCredit =
+      (await this.authorization.allowedRole({
+        userId,
+        weddingId,
+        action: 'manage_planner_credit',
+      })) !== null;
+    const rest: Omit<typeof snapshot, 'endDate'> & { endDate?: Date | null } = { ...snapshot };
+    delete rest.endDate;
+    const day = eventDate ? eventDate.toISOString().slice(0, 10) : null;
+    const range = endDateRange({ eventDate: day, timezone: site.timezone });
     return {
       ...rest,
       eventDate: eventDate ? eventDate.toISOString().slice(0, 10) : null,
@@ -92,6 +126,22 @@ export class SiteEditorViews {
         eventDate: identity,
         state: identity,
         slug: identity && site.publishedAt === null,
+      },
+      // O texto vazio vale o padrão (Música RN01).
+      songQuestion: {
+        enabled: site.songQuestion.enabled,
+        text: site.songQuestion.text ?? DEFAULT_SONG_QUESTION,
+      },
+      plannerCredit: collaborator && {
+        name: collaborator.name,
+        showPlannerCredit,
+        hiddenByKore: collaborator.hiddenByKore,
+        canChange: canChangeCredit,
+      },
+      publication: {
+        courtesyEnabled: this.config.get({ key: 'COURTESY_PUBLICATION_ENABLED' }),
+        endDateMin: range?.min ?? null,
+        endDateMax: range?.max ?? null,
       },
     };
   }
