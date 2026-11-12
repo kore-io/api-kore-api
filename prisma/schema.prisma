@@ -862,6 +862,9 @@ model SiteImage {
   updatedAt        DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
   weddingId        String          @map("wedding_id") @db.Uuid
   status           SiteImageStatus @default(uploading)
+  // O token aleatório das chaves no armazenamento (decisão 229(f)): a URL
+  // pública não leva o id, um UUIDv7 que revela a hora do envio.
+  keyToken         String          @unique(map: "uq_site_images_key_token") @map("key_token")
   // A versão servida (display.jpg, até 2560 px).
   storageKey       String          @map("storage_key")
   thumbKey         String?         @map("thumb_key")

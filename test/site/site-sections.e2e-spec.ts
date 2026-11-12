@@ -56,6 +56,7 @@ describe('Seções do site (banco real)', () => {
     await db.siteImage.create({
       data: {
         id,
+        keyToken: id,
         weddingId,
         status,
         storageKey: `site/${id}/display.jpg`,
@@ -142,6 +143,22 @@ describe('Seções do site (banco real)', () => {
     }).expect(200);
 
     expect(response.body).toMatchObject({ enabled: false, content: ceremony.content });
+  });
+
+  it('Imagens do site RN01 - a Nossa história aceita até 12 fotos; a 13ª dá 400 e nada muda', async () => {
+    const { ana, weddingId } = await anaWedding();
+    const before = await db.sectionContent.findMany({ where: { weddingId } });
+
+    const response = await put(ana.cookie, weddingId, 'story', {
+      enabled: true,
+      title: 'Nossa história',
+      content: { text: '', imageIds: Array.from({ length: 13 }, () => uuidV7()) },
+    }).expect(400);
+
+    expect(response.body.errors).toEqual([
+      { path: 'content.imageIds', code: 'ARRAY_MAX_SIZE', params: { max: 12 } },
+    ]);
+    expect(await db.sectionContent.findMany({ where: { weddingId } })).toEqual(before);
   });
 
   it('RN12 - todos os limites no servidor, com o caminho do campo e o prefixo content.', async () => {

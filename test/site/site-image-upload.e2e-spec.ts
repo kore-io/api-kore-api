@@ -62,6 +62,7 @@ describe('Imagens do site: autorização de envio (banco e MinIO reais)', () => 
         const id = uuidV7();
         return {
           id,
+          keyToken: id,
           weddingId,
           status,
           storageKey: `site/${id}/display.jpg`,
@@ -102,13 +103,17 @@ describe('Imagens do site: autorização de envio (banco e MinIO reais)', () => 
     const expires = new Date(expiresAt).getTime();
     expect(expires).toBeGreaterThanOrEqual(before + 5 * 60 * 1000 - 1000);
     expect(expires).toBeLessThanOrEqual(Date.now() + 5 * 60 * 1000);
+    // A chave leva um token aleatório de 128 bits, não o id (decisão 229(f)).
+    const { keyToken } = await db.siteImage.findUniqueOrThrow({ where: { id: imageId } });
+    expect(keyToken).toMatch(/^[0-9a-f]{32}$/);
+    expect(uploadUrl).not.toContain(imageId);
     expect(new URL(uploadUrl).pathname).toBe(
-      `/${process.env.STORAGE_PRIVATE_BUCKET}/site/${imageId}/original`,
+      `/${process.env.STORAGE_PRIVATE_BUCKET}/site/${keyToken}/original`,
     );
     expect(await db.siteImage.findUniqueOrThrow({ where: { id: imageId } })).toMatchObject({
       weddingId,
       status: 'uploading',
-      storageKey: `site/${imageId}/display.jpg`,
+      storageKey: `site/${keyToken}/display.jpg`,
       sizeBytes: 12,
       uploadedByUserId: ana.userId,
       readyAt: null,
@@ -121,10 +126,10 @@ describe('Imagens do site: autorização de envio (banco e MinIO reais)', () => 
       headers: { 'Content-Type': 'image/jpeg' },
     });
     expect(put.status).toBe(200);
-    expect(await storage.head({ bucket: 'private', key: `site/${imageId}/original` })).toEqual({
+    expect(await storage.head({ bucket: 'private', key: `site/${keyToken}/original` })).toEqual({
       sizeBytes: 12,
     });
-    await storage.delete({ bucket: 'private', keys: [`site/${imageId}/original`] });
+    await storage.delete({ bucket: 'private', keys: [`site/${keyToken}/original`] });
   });
 
   it('RN04 - só JPEG, de 1 byte a 4 MB, com os erros pelo campo', async () => {

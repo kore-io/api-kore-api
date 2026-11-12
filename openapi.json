@@ -4406,6 +4406,16 @@
               }
             }
           },
+          "201": {
+            "description": "Processada agora.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteImageResponse"
+                }
+              }
+            }
+          },
           "400": {
             "content": {
               "application/json": {

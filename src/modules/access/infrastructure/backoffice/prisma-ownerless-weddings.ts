@@ -147,11 +147,11 @@ export class PrismaOwnerlessWeddings implements OwnerlessWeddings {
         select: { status: true },
       });
       if (!wedding) return false;
-      const imageIds = await purgeWeddingData({ tx, weddingId, now });
+      const imageKeyTokens = await purgeWeddingData({ tx, weddingId, now });
       // Os arquivos saem dentro da transação, com o casamento travado: se o
       // armazenamento falhar, o erro desfaz o expurgo inteiro e a rotina tenta
       // de novo no dia seguinte (Imagens do site RN11).
-      await deleteSiteImageObjects({ storage: this.storage, imageIds });
+      await deleteSiteImageObjects({ storage: this.storage, imageKeyTokens });
       await tx.applicationLog.create({
         data: {
           action: OWNERLESS_PURGED_ACTION,

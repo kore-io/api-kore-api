@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import { uuidV7 } from '../../../shared/ids/uuid-v7';
 import {
@@ -9,6 +10,7 @@ import {
   SITE_IMAGE_UPLOAD_SECONDS,
   SITE_IMAGES_PER_WEDDING_MAX,
   STORED_SITE_IMAGE_STATUSES,
+  SITE_IMAGE_KEY_TOKEN_BYTES,
   siteImageKeys,
   type SiteImageUploadContentType,
 } from '../domain/site-image';
@@ -59,10 +61,13 @@ export class AuthorizeSiteImageUpload {
     if (stored >= SITE_IMAGES_PER_WEDDING_MAX) throw new SiteImageLimitReachedError();
 
     const imageId = uuidV7({ now: now.getTime() });
-    const keys = siteImageKeys({ imageId });
+    // A chave pública não leva o id, que revela a hora do envio (decisão 229(f)).
+    const keyToken = randomBytes(SITE_IMAGE_KEY_TOKEN_BYTES).toString('hex');
+    const keys = siteImageKeys({ keyToken });
     await this.images.createUploading({
       id: imageId,
       weddingId,
+      keyToken,
       storageKey: keys.display,
       sizeBytes,
       uploadedByUserId: userId,

@@ -19,12 +19,14 @@ export interface SiteImageStore {
   createUploading({
     id,
     weddingId,
+    keyToken,
     storageKey,
     sizeBytes,
     uploadedByUserId,
   }: {
     id: string;
     weddingId: string;
+    keyToken: string;
     storageKey: string;
     sizeBytes: number;
     uploadedByUserId: string;
@@ -32,7 +34,7 @@ export interface SiteImageStore {
 
   /**
    * `uploading` → `processing` de forma atômica (S4 RN05): só uma confirmação
-   * pega a imagem. Devolve se pegou.
+   * pega a imagem. Devolve o token das chaves, se pegou.
    */
   claimForProcessing({
     weddingId,
@@ -40,7 +42,7 @@ export interface SiteImageStore {
   }: {
     weddingId: string;
     imageId: string;
-  }): Promise<boolean>;
+  }): Promise<{ keyToken: string } | null>;
 
   find({
     weddingId,

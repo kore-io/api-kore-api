@@ -53,7 +53,7 @@ export class PrismaCreatorWeddingDeleter implements CreatorWeddingDeleter {
       if (!DELETABLE_STATUSES.includes(wedding.status)) return { result: 'not_allowed' };
 
       // Os convites pendentes saem com o resto: o link para de funcionar.
-      const imageIds = await purgeWeddingData({ tx, weddingId, now });
+      const imageKeyTokens = await purgeWeddingData({ tx, weddingId, now });
       await tx.applicationLog.create({
         data: {
           action: DELETED_BY_CREATOR_ACTION,
@@ -65,11 +65,11 @@ export class PrismaCreatorWeddingDeleter implements CreatorWeddingDeleter {
           data: { status: wedding.status },
         },
       });
-      return { result: 'deleted', status: wedding.status, imageIds };
+      return { result: 'deleted', status: wedding.status, imageKeyTokens };
     });
   }
 
-  deleteImageObjects({ imageIds }: { imageIds: readonly string[] }): Promise<void> {
-    return deleteSiteImageObjects({ storage: this.storage, imageIds });
+  deleteImageObjects({ imageKeyTokens }: { imageKeyTokens: readonly string[] }): Promise<void> {
+    return deleteSiteImageObjects({ storage: this.storage, imageKeyTokens });
   }
 }

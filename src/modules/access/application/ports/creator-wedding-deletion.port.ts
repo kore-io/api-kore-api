@@ -1,6 +1,6 @@
 /** O resultado da exclusão, conferido sob o lock do casamento (Meus casamentos RN11). */
 export type CreatorWeddingDeletion =
-  | { result: 'deleted'; status: string; imageIds: string[] }
+  | { result: 'deleted'; status: string; imageKeyTokens: string[] }
   | { result: 'has_owner' }
   | { result: 'not_allowed' };
 
@@ -21,7 +21,7 @@ export interface CreatorWeddingDeleter {
     now: Date;
   }): Promise<CreatorWeddingDeletion>;
   /** Os arquivos das imagens do site, depois do commit. */
-  deleteImageObjects({ imageIds }: { imageIds: readonly string[] }): Promise<void>;
+  deleteImageObjects({ imageKeyTokens }: { imageKeyTokens: readonly string[] }): Promise<void>;
 }
 
 export const CREATOR_WEDDING_DELETER = Symbol('CreatorWeddingDeleter');

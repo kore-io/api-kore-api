@@ -248,10 +248,12 @@ describe('Expurgo do casamento sem dono (RN13 de Convites; decisões 136 e 180; 
       await db.partyTag.create({ data: { weddingId, partyId: party.id, tagId: tag.id } });
       await db.guestTag.create({ data: { weddingId, guestId: luiz.id, tagId: tag.id } });
       const imageId = uuidV7();
-      const keys = siteImageKeys({ imageId });
+      const keyToken = randomBytes(16).toString('hex');
+      const keys = siteImageKeys({ keyToken });
       await db.siteImage.create({
         data: {
           id: imageId,
+          keyToken,
           weddingId,
           status: 'ready',
           storageKey: keys.display,
