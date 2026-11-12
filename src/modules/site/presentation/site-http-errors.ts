@@ -28,6 +28,10 @@ import {
   SiteFieldsInvalidError,
   SiteSlugLockedError,
   SiteSlugUnavailableError,
+  CourtesyDisabledError,
+  NotDraftError,
+  EventDateMissingError,
+  EndDateOutOfRangeError,
 } from '../domain/site.errors';
 
 /**
@@ -35,6 +39,36 @@ import {
  * WEDDING_NOT_FOUND e 403 ACTION_NOT_ALLOWED) seguem o mapa do Acesso.
  */
 export function toHttpError(error: unknown): unknown {
+  if (error instanceof CourtesyDisabledError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'COURTESY_DISABLED',
+      message: 'Publishing is not available yet.',
+    });
+  }
+  if (error instanceof NotDraftError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'NOT_DRAFT',
+      message: 'Only a draft wedding can be published.',
+    });
+  }
+  if (error instanceof EventDateMissingError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'EVENT_DATE_MISSING',
+      message: 'The wedding needs a date and a state to be published.',
+    });
+  }
+  if (error instanceof EndDateOutOfRangeError) {
+    return new UnprocessableEntityException({
+      statusCode: 422,
+      error: 'END_DATE_OUT_OF_RANGE',
+      message: 'The end date must be after the wedding and within 12 months of it.',
+      endDateMin: error.endDateMin,
+      endDateMax: error.endDateMax,
+    });
+  }
   if (error instanceof SiteSlugMissingError) {
     return new ConflictException({
       statusCode: 409,

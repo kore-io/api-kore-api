@@ -150,6 +150,16 @@ class SiteEditableResponse {
   slug: boolean;
 }
 
+/** A tela Publicar o site (Publicação RN01; decisão 217(13)). */
+export class SitePublicationResponse {
+  /** A chave do servidor; o app só esconde o botão, quem decide é o servidor. */
+  courtesyEnabled: boolean;
+  /** O dia seguinte ao casamento; nulo sem data ou sem fuso. */
+  @ApiProperty({ type: String, nullable: true, example: '2026-11-15' }) endDateMin: string | null;
+  /** 12 meses depois do casamento (29/02 → 28/02); nulo sem data ou sem fuso. */
+  @ApiProperty({ type: String, nullable: true, example: '2027-11-14' }) endDateMax: string | null;
+}
+
 export class SiteEditorResponse {
   status: string;
   @ApiProperty({ type: String, nullable: true, format: 'date-time' }) publishedAt: string | null;
@@ -167,6 +177,7 @@ export class SiteEditorResponse {
   @ApiProperty({ type: SiteEditorAppearanceResponse }) appearance: SiteEditorAppearanceResponse;
   @ApiProperty({ type: [SiteSectionResponse] }) sections: SiteSectionResponse[];
   @ApiProperty({ type: SiteEditableResponse }) editable: SiteEditableResponse;
+  @ApiProperty({ type: SitePublicationResponse }) publication: SitePublicationResponse;
 
   static from({ view }: { view: SiteEditorView }): SiteEditorResponse {
     return {

@@ -45,6 +45,7 @@ describe('validateEnv', () => {
       STORAGE_REGION: 'auto',
       STORAGE_FORCE_PATH_STYLE: false,
       SIMULATOR_ENABLED: true,
+      COURTESY_PUBLICATION_ENABLED: false,
     });
   });
 
@@ -139,5 +140,28 @@ describe('validateEnv', () => {
     expect(simulatorEnabled({ appEnv: 'homolog', value: undefined })).toBe(false);
     expect(simulatorEnabled({ appEnv: 'production', value: undefined })).toBe(false);
     expect(simulatorEnabled({ appEnv: 'homolog', value: 'true' })).toBe(true);
+  });
+
+  it('Publicação RN01 - a Cortesia vem desligada sem valor e liga em local e test', () => {
+    expect(validateEnv({ config: validConfig }).COURTESY_PUBLICATION_ENABLED).toBe(false);
+    expect(
+      validateEnv({ config: { ...validConfig, COURTESY_PUBLICATION_ENABLED: 'true' } })
+        .COURTESY_PUBLICATION_ENABLED,
+    ).toBe(true);
+  });
+
+  it('Publicação RN01 e decisão 217(11) - dado APP_ENV production ou homolog com a Cortesia ligada, a API não sobe', () => {
+    for (const appEnv of ['production', 'homolog'])
+      expect(() =>
+        validateEnv({
+          config: { ...validConfig, APP_ENV: appEnv, COURTESY_PUBLICATION_ENABLED: 'true' },
+        }),
+      ).toThrow(/COURTESY_PUBLICATION_ENABLED: a Cortesia só pode ser ligada/);
+    // Desligada, a variável não é motivo de recusa nesses ambientes.
+    expect(() =>
+      validateEnv({
+        config: { ...validConfig, APP_ENV: 'production', COURTESY_PUBLICATION_ENABLED: 'false' },
+      }),
+    ).not.toThrow(/COURTESY_PUBLICATION_ENABLED/);
   });
 });

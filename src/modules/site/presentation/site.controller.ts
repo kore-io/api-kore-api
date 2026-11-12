@@ -19,6 +19,7 @@ import { UpdateSiteAppearance } from '../application/update-site-appearance.use-
 import { SiteAppearanceResponse, UpdateSiteAppearanceBody } from './site-appearance.dto';
 import {
   ContrastTooLowErrorBody,
+  EndDateOutOfRangeErrorBody,
   SiteFieldNotAllowedErrorBody,
   SiteImageNotFoundErrorBody,
   SiteSlugLockedErrorBody,
@@ -135,6 +136,7 @@ export class SiteController {
     SiteImageNotFoundErrorBody,
     SiteSlugLockedErrorBody,
     SiteSlugUnavailableErrorBody,
+    EndDateOutOfRangeErrorBody,
   )
   async patch(
     @CurrentSession() session: AuthenticatedSession,

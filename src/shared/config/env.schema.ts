@@ -89,6 +89,13 @@ export const envSchema = z
     // O simulador do site (Simule RN01; decisão 207, item 9): desligado em
     // homologação e produção até o PO liberar. Sem a variável, ligado só em local e test.
     SIMULATOR_ENABLED: z.enum(['true', 'false']).optional(),
+    // Publicação por Cortesia (Publicação RN01; decisão 216, D1): sem valor,
+    // desligada. Recusada em homolog e production (decisão 217(11)): ligar lá é
+    // publicar para o público, e exige mudança de código e decisão do PO.
+    COURTESY_PUBLICATION_ENABLED: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
     // Versão vigente dos Termos e da Política (RN11 de Cadastro; decisão 166).
     TERMS_VERSION: z.string().min(1).default('2026-09'),
     // Armazenamento compatível com S3 (Imagens do site, RN06): MinIO no local,
@@ -120,6 +127,13 @@ export const envSchema = z
         code: 'custom',
         path: ['ALLOWED_ORIGINS'],
         message: 'não pode ter a origem do SITE_URL (a origem do site vale só nas rotas do site)',
+      });
+    }
+    if (env.COURTESY_PUBLICATION_ENABLED && !LOCAL_KEY_ENVS.includes(env.APP_ENV)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['COURTESY_PUBLICATION_ENABLED'],
+        message: 'a Cortesia só pode ser ligada com APP_ENV local ou test (decisão 217(11))',
       });
     }
     if (env.GOOGLE_PROVIDER === 'dev' && !LOCAL_KEY_ENVS.includes(env.APP_ENV)) {

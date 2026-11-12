@@ -3,6 +3,8 @@ import type { SectionContent, SiteSectionType } from '../../domain/site-sections
 export interface SiteSnapshot {
   status: string;
   publishedAt: Date | null;
+  /** A data de saída do ar (Publicação RN04); nula antes de publicar. */
+  endDate: Date | null;
   siteUpdatedAt: Date | null;
   partners: { id: string; name: string; title: 'bride' | 'groom' | null }[];
   eventDate: Date | null;
