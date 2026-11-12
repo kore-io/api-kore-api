@@ -65,7 +65,7 @@ export class PrismaSiteImageCleanup implements SiteImageCleanup {
       await tx.$queryRaw`SELECT id FROM weddings WHERE id = ${weddingId}::uuid FOR UPDATE`;
       const images = await tx.siteImage.findMany({
         where: { weddingId, ...dueWhere({ now }) },
-        select: { id: true, status: true },
+        select: { id: true, status: true, keyToken: true },
       });
       const counts: SiteImageCleanupCounts = { stale: 0, failed: 0, unused: 0 };
       if (images.length === 0) return counts;
@@ -75,7 +75,7 @@ export class PrismaSiteImageCleanup implements SiteImageCleanup {
         else if (image.status === 'ready') counts.unused += 1;
         else counts.stale += 1;
       }
-      const keys = images.map((image) => siteImageKeys({ imageId: image.id }));
+      const keys = images.map((image) => siteImageKeys({ keyToken: image.keyToken }));
       await this.storage.delete({ bucket: 'private', keys: keys.map((key) => key.original) });
       await this.storage.delete({
         bucket: 'public',

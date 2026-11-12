@@ -1,7 +1,7 @@
 import { getQueueToken } from '@nestjs/bullmq';
 import type { TestingModule } from '@nestjs/testing';
 import type { Queue } from 'bullmq';
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { CleanSiteImages } from '../../src/modules/site/application/clean-site-images.use-case';
 import { CleanSitePreviewTokens } from '../../src/modules/site/application/clean-site-preview-tokens.use-case';
 import {
@@ -49,6 +49,9 @@ describe('Imagens do site: limpeza diária (worker)', () => {
     return (await seedWedding({ db, ownerId })).weddingId;
   }
 
+  /** O token das chaves de cada imagem criada aqui (decisão 229(f)). */
+  const tokens = new Map<string, string>();
+
   /** Uma imagem no estado pedido, com o arquivo de cada versão no armazenamento. */
   async function image({
     weddingId,
@@ -62,11 +65,14 @@ describe('Imagens do site: limpeza diária (worker)', () => {
     unusedSince?: Date | null;
   }): Promise<string> {
     const id = uuidV7();
-    const keys = siteImageKeys({ imageId: id });
+    const keyToken = randomBytes(16).toString('hex');
+    tokens.set(id, keyToken);
+    const keys = siteImageKeys({ keyToken });
     const ready = status === 'ready';
     await db.siteImage.create({
       data: {
         id,
+        keyToken,
         weddingId,
         status,
         storageKey: keys.display,
@@ -94,7 +100,7 @@ describe('Imagens do site: limpeza diária (worker)', () => {
   }
 
   async function files(imageId: string): Promise<number> {
-    const keys = siteImageKeys({ imageId });
+    const keys = siteImageKeys({ keyToken: tokens.get(imageId)! });
     const heads = await Promise.all([
       storage.head({ bucket: 'private', key: keys.original }),
       ...[keys.display, keys.thumb, keys.og].map((key) => storage.head({ bucket: 'public', key })),

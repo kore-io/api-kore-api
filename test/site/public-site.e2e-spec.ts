@@ -46,6 +46,7 @@ describe('Site público do casal: visitante e prévia do link (banco real)', () 
     await db.siteImage.create({
       data: {
         id,
+        keyToken: id,
         weddingId,
         status: 'ready',
         storageKey: `site/${id}/display.jpg`,

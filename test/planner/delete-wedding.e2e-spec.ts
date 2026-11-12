@@ -78,10 +78,12 @@ describe('Excluir este casamento (banco real; RN11)', () => {
       data: { weddingId: planner.weddingId, partyId: party.id, name: 'Luiz Moreira' },
     });
     const imageId = uuidV7();
-    const keys = siteImageKeys({ imageId });
+    const keyToken = randomBytes(16).toString('hex');
+    const keys = siteImageKeys({ keyToken });
     await db.siteImage.create({
       data: {
         id: imageId,
+        keyToken,
         weddingId: planner.weddingId,
         status: 'ready',
         storageKey: keys.display,

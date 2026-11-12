@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { Client } from 'pg';
 import { BackofficePrismaService } from '../../src/shared/database/backoffice-prisma.service';
 import { uuidV7 } from '../../src/shared/ids/uuid-v7';
@@ -54,9 +54,9 @@ describe('Migration da F2: site_images (banco real, usuário kore_api)', () => {
   }: { wedding?: string; sizeBytes?: number } = {}): Promise<string> => {
     const id = uuidV7();
     await api.query(
-      `INSERT INTO site_images (id, wedding_id, storage_key, size_bytes, updated_at)
-       VALUES ($1, $2, $3, $4, now())`,
-      [id, wedding, `site/${id}/display.jpg`, sizeBytes],
+      `INSERT INTO site_images (id, wedding_id, key_token, storage_key, size_bytes, updated_at)
+       VALUES ($1, $2, $5, $3, $4, now())`,
+      [id, wedding, `site/${id}/display.jpg`, sizeBytes, id],
     );
     return id;
   };
@@ -76,6 +76,7 @@ describe('Migration da F2: site_images (banco real, usuário kore_api)', () => {
     await db.siteImage.create({
       data: {
         id: otherImage,
+        keyToken: randomBytes(16).toString('hex'),
         weddingId: otherWeddingId,
         storageKey: `site/${otherImage}/display.jpg`,
         sizeBytes: 1024,
@@ -91,7 +92,7 @@ describe('Migration da F2: site_images (banco real, usuário kore_api)', () => {
     });
   });
 
-  it('decisão 207(2) - a API não apaga imagem nem troca a chave, o casamento ou quem enviou', async () => {
+  it('decisão 207(2) - a API não apaga imagem nem troca a chave, o token da chave (229(f)), o casamento ou quem enviou', async () => {
     await as(ana, async () => {
       const id = await insertImage();
       await api.query('SAVEPOINT s');
@@ -99,7 +100,7 @@ describe('Migration da F2: site_images (banco real, usuário kore_api)', () => {
         /permission denied/,
       );
       await api.query('ROLLBACK TO SAVEPOINT s');
-      for (const column of ['storage_key', 'wedding_id', 'uploaded_by_user_id']) {
+      for (const column of ['storage_key', 'key_token', 'wedding_id', 'uploaded_by_user_id']) {
         await expect(
           api.query(`UPDATE site_images SET ${column} = ${column} WHERE id = $1`, [id]),
         ).rejects.toThrow(/permission denied/);

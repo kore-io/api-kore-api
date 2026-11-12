@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { BackofficePrismaService } from '../../src/shared/database/backoffice-prisma.service';
 import { uuidV7 } from '../../src/shared/ids/uuid-v7';
@@ -63,6 +63,7 @@ describe('Editor do site: leitura e Dados básicos (banco real)', () => {
     await db.siteImage.create({
       data: {
         id,
+        keyToken: id,
         weddingId,
         status: 'ready',
         storageKey: `site/${id}/display.jpg`,
@@ -144,6 +145,7 @@ describe('Editor do site: leitura e Dados básicos (banco real)', () => {
       await db.siteImage.create({
         data: {
           id: failed,
+          keyToken: randomBytes(16).toString('hex'),
           weddingId,
           status: 'failed',
           storageKey: `site/${failed}/display.jpg`,

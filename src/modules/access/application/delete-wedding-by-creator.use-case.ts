@@ -36,7 +36,7 @@ export class DeleteWeddingByCreator {
     if (deletion.result === 'has_owner') throw new WeddingHasOwnerError();
     if (deletion.result === 'not_allowed') throw new WeddingActionForbiddenError();
     try {
-      await this.deleter.deleteImageObjects({ imageIds: deletion.imageIds });
+      await this.deleter.deleteImageObjects({ imageKeyTokens: deletion.imageKeyTokens });
     } catch (error) {
       // O banco já está sem as linhas; arquivo que sobrar não é lido por ninguém.
       logger.error({ msg: 'site image objects left after deletion', weddingId, error });

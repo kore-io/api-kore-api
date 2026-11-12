@@ -76,16 +76,17 @@ export class ConfirmSiteImage {
       weddingId,
       work: async () => {
         await this.authorization.require({ userId, weddingId, action: 'manage_site' });
-        if (await this.images.claimForProcessing({ weddingId, imageId })) return null;
+        const claimed = await this.images.claimForProcessing({ weddingId, imageId });
+        if (claimed) return { kind: 'claimed' as const, keyToken: claimed.keyToken };
         const image = await this.images.find({ weddingId, imageId });
         if (!image || image.status === 'failed') throw new SiteImageNotFoundError();
-        if (image.status === 'ready') return image;
+        if (image.status === 'ready') return { kind: 'ready' as const, image };
         throw new SiteImageProcessingError();
       },
     });
-    if (claim) return { image: this.view(claim), processed: false };
+    if (claim.kind === 'ready') return { image: this.view(claim.image), processed: false };
 
-    const keys = siteImageKeys({ imageId });
+    const keys = siteImageKeys({ keyToken: claim.keyToken });
     let processed: Awaited<ReturnType<SiteImageProcessor['process']>>;
     try {
       processed = await this.slots.run(async () => {

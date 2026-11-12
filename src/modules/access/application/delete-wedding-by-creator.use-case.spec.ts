@@ -32,13 +32,13 @@ function setup({ deletion }: { deletion: CreatorWeddingDeletion }) {
 describe('DeleteWeddingByCreator (DELETE /v1/weddings/{weddingId})', () => {
   it('RN11 - autoriza sob a RLS, exclui pelo backoffice e só depois apaga os arquivos', async () => {
     const { useCase, deleter, calls } = setup({
-      deletion: { result: 'deleted', status: 'draft', imageIds: ['img'] },
+      deletion: { result: 'deleted', status: 'draft', imageKeyTokens: ['img'] },
     });
 
     await useCase.execute({ userId: 'u-j', weddingId: 'w1', now });
 
     expect(calls).toEqual(['scope', 'delete', 'images']);
-    expect(deleter.deleteImageObjects).toHaveBeenCalledWith({ imageIds: ['img'] });
+    expect(deleter.deleteImageObjects).toHaveBeenCalledWith({ imageKeyTokens: ['img'] });
   });
 
   it('RN11 - com dono: WEDDING_HAS_OWNER; quem não criou: ACTION_NOT_ALLOWED; nenhum arquivo sai', async () => {
