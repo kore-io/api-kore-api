@@ -53,6 +53,50 @@ describe('Aparência do site (banco real)', () => {
       },
     });
 
+  it('RN10 - no Checklist, a aparência fica por fazer com o appearanceSetAt nulo, e feita depois do PUT', async () => {
+    const { ana, weddingId } = await anaWedding();
+    const checklist = async () =>
+      (
+        (
+          await request(app.getHttpServer())
+            .get(`/v1/weddings/${weddingId}/dashboard`)
+            .set('Cookie', ana.cookie)
+            .expect(200)
+        ).body.checklist as { key: string; done: boolean }[]
+      ).find((item) => item.key === 'appearance');
+    expect((await appearance(weddingId)).appearanceSetAt).toBeNull();
+
+    expect(await checklist()).toMatchObject({ done: false });
+    await put(ana.cookie, weddingId, {
+      fontPairKey: 'moderno',
+      starterPaletteKey: 'marinho',
+      primaryColor: '#1F2A44',
+      accentColor: '#B08D57',
+      backgroundMode: 'light',
+    }).expect(200);
+    expect(await checklist()).toMatchObject({ done: true });
+  });
+
+  it('RN08 - o PUT da Aparência deixa as seções e a capa como estavam', async () => {
+    const { ana, weddingId } = await anaWedding();
+    const untouched = async () => ({
+      sections: await db.section.findMany({ where: { weddingId }, orderBy: { id: 'asc' } }),
+      contents: await db.sectionContent.findMany({ where: { weddingId }, orderBy: { id: 'asc' } }),
+      cover: (await db.wedding.findUniqueOrThrow({ where: { id: weddingId } })).coverImageId,
+    });
+    const before = await untouched();
+
+    await put(ana.cookie, weddingId, {
+      fontPairKey: 'moderno',
+      starterPaletteKey: 'marinho',
+      primaryColor: '#1F2A44',
+      accentColor: '#B08D57',
+      backgroundMode: 'light',
+    }).expect(200);
+
+    expect(await untouched()).toEqual(before);
+  });
+
   it('RN06 e RN10 - grava a Aparência com as cores em maiúsculas; o appearanceSetAt fica a primeira data', async () => {
     const { ana, weddingId } = await anaWedding();
 
