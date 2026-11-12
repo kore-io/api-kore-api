@@ -18,6 +18,10 @@
       {
         "include": "modules/guests/infrastructure/fonts/**/*",
         "outDir": "dist"
+      },
+      {
+        "include": "modules/site/domain/appearance-contrast.fixture.json",
+        "outDir": "dist"
       }
     ]
   }
