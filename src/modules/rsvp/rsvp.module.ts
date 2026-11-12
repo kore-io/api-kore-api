@@ -37,6 +37,10 @@ import {
 import { PrismaSongSuggestionReader } from './infrastructure/prisma-song-suggestion.reader';
 import { SongSuggestionsXlsx } from './infrastructure/song-suggestions-xlsx';
 import { SongSuggestionsController } from './presentation/song-suggestions.controller';
+import { GetDashboard } from './application/dashboard.use-case';
+import { DASHBOARD_READER } from './application/ports/dashboard-reader.port';
+import { PrismaDashboardReader } from './infrastructure/prisma-dashboard.reader';
+import { DashboardController } from './presentation/dashboard.controller';
 import { PARTY_LINKS } from '../guests/application/ports/party-links.port';
 import { RandomPartyLinks } from '../guests/infrastructure/random-party-links';
 import { RSVP_STORE } from './application/ports/rsvp-store.port';
@@ -55,6 +59,7 @@ import { RsvpController } from './presentation/rsvp.controller';
     DeliveriesController,
     QrCodesController,
     SongSuggestionsController,
+    DashboardController,
   ],
   providers: [
     { provide: RSVP_STORE, useClass: PrismaRsvpStore },
@@ -81,6 +86,8 @@ import { RsvpController } from './presentation/rsvp.controller';
     SongSuggestionsAccess,
     ListSongSuggestions,
     ExportSongSuggestions,
+    { provide: DASHBOARD_READER, useClass: PrismaDashboardReader },
+    GetDashboard,
   ],
 })
 export class RsvpModule {}

@@ -6451,6 +6451,67 @@
           "rsvp"
         ]
       }
+    },
+    "/v1/weddings/{weddingId}/dashboard": {
+      "get": {
+        "operationId": "DashboardController_get_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Os cartões, o Checklist e a Atividade recente, numa chamada; sem cache (RN08).",
+        "tags": [
+          "rsvp"
+        ]
+      }
     }
   },
   "info": {
@@ -13017,6 +13078,315 @@
           "items",
           "nextCursor",
           "total"
+        ]
+      },
+      "DashboardStatsResponse": {
+        "type": "object",
+        "properties": {
+          "guestsTotal": {
+            "type": "number",
+            "description": "Pessoas e vagas (Grupos RN13)."
+          },
+          "confirmed": {
+            "type": "number"
+          },
+          "declined": {
+            "type": "number"
+          },
+          "pending": {
+            "type": "number"
+          },
+          "adultsConfirmed": {
+            "type": "number"
+          },
+          "childrenConfirmed": {
+            "type": "number"
+          },
+          "babiesConfirmed": {
+            "type": "number"
+          },
+          "partiesPending": {
+            "type": "number"
+          },
+          "rsvpPercent": {
+            "type": "number",
+            "description": "(confirmados + recusados) ÷ total, em porcentagem."
+          },
+          "partiesTotal": {
+            "type": "number",
+            "description": "A soma do `delivery` (R6-5)."
+          }
+        },
+        "required": [
+          "guestsTotal",
+          "confirmed",
+          "declined",
+          "pending",
+          "adultsConfirmed",
+          "childrenConfirmed",
+          "babiesConfirmed",
+          "partiesPending",
+          "rsvpPercent",
+          "partiesTotal"
+        ]
+      },
+      "DashboardDeliveryResponse": {
+        "type": "object",
+        "properties": {
+          "notSent": {
+            "type": "number"
+          },
+          "sent": {
+            "type": "number"
+          },
+          "viewed": {
+            "type": "number"
+          },
+          "responded": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "notSent",
+          "sent",
+          "viewed",
+          "responded"
+        ]
+      },
+      "DashboardReminderQueueResponse": {
+        "type": "object",
+        "properties": {
+          "parties": {
+            "type": "number",
+            "description": "Grupos já enviados com convidado com nome pendente."
+          },
+          "guests": {
+            "type": "number",
+            "description": "Os convidados com nome pendentes nesses grupos (a vaga não conta)."
+          },
+          "notReminded": {
+            "type": "number",
+            "description": "Grupos da fila sem lembrete depois do convite."
+          }
+        },
+        "required": [
+          "parties",
+          "guests",
+          "notReminded"
+        ]
+      },
+      "DashboardSiteResponse": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "nullable": true
+          },
+          "publishedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "endDate": {
+            "type": "string",
+            "nullable": true,
+            "description": "A data de saída do ar (\"No ar até {data}.\").",
+            "example": "2027-02-14"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "publishedAt",
+          "endDate",
+          "status"
+        ]
+      },
+      "ChecklistProgressResponse": {
+        "type": "object",
+        "properties": {
+          "done": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "done",
+          "total"
+        ]
+      },
+      "ChecklistItemResponse": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "enum": [
+              "guests",
+              "appearance",
+              "publish",
+              "invites",
+              "reminders"
+            ],
+            "type": "string"
+          },
+          "progress": {
+            "nullable": true,
+            "description": "Envios: grupos enviados de todos; lembrete: grupos da fila já lembrados.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChecklistProgressResponse"
+              }
+            ]
+          },
+          "done": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "progress",
+          "done"
+        ]
+      },
+      "ActivityGroupResponse": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "partyId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "confirmed": {
+            "type": "number"
+          },
+          "declined": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "at",
+          "partyId",
+          "name",
+          "confirmed",
+          "declined"
+        ]
+      },
+      "ActivityResponse": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "description": "A notificação do dono, ou a gravação do grupo para a colaboradora (até a F6).",
+            "enum": [
+              "notification",
+              "submission"
+            ],
+            "type": "string"
+          },
+          "groups": {
+            "description": "Só o grupo e os números: sem restrição nem nome de convidado.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActivityGroupResponse"
+            }
+          },
+          "readAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string"
+          },
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "source",
+          "groups",
+          "readAt",
+          "at",
+          "id",
+          "count"
+        ]
+      },
+      "DashboardResponse": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "description": "Quem lê: a colaboradora vê a faixa \"Você colabora neste casamento.\" (RN01).",
+            "enum": [
+              "owner",
+              "collaborator"
+            ],
+            "type": "string"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/DashboardStatsResponse"
+          },
+          "delivery": {
+            "$ref": "#/components/schemas/DashboardDeliveryResponse"
+          },
+          "reminderQueue": {
+            "$ref": "#/components/schemas/DashboardReminderQueueResponse"
+          },
+          "site": {
+            "$ref": "#/components/schemas/DashboardSiteResponse"
+          },
+          "rsvpDeadline": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-15"
+          },
+          "eventDate": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-11-14"
+          },
+          "daysUntilEvent": {
+            "type": "number",
+            "nullable": true,
+            "description": "Dias até o casamento, no fuso dele; 0 no dia; negativo depois; nulo sem data."
+          },
+          "checklist": {
+            "description": "Na ordem da RN03; o lembrete aparece depois do 1º envio.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChecklistItemResponse"
+            }
+          },
+          "recentActivity": {
+            "description": "Até 5, da mais recente para a mais antiga (RN04).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActivityResponse"
+            }
+          }
+        },
+        "required": [
+          "role",
+          "stats",
+          "delivery",
+          "reminderQueue",
+          "site",
+          "rsvpDeadline",
+          "eventDate",
+          "daysUntilEvent",
+          "checklist",
+          "recentActivity"
         ]
       },
       "SpreadsheetTemplateHeaders": {
