@@ -45,6 +45,10 @@ class PublicViewerResponse {
   preview: PublicPreviewModeResponse | null;
 }
 
+class PublicPlannerCreditResponse {
+  @ApiProperty({ example: 'Prado Assessoria' }) name: string;
+}
+
 class PublicContactResponse {
   @ApiProperty({ type: String, nullable: true }) whatsapp: string | null;
   @ApiProperty({ type: String, nullable: true }) email: string | null;
@@ -78,6 +82,9 @@ export class PublicSiteResponse {
   contact: PublicContactResponse | null;
   /** Só as ligadas e com conteúdo, na ordem fixa. */
   @ApiProperty({ type: [PublicSectionResponse] }) sections: PublicSectionResponse[];
+  /** "Assessoria: {name}" no rodapé, sem link (Assinatura RN01 a RN03); nulo sem assinatura. */
+  @ApiProperty({ type: PublicPlannerCreditResponse, nullable: true })
+  plannerCredit: PublicPlannerCreditResponse | null;
 }
 
 class LinkPreviewImageResponse {

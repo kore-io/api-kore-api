@@ -9,6 +9,7 @@ export interface SiteBasicsChanges {
   contactWhatsapp?: string | null;
   contactEmail?: string | null;
   coverImageId?: string | null;
+  showPlannerCredit?: boolean;
 }
 
 /** Gravações do Editor do site, na transação da requisição (RLS). */

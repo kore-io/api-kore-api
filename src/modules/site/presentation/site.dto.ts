@@ -106,6 +106,15 @@ export class UpdateSiteBody {
   @IsOptional()
   @IsUUID()
   coverImageId?: string | null;
+
+  /**
+   * Mostrar a assinatura da assessoria no rodapé (Assinatura RN05). Aceito
+   * mesmo sem colaboradora; só o dono muda (o valor igual ao atual não é erro).
+   */
+  @ApiProperty({ required: false })
+  @OptionalNotNull()
+  @IsBoolean()
+  showPlannerCredit?: boolean;
 }
 
 class SitePartnerResponse {
@@ -179,6 +188,16 @@ export class SitePublicationResponse {
   @ApiProperty({ type: String, nullable: true, example: '2027-11-14' }) endDateMax: string | null;
 }
 
+class SitePlannerCreditResponse {
+  /** Nulo quando o nome não passa no predicado (Assinatura RN03). */
+  @ApiProperty({ type: String, nullable: true, example: 'Prado Assessoria' }) name: string | null;
+  showPlannerCredit: boolean;
+  /** O Kore ocultou a assinatura (RN06); o motivo não sai da API. */
+  hiddenByKore: boolean;
+  /** Só o dono muda (manage_planner_credit). */
+  canChange: boolean;
+}
+
 export class SiteEditorResponse {
   status: string;
   @ApiProperty({ type: String, nullable: true, format: 'date-time' }) publishedAt: string | null;
@@ -198,6 +217,9 @@ export class SiteEditorResponse {
   @ApiProperty({ type: SiteEditableResponse }) editable: SiteEditableResponse;
   @ApiProperty({ type: SitePublicationResponse }) publication: SitePublicationResponse;
   @ApiProperty({ type: SiteSongQuestionResponse }) songQuestion: SiteSongQuestionResponse;
+  /** Nulo sem cerimonialista colaboradora: o Switch não aparece (Assinatura RN05). */
+  @ApiProperty({ type: SitePlannerCreditResponse, nullable: true })
+  plannerCredit: SitePlannerCreditResponse | null;
 
   static from({ view }: { view: SiteEditorView }): SiteEditorResponse {
     return {

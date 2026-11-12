@@ -25,6 +25,10 @@ class InvitationWeddingResponse {
   @ApiProperty({ required: false }) partnerTitleNeeded?: boolean;
 }
 
+class InvitationPlannerCreditResponse {
+  @ApiProperty({ example: 'Prado Assessoria' }) name: string;
+}
+
 class InvitationReferrerResponse {
   name: string;
   @ApiProperty({ type: Number, nullable: true }) discountPercent: number | null;
@@ -37,6 +41,9 @@ export class AccessInvitationResponse {
   wedding: InvitationWeddingResponse;
   /** Só no do casal; nulo até a fase da Aparência (decisão 168). */
   @ApiProperty({ type: Object, nullable: true, required: false }) sitePreview?: null;
+  /** Só no do casal: "Assessoria: {name}" na prévia do aceite (Assinatura RN04). */
+  @ApiProperty({ type: InvitationPlannerCreditResponse, nullable: true, required: false })
+  plannerCredit?: InvitationPlannerCreditResponse | null;
   /** Só no do casal. */
   @ApiProperty({ type: InvitationReferrerResponse, nullable: true, required: false })
   referrer?: InvitationReferrerResponse | null;

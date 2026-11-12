@@ -35,6 +35,8 @@ export interface SiteBasicsInput {
   contactWhatsapp?: string | null;
   contactEmail?: string | null;
   coverImageId?: string | null;
+  /** A assinatura da assessoria no rodapé (Assinatura RN05): só o dono muda. */
+  showPlannerCredit?: boolean;
 }
 
 const toDate = (value: string | null): Date | null =>
@@ -86,11 +88,21 @@ export class UpdateSiteBasics {
     const identityFields = (Object.keys(changed) as (keyof typeof changed)[]).filter(
       (field) => changed[field],
     );
+    // Assinatura RN05: o valor igual ao atual não é erro, como nos outros campos.
+    const creditChanged =
+      input.showPlannerCredit !== undefined && input.showPlannerCredit !== site.showPlannerCredit;
+    const notAllowed: string[] = [];
     if (
       identityFields.length > 0 &&
       !(await this.authorization.canManageSiteIdentity({ userId, weddingId }))
     )
-      throw new SiteFieldNotAllowedError({ fields: identityFields });
+      notAllowed.push(...identityFields);
+    if (
+      creditChanged &&
+      !(await this.authorization.can({ userId, weddingId, action: 'manage_planner_credit' }))
+    )
+      notAllowed.push('showPlannerCredit');
+    if (notAllowed.length > 0) throw new SiteFieldNotAllowedError({ fields: notAllowed });
 
     const issues: SiteFieldIssue[] = [];
     const changes: SiteBasicsChanges = {};
@@ -104,6 +116,7 @@ export class UpdateSiteBasics {
       changes.timezone = timezoneForState({ state: input.state });
     }
     if (input.contactEmail !== undefined) changes.contactEmail = input.contactEmail;
+    if (creditChanged) changes.showPlannerCredit = input.showPlannerCredit;
     if (input.contactWhatsapp !== undefined) {
       if (input.contactWhatsapp === null) changes.contactWhatsapp = null;
       else {
@@ -170,6 +183,18 @@ export class UpdateSiteBasics {
     }
     if (input.partners?.length)
       await this.store.renamePartners({ weddingId, partners: input.partners });
+    if (creditChanged)
+      await this.log.record({
+        entry: {
+          action: 'wedding.planner_credit_changed',
+          actorKind: 'user',
+          actorUserId: userId,
+          weddingId,
+          entityType: 'wedding',
+          entityId: weddingId,
+          data: { show: input.showPlannerCredit },
+        },
+      });
     // Novo casamento RN08 (decisão 223, D10): a data, a UF e o endereço mudados
     // por quem não é dono (o indicador antes do aceite) vão para o log.
     if (role !== 'owner' && identityFields.length > 0)

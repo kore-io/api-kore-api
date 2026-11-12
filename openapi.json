@@ -10083,6 +10083,18 @@
           "message"
         ]
       },
+      "InvitationPlannerCreditResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Prado Assessoria"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
       "InvitationReferrerResponse": {
         "type": "object",
         "properties": {
@@ -10175,6 +10187,16 @@
             "description": "Só no do casal; nulo até a fase da Aparência (decisão 168).",
             "type": "object",
             "nullable": true
+          },
+          "plannerCredit": {
+            "nullable": true,
+            "description": "Só no do casal: \"Assessoria: {name}\" na prévia do aceite (Assinatura RN04).",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/InvitationPlannerCreditResponse"
+              }
+            ]
           },
           "referrer": {
             "nullable": true,
@@ -13104,6 +13126,34 @@
           "courtesyEnabled"
         ]
       },
+      "SitePlannerCreditResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nulo quando o nome não passa no predicado (Assinatura RN03).",
+            "example": "Prado Assessoria"
+          },
+          "showPlannerCredit": {
+            "type": "boolean"
+          },
+          "hiddenByKore": {
+            "type": "boolean",
+            "description": "O Kore ocultou a assinatura (RN06); o motivo não sai da API."
+          },
+          "canChange": {
+            "type": "boolean",
+            "description": "Só o dono muda (manage_planner_credit)."
+          }
+        },
+        "required": [
+          "name",
+          "showPlannerCredit",
+          "hiddenByKore",
+          "canChange"
+        ]
+      },
       "SiteEditorResponse": {
         "type": "object",
         "properties": {
@@ -13180,6 +13230,16 @@
           "songQuestion": {
             "$ref": "#/components/schemas/SiteSongQuestionResponse"
           },
+          "plannerCredit": {
+            "nullable": true,
+            "description": "Nulo sem cerimonialista colaboradora: o Switch não aparece (Assinatura RN05).",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SitePlannerCreditResponse"
+              }
+            ]
+          },
           "status": {
             "type": "string"
           }
@@ -13201,6 +13261,7 @@
           "editable",
           "publication",
           "songQuestion",
+          "plannerCredit",
           "status"
         ]
       },
@@ -13229,7 +13290,8 @@
               "enum": [
                 "eventDate",
                 "state",
-                "slug"
+                "slug",
+                "showPlannerCredit"
               ]
             }
           }
@@ -13435,6 +13497,10 @@
             "nullable": true,
             "description": "Imagem `ready` deste casamento, ou null para tirar a capa (RN09).",
             "format": "uuid"
+          },
+          "showPlannerCredit": {
+            "type": "boolean",
+            "description": "Mostrar a assinatura da assessoria no rodapé (Assinatura RN05). Aceito\nmesmo sem colaboradora; só o dono muda (o valor igual ao atual não é erro)."
           }
         }
       },
@@ -13859,6 +13925,18 @@
           "type"
         ]
       },
+      "PublicPlannerCreditResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Prado Assessoria"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
       "PublicSiteResponse": {
         "type": "object",
         "properties": {
@@ -13899,6 +13977,16 @@
               "$ref": "#/components/schemas/PublicSectionResponse"
             }
           },
+          "plannerCredit": {
+            "nullable": true,
+            "description": "\"Assessoria: {name}\" no rodapé, sem link (Assinatura RN01 a RN03); nulo sem assinatura.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublicPlannerCreditResponse"
+              }
+            ]
+          },
           "slug": {
             "type": "string"
           },
@@ -13923,6 +14011,7 @@
           "viewer",
           "contact",
           "sections",
+          "plannerCredit",
           "slug",
           "names",
           "city",

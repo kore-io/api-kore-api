@@ -7,6 +7,7 @@ import type {
   InvitationAcceptanceStore,
 } from '../application/ports/invitation-acceptance-store.port';
 import type { InvitationSnapshot } from '../domain/invitation-acceptance';
+import { creditNameForSite } from '../domain/planner-profile';
 import type { PartnerTitle } from '../domain/wedding-signup';
 
 type Json = Record<string, unknown>;
@@ -29,6 +30,8 @@ function toSnapshot(raw: Json): InvitationSnapshot {
       activeOwners: Number(wedding.activeOwners),
       activeCollaborators: Number(wedding.activeCollaborators),
     },
+    // Assinatura RN03 e RN04: o predicado do nome, no helper único.
+    plannerCredit: creditNameForSite({ raw: (raw.plannerCredit as string | null) ?? null }),
   };
 }
 

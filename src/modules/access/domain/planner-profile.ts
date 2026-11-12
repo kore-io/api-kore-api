@@ -176,3 +176,15 @@ export const RESERVED_REFERRAL_CODES: ReadonlySet<string> = new Set([
   'oficial',
   'sac',
 ]);
+
+/**
+ * O nome da assinatura como o site mostra (Assinatura RN03): o predicado do
+ * Nome da assessoria na hora da leitura, normalizado; o que não passa vira
+ * nulo. É o único lugar da regra: os leitores do site público, da prévia, do
+ * convite e do Editor chamam este helper sobre o que a wedding_planner_credit
+ * devolve.
+ */
+export function creditNameForSite({ raw }: { raw: string | null }): string | null {
+  if (raw === null || !isValidCreditName({ value: raw })) return null;
+  return normalizeCreditName({ value: raw });
+}

@@ -1,5 +1,10 @@
 import { nextReferralCode, referralCodeBase } from './invitation-acceptance';
-import { checkPlannerProfile, isProfileComplete, isValidCreditName } from './planner-profile';
+import {
+  checkPlannerProfile,
+  creditNameForSite,
+  isProfileComplete,
+  isValidCreditName,
+} from './planner-profile';
 
 describe('Dados profissionais do cerimonialista (Cadastro e perfil RN04, RN05 e RN10)', () => {
   it.each([
@@ -132,5 +137,11 @@ describe('Dados profissionais do cerimonialista (Cadastro e perfil RN04, RN05 e 
     );
     expect(nextReferralCode({ base: 'kore', taken: ['kore-2'] })).toBe('kore-3');
     expect(nextReferralCode({ base: 'juliana-prado', taken: [] })).toBe('juliana-prado');
+  });
+
+  it('Assinatura RN03 - o nome do site: normalizado quando passa no predicado, nulo quando não', () => {
+    expect(creditNameForSite({ raw: '  Prado   Assessoria ' })).toBe('Prado Assessoria');
+    expect(creditNameForSite({ raw: 'Juliana 11 9 9999-9999' })).toBeNull();
+    expect(creditNameForSite({ raw: null })).toBeNull();
   });
 });

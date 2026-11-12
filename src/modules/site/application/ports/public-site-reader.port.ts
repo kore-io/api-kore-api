@@ -33,6 +33,8 @@ export type PublicSiteRow =
       partners: string[];
       sections: { type: SiteSectionType; title: string | null; content: SectionContent }[];
       images: PublicSiteImage[];
+      /** A assinatura da assessoria, pela wedding_planner_credit (Assinatura RN02). */
+      plannerCredit: string | null;
     };
 
 export interface PartyByToken {
@@ -55,6 +57,9 @@ export interface PartySiteView {
 /** A leitura pública pelo endereço, sem sessão (Site público RN05 e RN06). */
 export interface PublicSiteReader {
   bySlug({ slug }: { slug: string }): Promise<PublicSiteRow | null>;
+
+  /** A assinatura da assessoria pela mesma função das outras leituras (Assinatura RN02 e RN04). */
+  plannerCredit({ weddingId }: { weddingId: string }): Promise<string | null>;
 
   /** O grupo do token do link, fora da lixeira (RN06). */
   partyByToken({ token }: { token: string }): Promise<PartyByToken | null>;

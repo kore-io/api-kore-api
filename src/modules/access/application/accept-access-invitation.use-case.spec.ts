@@ -55,6 +55,7 @@ const coupleLink: InvitationSnapshot = {
   },
   referrer: null,
   referralDiscountPercent: 10,
+  plannerCredit: null,
 };
 const acceptance: InvitationAcceptance = {
   confirmOtherAccount: false,
