@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { TenantTransaction } from '../../../shared/database/tenant-transaction';
 import type { PlannerLeftNotice } from '../application/ports/collaboration-notice-mailer.port';
 import { firstName } from '../domain/access-invitation';
+import { creditNameForSite } from '../domain/planner-profile';
 import type {
   PendingAccessInvitation,
   WeddingMember,
@@ -110,6 +111,10 @@ export class PrismaWeddingMembersStore implements WeddingMembersStore {
       firstName({ name: partners[0]?.displayName ?? '' }),
       firstName({ name: partners[1]?.displayName ?? '' }),
     ];
+    const plannerName = (planner?.name ?? '').trim();
+    // O nome da assessoria como o site e o convite mostram (Assinatura RN03); o
+    // que não passa no predicado cai no nome dela.
+    const agencyName = creditNameForSite({ raw: referrer.planner.creditName }) ?? plannerName;
     return owners.map((owner) => ({
       to: owner.user.email,
       ownerName: firstName({
@@ -118,8 +123,8 @@ export class PrismaWeddingMembersStore implements WeddingMembersStore {
           owner.user.name ??
           '',
       }),
-      plannerName: (planner?.name ?? '').trim(),
-      agencyName: referrer.planner!.creditName,
+      plannerName,
+      agencyName,
       partnerNames,
     }));
   }

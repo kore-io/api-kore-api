@@ -5,7 +5,10 @@ export interface PlannerLeftNotice {
   ownerName: string;
   /** O nome dela na conta ("{Juliana}"). */
   plannerName: string;
-  /** O nome da assessoria (`Planner.creditName`). */
+  /**
+   * O nome da assessoria como o site mostra (`creditNameForSite`); o nome dela
+   * quando ele não passa no predicado.
+   */
   agencyName: string;
   /** Os primeiros nomes dos noivos. */
   partnerNames: [string, string];

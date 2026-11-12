@@ -121,6 +121,16 @@ describe('E-mails da RN09 de Notificações da cerimonialista (banco real e Mail
     );
   });
 
+  it('RN09 e Assinatura RN03 - o nome da assessoria sai como no site; o que não passa no predicado cai no nome dela', async () => {
+    const { ana, juliana, weddingId } = await anaAndMarcos({ creditName: 'Prado www.prado.com' });
+
+    await removeMembership(juliana.cookie, weddingId, juliana.membershipId).expect(204);
+
+    const [message] = await waitForInbox({ to: ana.email });
+    expect(message.Subject).toBe('Juliana Prado saiu do casamento de vocês');
+    expect(await textOf(message.ID)).not.toContain('www.prado.com');
+  });
+
   it('Papéis RN06 - quando a dona remove a cerimonialista, o e-mail de saída não sai', async () => {
     const { ana, marcos, juliana, weddingId } = await anaAndMarcos();
 
