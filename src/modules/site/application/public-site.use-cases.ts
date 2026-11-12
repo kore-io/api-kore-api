@@ -138,7 +138,7 @@ export class GetPublicSite {
         ];
         const images = await this.siteReader.readyImages({ weddingId, ids });
         // A prévia mostra a assinatura com as mesmas condições (Assinatura RN04).
-        const plannerCredit = await this.reader.plannerCredit({ weddingId });
+        const plannerCredit = await this.reader.plannerCredit();
         return { snapshot, images, party, plannerCredit };
       },
     });

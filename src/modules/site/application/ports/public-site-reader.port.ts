@@ -58,8 +58,12 @@ export interface PartySiteView {
 export interface PublicSiteReader {
   bySlug({ slug }: { slug: string }): Promise<PublicSiteRow | null>;
 
-  /** A assinatura da assessoria pela mesma função das outras leituras (Assinatura RN02 e RN04). */
-  plannerCredit({ weddingId }: { weddingId: string }): Promise<string | null>;
+  /**
+   * A assinatura da assessoria do casamento da transação (a prévia), pela
+   * mesma regra das outras leituras (Assinatura RN02 e RN04). Sem parâmetro de
+   * id: só o casamento da sessão, com vínculo ativo.
+   */
+  plannerCredit(): Promise<string | null>;
 
   /** O grupo do token do link, fora da lixeira (RN06). */
   partyByToken({ token }: { token: string }): Promise<PartyByToken | null>;

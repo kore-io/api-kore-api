@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import { Client } from 'pg';
 import request from 'supertest';
 import { BackofficePrismaService } from '../../src/shared/database/backoffice-prisma.service';
 import { createTestApp } from '../support/create-test-app';
@@ -291,6 +292,51 @@ describe('Assinatura do cerimonialista no site (banco real; decisões 223 e 224)
         invitationName: expected,
         editorName: expected,
       });
+    }
+  });
+
+  it('segurança - o kore_app não chama as funções com um id qualquer; as da sessão só respondem no casamento da transação, com vínculo', async () => {
+    const { ana, juliana, weddingId } = await publishedWedding();
+    const stranger = await signedInUser({ app });
+    const api = new Client({ connectionString: process.env.DATABASE_URL });
+    await api.connect();
+    const as = async (userId: string, work: () => Promise<void>) => {
+      await api.query('BEGIN');
+      try {
+        await api.query(`SELECT set_config('app.user_id', $1, true)`, [userId]);
+        await api.query(`SELECT set_config('app.wedding_id', $1, true)`, [weddingId]);
+        await work();
+      } finally {
+        await api.query('ROLLBACK');
+      }
+    };
+    try {
+      await as(stranger.userId, async () => {
+        for (const fn of ['wedding_planner_credit', 'wedding_planner_collaborator']) {
+          await api.query('SAVEPOINT s');
+          await expect(api.query(`SELECT * FROM ${fn}($1::uuid)`, [weddingId])).rejects.toThrow(
+            /permission denied/,
+          );
+          await api.query('ROLLBACK TO SAVEPOINT s');
+        }
+        expect(
+          (await api.query('SELECT session_wedding_planner_credit() AS name')).rows[0].name,
+        ).toBeNull();
+        expect(
+          (await api.query('SELECT * FROM session_wedding_planner_collaborator()')).rowCount,
+        ).toBe(0);
+      });
+      for (const userId of [ana.userId, juliana.userId])
+        await as(userId, async () => {
+          expect(
+            (await api.query('SELECT session_wedding_planner_credit() AS name')).rows[0].name,
+          ).toBe('Prado Assessoria');
+          expect(
+            (await api.query('SELECT * FROM session_wedding_planner_collaborator()')).rowCount,
+          ).toBe(1);
+        });
+    } finally {
+      await api.end();
     }
   });
 });

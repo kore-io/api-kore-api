@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
+import { TenantTransaction } from '../../../shared/database/tenant-transaction';
 import type {
   PartyByToken,
   PartySiteView,
@@ -16,7 +17,10 @@ import { LIVE_SITE_STATUSES } from '../domain/public-site';
  */
 @Injectable()
 export class PrismaPublicSiteReader implements PublicSiteReader {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tenant: TenantTransaction,
+  ) {}
 
   async bySlug({ slug }: { slug: string }): Promise<PublicSiteRow | null> {
     const [row] = await this.prisma.$queryRaw<[{ site: Record<string, unknown> | null }]>`
@@ -35,9 +39,10 @@ export class PrismaPublicSiteReader implements PublicSiteReader {
     };
   }
 
-  async plannerCredit({ weddingId }: { weddingId: string }): Promise<string | null> {
-    const [row] = await this.prisma.$queryRaw<[{ name: string | null }]>`
-      SELECT wedding_planner_credit(${weddingId}::uuid) AS name`;
+  async plannerCredit(): Promise<string | null> {
+    // Na transação da prévia (app.user_id e app.wedding_id), não na conexão comum.
+    const [row] = await this.tenant.client().$queryRaw<[{ name: string | null }]>`
+      SELECT session_wedding_planner_credit() AS name`;
     return creditNameForSite({ raw: row?.name ?? null });
   }
 
