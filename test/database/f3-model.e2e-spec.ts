@@ -214,6 +214,72 @@ describe('Migration da F3 (banco real, usuário kore_api; decisões 230 e 231)',
       });
     });
 
+    it('RN03 (passo 1) - o pendente do app não traz nada do gateway nem de estado posterior', async () => {
+      for (const column of [
+        'pix_copy_paste',
+        'due_at',
+        'card_last4',
+        'gateway_fee_cents',
+        'net_cents',
+        'applied_by_admin_at',
+        'canceled_at',
+        'refunded_at',
+        'disputed_at',
+      ]) {
+        const value = column.endsWith('_at')
+          ? 'now()'
+          : column === 'card_last4'
+            ? `'4821'`
+            : column.endsWith('cents')
+              ? '1'
+              : `'x'`;
+        await as(ana, async () => {
+          const id = uuidV7();
+          await insertPayment(api, { id });
+          // O mesmo pagamento, agora com o campo preenchido, numa linha nova.
+          await rejects(
+            api,
+            `INSERT INTO payments SELECT (p).* FROM (
+               SELECT jsonb_populate_record(p, jsonb_build_object(
+                 'id', $2::uuid, 'external_reference', $2::text, 'short_code', nextval('payments_short_code_seq'),
+                 'idempotency_key', gen_random_uuid(), 'kind', 'extension',
+                 'activation_list_cents', 0, 'referral_discount_cents', 0, 'amount_cents', 20300,
+                 '${column}', ${value})) AS p
+               FROM payments p WHERE id = $1) x`,
+            [id, uuidV7()],
+            RLS,
+          );
+        });
+      }
+    });
+
+    it('defesa em profundidade - o app não cria casamento já pago, bloqueado ou com exclusão, nem indicador com CPF', async () => {
+      await as(ana, async () => {
+        for (const column of [
+          'paid_through',
+          'grace_until',
+          'blocked_at',
+          'deletion_scheduled_for',
+        ]) {
+          await rejects(
+            api,
+            `INSERT INTO weddings (id, updated_at, slug, status, timezone, city, state,
+               created_by_user_id, signup_source, ${column})
+             VALUES ($1, now(), $2, 'draft', 'America/Sao_Paulo', 'Campinas', 'SP', $3, 'direct', now())`,
+            [uuidV7(), `f3-${randomUUID()}`, ana],
+            RLS,
+          );
+        }
+        await rejects(
+          api,
+          `INSERT INTO referrers (id, updated_at, user_id, kind, referral_code, rate_percent, tax_id_hash)
+           VALUES ($1, now(), $2, 'planner', $3, 20, 'hash')`,
+          [uuidV7(), ana, `f3-${randomUUID()}`],
+          RLS,
+        );
+      });
+    });
+
     it('RN12 - o total tem de bater com as linhas da cotação (CHECK, B2-19)', async () => {
       await asOwner(async () => {
         await owner.query('SAVEPOINT s');

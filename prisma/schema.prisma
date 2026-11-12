@@ -34,6 +34,7 @@ model ApplicationLog {
   @@index([weddingId, createdAt(sort: Desc)], map: "idx_application_logs_wedding_id_created_at")
   @@index([actorUserId, createdAt(sort: Desc)], map: "idx_application_logs_actor_user_id_created_at")
   @@index([action, createdAt(sort: Desc)], map: "idx_application_logs_action_created_at")
+  @@index([supportSessionId], map: "idx_application_logs_support_session_id")
   @@map("application_logs")
 }
 
@@ -1429,8 +1430,12 @@ model GatewayEvent {
   processedAt    DateTime?          @map("processed_at") @db.Timestamptz(3)
   // O que o processamento fez (applied, ignored, orphan…), para o Backoffice.
   result         String?
+  // O pagamento do evento, gravado no processamento: o expurgo acha os eventos
+  // do casamento para anonimizar o payload (Retenção RN03). Sem FK, como o log.
+  paymentId      String?            @map("payment_id") @db.Uuid
 
   @@unique([gateway, gatewayEventId], map: "uq_gateway_events_gateway_gateway_event_id")
+  @@index([paymentId], map: "idx_gateway_events_payment_id")
   @@map("gateway_events")
 }
 
