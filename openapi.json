@@ -804,6 +804,55 @@
         "tags": [
           "me"
         ]
+      },
+      "get": {
+        "operationId": "MyWeddingsController_list_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyWeddingsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "planner"
+        ]
       }
     },
     "/v1/me/planner": {
@@ -7538,6 +7587,76 @@
         "summary": "Desliga o push neste aparelho.",
         "tags": [
           "notifications"
+        ]
+      }
+    },
+    "/v1/me/weddings/{id}": {
+      "get": {
+        "operationId": "MyWeddingsController_detail_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyWeddingDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "planner"
         ]
       }
     }
@@ -15210,6 +15329,355 @@
         },
         "required": [
           "endpoint"
+        ]
+      },
+      "MyWeddingsSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "active": {
+            "type": "number",
+            "description": "Todos menos pós-evento e expirado (RN03)."
+          },
+          "awaitingCouple": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "active",
+          "awaitingCouple"
+        ]
+      },
+      "PendingResponsesAlertResponse": {
+        "type": "object",
+        "properties": {
+          "partnerNames": {
+            "description": "Os primeiros nomes; o app junta (revisão, transversal \"Nomes do casal\").",
+            "example": [
+              "Ana",
+              "Marcos"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "rsvpDeadline": {
+            "type": "string",
+            "example": "2026-11-16"
+          },
+          "weddingId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "partnerNames",
+          "rsvpDeadline",
+          "weddingId"
+        ]
+      },
+      "InvitationsNotSentAlertResponse": {
+        "type": "object",
+        "properties": {
+          "partnerNames": {
+            "example": [
+              "Ana",
+              "Marcos"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "eventDate": {
+            "type": "string",
+            "example": "2027-01-30"
+          },
+          "weddingId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "partnerNames",
+          "eventDate",
+          "weddingId"
+        ]
+      },
+      "MyWeddingsAlertsResponse": {
+        "type": "object",
+        "properties": {
+          "pendingResponses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PendingResponsesAlertResponse"
+            }
+          },
+          "invitationsNotSent": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvitationsNotSentAlertResponse"
+            }
+          }
+        },
+        "required": [
+          "pendingResponses",
+          "invitationsNotSent"
+        ]
+      },
+      "MyWeddingItemResponse": {
+        "type": "object",
+        "properties": {
+          "partnerNames": {
+            "example": [
+              "Ana",
+              "Marcos"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "eventDate": {
+            "type": "string",
+            "nullable": true,
+            "example": "2027-01-30"
+          },
+          "status": {
+            "enum": [
+              "awaiting_couple",
+              "draft",
+              "published",
+              "post_event",
+              "grace",
+              "expired"
+            ],
+            "type": "string"
+          },
+          "rsvpPercent": {
+            "type": "number",
+            "description": "WeddingStats.rsvpPercent; com 0 convidados, o app mostra \"—\" (RN02).",
+            "example": 62
+          },
+          "origin": {
+            "enum": [
+              "created_by_me",
+              "referral_link",
+              "couple_invite"
+            ],
+            "type": "string"
+          },
+          "weddingId": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "guestsTotal": {
+            "type": "number"
+          },
+          "createdByMe": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "partnerNames",
+          "eventDate",
+          "status",
+          "rsvpPercent",
+          "origin",
+          "weddingId",
+          "city",
+          "state",
+          "guestsTotal",
+          "createdByMe"
+        ]
+      },
+      "MyWeddingsResponse": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "$ref": "#/components/schemas/MyWeddingsSummaryResponse"
+          },
+          "alerts": {
+            "$ref": "#/components/schemas/MyWeddingsAlertsResponse"
+          },
+          "weddings": {
+            "description": "A lista inteira, sem paginação, já na ordem da RN02.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MyWeddingItemResponse"
+            }
+          }
+        },
+        "required": [
+          "summary",
+          "alerts",
+          "weddings"
+        ]
+      },
+      "MyWeddingStatsResponse": {
+        "type": "object",
+        "properties": {
+          "guestsTotal": {
+            "type": "number"
+          },
+          "confirmed": {
+            "type": "number"
+          },
+          "declined": {
+            "type": "number"
+          },
+          "pending": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "guestsTotal",
+          "confirmed",
+          "declined",
+          "pending"
+        ]
+      },
+      "CoupleInvitationResponse": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "email",
+              "link"
+            ],
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "description": "Só no convite por e-mail."
+          },
+          "sentAt": {
+            "type": "string"
+          },
+          "state": {
+            "description": "Só no link: vigente ou vencido.",
+            "enum": [
+              "active",
+              "expired"
+            ],
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "nullable": true,
+            "description": "Só no link, só para quem o gerou e enquanto vale (RN09, N1(b))."
+          },
+          "id": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "expiresAt"
+        ]
+      },
+      "MyWeddingDetailResponse": {
+        "type": "object",
+        "properties": {
+          "partnerNames": {
+            "example": [
+              "Ana",
+              "Marcos"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "eventDate": {
+            "type": "string",
+            "nullable": true,
+            "example": "2027-01-30"
+          },
+          "status": {
+            "enum": [
+              "awaiting_couple",
+              "draft",
+              "published",
+              "post_event",
+              "grace",
+              "expired"
+            ],
+            "type": "string"
+          },
+          "rsvpPercent": {
+            "type": "number",
+            "description": "WeddingStats.rsvpPercent; com 0 convidados, o app mostra \"—\" (RN02).",
+            "example": 62
+          },
+          "origin": {
+            "enum": [
+              "created_by_me",
+              "referral_link",
+              "couple_invite"
+            ],
+            "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "nullable": true
+          },
+          "stats": {
+            "$ref": "#/components/schemas/MyWeddingStatsResponse"
+          },
+          "coupleInvitations": {
+            "description": "Só quando ela criou o casamento.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CoupleInvitationResponse"
+            }
+          },
+          "hasOwner": {
+            "type": "boolean"
+          },
+          "canEditIdentity": {
+            "type": "boolean",
+            "description": "A data, a UF e o endereço (Novo casamento RN08)."
+          },
+          "weddingId": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "guestsTotal": {
+            "type": "number"
+          },
+          "createdByMe": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "partnerNames",
+          "eventDate",
+          "status",
+          "rsvpPercent",
+          "origin",
+          "slug",
+          "stats",
+          "coupleInvitations",
+          "hasOwner",
+          "canEditIdentity",
+          "weddingId",
+          "city",
+          "state",
+          "guestsTotal",
+          "createdByMe"
         ]
       },
       "SpreadsheetTemplateHeaders": {
