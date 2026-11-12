@@ -1990,6 +1990,19 @@
             }
           },
           {
+            "name": "saveTheDate",
+            "required": false,
+            "in": "query",
+            "description": "O filtro do save the date: enviado ou não (Envios RN03).",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "sent",
+                "not_sent"
+              ]
+            }
+          },
+          {
             "name": "limit",
             "required": false,
             "in": "query",
@@ -5787,6 +5800,246 @@
           }
         },
         "summary": "Grava a mensagem de um tipo, ou volta ao padrão com `reset`.",
+        "tags": [
+          "rsvp"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/deliveries/queue": {
+      "get": {
+        "operationId": "DeliveriesController_getQueue_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "invite",
+                "save_the_date",
+                "reminder"
+              ]
+            }
+          },
+          {
+            "name": "partyIds",
+            "required": true,
+            "in": "query",
+            "description": "Ids separados por vírgula, até 200.",
+            "schema": {
+              "minItems": 1,
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryQueueResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveriesClosedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "A fila de envio, com as URLs prontas e o contato inteiro só nelas (RN07 e RN11).",
+        "tags": [
+          "rsvp"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/deliveries": {
+      "post": {
+        "operationId": "DeliveriesController_mark_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkDeliveriesBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkDeliveriesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DeliveryPartyNotFoundErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveriesClosedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryNotAllowedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Marca o envio dos grupos (o clique no canal; RN07 e RN08).",
         "tags": [
           "rsvp"
         ]
@@ -11869,6 +12122,352 @@
             "pattern": "^[^\\r\\n]*$"
           }
         }
+      },
+      "DeliveriesClosedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "DELIVERIES_CLOSED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "reason": {
+            "enum": [
+              "not_published",
+              "deadline_passed",
+              "post_event"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "reason"
+        ]
+      },
+      "DeliveryContactResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "phoneMasked": {
+            "type": "string",
+            "nullable": true,
+            "example": "(19) 9****-3310"
+          },
+          "emailMasked": {
+            "type": "string",
+            "nullable": true,
+            "example": "ce***@gmail.com"
+          },
+          "guestId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "phoneMasked",
+          "emailMasked",
+          "guestId"
+        ]
+      },
+      "DeliveryQueueItemResponse": {
+        "type": "object",
+        "properties": {
+          "deliveryStatus": {
+            "enum": [
+              "not_sent",
+              "sent",
+              "viewed",
+              "responded"
+            ],
+            "type": "string"
+          },
+          "sentAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "O 1º envio do convite; não muda nos reenvios.",
+            "format": "date-time"
+          },
+          "lastChannel": {
+            "nullable": true,
+            "enum": [
+              "whatsapp",
+              "email",
+              "link",
+              "qr"
+            ],
+            "type": "string"
+          },
+          "saveTheDateSentAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "lastReminderAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "contact": {
+            "nullable": true,
+            "description": "O convidado de contato, mascarado; o inteiro vai só dentro das URLs (RN11).",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeliveryContactResponse"
+              }
+            ]
+          },
+          "whatsappUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "`https://wa.me/<E.164 sem +>?text=…`; nulo sem telefone."
+          },
+          "mailtoUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "`mailto:<e-mail>?subject=…&body=…`; nulo sem e-mail."
+          },
+          "name": {
+            "type": "string"
+          },
+          "copyText": {
+            "type": "string",
+            "description": "A mensagem com os marcadores trocados, para Copiar mensagem e a prévia."
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "deliveryStatus",
+          "sentAt",
+          "lastChannel",
+          "saveTheDateSentAt",
+          "lastReminderAt",
+          "contact",
+          "whatsappUrl",
+          "mailtoUrl",
+          "name",
+          "copyText",
+          "id"
+        ]
+      },
+      "DeliveryQueueResponse": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "invite",
+              "save_the_date",
+              "reminder"
+            ],
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeliveryQueueItemResponse"
+            }
+          },
+          "skippedPartyIds": {
+            "description": "Pedidos que não entram: fora do lembrete, na lixeira ou de outro casamento (RN04).",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "subject": {
+            "type": "string",
+            "description": "O assunto do e-mail."
+          }
+        },
+        "required": [
+          "kind",
+          "items",
+          "skippedPartyIds",
+          "subject"
+        ]
+      },
+      "DeliveryPartyNotFoundErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PARTY_NOT_FOUND"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "partyIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "partyIds"
+        ]
+      },
+      "DeliveryNotAllowedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "enum": [
+              "PARTY_NOT_REMINDABLE",
+              "QR_ONLY_FOR_INVITE"
+            ],
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "partyIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "partyIds"
+        ]
+      },
+      "MarkDeliveriesBody": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "invite",
+              "save_the_date",
+              "reminder"
+            ],
+            "type": "string"
+          },
+          "channel": {
+            "enum": [
+              "whatsapp",
+              "email",
+              "link",
+              "qr"
+            ],
+            "type": "string"
+          },
+          "partyIds": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "kind",
+          "channel",
+          "partyIds"
+        ]
+      },
+      "DeliveredPartyResponse": {
+        "type": "object",
+        "properties": {
+          "deliveryStatus": {
+            "enum": [
+              "not_sent",
+              "sent",
+              "viewed",
+              "responded"
+            ],
+            "type": "string"
+          },
+          "sentAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "O 1º envio do convite; não muda nos reenvios.",
+            "format": "date-time"
+          },
+          "lastChannel": {
+            "nullable": true,
+            "enum": [
+              "whatsapp",
+              "email",
+              "link",
+              "qr"
+            ],
+            "type": "string"
+          },
+          "saveTheDateSentAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "lastReminderAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "deliveryStatus",
+          "sentAt",
+          "lastChannel",
+          "saveTheDateSentAt",
+          "lastReminderAt",
+          "id"
+        ]
+      },
+      "MarkDeliveriesResponse": {
+        "type": "object",
+        "properties": {
+          "parties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeliveredPartyResponse"
+            }
+          }
+        },
+        "required": [
+          "parties"
+        ]
       },
       "SpreadsheetTemplateHeaders": {
         "type": "string",

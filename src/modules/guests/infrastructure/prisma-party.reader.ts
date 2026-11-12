@@ -196,6 +196,8 @@ export class PrismaPartyReader implements PartyReader {
         AND g.deleted_at IS NULL AND g.rsvp_status = ${query.rsvp}::rsvp_status)`);
     if (query.sent)
       filters.push(Prisma.sql`p.delivery_status = ${query.sent}::party_delivery_status`);
+    if (query.saveTheDate === 'sent') filters.push(Prisma.sql`p.save_the_date_sent_at IS NOT NULL`);
+    if (query.saveTheDate === 'not_sent') filters.push(Prisma.sql`p.save_the_date_sent_at IS NULL`);
     if (query.remind)
       filters.push(Prisma.sql`p.delivery_status <> 'not_sent' AND EXISTS (
         SELECT 1 FROM guests g WHERE g.party_id = p.id AND g.deleted_at IS NULL

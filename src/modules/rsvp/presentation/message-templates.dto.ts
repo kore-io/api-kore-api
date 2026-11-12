@@ -32,6 +32,7 @@ export class SaveMessageTemplateBody {
 
   @ApiProperty({ required: false, maxLength: MESSAGE_BODY_MAX })
   @ValidateIf((body: SaveMessageTemplateBody) => body.reset !== true)
+  @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
   @IsNotEmpty()
   @MaxLength(MESSAGE_BODY_MAX)

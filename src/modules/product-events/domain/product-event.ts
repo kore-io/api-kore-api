@@ -28,6 +28,12 @@ export type ProductEvent =
     }
   /** Publicação RN05 (decisão 216, D29): na publicação, com os dias até o casamento. */
   | { name: 'publicado'; weddingId: string; props: { dias_ate_casamento: number } }
+  /** Envios RN07 (D29; R4-9): o 1º envio do convite de cada grupo, com o canal e o total de grupos. */
+  | {
+      name: 'grupo_enviado';
+      weddingId: string;
+      props: { canal: 'whatsapp' | 'email' | 'link' | 'qr'; grupos_total: number };
+    }
   /** RSVP RN07 (decisão 217(5)): a primeira resposta de um grupo no casamento, uma vez só. */
   | { name: 'primeira_resposta'; weddingId: string; props: { dias_desde_publicacao: number } }
   /** Simule RN11: o funil do simulador, anônimo: sem casamento, sem props e sem o IP. */
