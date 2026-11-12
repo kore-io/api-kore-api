@@ -7740,6 +7740,61 @@
           "planner"
         ]
       }
+    },
+    "/v1/me/referrer/weddings": {
+      "get": {
+        "operationId": "ReferredWeddingsController_list_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReferredWeddingResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Casais que vieram pelo seu link (Link de indicação RN03 a RN05).",
+        "tags": [
+          "planner"
+        ]
+      }
     }
   },
   "info": {
@@ -15784,6 +15839,41 @@
           "state",
           "guestsTotal",
           "createdByMe"
+        ]
+      },
+      "ReferredWeddingResponse": {
+        "type": "object",
+        "properties": {
+          "weddingId": {
+            "type": "string",
+            "nullable": true
+          },
+          "partnerNames": {
+            "example": [
+              "Ana",
+              "Marcos"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "awaiting_couple",
+              "draft",
+              "published",
+              "post_event",
+              "grace",
+              "expired"
+            ]
+          }
+        },
+        "required": [
+          "weddingId",
+          "partnerNames",
+          "status"
         ]
       },
       "SpreadsheetTemplateHeaders": {
