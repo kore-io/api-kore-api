@@ -31,6 +31,10 @@ class PublicPartyResponse {
 
 class PublicPreviewModeResponse {
   @ApiProperty({ enum: ['visitor', 'party'] }) as: 'visitor' | 'party';
+  /** O site já foi publicado: "Prévia do site." em vez de "O site ainda não foi publicado." (RN06). */
+  published: boolean;
+  /** A voz da barra pelo papel de quem gerou a prévia: dono → couple, colaborador → planner (RN06). */
+  @ApiProperty({ enum: ['couple', 'planner'] }) audience: 'couple' | 'planner';
 }
 
 class PublicViewerResponse {

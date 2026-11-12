@@ -65,7 +65,13 @@ export interface PublicSiteView {
     | {
         kind: 'preview';
         party: { name: string } | null;
-        preview: { as: 'visitor' | 'party' };
+        preview: {
+          as: 'visitor' | 'party';
+          /** O site já foi publicado: a barra diz "Prévia do site." (RN06). */
+          published: boolean;
+          /** A voz da barra, pelo papel de quem gerou a prévia (RN06). */
+          audience: 'couple' | 'planner';
+        };
       };
   /** Só para o grupo identificado (RN05 e RN10). */
   contact: { whatsapp: string | null; email: string | null } | null;
@@ -143,7 +149,11 @@ export class GetPublicSite {
           viewer: {
             kind: 'preview',
             party: party ? { name: party.name } : null,
-            preview: { as: preview.context.claims.mode },
+            preview: {
+              as: preview.context.claims.mode,
+              published: snapshot.publishedAt !== null,
+              audience: preview.context.role === 'owner' ? 'couple' : 'planner',
+            },
           },
         },
         staleCookie: null,
