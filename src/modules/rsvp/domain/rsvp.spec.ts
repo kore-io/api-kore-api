@@ -1,4 +1,12 @@
-import { partyCounts, partyRespondedAt, planRsvp, rsvpState, type RsvpGuest } from './rsvp';
+import {
+  isAfterDeadline,
+  partyCounts,
+  partyRespondedAt,
+  planCoupleResponse,
+  planRsvp,
+  rsvpState,
+  type RsvpGuest,
+} from './rsvp';
 
 const NOW = new Date('2026-10-05T15:00:00Z');
 const guest = (overrides: Partial<RsvpGuest> & { id: string }): RsvpGuest => ({
@@ -194,5 +202,78 @@ describe('RSVP: os números do grupo (RN07; Prazo RN06)', () => {
     expect(partyCounts({ guests })).toEqual({ confirmed: 2, declined: 1 });
     expect(partyRespondedAt({ guests, responded: true })).toEqual(new Date('2026-10-03T00:00:00Z'));
     expect(partyRespondedAt({ guests, responded: false })).toBeNull();
+  });
+});
+
+describe('Alterar resposta pelo casal (Prazo RN04)', () => {
+  it('RN04 - depois do prazo (no fuso) ou no pós-evento, só o dono', () => {
+    const at = (iso: string) =>
+      isAfterDeadline({
+        status: 'published',
+        rsvpDeadline: '2026-10-15',
+        timezone: 'America/Sao_Paulo',
+        now: new Date(iso),
+      });
+    expect(at('2026-10-16T02:59:00Z')).toBe(false);
+    expect(at('2026-10-16T03:01:00Z')).toBe(true);
+    expect(isAfterDeadline({ status: 'draft', rsvpDeadline: null, timezone: null, now: NOW })).toBe(
+      false,
+    );
+    expect(
+      isAfterDeadline({ status: 'post_event', rsvpDeadline: null, timezone: null, now: NOW }),
+    ).toBe(true);
+  });
+
+  it('RN04 - o nome só na vaga; Vai na vaga pede o nome', () => {
+    expect(
+      planCoupleResponse({
+        guest: celia,
+        answer: { status: 'confirmed', name: 'Outra' },
+        now: NOW,
+      }),
+    ).toEqual({ ok: false, issues: [{ path: 'name', code: 'NAME_NOT_ALLOWED', params: {} }] });
+    expect(
+      planCoupleResponse({ guest: slot, answer: { status: 'confirmed', name: ' ' }, now: NOW }),
+    ).toEqual({ ok: false, issues: [{ path: 'name', code: 'IS_NOT_EMPTY', params: {} }] });
+  });
+
+  it('RN04 - Não vai apaga a restrição e a música; a música não muda pelo casal', () => {
+    const answered = guest({
+      ...celia,
+      rsvpStatus: 'confirmed',
+      dietaryRestriction: 'sem glúten',
+      songSuggestion: 'Evidências',
+      songSuggestedAt: NOW,
+    });
+    const confirmed = planCoupleResponse({
+      guest: answered,
+      answer: { status: 'confirmed', dietaryRestriction: 'vegana' },
+      now: NOW,
+    });
+    expect(confirmed.ok && confirmed.update?.after).toMatchObject({
+      dietaryRestriction: 'vegana',
+      songSuggestion: 'Evidências',
+    });
+    const declined = planCoupleResponse({
+      guest: answered,
+      answer: { status: 'declined' },
+      now: NOW,
+    });
+    expect(declined.ok && declined.update?.after).toMatchObject({
+      rsvpStatus: 'declined',
+      dietaryRestriction: null,
+      songSuggestion: null,
+      songSuggestedAt: null,
+    });
+  });
+
+  it('RN04 - a mesma resposta não muda nada', () => {
+    const answered = guest({ ...celia, rsvpStatus: 'confirmed' });
+    expect(
+      planCoupleResponse({ guest: answered, answer: { status: 'confirmed' }, now: NOW }),
+    ).toEqual({
+      ok: true,
+      update: null,
+    });
   });
 });

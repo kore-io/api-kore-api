@@ -41,4 +41,11 @@ describe('Matriz de papéis (Papéis e permissões)', () => {
     expect(roleAllows({ role: 'owner', action: 'publish_site' })).toBe(true);
     expect(roleAllows({ role: 'collaborator', action: 'publish_site' })).toBe(false);
   });
+
+  it('Prazo RN04 - depois do prazo, só o dono altera respostas', () => {
+    expect(roleAllows({ role: 'owner', action: 'edit_response_after_deadline' })).toBe(true);
+    expect(roleAllows({ role: 'collaborator', action: 'edit_response_after_deadline' })).toBe(
+      false,
+    );
+  });
 });

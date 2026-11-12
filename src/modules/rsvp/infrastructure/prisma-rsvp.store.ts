@@ -4,7 +4,17 @@ import { uuidV7 } from '../../../shared/ids/uuid-v7';
 import { DEFAULT_TIMEZONE } from '../../../shared/time/local-date';
 import type { StatsDelta } from '../../guests/domain/wedding-stats';
 import type { RsvpGuest, RsvpGuestUpdate } from '../domain/rsvp';
-import type { RsvpPartyRow, RsvpStore, RsvpWeddingRow } from '../application/ports/rsvp-store.port';
+import type {
+  ResponseActorInput,
+  RsvpPartyRow,
+  RsvpStore,
+  RsvpWeddingRow,
+} from '../application/ports/rsvp-store.port';
+
+const actorColumns = (actor: ResponseActorInput) =>
+  actor.kind === 'party'
+    ? { actor: 'party' as const, signedByGuestId: actor.signedByGuestId, actorUserId: null }
+    : { actor: 'couple' as const, signedByGuestId: null, actorUserId: actor.userId };
 
 const PARTY_SELECT = {
   id: true,
@@ -67,6 +77,7 @@ export class PrismaRsvpStore implements RsvpStore {
       select: {
         status: true,
         timezone: true,
+        eventDate: true,
         rsvpDeadline: true,
         publishedAt: true,
         songQuestionEnabled: true,
@@ -78,6 +89,7 @@ export class PrismaRsvpStore implements RsvpStore {
     if (!wedding) return null;
     return {
       ...wedding,
+      eventDate: day(wedding.eventDate),
       rsvpDeadline: day(wedding.rsvpDeadline),
       publishedAt: wedding.publishedAt?.toISOString() ?? null,
     };
@@ -104,7 +116,7 @@ export class PrismaRsvpStore implements RsvpStore {
     weddingId,
     partyId,
     submissionId,
-    signedByGuestId,
+    actor,
     counts,
     updates,
     now,
@@ -112,7 +124,7 @@ export class PrismaRsvpStore implements RsvpStore {
     weddingId: string;
     partyId: string;
     submissionId: string;
-    signedByGuestId: string;
+    actor: ResponseActorInput;
     counts: { confirmed: number; declined: number };
     updates: readonly RsvpGuestUpdate[];
     now: Date;
@@ -126,8 +138,7 @@ export class PrismaRsvpStore implements RsvpStore {
           createdAt: now,
           weddingId,
           partyId,
-          actor: 'party',
-          signedByGuestId,
+          ...actorColumns(actor),
           confirmedCount: counts.confirmed,
           declinedCount: counts.declined,
         },
@@ -157,8 +168,7 @@ export class PrismaRsvpStore implements RsvpStore {
         partyId,
         submissionId,
         status: after.rsvpStatus,
-        signedByGuestId,
-        actor: 'party' as const,
+        ...actorColumns(actor),
       })),
     });
   }
@@ -175,23 +185,45 @@ export class PrismaRsvpStore implements RsvpStore {
     partyId,
     deliveryStatus,
     respondedAt,
-    signedByGuestId,
+    actor,
   }: {
     partyId: string;
     deliveryStatus: RsvpPartyRow['deliveryStatus'];
     respondedAt: Date | null;
-    signedByGuestId: string;
+    actor: ResponseActorInput;
   }): Promise<void> {
+    const columns = actorColumns(actor);
     await this.tenant.client().party.updateMany({
       where: { id: partyId },
       data: {
         version: { increment: 1 },
         deliveryStatus,
         respondedAt,
-        lastResponseActor: 'party',
-        lastSignedByGuestId: signedByGuestId,
-        lastResponseUserId: null,
+        lastResponseActor: columns.actor,
+        lastSignedByGuestId: columns.signedByGuestId,
+        lastResponseUserId: columns.actorUserId,
       },
+    });
+  }
+
+  async partyOfGuest({ guestId }: { guestId: string }): Promise<string | null> {
+    const guest = await this.tenant.client().guest.findFirst({
+      where: { id: guestId, deletedAt: null, party: { deletedAt: null } },
+      select: { partyId: true },
+    });
+    return guest?.partyId ?? null;
+  }
+
+  async updateDeadline({
+    weddingId,
+    rsvpDeadline,
+  }: {
+    weddingId: string;
+    rsvpDeadline: string | null;
+  }): Promise<void> {
+    await this.tenant.client().wedding.updateMany({
+      where: { id: weddingId },
+      data: { rsvpDeadline: rsvpDeadline ? new Date(`${rsvpDeadline}T00:00:00Z`) : null },
     });
   }
 

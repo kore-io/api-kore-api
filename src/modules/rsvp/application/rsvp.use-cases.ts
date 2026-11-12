@@ -5,7 +5,6 @@ import { uuidV7 } from '../../../shared/ids/uuid-v7';
 import { RsvpWriteRateLimit } from '../../../shared/rate-limit/rsvp-write-rate-limit';
 import { daysBetween, localDate } from '../../../shared/time/local-date';
 import { deliveryStatusAfter, hasPending } from '../../guests/domain/party-rules';
-import { guestsDelta, type StatsDelta } from '../../guests/domain/wedding-stats';
 import {
   ACCESS_IP_LOG_WRITER,
   type AccessIpLogWriter,
@@ -21,7 +20,6 @@ import {
   planRsvp,
   rsvpState,
   type RsvpAnswer,
-  type RsvpGuestUpdate,
 } from '../domain/rsvp';
 import {
   PreviewReadOnlyError,
@@ -33,10 +31,15 @@ import {
   PartySessionInvalidError,
 } from '../domain/rsvp.errors';
 import { RSVP_STORE, type RsvpStore } from './ports/rsvp-store.port';
+import { responseStatsDelta } from './response-stats';
 import { RsvpSessions } from './rsvp-sessions.service';
 import { rsvpView, type RsvpView } from './rsvp-view';
 
-/** Notificações novas por gravação: um id por dono (o casal tem até 2). */
+/**
+ * Ids das notificações novas por gravação, um por dono ativo: o casamento tem
+ * no máximo 2 donos (os 2 noivos, Partner.slot 1 e 2; chk_partners_slot), e a
+ * notify_rsvp usa um id por dono. A folga cobre a troca de dono no meio.
+ */
 const NOTIFICATION_IDS = 4;
 
 /**
@@ -194,14 +197,14 @@ export class SubmitRsvp {
           weddingId,
           partyId: party.id,
           submissionId,
-          signedByGuestId,
+          actor: { kind: 'party', signedByGuestId },
           counts,
           updates: plan.updates,
           now,
         });
         await this.store.applyStats({
           weddingId,
-          delta: statsDelta({
+          delta: responseStatsDelta({
             updates: plan.updates,
             pendingBefore: hasPending({ members: guests }),
             pendingAfter: hasPending({ members: plan.guests }),
@@ -220,7 +223,7 @@ export class SubmitRsvp {
             guests: plan.guests,
             responded: deliveryStatus === 'responded',
           }),
-          signedByGuestId,
+          actor: { kind: 'party', signedByGuestId },
         });
         const notified = await this.store.notify({
           submissionId,
@@ -262,36 +265,4 @@ function stateOf({ context, now }: { context: PartyTransactionContext; now: Date
     timezone: context.timezone,
     now,
   });
-}
-
-/** Os números pelas transições de cada convidado (Grupos RN16, evento "Responder"). */
-function statsDelta({
-  updates,
-  pendingBefore,
-  pendingAfter,
-}: {
-  updates: readonly RsvpGuestUpdate[];
-  pendingBefore: boolean;
-  pendingAfter: boolean;
-}): StatsDelta {
-  const total: Required<StatsDelta> = {
-    guestsTotal: 0,
-    confirmed: 0,
-    declined: 0,
-    pending: 0,
-    adultsConfirmed: 0,
-    childrenConfirmed: 0,
-    babiesConfirmed: 0,
-    partiesPending: Number(pendingAfter) - Number(pendingBefore),
-  };
-  for (const { before, after, statusChanged } of updates) {
-    if (!statusChanged) continue;
-    for (const delta of [
-      guestsDelta({ guests: [before], sign: -1 }),
-      guestsDelta({ guests: [after], sign: 1 }),
-    ])
-      for (const [key, value] of Object.entries(delta) as [keyof StatsDelta, number][])
-        total[key] += value;
-  }
-  return total;
 }

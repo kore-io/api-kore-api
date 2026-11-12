@@ -52,3 +52,24 @@ export class RsvpRateLimitedError extends Error {
 export class RsvpLimitError extends Error {
   override name = 'RsvpLimitError';
 }
+
+/** Prazo no passado (422 DEADLINE_IN_PAST; Prazo RN01). */
+export class DeadlineInPastError extends Error {
+  override name = 'DeadlineInPastError';
+}
+
+/** Prazo depois da data do casamento (422 DEADLINE_AFTER_EVENT; Prazo RN01). */
+export class DeadlineAfterEventError extends Error {
+  override name = 'DeadlineAfterEventError';
+  readonly eventDate: string;
+
+  constructor({ eventDate }: { eventDate: string }) {
+    super();
+    this.eventDate = eventDate;
+  }
+}
+
+/** O convidado não existe neste casamento ou está na lixeira (404 GUEST_NOT_FOUND). */
+export class ResponseGuestNotFoundError extends Error {
+  override name = 'ResponseGuestNotFoundError';
+}

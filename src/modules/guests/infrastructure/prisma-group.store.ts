@@ -19,6 +19,7 @@ const MEMBER_SELECT = {
   ageGroup: true,
   phone: true,
   email: true,
+  respondedAt: true,
   tags: {
     where: { tag: { deletedAt: null } },
     select: { tagId: true },
@@ -68,6 +69,7 @@ export class PrismaGroupStore implements GroupStore {
         plusOneSlots: true,
         deliveryStatus: true,
         firstViewedAt: true,
+        respondedAt: true,
         guests: {
           where: { deletedAt: null },
           orderBy: [{ isPlusOne: 'asc' }, { joinedPartyAt: 'asc' }, { id: 'asc' }],

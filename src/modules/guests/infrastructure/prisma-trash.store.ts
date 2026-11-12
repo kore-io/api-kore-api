@@ -18,6 +18,7 @@ const GUEST_SELECT = {
   ageGroup: true,
   phone: true,
   email: true,
+  respondedAt: true,
   trashBatchId: true,
   deletedAt: true,
 } as const;

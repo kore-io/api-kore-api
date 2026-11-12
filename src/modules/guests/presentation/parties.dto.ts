@@ -227,6 +227,12 @@ export class ListPartiesQuery {
 
   @IsOptional() @IsUUID() tag?: string;
 
+  /** A fila do lembrete: enviados com convidado com nome pendente (Envios RN04; Prazo RN07). */
+  @ApiProperty({ required: false, enum: ['true', 'false'] })
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  remind?: 'true' | 'false';
+
   @IsOptional() @IsString() @MaxLength(500) cursor?: string;
 
   @ApiProperty({ required: false, minimum: 1, maximum: 100, default: 25 })
@@ -270,15 +276,43 @@ export class PartyLinkResponse {
   @ApiProperty({ type: String, format: 'date-time', nullable: true }) regeneratedAt: string | null;
 }
 
-/** Envio, visualização e resposta: enche na Fase 4. */
+class PartyHistoryGuestResponse {
+  @ApiProperty({ type: String, nullable: true }) name: string | null;
+  @ApiProperty({ enum: RSVP_STATUSES }) status: RsvpStatus;
+}
+
+const HISTORY_KINDS = ['sent', 'save_the_date', 'reminder', 'viewed', 'response'] as const;
+
+/**
+ * Uma linha do histórico (Prazo RN05): envios (`sent`, `save_the_date`,
+ * `reminder`, com o canal), a primeira visualização (`viewed`) e as respostas
+ * (`response`, com quem assinou ou quem alterou e os totais do grupo depois).
+ * Sem restrição alimentar.
+ */
 export class PartyHistoryEntryResponse {
-  @ApiProperty({ enum: ['sent', 'viewed', 'responded'] }) kind: 'sent' | 'viewed' | 'responded';
+  @ApiProperty({ enum: HISTORY_KINDS }) kind: (typeof HISTORY_KINDS)[number];
   @ApiProperty({ format: 'date-time' }) at: string;
+  /** Nos envios. */
+  @ApiProperty({ enum: ['whatsapp', 'email', 'link', 'qr'], required: false })
+  channel?: 'whatsapp' | 'email' | 'link' | 'qr';
+  /** Nas respostas: o grupo pelo RSVP ou o casal pelo Painel. */
+  @ApiProperty({ enum: ['party', 'couple'], required: false }) actor?: 'party' | 'couple';
+  /** Quem assinou pelo grupo; nulo sem assinante ("Respondido pelo grupo"). */
+  @ApiProperty({ type: String, nullable: true, required: false }) signedBy?: string | null;
+  /** Quem alterou pelo casal. */
+  @ApiProperty({ type: String, nullable: true, required: false }) actorName?: string | null;
+  @ApiProperty({ required: false }) confirmed?: number;
+  @ApiProperty({ required: false }) declined?: number;
+  /** Na alteração do casal: o convidado e a resposta. */
+  @ApiProperty({ type: PartyHistoryGuestResponse, nullable: true, required: false })
+  guest?: PartyHistoryGuestResponse | null;
 }
 
 export class PartyResponse {
   id: string;
   name: string;
+  /** A versão do grupo, para o Alterar resposta (Prazo RN04). */
+  version: number;
   @ApiProperty({ type: String, nullable: true }) contactGuestId: string | null;
   plusOneSlots: number;
   @ApiProperty({ type: String, nullable: true }) internalNote: string | null;
@@ -287,7 +321,7 @@ export class PartyResponse {
   @ApiProperty({ enum: DELIVERY_STATUSES }) deliveryStatus: DeliveryStatus;
   /** Na ordem do grupo, vagas no fim (RN17). */
   @ApiProperty({ type: [PartyGuestResponse] }) guests: PartyGuestResponse[];
-  /** Do mais novo para o mais antigo; vazio até a Fase 4. */
+  /** Do mais novo para o mais antigo, as 50 linhas mais recentes (Prazo RN05). */
   @ApiProperty({ type: [PartyHistoryEntryResponse] }) history: PartyHistoryEntryResponse[];
 
   static from({ party }: { party: PartyView }): PartyResponse {
@@ -297,7 +331,7 @@ export class PartyResponse {
         url: party.link.url,
         regeneratedAt: party.link.regeneratedAt?.toISOString() ?? null,
       },
-      history: [],
+      history: party.history.map((entry) => ({ ...entry, at: entry.at.toISOString() })),
     };
   }
 }
@@ -318,6 +352,14 @@ export class PartyCountsResponse {
   pendingPlusOnes: number;
 }
 
+export class PartyLastResponseResponse {
+  @ApiProperty({ enum: ['party', 'couple'] }) actor: 'party' | 'couple';
+  /** O nome do convidado que assinou; nulo sem assinante ou na alteração do casal. */
+  @ApiProperty({ type: String, nullable: true }) signedByName: string | null;
+  /** O nome de quem alterou pelo casal. */
+  @ApiProperty({ type: String, nullable: true }) actorName: string | null;
+}
+
 export class PartyListItemResponse {
   id: string;
   name: string;
@@ -329,8 +371,14 @@ export class PartyListItemResponse {
   counts: PartyCountsResponse;
   @ApiProperty({ enum: DELIVERY_STATUSES }) deliveryStatus: DeliveryStatus;
   @ApiProperty({ type: String, format: 'date-time', nullable: true }) respondedAt: string | null;
-  /** Fase 4. */
-  @ApiProperty({ type: String, nullable: true }) respondedBy: string | null;
+  /**
+   * A coluna Respondido em (Prazo RN07): "· por Célia" (grupo, quem assinou) ou
+   * "· alterada por Ana" (casal, quem alterou). Nula enquanto o grupo não está respondido.
+   */
+  @ApiProperty({ type: PartyLastResponseResponse, nullable: true })
+  lastResponse: PartyLastResponseResponse | null;
+  /** Obsoleto: o nome de `lastResponse` (quem assinou ou quem alterou). */
+  @ApiProperty({ type: String, nullable: true, deprecated: true }) respondedBy: string | null;
   /** Só as do grupo. */
   @ApiProperty({ type: [TagSummaryResponse] }) tags: TagSummaryResponse[];
 }

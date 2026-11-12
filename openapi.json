@@ -1977,6 +1977,19 @@
             }
           },
           {
+            "name": "remind",
+            "required": false,
+            "in": "query",
+            "description": "A fila do lembrete: enviados com convidado com nome pendente (Envios RN04; Prazo RN07).",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            }
+          },
+          {
             "name": "limit",
             "required": false,
             "in": "query",
@@ -5348,6 +5361,244 @@
           "sites"
         ]
       }
+    },
+    "/v1/weddings/{weddingId}/rsvp-deadline": {
+      "put": {
+        "operationId": "CoupleResponsesController_deadline_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RsvpDeadlineBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RsvpDeadlineResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/DeadlineAfterEventErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DeadlineInPastErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Define, muda, reabre ou tira o prazo de resposta (Prazo RN01 a RN03).",
+        "tags": [
+          "rsvp"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/guests/{guestId}/response": {
+      "put": {
+        "operationId": "CoupleResponsesController_response_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "guestId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuestResponseBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuestResponseResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/GuestNotFoundErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuestResponseChangedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Alterar resposta pelo casal (Prazo RN04).",
+        "tags": [
+          "rsvp"
+        ]
+      }
     }
   },
   "info": {
@@ -7367,6 +7618,33 @@
           "guestId"
         ]
       },
+      "PartyLastResponseResponse": {
+        "type": "object",
+        "properties": {
+          "actor": {
+            "enum": [
+              "party",
+              "couple"
+            ],
+            "type": "string"
+          },
+          "signedByName": {
+            "type": "string",
+            "nullable": true,
+            "description": "O nome do convidado que assinou; nulo sem assinante ou na alteração do casal."
+          },
+          "actorName": {
+            "type": "string",
+            "nullable": true,
+            "description": "O nome de quem alterou pelo casal."
+          }
+        },
+        "required": [
+          "actor",
+          "signedByName",
+          "actorName"
+        ]
+      },
       "TagSummaryResponse": {
         "type": "object",
         "properties": {
@@ -7450,10 +7728,21 @@
             "nullable": true,
             "format": "date-time"
           },
+          "lastResponse": {
+            "nullable": true,
+            "description": "A coluna Respondido em (Prazo RN07): \"· por Célia\" (grupo, quem assinou) ou\n\"· alterada por Ana\" (casal, quem alterou). Nula enquanto o grupo não está respondido.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartyLastResponseResponse"
+              }
+            ]
+          },
           "respondedBy": {
             "type": "string",
             "nullable": true,
-            "description": "Fase 4."
+            "description": "Obsoleto: o nome de `lastResponse` (quem assinou ou quem alterou).",
+            "deprecated": true
           },
           "tags": {
             "description": "Só as do grupo.",
@@ -7481,6 +7770,7 @@
           "firstGuestName",
           "deliveryStatus",
           "respondedAt",
+          "lastResponse",
           "respondedBy",
           "tags",
           "id",
@@ -7710,20 +8000,87 @@
           "isPlusOne"
         ]
       },
+      "PartyHistoryGuestResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "confirmed",
+              "declined"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "status"
+        ]
+      },
       "PartyHistoryEntryResponse": {
         "type": "object",
         "properties": {
           "kind": {
             "enum": [
               "sent",
+              "save_the_date",
+              "reminder",
               "viewed",
-              "responded"
+              "response"
             ],
             "type": "string"
           },
           "at": {
             "type": "string",
             "format": "date-time"
+          },
+          "channel": {
+            "description": "Nos envios.",
+            "enum": [
+              "whatsapp",
+              "email",
+              "link",
+              "qr"
+            ],
+            "type": "string"
+          },
+          "actor": {
+            "description": "Nas respostas: o grupo pelo RSVP ou o casal pelo Painel.",
+            "enum": [
+              "party",
+              "couple"
+            ],
+            "type": "string"
+          },
+          "signedBy": {
+            "type": "string",
+            "nullable": true,
+            "description": "Quem assinou pelo grupo; nulo sem assinante (\"Respondido pelo grupo\")."
+          },
+          "actorName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Quem alterou pelo casal."
+          },
+          "confirmed": {
+            "type": "number"
+          },
+          "declined": {
+            "type": "number"
+          },
+          "guest": {
+            "nullable": true,
+            "description": "Na alteração do casal: o convidado e a resposta.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartyHistoryGuestResponse"
+              }
+            ]
           }
         },
         "required": [
@@ -7784,7 +8141,7 @@
             }
           },
           "history": {
-            "description": "Do mais novo para o mais antigo; vazio até a Fase 4.",
+            "description": "Do mais novo para o mais antigo, as 50 linhas mais recentes (Prazo RN05).",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PartyHistoryEntryResponse"
@@ -7795,6 +8152,10 @@
           },
           "name": {
             "type": "string"
+          },
+          "version": {
+            "type": "number",
+            "description": "A versão do grupo, para o Alterar resposta (Prazo RN04)."
           },
           "plusOneSlots": {
             "type": "number"
@@ -7812,6 +8173,7 @@
           "history",
           "id",
           "name",
+          "version",
           "plusOneSlots",
           "link"
         ]
@@ -11065,6 +11427,163 @@
           "version",
           "signedByGuestId",
           "guests"
+        ]
+      },
+      "DeadlineAfterEventErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "DEADLINE_AFTER_EVENT"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "eventDate": {
+            "type": "string",
+            "example": "2026-11-14"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "eventDate"
+        ]
+      },
+      "DeadlineInPastErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "DEADLINE_IN_PAST"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "RsvpDeadlineBody": {
+        "type": "object",
+        "properties": {
+          "rsvpDeadline": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-15"
+          }
+        },
+        "required": [
+          "rsvpDeadline"
+        ]
+      },
+      "RsvpDeadlineResponse": {
+        "type": "object",
+        "properties": {
+          "rsvpDeadline": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-15"
+          }
+        },
+        "required": [
+          "rsvpDeadline"
+        ]
+      },
+      "GuestResponseResponse": {
+        "type": "object",
+        "properties": {
+          "partyId": {
+            "type": "string"
+          },
+          "version": {
+            "type": "number",
+            "description": "A versão nova do grupo."
+          }
+        },
+        "required": [
+          "partyId",
+          "version"
+        ]
+      },
+      "GuestResponseChangedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "RSVP_CHANGED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "current": {
+            "$ref": "#/components/schemas/GuestResponseResponse"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "current"
+        ]
+      },
+      "GuestResponseBody": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "enum": [
+              "confirmed",
+              "declined"
+            ],
+            "type": "string"
+          },
+          "dietaryRestriction": {
+            "type": "string",
+            "nullable": true,
+            "description": "Até 200; apagada com Não vai."
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Só na vaga: até 80, obrigatório com Vai."
+          },
+          "version": {
+            "type": "number",
+            "description": "A `version` do grupo lida no Painel (R3-7).",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "status",
+          "version"
         ]
       },
       "SpreadsheetTemplateHeaders": {

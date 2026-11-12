@@ -9,6 +9,7 @@ export interface TrashedGuestRow {
   ageGroup: AgeGroup | null;
   phone: string | null;
   email: string | null;
+  respondedAt: Date | null;
   trashBatchId: string | null;
   deletedAt: Date;
 }

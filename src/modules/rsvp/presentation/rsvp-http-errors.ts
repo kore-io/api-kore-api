@@ -3,11 +3,16 @@ import {
   ForbiddenException,
   HttpException,
   HttpStatus,
+  NotFoundException,
   UnauthorizedException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { validationError } from '../../../shared/http/validation-errors';
 import { toHttpError as toSiteHttpError } from '../../site/presentation/site-http-errors';
 import {
+  DeadlineAfterEventError,
+  DeadlineInPastError,
+  ResponseGuestNotFoundError,
   PartySessionInvalidError,
   PreviewReadOnlyError,
   RsvpChangedError,
@@ -19,6 +24,25 @@ import {
 
 /** Erros do RSVP para HTTP; os do endereço (SITE_NOT_FOUND, SITE_DRAFT) seguem o mapa do Site. */
 export function toHttpError(error: unknown): unknown {
+  if (error instanceof DeadlineInPastError)
+    return new UnprocessableEntityException({
+      statusCode: 422,
+      error: 'DEADLINE_IN_PAST',
+      message: 'The deadline is in the past.',
+    });
+  if (error instanceof DeadlineAfterEventError)
+    return new UnprocessableEntityException({
+      statusCode: 422,
+      error: 'DEADLINE_AFTER_EVENT',
+      message: 'The deadline must be up to the wedding day.',
+      eventDate: error.eventDate,
+    });
+  if (error instanceof ResponseGuestNotFoundError)
+    return new NotFoundException({
+      statusCode: 404,
+      error: 'GUEST_NOT_FOUND',
+      message: 'Guest not found.',
+    });
   if (error instanceof PartySessionInvalidError)
     return new UnauthorizedException({
       statusCode: 401,
