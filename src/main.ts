@@ -6,7 +6,11 @@ import { AppConfigService } from './shared/config/app-config.service';
 import { configureApp } from './shared/http/configure-app';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+    // O corpo bruto do webhook do gateway, para conferir a assinatura (Publicar e pagar RN09).
+    rawBody: true,
+  });
   app.useLogger(app.get(Logger));
   const config = app.get(AppConfigService);
   configureApp({

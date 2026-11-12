@@ -19,7 +19,7 @@ export async function createTestApp({
   const builder = Test.createTestingModule({ imports: [AppModule], controllers });
   const moduleRef = await (override ? override(builder) : builder).compile();
   const app = configureApp({
-    app: moduleRef.createNestApplication(),
+    app: moduleRef.createNestApplication({ rawBody: true }),
     enableDocs: false,
     allowedOrigins: moduleRef.get(AppConfigService).get({ key: 'ALLOWED_ORIGINS' }),
     siteOrigin: moduleRef.get(AppConfigService).siteOrigin,

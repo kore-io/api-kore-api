@@ -1,7 +1,7 @@
 // Cria (ou atualiza a senha de) os usuários de login do banco a partir das
 // URLs de conexão: o da API (DATABASE_URL), membro de kore_app e sujeito à RLS,
 // e o do backoffice e das rotinas (DATABASE_BACKOFFICE_URL), membro de
-// kore_backoffice. Só para local e test: nos outros ambientes os usuários são
+// kore_backoffice; e o esquema do gateway de pagamento local. Só para local e test: nos outros ambientes os usuários são
 // criados pela infraestrutura.
 import 'dotenv/config';
 import { Client } from 'pg';
@@ -25,6 +25,12 @@ async function main(): Promise<void> {
     for (const { urlEnv, groupRole } of LOGIN_USERS) {
       await upsertLoginUser({ client, url: new URL(requireEnv({ name: urlEnv })), groupRole });
     }
+    // O esquema do gateway de pagamento local (Publicar e pagar RN14; B2-14):
+    // só em local e test. As tabelas são criadas pelo adaptador, pela conexão
+    // do backoffice; a API e o worker leem o mesmo estado.
+    await client.query('CREATE SCHEMA IF NOT EXISTS local_gateway');
+    await client.query('GRANT USAGE, CREATE ON SCHEMA local_gateway TO kore_backoffice');
+    console.log('Esquema local_gateway pronto (gateway de pagamento local).');
   } finally {
     await client.end();
   }

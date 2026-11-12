@@ -133,6 +133,17 @@ export const envSchema = z
     STORAGE_PUBLIC_BUCKET: z.string().min(3),
     // Base pública das versões servidas (o domínio do CDN; no local, o MinIO).
     STORAGE_PUBLIC_URL: z.url({ protocol: /^https?$/ }),
+    // Gateway de pagamento (Publicar e pagar RN14 e RN16; decisão 230, D11): só o
+    // adaptador local por enquanto, com o estado no Postgres; o Asaas entra com o
+    // card 65. O local é recusado em homolog e production, então a API não sobe
+    // lá até o card 65 (B2-18): nenhum site vai ao ar sem pagamento.
+    PAYMENT_GATEWAY_PROVIDER: z.enum(['local']),
+    // Segredo do webhook do gateway, comparado em tempo constante (RN09).
+    PAYMENT_WEBHOOK_SECRET: z.string().min(32),
+    // Chave do HMAC do CPF e do CNPJ (porta TaxIdHasher; Publicar e pagar RN02;
+    // revisão técnica B2-12): 32 bytes cifrados pelo KMS, em base64, decifrados
+    // na subida. Nunca a chave mestra.
+    TAX_ID_HASH_KEY_ENCRYPTED: z.base64().min(1),
     // Observabilidade: console no local; o OTLP do SigNoz entra com a infraestrutura.
     OTEL_EXPORTER: z.enum(OTEL_EXPORTERS).default('none'),
     LOG_LEVEL: z
@@ -162,6 +173,14 @@ export const envSchema = z
         code: 'custom',
         path: ['COURTESY_PUBLICATION_ENABLED'],
         message: 'a Cortesia só pode ser ligada com APP_ENV local ou test (decisão 217(11))',
+      });
+    }
+    if (env.PAYMENT_GATEWAY_PROVIDER === 'local' && !LOCAL_KEY_ENVS.includes(env.APP_ENV)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['PAYMENT_GATEWAY_PROVIDER'],
+        message:
+          'o gateway local só é aceito com APP_ENV local ou test (Publicar e pagar RN16; decisão 230, D11)',
       });
     }
     if (!LOCAL_KEY_ENVS.includes(env.APP_ENV)) {

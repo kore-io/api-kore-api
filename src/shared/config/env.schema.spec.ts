@@ -27,6 +27,10 @@ const validConfig = {
   STORAGE_PRIVATE_BUCKET: 'kore-private',
   STORAGE_PUBLIC_BUCKET: 'kore-public',
   STORAGE_PUBLIC_URL: 'http://localhost:9000/kore-public',
+  PAYMENT_GATEWAY_PROVIDER: 'local',
+  PAYMENT_WEBHOOK_SECRET: 'local-webhook-secret-only-for-dev-and-tests-0001',
+  TAX_ID_HASH_KEY_ENCRYPTED:
+    'CltkHGWe/+yKMJl8JI1nIOa/jb2HMmHMZ8EJeYchSE+Mcv+nN82KPDW+1CyvIFV9twm0oj0U2+ij7fwI',
 };
 
 describe('validateEnv', () => {
@@ -196,5 +200,32 @@ describe('validateEnv', () => {
     expect(() =>
       validateEnv({ config: { ...validConfig, VAPID_SUBJECT: 'kore@kore.com.br' } }),
     ).toThrow(/VAPID_SUBJECT/);
+  });
+
+  it.each(['homolog', 'production'])(
+    'Publicar e pagar RN16 - dado APP_ENV %s e PAYMENT_GATEWAY_PROVIDER local, a validação falha e a API não sobe',
+    (appEnv) => {
+      expect(() => validateEnv({ config: { ...validConfig, APP_ENV: appEnv } })).toThrow(
+        /PAYMENT_GATEWAY_PROVIDER: o gateway local só é aceito com APP_ENV local ou test/,
+      );
+    },
+  );
+
+  it('Publicar e pagar RN14 - o gateway, o segredo do webhook e a chave do HMAC são obrigatórios', () => {
+    for (const key of [
+      'PAYMENT_GATEWAY_PROVIDER',
+      'PAYMENT_WEBHOOK_SECRET',
+      'TAX_ID_HASH_KEY_ENCRYPTED',
+    ] as const) {
+      const config: Record<string, unknown> = { ...validConfig };
+      delete config[key];
+      expect(() => validateEnv({ config })).toThrow(new RegExp(key));
+    }
+    expect(() =>
+      validateEnv({ config: { ...validConfig, PAYMENT_WEBHOOK_SECRET: 'curto' } }),
+    ).toThrow(/PAYMENT_WEBHOOK_SECRET/);
+    expect(() =>
+      validateEnv({ config: { ...validConfig, PAYMENT_GATEWAY_PROVIDER: 'asaas' } }),
+    ).toThrow(/PAYMENT_GATEWAY_PROVIDER/);
   });
 });

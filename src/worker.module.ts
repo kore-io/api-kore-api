@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { BillingWorkerModule } from './modules/billing/billing-worker.module';
 import { AccessWorkerModule } from './modules/access/access-worker.module';
 import { GuestsWorkerModule } from './modules/guests/guests-worker.module';
 import { LogsWorkerModule } from './modules/logs/logs-worker.module';
@@ -27,6 +28,7 @@ import { ObservabilityModule } from './shared/observability/observability.module
     GuestsWorkerModule,
     SiteWorkerModule,
     NotificationsWorkerModule,
+    BillingWorkerModule,
   ],
 })
 export class WorkerModule {}
