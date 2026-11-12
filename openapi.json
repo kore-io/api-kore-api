@@ -10165,6 +10165,13 @@
           "favicon"
         ],
         "description": "Endereços que nenhum casamento pode usar, porque são rotas do Kore na raiz de kore.com.br. A comparação não diferencia maiúsculas de minúsculas (Dados básicos RN07)."
+      },
+      "AppearanceContrastFixtureSha256": {
+        "type": "string",
+        "enum": [
+          "42cd6ed77302f384ab3ab3d8c92c4d0ef1c0f7441831f3ce31b4f37fad57601b"
+        ],
+        "description": "O sha256 (hex) da appearance-contrast.fixture.json da API. A cópia do web precisa ter o mesmo (Aparência RN01)."
       }
     }
   }
