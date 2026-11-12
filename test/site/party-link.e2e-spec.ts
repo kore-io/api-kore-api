@@ -276,6 +276,20 @@ describe('Site público: o link do grupo (banco real)', () => {
     await exchange(slug, 'curto').expect(400);
   });
 
+  it('Site público RN04 - fora do ar (expired): SITE_NOT_FOUND na leitura e na troca do link, sem cookie', async () => {
+    const { weddingId, slug, party } = await wedding();
+    await db.wedding.update({ where: { id: weddingId }, data: { status: 'expired' } });
+
+    const read = await request(app.getHttpServer())
+      .get(`/v1/sites/${slug}`)
+      .set('Origin', SITE_ORIGIN)
+      .expect(404);
+    expect(read.body.error).toBe('SITE_NOT_FOUND');
+    const exchanged = await exchange(slug, party.linkToken).expect(404);
+    expect(exchanged.body.error).toBe('SITE_NOT_FOUND');
+    expect(cookieOf(exchanged)).toEqual([]);
+  });
+
   it('RN06 - party_link: 20 falhas por minuto por IP; os acertos não contam, e outro IP não é afetado', async () => {
     const { slug, party } = await wedding();
     const crowded = ip();
@@ -289,6 +303,8 @@ describe('Site público: o link do grupo (banco real)', () => {
       error: 'RATE_LIMITED',
       message: 'Too many requests.',
     });
+    // O bloqueio não grava o cookie do grupo, mesmo com o link certo.
+    expect(cookieOf(blocked)).toEqual([]);
     await exchange(slug, party.linkToken).expect(200);
   });
 
