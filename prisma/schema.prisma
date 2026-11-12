@@ -108,6 +108,7 @@ model User {
   notificationPreferences   NotificationPreference[]
   notificationEmailStates   NotificationEmailState[]
   pushSubscriptions         PushSubscription[]
+  notificationDigestState   NotificationDigestState?
 
   @@map("users")
 }
@@ -320,6 +321,8 @@ model Wedding {
   // Pergunta de música (Música RN01): desligada por padrão; texto nulo = o padrão.
   songQuestionEnabled Boolean            @default(false) @map("song_question_enabled")
   songQuestionText    String?            @map("song_question_text")
+  // Assinatura do cerimonialista no rodapé (Assinatura RN05): só o dono muda.
+  showPlannerCredit   Boolean            @default(true) @map("show_planner_credit")
 
   createdBy               User?                    @relation("WeddingCreatedBy", fields: [createdByUserId], references: [id])
   publishedBy             User?                    @relation("WeddingPublishedBy", fields: [publishedByUserId], references: [id], onDelete: SetNull)
@@ -497,19 +500,51 @@ enum ReferrerStatus {
 
 // Cerimonialista (Glossário): só o que é dele; a comissão fica no Referrer.
 model Planner {
-  id         String   @id @default(uuid(7)) @db.Uuid
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
-  referrerId String   @unique(map: "uq_planners_referrer_id") @map("referrer_id") @db.Uuid
+  id                 String    @id @default(uuid(7)) @db.Uuid
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  referrerId         String    @unique(map: "uq_planners_referrer_id") @map("referrer_id") @db.Uuid
   // Nome na assinatura do site e no destaque da indicação.
-  creditName String   @map("credit_name")
-  phone      String?
-  whatsapp   String?
-  cities     String[] @default([])
+  creditName         String    @map("credit_name")
+  phone              String?
+  whatsapp           String?
+  cities             String[]  @default([])
+  // O Admin oculta a assinatura nos sites (Assinatura RN06); o motivo nunca sai da API.
+  creditHiddenAt     DateTime? @map("credit_hidden_at") @db.Timestamptz(3)
+  creditHiddenReason String?   @map("credit_hidden_reason")
 
-  referrer Referrer @relation(fields: [referrerId], references: [id], onDelete: Cascade)
+  referrer  Referrer          @relation(fields: [referrerId], references: [id], onDelete: Cascade)
+  templates PlannerTemplate[]
 
   @@map("planners")
+}
+
+// Modelo do cerimonialista (Modelos RN01 a RN04): copiado para o casamento ao
+// aplicar, sem weddingId. RLS por current_planner_id() (decisão 224).
+model PlannerTemplate {
+  id          String              @id @default(uuid(7)) @db.Uuid
+  createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  plannerId   String              @map("planner_id") @db.Uuid
+  kind        PlannerTemplateKind
+  // Só em section_content: story, lodging ou dress_code (CHECK no SQL).
+  sectionType SectionType?        @map("section_type")
+  name        String
+  locale      String              @default("pt-BR")
+  content     Json
+
+  planner Planner @relation(fields: [plannerId], references: [id], onDelete: Cascade)
+
+  @@index([plannerId, kind, createdAt(sort: Desc)], map: "idx_planner_templates_planner_id_kind_created_at")
+  @@map("planner_templates")
+}
+
+enum PlannerTemplateKind {
+  section_content
+  faq
+  appearance
+
+  @@map("planner_template_kind")
 }
 
 // Assessoria (Glossário), mínima (decisão 113): 1 membro no lançamento; a
@@ -592,6 +627,9 @@ model AccessInvitation {
   revokedAt        DateTime?            @map("revoked_at") @db.Timestamptz(3)
   // Reenvio, Convidar outro e-mail ou Gerar novo link (RN04).
   supersededAt     DateTime?            @map("superseded_at") @db.Timestamptz(3)
+  // Só no link do casal sem e-mail (N1(b), decisão 224): o token cifrado pelo
+  // FieldCipher, zerado no aceite, no cancelamento, na substituição e no vencimento.
+  tokenEncrypted   String?              @map("token_encrypted")
 
   wedding    Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
   invitedBy  User    @relation("AccessInvitationInvitedBy", fields: [invitedByUserId], references: [id])
@@ -1066,6 +1104,8 @@ model PartyDelivery {
 // Tipos de notificação: cada fase acrescenta os seus (Central RN01).
 enum NotificationType {
   rsvp
+  wedding_published
+  membership_removed
 
   @@map("notification_type")
 }
@@ -1124,6 +1164,19 @@ model NotificationPreference {
   @@unique([userId, weddingId, type], map: "uq_notification_preferences_user_id_wedding_id_type")
   @@index([weddingId], map: "idx_notification_preferences_wedding_id")
   @@map("notification_preferences")
+}
+
+// Resumo diário agrupado da cerimonialista (Notificações da cerimonialista
+// RN07; revisão C8-7): a data do último envio, em America/Sao_Paulo. Escrita
+// só pelo worker.
+model NotificationDigestState {
+  userId         String    @id @map("user_id") @db.Uuid
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  lastDigestDate DateTime? @map("last_digest_date") @db.Date
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_digest_states")
 }
 
 // Estado do e-mail por pessoa e casamento (E-mail e push RN02; decisão 217(b)):
