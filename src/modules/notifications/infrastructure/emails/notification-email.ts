@@ -181,3 +181,114 @@ export function localHour({ at, timezone }: { at: Date; timezone: string }): num
     }).format(at),
   );
 }
+
+/** "Ana e Marcos" (os textos da cerimonialista; Pena). */
+export function coupleLabel({ partnerNames }: { partnerNames: readonly [string, string] }): string {
+  return partnerNames.filter((name) => name.length > 0).join(' e ');
+}
+
+const groupsPhrase = (count: number) =>
+  count === 1 ? '1 grupo respondeu' : `${count} grupos responderam`;
+
+export interface PlannerEmailContext {
+  to: string;
+  firstName: string | null;
+  partnerNames: readonly [string, string];
+  /** Os grupos que responderam desde o último e-mail; só a contagem vai no texto. */
+  groupCount: number;
+  totals: { confirmed: number; declined: number; pending: number };
+  /** O detalhe do casamento na Área do cerimonialista. */
+  weddingUrl: string;
+  settingsUrl: string;
+}
+
+/**
+ * O e-mail "Na hora" da cerimonialista (Notificações da cerimonialista RN07;
+ * Pena): sem nome de convidado nem de grupo, só a contagem e o casal.
+ */
+export function plannerImmediateEmail({ context }: { context: PlannerEmailContext }): EmailMessage {
+  const couple = coupleLabel(context);
+  const blocks: EmailBlock[] = [
+    { kind: 'paragraph', text: context.firstName ? `Olá, ${context.firstName}.` : 'Olá.' },
+    {
+      kind: 'paragraph',
+      text:
+        context.groupCount === 1
+          ? `Hoje, 1 grupo respondeu o convite de ${couple}.`
+          : `Hoje, ${context.groupCount} grupos responderam o convite de ${couple}.`,
+    },
+    { kind: 'paragraph', text: totalsLine(context.totals) },
+    { kind: 'button', text: 'Abrir o casamento', href: context.weddingUrl },
+  ];
+  // O pré-cabeçalho e o rodapé do "Na hora" do casal, que já falam com você.
+  const footer = `Você recebe este e-mail porque escolheu receber as respostas na hora. Para mudar, abra Configurações › Notificações no Kore. ${context.settingsUrl}`;
+  return {
+    to: context.to,
+    subject: oneLine(`${groupsPhrase(context.groupCount)} em ${couple}`),
+    text: [
+      ...blocks.map((block) =>
+        block.kind === 'button' ? `${block.text}: ${block.href ?? ''}` : block.text,
+      ),
+      SUPPORT_LINE,
+      footer,
+    ].join('\n\n'),
+    html: renderEmailHtml({ preheader: 'Confira as respostas no Kore.', blocks, footer }),
+  };
+}
+
+/** Um casamento no Resumo agrupado da cerimonialista. */
+export interface PlannerDigestBlock {
+  partnerNames: readonly [string, string];
+  /** Grupos que responderam desde o último e-mail; 0 não aparece. */
+  groupCount: number;
+  /** O site foi publicado desde o último e-mail. */
+  published: boolean;
+}
+
+/**
+ * O Resumo diário agrupado da cerimonialista (Notificações da cerimonialista
+ * RN07; Pena): um e-mail por pessoa por dia, com um bloco por casamento.
+ */
+export function plannerDigestEmail({
+  to,
+  firstName,
+  blocks: weddings,
+  homeUrl,
+  settingsUrl,
+}: {
+  to: string;
+  firstName: string | null;
+  blocks: readonly PlannerDigestBlock[];
+  homeUrl: string;
+  settingsUrl: string;
+}): EmailMessage {
+  const blocks: EmailBlock[] = [
+    { kind: 'paragraph', text: firstName ? `Olá, ${firstName}.` : 'Olá.' },
+    { kind: 'paragraph', text: 'Hoje, nos seus casamentos:' },
+    ...weddings.flatMap((wedding): EmailBlock[] => [
+      { kind: 'paragraph', text: coupleLabel(wedding) },
+      ...(wedding.groupCount > 0
+        ? [{ kind: 'paragraph' as const, text: groupsPhrase(wedding.groupCount) }]
+        : []),
+      ...(wedding.published ? [{ kind: 'paragraph' as const, text: 'Site publicado' }] : []),
+    ]),
+    { kind: 'button', text: 'Abrir Meus casamentos', href: homeUrl },
+  ];
+  const footer = `Você recebe este resumo porque escolheu o resumo diário. Para mudar, abra Configurações › Notificações no Kore. ${settingsUrl}`;
+  const count = weddings.length;
+  return {
+    to,
+    subject:
+      count === 1
+        ? 'Resumo do dia: novidades em 1 casamento'
+        : `Resumo do dia: novidades em ${count} casamentos`,
+    text: [
+      ...blocks.map((block) =>
+        block.kind === 'button' ? `${block.text}: ${block.href ?? ''}` : block.text,
+      ),
+      SUPPORT_LINE,
+      footer,
+    ].join('\n\n'),
+    html: renderEmailHtml({ preheader: 'Respostas e publicações de hoje.', blocks, footer }),
+  };
+}

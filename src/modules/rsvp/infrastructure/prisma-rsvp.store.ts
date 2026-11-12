@@ -233,10 +233,10 @@ export class PrismaRsvpStore implements RsvpStore {
   }: {
     submissionId: string;
     notificationIds: readonly string[];
-  }): Promise<{ firstResponse: boolean; recipients: string[] }> {
+  }): Promise<{ firstResponse: boolean; recipients: string[]; plannerRecipients: string[] }> {
     const [row] = await this.tenant.client().$queryRaw<
-      [{ result: { firstResponse: boolean; recipients: string[] } }]
+      [{ result: { firstResponse: boolean; recipients: string[]; plannerRecipients?: string[] } }]
     >`SELECT notify_rsvp(${submissionId}::uuid, ${[...notificationIds]}::uuid[]) AS result`;
-    return row.result;
+    return { ...row.result, plannerRecipients: row.result.plannerRecipients ?? [] };
   }
 }

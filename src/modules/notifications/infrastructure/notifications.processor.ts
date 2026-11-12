@@ -2,6 +2,7 @@ import { InjectQueue, OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullm
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { DelayedError, type Job, type Queue } from 'bullmq';
 import { upsertDailyScheduler } from '../../../shared/jobs/daily-scheduler';
+import { PlannerDigest } from '../application/planner-digest.use-case';
 import { RsvpEmails } from '../application/rsvp-emails.use-cases';
 import { RsvpPush } from '../application/rsvp-push.use-case';
 import {
@@ -22,6 +23,7 @@ export class NotificationsProcessor extends WorkerHost {
   constructor(
     private readonly emails: RsvpEmails,
     private readonly push: RsvpPush,
+    private readonly plannerDigest: PlannerDigest,
     @InjectQueue(NOTIFICATIONS_QUEUE) private readonly queue: Queue,
   ) {
     super();
@@ -48,7 +50,11 @@ export class NotificationsProcessor extends WorkerHost {
     const result = await this.emails.sweep({ now });
     if (result.sent || result.failed)
       logger.log(`E-mails de respostas: ${result.sent} enviados, ${result.failed} falhas.`);
-    return result;
+    // O Resumo agrupado da cerimonialista (Notificações da cerimonialista RN07).
+    const digests = await this.plannerDigest.sweep({ now });
+    if (digests.sent || digests.failed)
+      logger.log(`Resumos agrupados: ${digests.sent} enviados, ${digests.failed} falhas.`);
+    return { ...result, plannerDigests: digests };
   }
 
   /**

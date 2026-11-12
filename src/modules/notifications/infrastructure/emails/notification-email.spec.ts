@@ -1,4 +1,6 @@
 import {
+  plannerDigestEmail,
+  plannerImmediateEmail,
   digestEmail,
   groupLine,
   immediateEmail,
@@ -91,5 +93,76 @@ describe('E-mail das respostas (E-mail e push RN02 a RN06)', () => {
     expect(localHour({ at: new Date('2026-09-12T23:00:00Z'), timezone: 'America/Sao_Paulo' })).toBe(
       20,
     );
+  });
+});
+
+describe('Os e-mails da cerimonialista (Notificações da cerimonialista RN07; Pena)', () => {
+  const totals = { confirmed: 96, declined: 18, pending: 28 };
+
+  it('Na hora: a contagem e o casal, sem nome de grupo nem de convidado', () => {
+    const email = plannerImmediateEmail({
+      context: {
+        to: 'juliana@prado.com',
+        firstName: 'Juliana',
+        partnerNames: ['Ana', 'Marcos'],
+        groupCount: 3,
+        totals,
+        weddingUrl: 'http://app/cerimonialista/casamentos/w1',
+        settingsUrl: 'http://app/cerimonialista/configuracoes/notificacoes',
+      },
+    });
+
+    expect(email.subject).toBe('3 grupos responderam em Ana e Marcos');
+    expect(email.text).toContain('Olá, Juliana.');
+    expect(email.text).toContain('Hoje, 3 grupos responderam o convite de Ana e Marcos.');
+    expect(email.text).toContain(
+      'No total, o casamento tem 96 confirmados, 18 recusados e 28 pendentes.',
+    );
+    expect(email.text).toContain('Abrir o casamento: http://app/cerimonialista/casamentos/w1');
+    expect(
+      plannerImmediateEmail({
+        context: {
+          to: 'j@x.com',
+          firstName: null,
+          partnerNames: ['Ana', 'Marcos'],
+          groupCount: 1,
+          totals,
+          weddingUrl: 'u',
+          settingsUrl: 's',
+        },
+      }).subject,
+    ).toBe('1 grupo respondeu em Ana e Marcos');
+  });
+
+  it('Resumo agrupado: um bloco por casamento, com as respostas e o "Site publicado"', () => {
+    const email = plannerDigestEmail({
+      to: 'juliana@prado.com',
+      firstName: 'Juliana',
+      blocks: [
+        { partnerNames: ['Ana', 'Marcos'], groupCount: 3, published: false },
+        { partnerNames: ['Fernanda', 'João'], groupCount: 1, published: true },
+      ],
+      homeUrl: 'http://app/cerimonialista',
+      settingsUrl: 'http://app/cerimonialista/configuracoes/notificacoes',
+    });
+
+    expect(email.subject).toBe('Resumo do dia: novidades em 2 casamentos');
+    expect(email.text).toContain(
+      ['Hoje, nos seus casamentos:', 'Ana e Marcos', '3 grupos responderam'].join('\n\n'),
+    );
+    expect(email.text).toContain(
+      ['Fernanda e João', '1 grupo respondeu', 'Site publicado'].join('\n\n'),
+    );
+    expect(email.text).toContain('Abrir Meus casamentos: http://app/cerimonialista');
+    expect(email.text).toContain('Você recebe este resumo porque escolheu o resumo diário.');
+    expect(
+      plannerDigestEmail({
+        to: 'j@x.com',
+        firstName: null,
+        blocks: [{ partnerNames: ['Ana', 'Marcos'], groupCount: 0, published: true }],
+        homeUrl: 'h',
+        settingsUrl: 's',
+      }).subject,
+    ).toBe('Resumo do dia: novidades em 1 casamento');
   });
 });

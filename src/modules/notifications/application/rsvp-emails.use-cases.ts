@@ -14,6 +14,7 @@ import {
   IMMEDIATE_WINDOW_MS,
   digestEmail,
   immediateEmail,
+  plannerImmediateEmail,
   localHour,
   newestAt,
   pendingGroups,
@@ -29,6 +30,8 @@ const logger = new Logger('RsvpEmails');
 
 /** O caminho da tela Configurações › Notificações no app (o link direto do rodapé, R8-9). */
 export const NOTIFICATION_SETTINGS_PATH = '/app/configuracoes/notificacoes';
+/** As Configurações › Notificações da cerimonialista (Cadastro e perfil RN07). */
+export const PLANNER_NOTIFICATION_SETTINGS_PATH = '/cerimonialista/configuracoes/notificacoes';
 
 /**
  * Como o e-mail sai: `immediate` é o job do "Na hora"; `catch_up` é a rede de
@@ -108,6 +111,9 @@ export class RsvpEmails {
           guestsUrl: `${this.appUrl}/app/convidados`,
           settingsUrl: `${this.appUrl}${NOTIFICATION_SETTINGS_PATH}`,
         };
+        // A cerimonialista recebe o Resumo agrupado por pessoa (PlannerDigest),
+        // não um por casamento (Notificações da cerimonialista RN07).
+        if (mode === 'digest' && state.role === 'planner') return null;
         if (mode === 'digest') {
           const today = localDate({ at: now, timezone: state.timezone });
           if (
@@ -129,7 +135,22 @@ export class RsvpEmails {
         // A rede de segurança só manda o que esperou mais de 15 minutos.
         if (mode === 'catch_up' && Date.parse(groups[0].at) > now.getTime() - IMMEDIATE_WINDOW_MS)
           return null;
-        await this.sender.send({ message: immediateEmail({ context }) });
+        await this.sender.send({
+          message:
+            state.role === 'planner'
+              ? plannerImmediateEmail({
+                  context: {
+                    to: state.email,
+                    firstName: state.firstName,
+                    partnerNames: state.partnerNames,
+                    groupCount: groups.length,
+                    totals: state.totals,
+                    weddingUrl: `${this.appUrl}/cerimonialista/casamentos/${weddingId}`,
+                    settingsUrl: `${this.appUrl}${PLANNER_NOTIFICATION_SETTINGS_PATH}`,
+                  },
+                })
+              : immediateEmail({ context }),
+        });
         result = { kind: 'sent' };
         return { emailedThrough: newestAt({ groups }), lastImmediateAt: now };
       },

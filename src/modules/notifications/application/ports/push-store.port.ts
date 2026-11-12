@@ -13,6 +13,10 @@ export interface PushStore {
   /** Vínculo ativo e a preferência push do tipo (sem linha, desligado). */
   recipient({ userId, weddingId, now }: { userId: string; weddingId: string; now: Date }): Promise<{
     member: boolean;
+    /** O dono ou a cerimonialista com Planner, conferido agora (D18); nulo sem vínculo. */
+    role: 'owner' | 'planner' | null;
+    partnerNames: [string, string];
+    /** A preferência push: a do casamento para o dono, a geral para a cerimonialista. */
     push: boolean;
     subscriptions: StoredPushSubscription[];
     /** A notificação não lida do casamento: o que o aviso mostra. */

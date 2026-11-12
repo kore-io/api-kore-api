@@ -237,9 +237,13 @@ export class SubmitRsvp {
             uuidV7({ now: now.getTime() + index }),
           ),
         });
-        // E-mail e push saem por job depois do commit (Central RN02).
+        // E-mail e push saem por job depois do commit (Central RN02); o worker
+        // escolhe os textos e a preferência pelo papel de cada um (RN07 da F6).
         this.afterCommit.schedule(() =>
-          this.dispatcher.notified({ weddingId, userIds: notified.recipients }),
+          this.dispatcher.notified({
+            weddingId,
+            userIds: [...notified.recipients, ...notified.plannerRecipients],
+          }),
         );
         if (notified.firstResponse && context.publishedAt) {
           const days = daysBetween({

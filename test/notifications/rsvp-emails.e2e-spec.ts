@@ -175,8 +175,13 @@ describe('E-mails das respostas (worker)', () => {
     const after = new Date(now.getTime() + 16 * MINUTE);
     await emails.send({ userId, weddingId, mode: 'immediate', now: after });
     const messages = await waitForInbox({ to: email, count: 2 });
-    expect(messages[0].Subject).toBe('Família Duarte respondeu o convite');
-    expect(await textOf(messages[0].ID)).not.toContain('Família Moreira');
+    // Pelo assunto: dois e-mails no mesmo segundo vêm do Mailpit em qualquer ordem.
+    expect(messages.map((message) => message.Subject).sort()).toEqual([
+      'Família Duarte respondeu o convite',
+      'Família Moreira respondeu o convite',
+    ]);
+    const second = messages.find((message) => message.Subject.startsWith('Família Duarte'));
+    expect(await textOf(second!.ID)).not.toContain('Família Moreira');
   });
 
   it('RN04 - o Resumo diário: antes das 20h no fuso, nada; depois, um só no dia, mesmo rodando de novo', async () => {
