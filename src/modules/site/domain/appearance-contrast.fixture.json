@@ -1,0 +1,528 @@
+{
+  "version": 1,
+  "formula": "Razão de contraste da WCAG 2.x (luminância relativa, linearização com limiar 0,04045). primaryForeground: #FFFFFF ou #1F1F1F, o de maior contraste com a primária (no empate, #FFFFFF). Bloqueia abaixo de 4,5 (texto sobre a primária) e de 3 (primária sobre site.background); com as duas falhando, vale primary_foreground. Destaque abaixo de 3 sobre site.background só avisa. Comparação sem arredondar; as razões da fixture com duas casas, para baixo.",
+  "fontPairKeys": ["romantico", "classico", "leve", "moderno"],
+  "backgrounds": {
+    "light": {
+      "background": "#FFFFFF",
+      "surface": "#F5F5F4",
+      "foreground": "#1F1F1F",
+      "mutedForeground": "#5E5E5B",
+      "border": "#E4E4E1",
+      "koreSeal": "#74233D"
+    },
+    "cream": {
+      "background": "#FBF7F2",
+      "surface": "#FFFFFF",
+      "foreground": "#2E2A26",
+      "mutedForeground": "#6B6159",
+      "border": "#E8DFD4",
+      "koreSeal": "#74233D"
+    },
+    "dark": {
+      "background": "#15171C",
+      "surface": "#1E2128",
+      "foreground": "#F2F0EC",
+      "mutedForeground": "#A9A59E",
+      "border": "#353944",
+      "koreSeal": "#F6E6EB"
+    }
+  },
+  "starterPalettes": {
+    "terracota": {
+      "primary": "#A94F37",
+      "accent": "#7A8B69",
+      "background": "cream"
+    },
+    "salvia": {
+      "primary": "#566C4B",
+      "accent": "#C9A66B",
+      "background": "light"
+    },
+    "rose": {
+      "primary": "#A3545E",
+      "accent": "#8C9A7E",
+      "background": "cream"
+    },
+    "marfim": {
+      "primary": "#7D6036",
+      "accent": "#1F2A44",
+      "background": "cream"
+    },
+    "marinho": {
+      "primary": "#1F2A44",
+      "accent": "#B08D57",
+      "background": "light"
+    },
+    "areia": {
+      "primary": "#2F6F7E",
+      "accent": "#D9A06B",
+      "background": "cream"
+    },
+    "por-do-sol": {
+      "primary": "#B24F34",
+      "accent": "#2F6F7E",
+      "background": "cream"
+    },
+    "grafite": {
+      "primary": "#222222",
+      "accent": "#9A8C7A",
+      "background": "light"
+    },
+    "noite": {
+      "primary": "#E7D3B0",
+      "accent": "#9A8C7A",
+      "background": "dark"
+    }
+  },
+  "cases": [
+    {
+      "name": "terracota · light",
+      "primaryColor": "#A94F37",
+      "accentColor": "#7A8B69",
+      "backgroundMode": "light",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 5.43,
+        "primaryBackgroundRatio": 5.43,
+        "accentBackgroundRatio": 3.66,
+        "blocked": null,
+        "accentLowContrast": false
+      }
+    },
+    {
+      "name": "terracota · cream",
+      "primaryColor": "#A94F37",
+      "accentColor": "#7A8B69",
+      "backgroundMode": "cream",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 5.43,
+        "primaryBackgroundRatio": 5.09,
+        "accentBackgroundRatio": 3.43,
+        "blocked": null,
+        "accentLowContrast": false
+      }
+    },
+    {
+      "name": "terracota · dark",
+      "primaryColor": "#A94F37",
+      "accentColor": "#7A8B69",
+      "backgroundMode": "dark",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 5.43,
+        "primaryBackgroundRatio": 3.29,
+        "accentBackgroundRatio": 4.88,
+        "blocked": null,
+        "accentLowContrast": false
+      }
+    },
+    {
+      "name": "salvia · light",
+      "primaryColor": "#566C4B",
+      "accentColor": "#C9A66B",
+      "backgroundMode": "light",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 5.76,
+        "primaryBackgroundRatio": 5.76,
+        "accentBackgroundRatio": 2.29,
+        "blocked": null,
+        "accentLowContrast": true
+      }
+    },
+    {
+      "name": "salvia · cream",
+      "primaryColor": "#566C4B",
+      "accentColor": "#C9A66B",
+      "backgroundMode": "cream",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 5.76,
+        "primaryBackgroundRatio": 5.4,
+        "accentBackgroundRatio": 2.15,
+        "blocked": null,
+        "accentLowContrast": true
+      }
+    },
+    {
+      "name": "salvia · dark",
+      "primaryColor": "#566C4B",
+      "accentColor": "#C9A66B",
+      "backgroundMode": "dark",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 5.76,
+        "primaryBackgroundRatio": 3.1,
+        "accentBackgroundRatio": 7.81,
+        "blocked": null,
+        "accentLowContrast": false
+      }
+    },
+    {
+      "name": "rose · light",
+      "primaryColor": "#A3545E",
+      "accentColor": "#8C9A7E",
+      "backgroundMode": "light",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 5.26,
+        "primaryBackgroundRatio": 5.26,
+        "accentBackgroundRatio": 2.98,
+        "blocked": null,
+        "accentLowContrast": true
+      }
+    },
+    {
+      "name": "rose · cream",
+      "primaryColor": "#A3545E",
+      "accentColor": "#8C9A7E",
+      "backgroundMode": "cream",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 5.26,
+        "primaryBackgroundRatio": 4.93,
+        "accentBackgroundRatio": 2.79,
+        "blocked": null,
+        "accentLowContrast": true
+      }
+    },
+    {
+      "name": "rose · dark",
+      "primaryColor": "#A3545E",
+      "accentColor": "#8C9A7E",
+      "backgroundMode": "dark",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 5.26,
+        "primaryBackgroundRatio": 3.4,
+        "accentBackgroundRatio": 6.0,
+        "blocked": null,
+        "accentLowContrast": false
+      }
+    },
+    {
+      "name": "marfim · light",
+      "primaryColor": "#7D6036",
+      "accentColor": "#1F2A44",
+      "backgroundMode": "light",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 5.83,
+        "primaryBackgroundRatio": 5.83,
+        "accentBackgroundRatio": 14.25,
+        "blocked": null,
+        "accentLowContrast": false
+      }
+    },
+    {
+      "name": "marfim · cream",
+      "primaryColor": "#7D6036",
+      "accentColor": "#1F2A44",
+      "backgroundMode": "cream",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 5.83,
+        "primaryBackgroundRatio": 5.47,
+        "accentBackgroundRatio": 13.36,
+        "blocked": null,
+        "accentLowContrast": false
+      }
+    },
+    {
+      "name": "marfim · dark",
+      "primaryColor": "#7D6036",
+      "accentColor": "#1F2A44",
+      "backgroundMode": "dark",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 5.83,
+        "primaryBackgroundRatio": 3.07,
+        "accentBackgroundRatio": 1.25,
+        "blocked": null,
+        "accentLowContrast": true
+      }
+    },
+    {
+      "name": "marinho · light",
+      "primaryColor": "#1F2A44",
+      "accentColor": "#B08D57",
+      "backgroundMode": "light",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 14.25,
+        "primaryBackgroundRatio": 14.25,
+        "accentBackgroundRatio": 3.09,
+        "blocked": null,
+        "accentLowContrast": false
+      }
+    },
+    {
+      "name": "marinho · cream",
+      "primaryColor": "#1F2A44",
+      "accentColor": "#B08D57",
+      "backgroundMode": "cream",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 14.25,
+        "primaryBackgroundRatio": 13.36,
+        "accentBackgroundRatio": 2.89,
+        "blocked": null,
+        "accentLowContrast": true
+      }
+    },
+    {
+      "name": "marinho · dark",
+      "primaryColor": "#1F2A44",
+      "accentColor": "#B08D57",
+      "backgroundMode": "dark",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 14.25,
+        "primaryBackgroundRatio": 1.25,
+        "accentBackgroundRatio": 5.8,
+        "blocked": "primary_background",
+        "accentLowContrast": false
+      }
+    },
+    {
+      "name": "areia · light",
+      "primaryColor": "#2F6F7E",
+      "accentColor": "#D9A06B",
+      "backgroundMode": "light",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 5.68,
+        "primaryBackgroundRatio": 5.68,
+        "accentBackgroundRatio": 2.28,
+        "blocked": null,
+        "accentLowContrast": true
+      }
+    },
+    {
+      "name": "areia · cream",
+      "primaryColor": "#2F6F7E",
+      "accentColor": "#D9A06B",
+      "backgroundMode": "cream",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 5.68,
+        "primaryBackgroundRatio": 5.32,
+        "accentBackgroundRatio": 2.14,
+        "blocked": null,
+        "accentLowContrast": true
+      }
+    },
+    {
+      "name": "areia · dark",
+      "primaryColor": "#2F6F7E",
+      "accentColor": "#D9A06B",
+      "backgroundMode": "dark",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 5.68,
+        "primaryBackgroundRatio": 3.15,
+        "accentBackgroundRatio": 7.84,
+        "blocked": null,
+        "accentLowContrast": false
+      }
+    },
+    {
+      "name": "por-do-sol · light",
+      "primaryColor": "#B24F34",
+      "accentColor": "#2F6F7E",
+      "backgroundMode": "light",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 5.17,
+        "primaryBackgroundRatio": 5.17,
+        "accentBackgroundRatio": 5.68,
+        "blocked": null,
+        "accentLowContrast": false
+      }
+    },
+    {
+      "name": "por-do-sol · cream",
+      "primaryColor": "#B24F34",
+      "accentColor": "#2F6F7E",
+      "backgroundMode": "cream",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 5.17,
+        "primaryBackgroundRatio": 4.84,
+        "accentBackgroundRatio": 5.32,
+        "blocked": null,
+        "accentLowContrast": false
+      }
+    },
+    {
+      "name": "por-do-sol · dark",
+      "primaryColor": "#B24F34",
+      "accentColor": "#2F6F7E",
+      "backgroundMode": "dark",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 5.17,
+        "primaryBackgroundRatio": 3.46,
+        "accentBackgroundRatio": 3.15,
+        "blocked": null,
+        "accentLowContrast": false
+      }
+    },
+    {
+      "name": "grafite · light",
+      "primaryColor": "#222222",
+      "accentColor": "#9A8C7A",
+      "backgroundMode": "light",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 15.9,
+        "primaryBackgroundRatio": 15.9,
+        "accentBackgroundRatio": 3.27,
+        "blocked": null,
+        "accentLowContrast": false
+      }
+    },
+    {
+      "name": "grafite · cream",
+      "primaryColor": "#222222",
+      "accentColor": "#9A8C7A",
+      "backgroundMode": "cream",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 15.9,
+        "primaryBackgroundRatio": 14.91,
+        "accentBackgroundRatio": 3.07,
+        "blocked": null,
+        "accentLowContrast": false
+      }
+    },
+    {
+      "name": "grafite · dark",
+      "primaryColor": "#222222",
+      "accentColor": "#9A8C7A",
+      "backgroundMode": "dark",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 15.9,
+        "primaryBackgroundRatio": 1.12,
+        "accentBackgroundRatio": 5.46,
+        "blocked": "primary_background",
+        "accentLowContrast": false
+      }
+    },
+    {
+      "name": "noite · light",
+      "primaryColor": "#E7D3B0",
+      "accentColor": "#9A8C7A",
+      "backgroundMode": "light",
+      "expected": {
+        "primaryForeground": "#1F1F1F",
+        "primaryForegroundRatio": 11.25,
+        "primaryBackgroundRatio": 1.46,
+        "accentBackgroundRatio": 3.27,
+        "blocked": "primary_background",
+        "accentLowContrast": false
+      }
+    },
+    {
+      "name": "noite · cream",
+      "primaryColor": "#E7D3B0",
+      "accentColor": "#9A8C7A",
+      "backgroundMode": "cream",
+      "expected": {
+        "primaryForeground": "#1F1F1F",
+        "primaryForegroundRatio": 11.25,
+        "primaryBackgroundRatio": 1.37,
+        "accentBackgroundRatio": 3.07,
+        "blocked": "primary_background",
+        "accentLowContrast": false
+      }
+    },
+    {
+      "name": "noite · dark",
+      "primaryColor": "#E7D3B0",
+      "accentColor": "#9A8C7A",
+      "backgroundMode": "dark",
+      "expected": {
+        "primaryForeground": "#1F1F1F",
+        "primaryForegroundRatio": 11.25,
+        "primaryBackgroundRatio": 12.24,
+        "accentBackgroundRatio": 5.46,
+        "blocked": null,
+        "accentLowContrast": false
+      }
+    },
+    {
+      "name": "#777777 · light: 4,47:1 com o branco, abaixo de 4,5 sem arredondar",
+      "primaryColor": "#777777",
+      "accentColor": "#7A8B69",
+      "backgroundMode": "light",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 4.47,
+        "primaryBackgroundRatio": 4.47,
+        "accentBackgroundRatio": 3.66,
+        "blocked": "primary_foreground",
+        "accentLowContrast": false
+      }
+    },
+    {
+      "name": "#767676 · light: 4,54:1, passa",
+      "primaryColor": "#767676",
+      "accentColor": "#7A8B69",
+      "backgroundMode": "light",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 4.54,
+        "primaryBackgroundRatio": 4.54,
+        "accentBackgroundRatio": 3.66,
+        "blocked": null,
+        "accentLowContrast": false
+      }
+    },
+    {
+      "name": "#F5F5F5 · light: o texto passa, a cor some no fundo",
+      "primaryColor": "#F5F5F5",
+      "accentColor": "#7A8B69",
+      "backgroundMode": "light",
+      "expected": {
+        "primaryForeground": "#1F1F1F",
+        "primaryForegroundRatio": 15.11,
+        "primaryBackgroundRatio": 1.09,
+        "accentBackgroundRatio": 3.66,
+        "blocked": "primary_background",
+        "accentLowContrast": false
+      }
+    },
+    {
+      "name": "#15171C · dark: a cor some no fundo escuro",
+      "primaryColor": "#15171C",
+      "accentColor": "#9A8C7A",
+      "backgroundMode": "dark",
+      "expected": {
+        "primaryForeground": "#FFFFFF",
+        "primaryForegroundRatio": 17.93,
+        "primaryBackgroundRatio": 1.0,
+        "accentBackgroundRatio": 5.46,
+        "blocked": "primary_background",
+        "accentLowContrast": false
+      }
+    },
+    {
+      "name": "#808080 · dark: nem o branco nem o texto escuro chegam a 4,5",
+      "primaryColor": "#808080",
+      "accentColor": "#9A8C7A",
+      "backgroundMode": "dark",
+      "expected": {
+        "primaryForeground": "#1F1F1F",
+        "primaryForegroundRatio": 4.17,
+        "primaryBackgroundRatio": 4.53,
+        "accentBackgroundRatio": 5.46,
+        "blocked": "primary_foreground",
+        "accentLowContrast": false
+      }
+    }
+  ]
+}

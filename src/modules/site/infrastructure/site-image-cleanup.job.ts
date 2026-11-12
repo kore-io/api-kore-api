@@ -1,0 +1,56 @@
+import { InjectQueue, OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
+import type { Queue } from 'bullmq';
+import { upsertDailyScheduler } from '../../../shared/jobs/daily-scheduler';
+import { CleanSiteImages } from '../application/clean-site-images.use-case';
+import { CleanSitePreviewTokens } from '../application/clean-site-preview-tokens.use-case';
+
+export const SITE_IMAGE_CLEANUP_QUEUE = 'site-image-cleanup';
+export const SITE_IMAGE_CLEANUP_SCHEDULER_ID = 'clean-site-images';
+// Todo dia às 2h30, horário de Brasília, num horário sem outra rotina.
+const DAILY_AT_2_30AM = '30 2 * * *';
+
+const logger = new Logger('SiteImageCleanup');
+
+/** A limpeza diária do site: as imagens (S4 RN08) e os tokens da prévia (S6). */
+@Processor(SITE_IMAGE_CLEANUP_QUEUE)
+export class SiteImageCleanupProcessor extends WorkerHost {
+  constructor(
+    private readonly clean: CleanSiteImages,
+    private readonly cleanPreviewTokens: CleanSitePreviewTokens,
+  ) {
+    super();
+  }
+
+  async process(): Promise<void> {
+    const now = new Date();
+    const counts = await this.clean.execute({ now });
+    logger.log(
+      `Imagens do site: ${counts.stale} envios abandonados, ${counts.failed} recusadas e ${counts.unused} fora de uso.`,
+    );
+    // Os tokens da prévia com mais de 1 dia (Pré-visualização, modelo).
+    const tokens = await this.cleanPreviewTokens.execute({ now });
+    logger.log(`Tokens da prévia: ${tokens.deleted} apagados.`);
+  }
+
+  // Sem ouvinte de 'error', o worker derruba o processo quando o Redis cai.
+  @OnWorkerEvent('error')
+  onError(error: Error): void {
+    logger.warn(`Worker sem Redis: ${error.name}`);
+  }
+}
+
+/** Registra (ou atualiza) o agendamento diário na subida do worker. */
+@Injectable()
+export class SiteImageCleanupScheduler implements OnApplicationBootstrap {
+  constructor(@InjectQueue(SITE_IMAGE_CLEANUP_QUEUE) private readonly queue: Queue) {}
+
+  async onApplicationBootstrap(): Promise<void> {
+    await upsertDailyScheduler({
+      queue: this.queue,
+      schedulerId: SITE_IMAGE_CLEANUP_SCHEDULER_ID,
+      cronPattern: DAILY_AT_2_30AM,
+      logger,
+    });
+  }
+}

@@ -1,0 +1,869 @@
+// Fonte da verdade dos campos e tipos. O que o Prisma não expressa (RLS,
+// índices parciais, CHECK, extensões) vai em SQL manual dentro da migration.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Log da aplicação (Glossário): registro técnico de ações, inclusive as
+// sensíveis. Só inserção, sem RLS de casamento, fora do expurgo do casamento.
+// weddingId e actorUserId ficam sem FK de propósito: o log sobrevive ao
+// expurgo do casamento e à exclusão da conta.
+model ApplicationLog {
+  id               String              @id @default(uuid(7)) @db.Uuid
+  createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  weddingId        String?             @map("wedding_id") @db.Uuid
+  actorKind        ApplicationLogActor @map("actor_kind")
+  actorUserId      String?             @map("actor_user_id") @db.Uuid
+  supportSessionId String?             @map("support_session_id") @db.Uuid
+  action           String
+  entityType       String?             @map("entity_type")
+  entityId         String?             @map("entity_id")
+  data             Json?
+  ipHash           String?             @map("ip_hash")
+
+  @@index([weddingId, createdAt(sort: Desc)], map: "idx_application_logs_wedding_id_created_at")
+  @@index([actorUserId, createdAt(sort: Desc)], map: "idx_application_logs_actor_user_id_created_at")
+  @@index([action, createdAt(sort: Desc)], map: "idx_application_logs_action_created_at")
+  @@map("application_logs")
+}
+
+enum ApplicationLogActor {
+  user
+  party
+  admin
+  system
+
+  @@map("application_log_actor")
+}
+
+// Log de IP real (decisão 116; Marco Civil, art. 15): guarda o IP real por
+// 6 meses, separado do log da aplicação e do casamento. Só inserção; a rotina
+// de retenção apaga o que passou do prazo.
+model AccessIpLog {
+  id          String           @id @default(uuid(7)) @db.Uuid
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  occurredAt  DateTime         @map("occurred_at") @db.Timestamptz(3)
+  ip          String           @db.Inet
+  actorKind   AccessIpLogActor @map("actor_kind")
+  actorUserId String?          @map("actor_user_id") @db.Uuid
+  partyId     String?          @map("party_id") @db.Uuid
+  action      String
+
+  @@index([occurredAt], map: "idx_access_ip_logs_occurred_at")
+  @@map("access_ip_logs")
+}
+
+enum AccessIpLogActor {
+  user
+  party
+
+  @@map("access_ip_log_actor")
+}
+
+// Usuário (Glossário): casal, cerimonialista, vendedor ou Admin Kore.
+// Convidado não é User.
+model User {
+  id              String       @id @default(uuid(7)) @db.Uuid
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  email           String       @unique(map: "uq_users_email") @db.Citext
+  // Nulo até a pessoa informar o nome (cadastro do casal ou aceite de convite).
+  name            String?
+  avatarKey       String?      @map("avatar_key")
+  platformRole    PlatformRole @default(none) @map("platform_role")
+  status          UserStatus   @default(active)
+  lastLoginAt     DateTime?    @map("last_login_at") @db.Timestamptz(3)
+  termsVersion    String?      @map("terms_version")
+  termsAcceptedAt DateTime?    @map("terms_accepted_at") @db.Timestamptz(3)
+
+  authIdentities            AuthIdentity[]
+  sessions                  Session[]
+  weddingsCreated           Wedding[]            @relation("WeddingCreatedBy")
+  partners                  Partner[]
+  memberships               Membership[]         @relation("MembershipUser")
+  accessInvitationsSent     AccessInvitation[]   @relation("AccessInvitationInvitedBy")
+  accessInvitationsAccepted AccessInvitation[]   @relation("AccessInvitationAcceptedBy")
+  membershipsRemoved        Membership[]         @relation("MembershipRemovedBy")
+  referrer                  Referrer?            @relation("ReferrerUser")
+  referrersCreated          Referrer[]           @relation("ReferrerCreatedByAdmin")
+  organizationsCreated      Organization[]       @relation("OrganizationCreatedBy")
+  organizationMembers       OrganizationMember[]
+  referralSettingsUpdated   ReferralSettings[]
+  siteImagesUploaded        SiteImage[]          @relation("SiteImageUploadedBy")
+  sitePreviewTokens         SitePreviewToken[]
+
+  @@map("users")
+}
+
+enum PlatformRole {
+  none
+  admin
+  support
+
+  @@map("platform_role")
+}
+
+enum UserStatus {
+  active
+  blocked
+
+  @@map("user_status")
+}
+
+// Método de login (Google ou e-mail); um usuário pode ter os dois.
+model AuthIdentity {
+  id              String       @id @default(uuid(7)) @db.Uuid
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  userId          String       @map("user_id") @db.Uuid
+  provider        AuthProvider
+  providerSubject String       @map("provider_subject")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerSubject], map: "uq_auth_identities_provider_provider_subject")
+  @@index([userId], map: "idx_auth_identities_user_id")
+  @@map("auth_identities")
+}
+
+enum AuthProvider {
+  google
+  email
+
+  @@map("auth_provider")
+}
+
+// Sessão no servidor (ADR de login sem senha): token opaco no cookie, só o
+// hash no banco; vale 7 dias a partir do último uso (RN08 de Login).
+model Session {
+  id               String       @id @default(uuid(7)) @db.Uuid
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  userId           String       @map("user_id") @db.Uuid
+  tokenHash        String       @unique(map: "uq_sessions_token_hash") @map("token_hash")
+  expiresAt        DateTime     @map("expires_at") @db.Timestamptz(3)
+  lastSeenAt       DateTime     @map("last_seen_at") @db.Timestamptz(3)
+  // Hora do login: não se renova com o uso (RN13 de Login).
+  authenticatedAt  DateTime     @map("authenticated_at") @db.Timestamptz(3)
+  // Como foi o login: o backoffice exige o Google do domínio (RN12; decisão 139).
+  authMethod       AuthProvider @map("auth_method")
+  activeProfile    ProfileKind? @map("active_profile")
+  supportSessionId String?      @map("support_session_id") @db.Uuid
+  userAgent        String?      @map("user_agent")
+  revokedAt        DateTime?    @map("revoked_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_sessions_user_id")
+  @@index([expiresAt], map: "idx_sessions_expires_at")
+  @@map("sessions")
+}
+
+// Perfil: o jeito de a pessoa usar o Kore (RN14 de Login).
+enum ProfileKind {
+  couple
+  planner
+  seller
+
+  @@map("profile_kind")
+}
+
+// Evento de produto (Parecer pré-código; decisões 135 e 138): métrica própria
+// no Postgres, sem ferramenta de terceiros. O casamento entra só
+// pseudonimizado (weddingRef = HMAC do weddingId). Só inserção para a API;
+// retenção de 18 meses.
+model ProductEvent {
+  id         String           @id @default(uuid(7)) @db.Uuid
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  name       ProductEventName
+  occurredAt DateTime         @map("occurred_at") @db.Timestamptz(3)
+  weddingRef String?          @map("wedding_ref")
+  props      Json?
+
+  @@index([occurredAt], map: "idx_product_events_occurred_at")
+  @@index([name, occurredAt], map: "idx_product_events_name_occurred_at")
+  @@map("product_events")
+}
+
+// Só os nomes da lista do Parecer; cada fase acrescenta os seus por migration.
+enum ProductEventName {
+  conta_criada
+  cerim_link_gerado
+  casal_aceitou
+  // F1: Importação RN14 e Exportação RN08.
+  importacao
+  exportacao_buffet
+
+  @@map("product_event_name")
+}
+
+// Botão de acesso e código do e-mail (RN01 a RN06 de Login): valem 15 minutos
+// e uma vez só; guardamos só os hashes.
+model LoginChallenge {
+  id            String      @id @default(uuid(7)) @db.Uuid
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  email         String      @db.Citext
+  tokenHash     String      @unique(map: "uq_login_challenges_token_hash") @map("token_hash")
+  // HMAC com LOGIN_CODE_KEY: o código tem pouca entropia (decisão 139).
+  codeHash      String      @map("code_hash")
+  expiresAt     DateTime    @map("expires_at") @db.Timestamptz(3)
+  attempts      Int         @default(0)
+  consumedAt    DateTime?   @map("consumed_at") @db.Timestamptz(3)
+  // Pedido novo ou 5 erros (RN04, RN05).
+  invalidatedAt DateTime?   @map("invalidated_at") @db.Timestamptz(3)
+  origin        LoginOrigin @default(none)
+  // Token do convite de acesso ou código de indicação (RN06).
+  originRef     String?     @map("origin_ref")
+  requestIp     String?     @map("request_ip") @db.Inet
+
+  @@index([email, createdAt], map: "idx_login_challenges_email_created_at")
+  @@index([expiresAt], map: "idx_login_challenges_expires_at")
+  @@map("login_challenges")
+}
+
+// De onde a pessoa veio ao pedir o código (RN06 de Login).
+enum LoginOrigin {
+  invite
+  referral
+  couple_signup
+  planner_signup
+  none
+
+  @@map("login_origin")
+}
+
+// Casamento (Glossário): o tenant. Toda tabela do casamento tem weddingId e
+// RLS por vínculo (ADR de multi-tenant; decisão 153). Campos das próximas
+// fases entram com elas.
+model Wedding {
+  id                String          @id @default(uuid(7)) @db.Uuid
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+  // Endereço do site; único e minúsculo (RN04 e RN05 de Cadastro).
+  slug              String?         @unique(map: "uq_weddings_slug") @db.Citext
+  status            WeddingStatus
+  eventDate         DateTime?       @map("event_date") @db.Date
+  // Derivado da UF (RN03 de Cadastro).
+  timezone          String?
+  city              String?
+  state             String?         @db.Char(2)
+  createdByUserId   String?         @map("created_by_user_id") @db.Uuid
+  // Atividade que zera o prazo de exclusão sem dono (RN13 de Convites; decisão 136).
+  lastActivityAt    DateTime        @default(now()) @map("last_activity_at") @db.Timestamptz(3)
+  // Indicador que trouxe o casal (RN08 de Cadastro).
+  referrerId        String?         @map("referrer_id") @db.Uuid
+  referralSource    ReferralSource? @map("referral_source")
+  // Origem do cadastro (decisões 135 e 166).
+  signupSource      SignupSource?   @map("signup_source")
+  utmSource         String?         @map("utm_source")
+  utmMedium         String?         @map("utm_medium")
+  utmCampaign       String?         @map("utm_campaign")
+  // Aviso de 30 dias do expurgo sem dono (RN13 de Convites; decisão 180).
+  purgeNoticeSentAt DateTime?       @map("purge_notice_sent_at") @db.Timestamptz(3)
+  // Lápide: no expurgo, ficam id, status, purgedAt, o indicador e createdAt.
+  purgedAt          DateTime?       @map("purged_at") @db.Timestamptz(3)
+  // Site do casal (F2). Contato só para o grupo identificado (Dados básicos RN08).
+  contactEmail      String?         @map("contact_email") @db.Citext
+  // E.164.
+  contactWhatsapp   String?         @map("contact_whatsapp")
+  // Foto de capa: FK composta (id, cover_image_id) → site_images (wedding_id, id),
+  // ON DELETE SET NULL, só no SQL (Imagens do site RN10).
+  coverImageId      String?         @map("cover_image_id") @db.Uuid
+  locales           String[]        @default(["pt-BR"])
+  // A última gravação do Editor, para o "salvo às" (Dados básicos RN10).
+  siteUpdatedAt     DateTime?       @map("site_updated_at") @db.Timestamptz(3)
+  // Nula até a publicação (F4); trava o endereço (Dados básicos RN05; decisão 207(14)).
+  publishedAt       DateTime?       @map("published_at") @db.Timestamptz(3)
+  // Aparência (Aparência do site RN01 e RN02); nulas só na lápide.
+  fontPairKey       String?         @default("romantico") @map("font_pair_key")
+  starterPaletteKey String?         @default("terracota") @map("starter_palette_key")
+  primaryColor      String?         @default("#A94F37") @map("primary_color")
+  accentColor       String?         @default("#7A8B69") @map("accent_color")
+  backgroundMode    String?         @default("cream") @map("background_mode")
+  // Primeira gravação da Aparência ou criação pelo simulador (Aparência RN10).
+  appearanceSetAt   DateTime?       @map("appearance_set_at") @db.Timestamptz(3)
+
+  createdBy         User?              @relation("WeddingCreatedBy", fields: [createdByUserId], references: [id])
+  referrer          Referrer?          @relation(fields: [referrerId], references: [id])
+  partners          Partner[]
+  memberships       Membership[]
+  accessInvitations AccessInvitation[]
+  parties           Party[]
+  guests            Guest[]
+  tags              Tag[]
+  partyTags         PartyTag[]
+  guestTags         GuestTag[]
+  stats             WeddingStats?
+  siteImages        SiteImage[]
+  sections          Section[]
+  sectionContents   SectionContent[]
+  sitePreviewTokens SitePreviewToken[]
+
+  @@index([createdByUserId], map: "idx_weddings_created_by_user_id")
+  @@index([referrerId, status], map: "idx_weddings_referrer_id_status")
+  @@map("weddings")
+}
+
+// Ciclo de vida (Modelo de Dados).
+enum WeddingStatus {
+  awaiting_couple
+  draft
+  published
+  post_event
+  grace
+  expired
+  purged
+
+  @@map("wedding_status")
+}
+
+// Como o casamento ficou atribuído ao indicador (Modelo de Dados).
+enum ReferralSource {
+  created_by_planner
+  created_by_seller
+  referral_link
+  invited_before_payment
+  admin_reassigned
+
+  @@map("referral_source")
+}
+
+// De onde veio o cadastro; planner entra na F6 (decisão 135).
+enum SignupSource {
+  direct
+  simulator
+  referral_link
+  planner
+  made_with_kore
+
+  @@map("signup_source")
+}
+
+// Noivo ou noiva (Glossário: Partner, sem gênero no nome).
+model Partner {
+  id          String        @id @default(uuid(7)) @db.Uuid
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  weddingId   String        @map("wedding_id") @db.Uuid
+  slot        Int           @db.SmallInt
+  displayName String        @map("display_name")
+  // Nulo até a pessoa dizer se é noivo ou noiva (decisões 93 e 167).
+  title       PartnerTitle?
+  // Nulo até o noivo ter login.
+  userId      String?       @map("user_id") @db.Uuid
+
+  wedding Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id])
+
+  @@unique([weddingId, slot], map: "uq_partners_wedding_id_slot")
+  @@index([userId], map: "idx_partners_user_id")
+  @@map("partners")
+}
+
+// Valores em inglês (decisão 135, item 9).
+enum PartnerTitle {
+  bride
+  groom
+
+  @@map("partner_title")
+}
+
+// Vínculo de uma pessoa com um casamento (Glossário). owner é o casal;
+// collaborator é o cerimonialista, ou o vendedor enquanto o casal não aceitou.
+model Membership {
+  id              String         @id @default(uuid(7)) @db.Uuid
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  weddingId       String         @map("wedding_id") @db.Uuid
+  userId          String         @map("user_id") @db.Uuid
+  role            MembershipRole
+  removedAt       DateTime?      @map("removed_at") @db.Timestamptz(3)
+  removedByUserId String?        @map("removed_by_user_id") @db.Uuid
+
+  wedding   Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  user      User    @relation("MembershipUser", fields: [userId], references: [id])
+  removedBy User?   @relation("MembershipRemovedBy", fields: [removedByUserId], references: [id])
+
+  @@index([weddingId], map: "idx_memberships_wedding_id")
+  @@index([removedByUserId], map: "idx_memberships_removed_by_user_id")
+  @@map("memberships")
+}
+
+enum MembershipRole {
+  owner
+  collaborator
+
+  @@map("membership_role")
+}
+
+// Indicador (Glossário): cerimonialista ou vendedor que traz casamentos pelo
+// link de indicação. Dono da atribuição, da comissão e do repasse. Os campos
+// fiscais (taxId*) entram com o repasse (Payout).
+model Referrer {
+  id                      String         @id @default(uuid(7)) @db.Uuid
+  createdAt               DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt               DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  userId                  String         @unique(map: "uq_referrers_user_id") @map("user_id") @db.Uuid
+  kind                    ReferrerKind
+  // O link de indicação (/i/{código}); único sem diferenciar maiúsculas.
+  referralCode            String         @unique(map: "uq_referrers_referral_code") @map("referral_code") @db.Citext
+  // Percentual da comissão; nasce com o padrão do ReferralSettings.
+  ratePercent             Int            @map("rate_percent") @db.SmallInt
+  // Desconto de indicação para o casal (RN09 de Cadastro).
+  referralDiscountEnabled Boolean        @default(true) @map("referral_discount_enabled")
+  status                  ReferrerStatus @default(active)
+  // Só no vendedor, que o Admin cadastra.
+  createdByAdminUserId    String?        @map("created_by_admin_user_id") @db.Uuid
+  deactivatedAt           DateTime?      @map("deactivated_at") @db.Timestamptz(3)
+
+  user           User      @relation("ReferrerUser", fields: [userId], references: [id])
+  createdByAdmin User?     @relation("ReferrerCreatedByAdmin", fields: [createdByAdminUserId], references: [id])
+  planner        Planner?
+  weddings       Wedding[]
+
+  @@index([kind, status], map: "idx_referrers_kind_status")
+  @@index([createdByAdminUserId], map: "idx_referrers_created_by_admin_user_id")
+  @@map("referrers")
+}
+
+enum ReferrerKind {
+  planner
+  seller
+
+  @@map("referrer_kind")
+}
+
+enum ReferrerStatus {
+  active
+  blocked
+  inactive
+
+  @@map("referrer_status")
+}
+
+// Cerimonialista (Glossário): só o que é dele; a comissão fica no Referrer.
+model Planner {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  referrerId String   @unique(map: "uq_planners_referrer_id") @map("referrer_id") @db.Uuid
+  // Nome na assinatura do site e no destaque da indicação.
+  creditName String   @map("credit_name")
+  phone      String?
+  whatsapp   String?
+  cities     String[] @default([])
+
+  referrer Referrer @relation(fields: [referrerId], references: [id], onDelete: Cascade)
+
+  @@map("planners")
+}
+
+// Assessoria (Glossário), mínima (decisão 113): 1 membro no lançamento; a
+// conta com vários usuários entra antes da Fase 9.
+model Organization {
+  id              String   @id @default(uuid(7)) @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  name            String
+  createdByUserId String   @map("created_by_user_id") @db.Uuid
+
+  createdBy User                 @relation("OrganizationCreatedBy", fields: [createdByUserId], references: [id])
+  members   OrganizationMember[]
+
+  @@index([createdByUserId], map: "idx_organizations_created_by_user_id")
+  @@map("organizations")
+}
+
+// Membro da assessoria. event_staff existe só no modelo, sem tela (decisão 113).
+model OrganizationMember {
+  id             String                 @id @default(uuid(7)) @db.Uuid
+  createdAt      DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  organizationId String                 @map("organization_id") @db.Uuid
+  userId         String                 @map("user_id") @db.Uuid
+  role           OrganizationMemberRole
+  removedAt      DateTime?              @map("removed_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "idx_organization_members_user_id")
+  @@map("organization_members")
+}
+
+enum OrganizationMemberRole {
+  owner
+  member
+  event_staff
+
+  @@map("organization_member_role")
+}
+
+// Configurações da indicação: uma linha só, editável só pelo Admin; vale
+// para os pagamentos novos.
+model ReferralSettings {
+  id                      String   @id @default(uuid(7)) @db.Uuid
+  createdAt               DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt               DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  defaultRatePercent      Int      @map("default_rate_percent") @db.SmallInt
+  referralDiscountPercent Int      @map("referral_discount_percent") @db.SmallInt
+  commissionHoldDays      Int      @map("commission_hold_days") @db.SmallInt
+  payoutMinCents          Int      @map("payout_min_cents")
+  updatedByUserId         String?  @map("updated_by_user_id") @db.Uuid
+
+  updatedBy User? @relation(fields: [updatedByUserId], references: [id])
+
+  @@map("referral_settings")
+}
+
+// Convite de acesso (Glossário): do parceiro, do casal ou do cerimonialista.
+// Diferente do convite do casamento, que vai aos convidados. Guardamos só o
+// hash do token (RN03 de Convites). Pendente = sem aceite, recusa,
+// cancelamento nem substituição; o vencido continua pendente até o reenvio.
+model AccessInvitation {
+  id               String               @id @default(uuid(7)) @db.Uuid
+  createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  weddingId        String               @map("wedding_id") @db.Uuid
+  kind             AccessInvitationKind
+  // Nulo só no convite do casal por link, sem e-mail (RN14; decisão 102).
+  email            String?              @db.Citext
+  // O papel que o aceite concede.
+  role             MembershipRole
+  tokenHash        String               @unique(map: "uq_access_invitations_token_hash") @map("token_hash")
+  invitedByUserId  String               @map("invited_by_user_id") @db.Uuid
+  expiresAt        DateTime             @map("expires_at") @db.Timestamptz(3)
+  acceptedAt       DateTime?            @map("accepted_at") @db.Timestamptz(3)
+  acceptedByUserId String?              @map("accepted_by_user_id") @db.Uuid
+  // Quando a conta que aceitou tem outro e-mail (RN07).
+  acceptedForEmail String?              @map("accepted_for_email") @db.Citext
+  declinedAt       DateTime?            @map("declined_at") @db.Timestamptz(3)
+  revokedAt        DateTime?            @map("revoked_at") @db.Timestamptz(3)
+  // Reenvio, Convidar outro e-mail ou Gerar novo link (RN04).
+  supersededAt     DateTime?            @map("superseded_at") @db.Timestamptz(3)
+
+  wedding    Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  invitedBy  User    @relation("AccessInvitationInvitedBy", fields: [invitedByUserId], references: [id])
+  acceptedBy User?   @relation("AccessInvitationAcceptedBy", fields: [acceptedByUserId], references: [id])
+
+  @@index([weddingId], map: "idx_access_invitations_wedding_id")
+  @@index([invitedByUserId], map: "idx_access_invitations_invited_by_user_id")
+  @@index([acceptedByUserId], map: "idx_access_invitations_accepted_by_user_id")
+  @@map("access_invitations")
+}
+
+enum AccessInvitationKind {
+  partner
+  couple
+  planner
+
+  @@map("access_invitation_kind")
+}
+
+// Grupo (Glossário): a unidade de envio e de resposta (Grupos e convidados
+// RN01). O nome não é único. Lixeira por deletedAt (Lixeira RN03).
+// O contato (contactGuestId) tem FK composta (id, contact_guest_id) →
+// guests(party_id, id), DEFERRABLE, em SQL manual na migration: o Prisma não
+// expressa, e é ela que garante que o contato é do mesmo grupo (Modelo de
+// Dados, invariante 12.2). Não declarar a relação aqui.
+model Party {
+  id                String              @id @default(uuid(7)) @db.Uuid
+  createdAt         DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  weddingId         String              @map("wedding_id") @db.Uuid
+  name              String
+  internalNote      String?             @map("internal_note")
+  // Link do grupo: token de 128 bits (RN11); a versão sobe a cada regeneração (RN12).
+  linkToken         String              @unique(map: "uq_parties_link_token") @map("link_token")
+  linkVersion       Int                 @default(1) @map("link_version")
+  linkRegeneratedAt DateTime?           @map("link_regenerated_at") @db.Timestamptz(3)
+  contactGuestId    String?             @map("contact_guest_id") @db.Uuid
+  // Igual ao número de Guest isPlusOne ativos do grupo (RN07).
+  plusOneSlots      Int                 @default(0) @map("plus_one_slots")
+  deliveryStatus    PartyDeliveryStatus @default(not_sent) @map("delivery_status")
+  // Envio e primeira visualização (Fase 4): o status de envio volta a eles
+  // quando um grupo respondido passa a ter pendente (Grupos RN10).
+  sentAt            DateTime?           @map("sent_at") @db.Timestamptz(3)
+  firstViewedAt     DateTime?           @map("first_viewed_at") @db.Timestamptz(3)
+  respondedAt       DateTime?           @map("responded_at") @db.Timestamptz(3)
+  deletedAt         DateTime?           @map("deleted_at") @db.Timestamptz(3)
+
+  wedding           Wedding            @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  guests            Guest[]
+  tags              PartyTag[]
+  sitePreviewTokens SitePreviewToken[]
+
+  @@unique([weddingId, id], map: "uq_parties_wedding_id_id")
+  @@map("parties")
+}
+
+enum PartyDeliveryStatus {
+  not_sent
+  sent
+  viewed
+  responded
+
+  @@map("party_delivery_status")
+}
+
+// Convidado (Glossário). Vaga de acompanhante = Guest isPlusOne sem nome (RN07).
+// A ordem no grupo é joinedPartyAt, id (RN17). trashBatchId marca quem foi
+// para a lixeira junto com o grupo (Lixeira RN03).
+model Guest {
+  id                 String         @id @default(uuid(7)) @db.Uuid
+  createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  weddingId          String         @map("wedding_id") @db.Uuid
+  partyId            String         @map("party_id") @db.Uuid
+  // Nulo só na vaga de acompanhante vazia.
+  name               String?
+  email              String?        @db.Citext
+  // E.164 (RN04).
+  phone              String?
+  ageGroup           GuestAgeGroup? @map("age_group")
+  dietaryRestriction String?        @map("dietary_restriction")
+  isPlusOne          Boolean        @default(false) @map("is_plus_one")
+  rsvpStatus         RsvpStatus     @default(pending) @map("rsvp_status")
+  respondedAt        DateTime?      @map("responded_at") @db.Timestamptz(3)
+  joinedPartyAt      DateTime       @default(now()) @map("joined_party_at") @db.Timestamptz(3)
+  trashBatchId       String?        @map("trash_batch_id") @db.Uuid
+  deletedAt          DateTime?      @map("deleted_at") @db.Timestamptz(3)
+
+  wedding Wedding    @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  party   Party      @relation(fields: [weddingId, partyId], references: [weddingId, id], onDelete: Cascade)
+  tags    GuestTag[]
+
+  @@unique([weddingId, id], map: "uq_guests_wedding_id_id")
+  @@unique([partyId, id], map: "uq_guests_party_id_id")
+  @@index([weddingId, partyId], map: "idx_guests_wedding_id_party_id")
+  @@map("guests")
+}
+
+enum GuestAgeGroup {
+  adult
+  child
+  baby
+
+  @@map("guest_age_group")
+}
+
+enum RsvpStatus {
+  pending
+  confirmed
+  declined
+
+  @@map("rsvp_status")
+}
+
+// Tag (Glossário): até 10 ativas por casamento, nome único entre as ativas sem
+// diferenciar maiúsculas (índice parcial em SQL manual; Tags RN01 e RN02).
+model Tag {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  weddingId String    @map("wedding_id") @db.Uuid
+  name      String
+  color     TagColor?
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  wedding Wedding    @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  parties PartyTag[]
+  guests  GuestTag[]
+
+  @@unique([weddingId, id], map: "uq_tags_wedding_id_id")
+  @@map("tags")
+}
+
+// Nomes de token das cores de tag do Design System (decisões 191(1) e 192(4)).
+enum TagColor {
+  wine
+  champagne
+  green
+  amber
+  red
+  blue
+
+  @@map("tag_color")
+}
+
+// Tag do grupo. Fica guardada com a tag na lixeira, para a restauração (Lixeira RN05).
+model PartyTag {
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  weddingId String   @map("wedding_id") @db.Uuid
+  partyId   String   @map("party_id") @db.Uuid
+  tagId     String   @map("tag_id") @db.Uuid
+
+  wedding Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  party   Party   @relation(fields: [weddingId, partyId], references: [weddingId, id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [weddingId, tagId], references: [weddingId, id], onDelete: Cascade)
+
+  @@id([partyId, tagId], map: "party_tags_pkey")
+  @@index([tagId], map: "idx_party_tags_tag_id")
+  @@index([weddingId], map: "idx_party_tags_wedding_id")
+  @@map("party_tags")
+}
+
+// Tag do convidado (na F1, só pela planilha; decisão 185(3)).
+model GuestTag {
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  weddingId String   @map("wedding_id") @db.Uuid
+  guestId   String   @map("guest_id") @db.Uuid
+  tagId     String   @map("tag_id") @db.Uuid
+
+  wedding Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  guest   Guest   @relation(fields: [weddingId, guestId], references: [weddingId, id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [weddingId, tagId], references: [weddingId, id], onDelete: Cascade)
+
+  @@id([guestId, tagId], map: "guest_tags_pkey")
+  @@index([tagId], map: "idx_guest_tags_tag_id")
+  @@index([weddingId], map: "idx_guest_tags_wedding_id")
+  @@map("guest_tags")
+}
+
+// Números do casamento (Grupos RN16; Modelo de Dados, invariante 12): contam os
+// Guest ativos, vagas incluídas. Uma linha por casamento, criada pelo gatilho
+// do cadastro. rsvpPercent é coluna gerada no banco (SQL manual): nunca gravar.
+model WeddingStats {
+  weddingId         String   @id @map("wedding_id") @db.Uuid
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  guestsTotal       Int      @default(0) @map("guests_total")
+  confirmed         Int      @default(0)
+  declined          Int      @default(0)
+  pending           Int      @default(0)
+  adultsConfirmed   Int      @default(0) @map("adults_confirmed")
+  childrenConfirmed Int      @default(0) @map("children_confirmed")
+  babiesConfirmed   Int      @default(0) @map("babies_confirmed")
+  partiesPending    Int      @default(0) @map("parties_pending")
+  rsvpPercent       Decimal  @default(0) @map("rsvp_percent") @db.Decimal(5, 2)
+
+  wedding Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+
+  @@index([rsvpPercent], map: "idx_wedding_stats_rsvp_percent")
+  @@map("wedding_stats")
+}
+
+// Imagem do site (Imagens do site): capa, Nossa história e Dress code. Nasce
+// em `uploading` na autorização de envio e fica `ready` depois do
+// processamento. As chaves não levam o weddingId (RN06): o original fica em
+// `site/<id>/original` no bucket privado; as versões, em `site/<id>/…` no público.
+model SiteImage {
+  id               String          @id @default(uuid(7)) @db.Uuid
+  createdAt        DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+  weddingId        String          @map("wedding_id") @db.Uuid
+  status           SiteImageStatus @default(uploading)
+  // A versão servida (display.jpg, até 2560 px).
+  storageKey       String          @map("storage_key")
+  thumbKey         String?         @map("thumb_key")
+  ogKey            String?         @map("og_key")
+  // O tamanho pedido na autorização; o da versão servida depois do processamento.
+  sizeBytes        Int             @map("size_bytes")
+  width            Int?
+  height           Int?
+  uploadedByUserId String?         @map("uploaded_by_user_id") @db.Uuid
+  readyAt          DateTime?       @map("ready_at") @db.Timestamptz(3)
+  // Fora de uso desde (RN08): readyAt na confirmação, nulo em uso, now() ao sair.
+  unusedSince      DateTime?       @map("unused_since") @db.Timestamptz(3)
+
+  wedding    Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  uploadedBy User?   @relation("SiteImageUploadedBy", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([weddingId, id], map: "uq_site_images_wedding_id_id")
+  @@index([weddingId, status], map: "idx_site_images_wedding_id_status")
+  @@index([status, unusedSince], map: "idx_site_images_status_unused_since")
+  @@map("site_images")
+}
+
+enum SiteImageStatus {
+  uploading
+  processing
+  ready
+  failed
+
+  @@map("site_image_status")
+}
+
+// Seção do site (Seções do site): as 6 da F2 nascem com o casamento, na ordem
+// fixa de position. Desligar só esconde (RN11).
+model Section {
+  id        String      @id @default(uuid(7)) @db.Uuid
+  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+  weddingId String      @map("wedding_id") @db.Uuid
+  type      SectionType
+  enabled   Boolean     @default(false)
+  position  Int
+  // Até 80; nulo na contagem regressiva (RN02).
+  title     String?
+
+  wedding  Wedding          @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  contents SectionContent[]
+
+  @@unique([weddingId, type], map: "uq_sections_wedding_id_type")
+  @@unique([weddingId, id], map: "uq_sections_wedding_id_id")
+  @@map("sections")
+}
+
+enum SectionType {
+  story
+  countdown
+  ceremony
+  lodging
+  dress_code
+  faq
+  gallery
+  gifts
+  messages
+
+  @@map("section_type")
+}
+
+// Conteúdo da seção por idioma (pt-BR na F2): jsonb validado pelo DTO do tipo (RN12).
+model SectionContent {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  weddingId String   @map("wedding_id") @db.Uuid
+  sectionId String   @map("section_id") @db.Uuid
+  locale    String
+  content   Json
+
+  wedding Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  section Section @relation(fields: [weddingId, sectionId], references: [weddingId, id], onDelete: Cascade)
+
+  @@unique([sectionId, locale], map: "uq_section_contents_section_id_locale")
+  @@index([weddingId], map: "idx_section_contents_wedding_id")
+  @@map("section_contents")
+}
+
+// Token da pré-visualização do site (Pré-visualização RN02): 128 bits, uso
+// único, 5 minutos, guardado só em hash; trocado pelo cookie da prévia.
+model SitePreviewToken {
+  id        String          @id @default(uuid(7)) @db.Uuid
+  createdAt DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  weddingId String          @map("wedding_id") @db.Uuid
+  userId    String          @map("user_id") @db.Uuid
+  // SHA-256 do token, em hex.
+  tokenHash String          @unique(map: "uq_site_preview_tokens_token_hash") @map("token_hash")
+  mode      SitePreviewMode
+  // Só no modo party; FK composta com o casamento.
+  partyId   String?         @map("party_id") @db.Uuid
+  expiresAt DateTime        @map("expires_at") @db.Timestamptz(3)
+  usedAt    DateTime?       @map("used_at") @db.Timestamptz(3)
+
+  wedding Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  party   Party?  @relation(fields: [weddingId, partyId], references: [weddingId, id], onDelete: Cascade)
+
+  @@index([weddingId], map: "idx_site_preview_tokens_wedding_id")
+  @@index([createdAt], map: "idx_site_preview_tokens_created_at")
+  @@map("site_preview_tokens")
+}
+
+enum SitePreviewMode {
+  visitor
+  party
+
+  @@map("site_preview_mode")
+}

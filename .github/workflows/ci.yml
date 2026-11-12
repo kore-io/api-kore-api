@@ -1,0 +1,108 @@
+# CI do api-kore-api (ADR "GitHub Actions para CI-CD", decisão 145): roda em todo
+# push, em qualquer branch; o PR mostra o resultado do último push.
+name: CI
+
+# Actions fixadas pelo SHA do commit (cadeia de fornecimento); a tag fica no comentário.
+
+on:
+  push:
+
+permissions:
+  contents: read
+
+# Um push novo cancela o anterior na mesma branch, menos em homolog e production.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/homolog' && github.ref != 'refs/heads/production' }}
+
+jobs:
+  commitlint:
+    name: Commits (Conventional Commits)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: wagoid/commitlint-github-action@b948419dd99f3fd78a6548d48f94e3df7f6bf3ed # v6.2.1
+
+  check:
+    name: Formatação, lint, tipos, testes unitários, build e OpenAPI
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # O openapi:check monta a aplicação, que abre as filas no Redis.
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # A versão do pnpm vem do packageManager do package.json; a do Node, do .nvmrc.
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # O postinstall gera o client do Prisma.
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+      # Falha se rota ou DTO mudou sem o openapi.json regravado (decisão 149).
+      - run: pnpm openapi:check
+
+  e2e:
+    name: Testes ponta a ponta (Postgres, Redis, Mailpit e MinIO reais)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Mesmas portas e credenciais do docker-compose local, que o .env.test usa.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: kore
+          POSTGRES_PASSWORD: kore
+          POSTGRES_DB: kore
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U kore -d kore" --health-interval 5s --health-timeout 3s --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 20
+      mailpit:
+        image: axllent/mailpit:v1.33.0
+        ports:
+          - 1025:1025
+          - 8025:8025
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      # O MinIO precisa do comando "server", que os services do Actions não aceitam.
+      - name: Subir o MinIO
+        run: |
+          docker run -d --name kore-minio -p 9000:9000 \
+            -e MINIO_ROOT_USER=kore -e MINIO_ROOT_PASSWORD=kore-minio-local \
+            -e MINIO_API_CORS_ALLOW_ORIGIN=http://localhost:5173 \
+            cgr.dev/chainguard/minio:latest@sha256:3c60a2a8c4d33409a9bc7a623a7fcbfb4605adc3d89422d2f53b3f673a6e5597 \
+            server /data
+          for i in $(seq 1 30); do curl -sf http://localhost:9000/minio/health/live && exit 0; sleep 1; done
+          docker logs kore-minio; exit 1
+      # O globalSetup cria o kore_test, aplica as migrations e os usuários do banco.
+      - run: pnpm test:e2e
