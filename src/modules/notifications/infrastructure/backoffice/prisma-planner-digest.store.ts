@@ -16,6 +16,12 @@ const SEND_TRANSACTION_TIMEOUT_MS = 30_000;
 export class PrismaPlannerDigestStore implements PlannerDigestStore {
   constructor(private readonly prisma: BackofficePrismaService) {}
 
+  /**
+   * Só quem ainda pode receber: a resposta com a colaboração ativa, a
+   * publicação com a colaboração ou a indicação, e a preferência geral do tipo
+   * em Resumo diário (o padrão). Sem isso, a lista só cresceria. O envio
+   * confere tudo de novo, travado (D18).
+   */
   async candidates(): Promise<string[]> {
     const rows = await this.prisma.$queryRaw<{ user_id: string }[]>`
       SELECT DISTINCT n.user_id::text AS user_id
@@ -26,6 +32,17 @@ export class PrismaPlannerDigestStore implements PlannerDigestStore {
         ON s.user_id = n.user_id AND s.wedding_id = n.wedding_id
       WHERE n.type IN ('rsvp', 'wedding_published')
         AND (s.emailed_through IS NULL OR n.updated_at > s.emailed_through)
+        AND COALESCE((
+          SELECT np.email::text FROM notification_preferences np
+          WHERE np.user_id = n.user_id AND np.wedding_id IS NULL AND np.type = n.type
+        ), 'daily') = 'daily'
+        AND (
+          EXISTS (
+            SELECT 1 FROM memberships m
+            WHERE m.user_id = n.user_id AND m.wedding_id = n.wedding_id
+              AND m.role = 'collaborator' AND m.removed_at IS NULL)
+          OR (n.type = 'wedding_published' AND EXISTS (
+            SELECT 1 FROM weddings w WHERE w.id = n.wedding_id AND w.referrer_id = r.id)))
         AND NOT EXISTS (
           SELECT 1 FROM memberships m
           WHERE m.user_id = n.user_id AND m.wedding_id = n.wedding_id

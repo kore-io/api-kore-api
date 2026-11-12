@@ -130,12 +130,35 @@ export class PrismaNotificationEmailStore implements NotificationEmailStore {
     };
   }
 
+  /**
+   * Só os pares que ainda podem receber: sem isso, quem desligou o e-mail ou
+   * perdeu o vínculo ficaria na lista para sempre (a lista só cresceria). O
+   * dono, com a preferência do casamento ligada; a cerimonialista com Planner,
+   * só com a geral em "Na hora" (o resumo dela é o agrupado, no PlannerDigest).
+   * O envio confere tudo de novo, travado (D18).
+   */
   candidates(): Promise<EmailCandidate[]> {
     return this.prisma.$queryRaw<EmailCandidate[]>`
       SELECT DISTINCT n.user_id::text AS "userId", n.wedding_id::text AS "weddingId"
       FROM notifications n
+      JOIN memberships m
+        ON m.user_id = n.user_id AND m.wedding_id = n.wedding_id AND m.removed_at IS NULL
       LEFT JOIN notification_email_states s
         ON s.user_id = n.user_id AND s.wedding_id = n.wedding_id
-      WHERE n.type = 'rsvp' AND (s.emailed_through IS NULL OR n.updated_at > s.emailed_through)`;
+      WHERE n.type = 'rsvp'
+        AND (s.emailed_through IS NULL OR n.updated_at > s.emailed_through)
+        AND (
+          (m.role = 'owner' AND COALESCE((
+            SELECT p.email::text FROM notification_preferences p
+            WHERE p.user_id = n.user_id AND p.wedding_id = n.wedding_id AND p.type = 'rsvp'
+          ), 'daily') <> 'off')
+          OR (m.role = 'collaborator'
+            AND EXISTS (
+              SELECT 1 FROM referrers r JOIN planners pl ON pl.referrer_id = r.id
+              WHERE r.user_id = n.user_id AND r.kind = 'planner' AND r.status = 'active')
+            AND (
+              SELECT p.email::text FROM notification_preferences p
+              WHERE p.user_id = n.user_id AND p.wedding_id IS NULL AND p.type = 'rsvp'
+            ) = 'immediate'))`;
   }
 }

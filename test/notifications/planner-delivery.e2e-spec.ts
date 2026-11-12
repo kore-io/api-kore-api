@@ -1,6 +1,14 @@
 import type { TestingModule } from '@nestjs/testing';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { PlannerDigest } from '../../src/modules/notifications/application/planner-digest.use-case';
+import {
+  NOTIFICATION_EMAIL_STORE,
+  type NotificationEmailStore,
+} from '../../src/modules/notifications/application/ports/notification-email-store.port';
+import {
+  PLANNER_DIGEST_STORE,
+  type PlannerDigestStore,
+} from '../../src/modules/notifications/application/ports/planner-digest-store.port';
 import type {
   PushResult,
   PushTarget,
@@ -300,5 +308,76 @@ describe('Envio das notificações da cerimonialista (worker)', () => {
     await generalPreference(juliana.userId, 'rsvp', { email: 'off' });
 
     expect(await digest.send({ userId: juliana.userId, now: evening(6) })).toBe(false);
+  });
+
+  it('RN04 e D18 - a rotina de 15 minutos só varre quem ainda pode receber', async () => {
+    const pairs = async () =>
+      (await worker.get<NotificationEmailStore>(NOTIFICATION_EMAIL_STORE).candidates()).map(
+        ({ userId, weddingId }) => `${userId}:${weddingId}`,
+      );
+    const digestUsers = () => worker.get<PlannerDigestStore>(PLANNER_DIGEST_STORE).candidates();
+
+    // A cerimonialista em "Na hora" entra nas duas listas que lhe cabem só pela preferência.
+    const immediate = await planner();
+    const a = await collaboration(immediate);
+    await generalPreference(immediate.userId, 'rsvp', { email: 'immediate' });
+    // No padrão (Resumo diário): fora da rotina por casamento, dentro do agrupado.
+    const daily = await planner();
+    const b = await collaboration(daily);
+    // Com o e-mail desligado: fora das duas.
+    const off = await planner();
+    const c = await collaboration(off);
+    await generalPreference(off.userId, 'rsvp', { email: 'off' });
+    // Removida: fora das duas.
+    const removed = await planner();
+    const d = await collaboration(removed);
+    await generalPreference(removed.userId, 'rsvp', { email: 'immediate' });
+    await db.membership.updateMany({
+      where: { weddingId: d.weddingId, userId: removed.userId },
+      data: { removedAt: new Date() },
+    });
+    // O vendedor: fora das duas.
+    const lucas = await seedReferrer({ db, kind: 'seller', name: 'Lucas Andrade' });
+    const e = await collaboration({ userId: lucas.userId });
+    await generalPreference(lucas.userId, 'rsvp', { email: 'immediate' });
+    // A dona com o e-mail do casamento desligado: fora; no padrão, dentro.
+    const ownerOff = await db.notification.create({
+      data: {
+        userId: a.anaId,
+        weddingId: a.weddingId,
+        type: 'rsvp',
+        groupKey: `rsvp:${a.weddingId}`,
+        payload: [],
+      },
+    });
+    await db.notification.create({
+      data: {
+        userId: b.anaId,
+        weddingId: b.weddingId,
+        type: 'rsvp',
+        groupKey: `rsvp:${b.weddingId}`,
+        payload: [],
+      },
+    });
+    await db.notificationPreference.create({
+      data: { userId: ownerOff.userId, weddingId: a.weddingId, type: 'rsvp', email: 'off' },
+    });
+
+    const found = await pairs();
+    expect(found).toContain(`${immediate.userId}:${a.weddingId}`);
+    expect(found).toContain(`${b.anaId}:${b.weddingId}`);
+    for (const pair of [
+      `${daily.userId}:${b.weddingId}`,
+      `${off.userId}:${c.weddingId}`,
+      `${removed.userId}:${d.weddingId}`,
+      `${lucas.userId}:${e.weddingId}`,
+      `${a.anaId}:${a.weddingId}`,
+    ])
+      expect(found).not.toContain(pair);
+
+    const users = await digestUsers();
+    expect(users).toContain(daily.userId);
+    for (const userId of [immediate.userId, off.userId, removed.userId, lucas.userId])
+      expect(users).not.toContain(userId);
   });
 });
