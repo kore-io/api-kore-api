@@ -5599,6 +5599,198 @@
           "rsvp"
         ]
       }
+    },
+    "/v1/weddings/{weddingId}/message-templates": {
+      "get": {
+        "operationId": "MessageTemplatesController_all_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageTemplatesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "As três mensagens, com o padrão quando o casal não editou.",
+        "tags": [
+          "rsvp"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/message-templates/{kind}": {
+      "put": {
+        "operationId": "MessageTemplatesController_put_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": [
+                "invite",
+                "save_the_date",
+                "reminder"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveMessageTemplateBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageTemplateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkPlaceholderMissingErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Grava a mensagem de um tipo, ou volta ao padrão com `reset`.",
+        "tags": [
+          "rsvp"
+        ]
+      }
     }
   },
   "info": {
@@ -11585,6 +11777,98 @@
           "status",
           "version"
         ]
+      },
+      "MessageTemplateResponse": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "invite",
+              "save_the_date",
+              "reminder"
+            ],
+            "type": "string"
+          },
+          "subject": {
+            "type": "string",
+            "description": "O assunto do e-mail (o padrão quando o casal não escreveu um)."
+          },
+          "body": {
+            "type": "string"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Sem mensagem guardada: é a padrão."
+          }
+        },
+        "required": [
+          "kind",
+          "subject",
+          "body",
+          "isDefault"
+        ]
+      },
+      "MessageTemplatesResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "As três: convite, save the date e lembrete.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageTemplateResponse"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "LinkPlaceholderMissingErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "LINK_PLACEHOLDER_MISSING"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SaveMessageTemplateBody": {
+        "type": "object",
+        "properties": {
+          "reset": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "subject": {
+            "type": "string",
+            "nullable": true,
+            "description": "Sem quebra de linha.",
+            "maxLength": 120,
+            "pattern": "^[^\\r\\n]*$"
+          }
+        }
       },
       "SpreadsheetTemplateHeaders": {
         "type": "string",
