@@ -139,4 +139,20 @@ describe('Barreiras do aceite pelo SQLSTATE (banco real, adapter do aceite)', ()
     expect(await acceptAs({ userId, token, slot: 1 })).toBe('self_referral');
     expect(await db.membership.count({ where: { weddingId, role: 'owner' } })).toBe(0);
   });
+
+  it('KA005 (Novo casamento RN05) - quem criou o casamento, sem ser o indicador: self_referral', async () => {
+    const { ana, weddingId } = await anaWedding();
+    // Sem vínculo e sem indicador: a barreira é só por ter criado o casamento.
+    await db.membership.updateMany({ where: { weddingId }, data: { removedAt: new Date() } });
+    await db.partner.updateMany({ where: { weddingId }, data: { userId: null } });
+    const { token } = await seedInvitation({
+      db,
+      weddingId,
+      kind: 'couple',
+      email: null,
+      invitedByUserId: ana,
+    });
+
+    expect(await acceptAs({ userId: ana, token, slot: 1 })).toBe('self_referral');
+  });
 });

@@ -159,7 +159,7 @@ export class CreateWedding {
 }
 
 /** As cores em maiúsculas, o contraste conferido e a paleta só com as cores dela (Aparência RN04 a RN07). */
-function checkedAppearance({
+export function checkedAppearance({
   input,
 }: {
   input: SiteAppearanceInput;

@@ -26,6 +26,8 @@ import {
   LastOwnerError,
   WeddingHasNoOwnerError,
   SelfReferralError,
+  SelfInvitationError,
+  OwnerlessWeddingsLimitError,
   MembershipNotFoundError,
   SellerCannotBePlannerError,
   InvitationNotDeclinableError,
@@ -286,6 +288,20 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 409,
       error: 'WEDDING_HAS_NO_OWNER',
       message: 'The wedding has no owner yet; delete it instead of leaving.',
+    });
+  }
+  if (error instanceof OwnerlessWeddingsLimitError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'OWNERLESS_WEDDINGS_LIMIT',
+      message: 'Too many weddings still without the couple.',
+    });
+  }
+  if (error instanceof SelfInvitationError) {
+    return new UnprocessableEntityException({
+      statusCode: 422,
+      error: 'SELF_INVITATION',
+      message: 'This is the e-mail of your account; use the couple e-mail.',
     });
   }
   if (error instanceof SelfReferralError) {

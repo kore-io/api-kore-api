@@ -13,6 +13,8 @@ import type {
   PendingInvitation,
 } from './ports/access-invitation-store.port';
 import type { InvitationEmail, InvitationMailer } from './ports/invitation-mailer.port';
+import { SelfInvitationError } from '../domain/access.errors';
+import type { UserRepository } from './ports/user-repository.port';
 import { SendAccessInvitations } from './send-access-invitations.use-case';
 import type { WeddingAuthorization } from './wedding-authorization.service';
 
@@ -95,6 +97,14 @@ function setup({
   const authorization = {
     require: jest.fn().mockResolvedValue(role),
   } as unknown as WeddingAuthorization;
+  const users = {
+    findProfileById: jest.fn().mockResolvedValue({
+      id: 'u-juliana',
+      name: 'Juliana Prado',
+      email: 'Juliana@Prado.com.br',
+      platformRole: 'none',
+    }),
+  } satisfies UserRepository;
   const useCase = new SendAccessInvitations(
     authorization,
     store,
@@ -102,6 +112,7 @@ function setup({
     mailer,
     productEvents,
     afterCommit,
+    users,
   );
   return { useCase, store, inserted, superseded, emails, productEvents, authorization, commit };
 }
@@ -291,5 +302,24 @@ describe('SendAccessInvitations (POST /v1/weddings/{weddingId}/access-invitation
     await commit();
 
     expect(productEvents.record).not.toHaveBeenCalled();
+  });
+
+  it('Novo casamento RN05 - o convite do casal para o e-mail da própria conta: SELF_INVITATION, sem gravar nada', async () => {
+    const { useCase, inserted, superseded } = setup({
+      wedding: plannerWedding,
+      inviter: juliana,
+      role: 'collaborator',
+    });
+
+    await expect(
+      useCase.execute({
+        ...base,
+        userId: 'u-juliana',
+        kind: 'couple',
+        emails: ['fernanda@x.com', 'juliana@prado.com.br'],
+      }),
+    ).rejects.toThrow(SelfInvitationError);
+    expect(inserted).toEqual([]);
+    expect(superseded).toEqual([]);
   });
 });

@@ -34,10 +34,13 @@ export class WeddingAuthorization {
     const role = await this.memberships.activeRole({ userId, weddingId });
     if (role === null) return false;
     if (role === 'owner') return true;
+    const origin = await this.memberships.weddingOrigin({ weddingId });
     return canManageSiteIdentity({
       role,
       referrerKind: await this.plannerProfiles.referrerKind({ userId }),
       hasActiveOwner: await this.memberships.hasActiveOwner({ weddingId }),
+      createdByMe: origin?.createdByUserId === userId,
+      referralSource: origin?.referralSource ?? null,
     });
   }
 

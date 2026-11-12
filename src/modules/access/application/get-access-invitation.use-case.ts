@@ -1,10 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { firstName, type AccessInvitationKind } from '../domain/access-invitation';
-import { InvitationInvalidError } from '../domain/access.errors';
+import { InvitationInvalidError, SelfReferralError } from '../domain/access.errors';
 import {
   coupleNames,
   emailDiffers,
   invalidReason,
+  isSelfReferral,
   type InvitationSnapshot,
 } from '../domain/invitation-acceptance';
 import { toReferral } from '../domain/referral';
@@ -77,6 +78,10 @@ export class GetAccessInvitation {
     if (!invitation) throw new InvitationInvalidError({ reason: 'used' });
     const reason = invalidReason({ invitation, now });
     if (reason) throw new InvitationInvalidError({ reason });
+    // Novo casamento RN05: com sessão, a prévia já acusa a autoindicação, e o
+    // app mostra o Convite inválido antes de a pessoa tentar aceitar.
+    if (sessionUserId && isSelfReferral({ invitation, userId: sessionUserId }))
+      throw new SelfReferralError();
 
     const sessionUser = sessionUserId
       ? await this.users.findProfileById({ userId: sessionUserId })

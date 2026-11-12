@@ -73,17 +73,21 @@ export function invalidReason({
 
 /**
  * Decisão 224(2): no convite do casal (link ou e-mail), quem aceita não pode
- * ser o indicador a que o casamento está atribuído. O convite do cerimonialista
+ * ser o indicador a que o casamento está atribuído nem quem o criou. O convite do cerimonialista
  * não entra: ali o indicador é quem deve aceitar (RN10).
  */
 export function isSelfReferral({
   invitation,
   userId,
 }: {
-  invitation: Pick<InvitationSnapshot, 'kind' | 'referrer'>;
+  invitation: Pick<InvitationSnapshot, 'kind' | 'referrer'> & {
+    wedding: Pick<InvitationSnapshot['wedding'], 'createdByUserId'>;
+  };
   userId: string;
 }): boolean {
-  return invitation.kind === 'couple' && invitation.referrer?.userId === userId;
+  if (invitation.kind !== 'couple') return false;
+  // Novo casamento RN05: nem o indicador nem quem criou o casamento.
+  return invitation.referrer?.userId === userId || invitation.wedding.createdByUserId === userId;
 }
 
 /** RN07: o convite por e-mail foi para outro endereço; o link sem e-mail não compara. */

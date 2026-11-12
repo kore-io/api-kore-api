@@ -53,8 +53,9 @@ export function roleAllows({
 
 /**
  * Mudar a data, a UF e o endereço do site (Dados básicos RN04; decisão 207,
- * item 13): o dono, ou o colaborador com perfil de indicador `seller` num
- * casamento sem dono ativo (decisões 31 e 65). Fica fora do `roleAllows`
+ * item 13): o dono, ou, num casamento sem dono ativo, o colaborador com
+ * perfil de indicador `seller` (decisões 31 e 65) ou a cerimonialista que o
+ * criou (Novo casamento RN08). Fica fora do `roleAllows`
  * porque depende do perfil de indicador e do casamento, não só do papel: o
  * vendedor e a cerimonialista são os dois `collaborator`.
  */
@@ -62,11 +63,19 @@ export function canManageSiteIdentity({
   role,
   referrerKind,
   hasActiveOwner,
+  createdByMe,
+  referralSource,
 }: {
   role: MembershipRole;
   referrerKind: 'planner' | 'seller' | null;
   hasActiveOwner: boolean;
+  createdByMe: boolean;
+  referralSource: string | null;
 }): boolean {
   if (role === 'owner') return true;
-  return referrerKind === 'seller' && !hasActiveOwner;
+  if (hasActiveOwner) return false;
+  if (referrerKind === 'seller') return true;
+  // Novo casamento RN08 (decisão 223, D10): a cerimonialista que criou o
+  // casamento, até o aceite do casal.
+  return referrerKind === 'planner' && createdByMe && referralSource === 'created_by_planner';
 }

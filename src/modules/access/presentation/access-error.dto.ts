@@ -213,6 +213,20 @@ export class WeddingHasNoOwnerErrorBody {
   @ApiProperty() message: string;
 }
 
+export class OwnerlessWeddingsLimitErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['OWNERLESS_WEDDINGS_LIMIT'] }) error: 'OWNERLESS_WEDDINGS_LIMIT';
+  @ApiProperty() message: string;
+}
+
+export class SelfInvitationErrorBody {
+  static readonly status = 422;
+  @ApiProperty({ enum: [422] }) statusCode: 422;
+  @ApiProperty({ enum: ['SELF_INVITATION'] }) error: 'SELF_INVITATION';
+  @ApiProperty() message: string;
+}
+
 export class SelfReferralErrorBody {
   static readonly status = 409;
   @ApiProperty({ enum: [409] }) statusCode: 409;

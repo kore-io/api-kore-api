@@ -1,4 +1,16 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Patch,
+  Post,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
+import { PlannerWeddingRateLimitGuard } from '../../../shared/rate-limit/user-rate-limit.guard';
+import { CreatePlannerWedding } from '../application/create-planner-wedding.use-case';
 import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import {
@@ -12,7 +24,10 @@ import {
   UpdatePlannerProfile,
 } from '../application/planner-profile.use-cases';
 import type { AuthenticatedSession } from '../domain/authenticated-session';
+import { ContrastTooLowErrorBody } from '../../site/presentation/site-error.dto';
 import {
+  OwnerlessWeddingsLimitErrorBody,
+  SlugUnavailableErrorBody,
   PlannerNotFoundErrorBody,
   PlannerProfileExistsErrorBody,
   PlannerSignupDisabledErrorBody,
@@ -24,6 +39,8 @@ import { toHttpError } from './access-http-errors';
 import { CurrentSession } from './current-session.decorator';
 import { setLastProfileCookie } from './last-profile-cookie';
 import {
+  CreatePlannerWeddingBody,
+  CreatePlannerWeddingResponse,
   CreatePlannerProfileBody,
   CreatePlannerProfileResponse,
   MyReferrerResponse,
@@ -40,7 +57,45 @@ export class PlannerController {
     private readonly getProfile: GetPlannerProfile,
     private readonly updateProfile: UpdatePlannerProfile,
     private readonly getReferrer: GetMyReferrer,
+    private readonly createWedding: CreatePlannerWedding,
   ) {}
+
+  /**
+   * Novo casamento pela cerimonialista (Novo casamento RN01 a RN04): sem dono,
+   * com ela colaboradora. Exige ter o perfil; não muda o perfil ativo.
+   */
+  @Post('weddings')
+  @HttpCode(HttpStatus.CREATED)
+  @UseGuards(PlannerWeddingRateLimitGuard)
+  @ApiErrorResponses(
+    ...commonErrors({ validated: true, session: true, write: true }),
+    ProfileNotOwnedErrorBody,
+    SlugUnavailableErrorBody,
+    OwnerlessWeddingsLimitErrorBody,
+    ContrastTooLowErrorBody,
+  )
+  async createPlannerWedding(
+    @CurrentSession() session: AuthenticatedSession,
+    @Body() body: CreatePlannerWeddingBody,
+  ): Promise<CreatePlannerWeddingResponse> {
+    try {
+      const wedding = await this.createWedding.execute({
+        userId: session.userId,
+        input: {
+          partnerNames: [body.partner1Name, body.partner2Name],
+          eventDate: body.eventDate ? new Date(`${body.eventDate}T00:00:00Z`) : null,
+          city: body.city,
+          state: body.state,
+          slug: body.slug,
+          appearance: body.appearance ?? null,
+        },
+        now: new Date(),
+      });
+      return CreatePlannerWeddingResponse.from({ wedding });
+    } catch (error) {
+      throw toHttpError(error);
+    }
+  }
 
   /** Cria o perfil de cerimonialista na conta da sessão (RN02 a RN05). */
   @Post('planner')

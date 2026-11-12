@@ -24,6 +24,7 @@ import {
   NotPendingErrorBody,
   OwnersFullErrorBody,
   PlannerAlreadyErrorBody,
+  SelfInvitationErrorBody,
   WeddingNotFoundErrorBody,
 } from './access-error.dto';
 import { toHttpError } from './access-http-errors';
@@ -48,6 +49,7 @@ export class AccessInvitationsController {
     OwnersFullErrorBody,
     PlannerAlreadyErrorBody,
     CoupleInvitationsFullErrorBody,
+    SelfInvitationErrorBody,
   )
   async send(
     @CurrentSession() session: AuthenticatedSession,

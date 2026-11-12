@@ -57,6 +57,9 @@ function setup({
       created.push(wedding);
       return Promise.resolve(createResult);
     }),
+    lockPlannerWeddings: jest.fn(),
+    countOwnerlessCreated: jest.fn(),
+    createForPlanner: jest.fn(),
   };
   const referrals: ReferralDirectory = {
     findByCode: jest.fn().mockResolvedValue(referrer),

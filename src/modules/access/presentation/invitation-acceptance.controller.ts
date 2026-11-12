@@ -43,7 +43,7 @@ export class InvitationAcceptanceController {
   @Get()
   @Public()
   @OptionalSession()
-  @ApiErrorResponses(...commonErrors({}), InvitationInvalidErrorBody)
+  @ApiErrorResponses(...commonErrors({}), InvitationInvalidErrorBody, SelfReferralErrorBody)
   async read(
     @Param('token') token: string,
     @Req() request: AuthenticatedRequest,
