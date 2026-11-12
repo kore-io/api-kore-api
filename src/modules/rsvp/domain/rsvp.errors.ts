@@ -73,3 +73,8 @@ export class DeadlineAfterEventError extends Error {
 export class ResponseGuestNotFoundError extends Error {
   override name = 'ResponseGuestNotFoundError';
 }
+
+/** A mensagem do convite ou do lembrete sem o {link} (422 LINK_PLACEHOLDER_MISSING; Envios RN06). */
+export class LinkPlaceholderMissingError extends Error {
+  override name = 'LinkPlaceholderMissingError';
+}

@@ -10,6 +10,7 @@ import {
 import { validationError } from '../../../shared/http/validation-errors';
 import { toHttpError as toSiteHttpError } from '../../site/presentation/site-http-errors';
 import {
+  LinkPlaceholderMissingError,
   DeadlineAfterEventError,
   DeadlineInPastError,
   ResponseGuestNotFoundError,
@@ -24,6 +25,12 @@ import {
 
 /** Erros do RSVP para HTTP; os do endereço (SITE_NOT_FOUND, SITE_DRAFT) seguem o mapa do Site. */
 export function toHttpError(error: unknown): unknown {
+  if (error instanceof LinkPlaceholderMissingError)
+    return new UnprocessableEntityException({
+      statusCode: 422,
+      error: 'LINK_PLACEHOLDER_MISSING',
+      message: 'The message needs the {link} placeholder.',
+    });
   if (error instanceof DeadlineInPastError)
     return new UnprocessableEntityException({
       statusCode: 422,
