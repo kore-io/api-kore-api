@@ -26,6 +26,11 @@ export interface PartyChanges {
   contactGuestId?: string | null;
   plusOneSlots?: number;
   deliveryStatus?: DeliveryStatus;
+  /**
+   * Sobe a Party.version (decisão 216, D11; RSVP RN11): o formulário de RSVP
+   * aberto antes da mudança recebe 409 RSVP_CHANGED.
+   */
+  bumpVersion?: true;
 }
 
 export interface GuestChanges {

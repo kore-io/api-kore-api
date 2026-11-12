@@ -148,7 +148,8 @@ export class MoveGuest {
     contact: string | null;
     plusOneSlots?: number;
   }): PartyChanges {
-    const changes: PartyChanges = {};
+    // Os dois grupos mudaram: a versão sobe (RSVP RN11).
+    const changes: PartyChanges = { bumpVersion: true };
     if (contact !== party.contactGuestId) changes.contactGuestId = contact;
     if (plusOneSlots !== undefined) changes.plusOneSlots = plusOneSlots;
     const delivery = deliveryStatusAfter({

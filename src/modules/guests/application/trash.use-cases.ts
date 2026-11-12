@@ -289,7 +289,8 @@ export class TrashGuest {
 
     await support.trash.trashGuest({ guestId, now });
     const after = group.members.filter((member) => member.id !== guestId);
-    const changes: PartyChanges = {};
+    // O grupo mudou: a versão sobe (RSVP RN11).
+    const changes: PartyChanges = { bumpVersion: true };
     const contact = contactAfter({ currentContactId: group.contactGuestId, members: after });
     if (contact !== group.contactGuestId) changes.contactGuestId = contact;
     if (guest.isPlusOne) changes.plusOneSlots = group.plusOneSlots - 1;
@@ -498,7 +499,8 @@ export class RestoreTrashItem {
     await support.trash.restoreGuest({ guestId, asRegular });
     const back = this.asMember({ guest, asRegular });
     const after = [...group.members, back];
-    const changes: PartyChanges = {};
+    // O grupo mudou: a versão sobe (RSVP RN11).
+    const changes: PartyChanges = { bumpVersion: true };
     // O contato só volta se o grupo estiver sem contato.
     if (group.contactGuestId === null && canBeContact(back)) changes.contactGuestId = guestId;
     const delivery = deliveryStatusAfter({
