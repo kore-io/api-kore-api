@@ -4,6 +4,7 @@ import request from 'supertest';
 import { WeddingPseudonymizer } from '../../src/modules/product-events/infrastructure/wedding-pseudonymizer';
 import { BackofficePrismaService } from '../../src/shared/database/backoffice-prisma.service';
 import { uuidV7 } from '../../src/shared/ids/uuid-v7';
+import { NOTIFICATION_DISPATCHER } from '../../src/modules/notifications/application/ports/notification-dispatcher.port';
 import { createTestApp } from '../support/create-test-app';
 import { signedInUser } from '../support/sessions';
 import { seedWedding } from '../support/weddings';
@@ -35,8 +36,19 @@ describe('Confirmar presença (banco real)', () => {
   let app: INestApplication;
   let db: BackofficePrismaService;
 
+  // O aviso ao worker (e-mail e push) é gravado aqui, sem a fila.
+  const notified: { weddingId: string; userIds: readonly string[] }[] = [];
+
   beforeAll(async () => {
-    app = await createTestApp();
+    app = await createTestApp({
+      override: (builder) =>
+        builder.overrideProvider(NOTIFICATION_DISPATCHER).useValue({
+          notified: (call: { weddingId: string; userIds: readonly string[] }) => {
+            notified.push(call);
+            return Promise.resolve();
+          },
+        }),
+    });
     db = app.get(BackofficePrismaService);
   });
 
@@ -215,6 +227,8 @@ describe('Confirmar presença (banco real)', () => {
         ],
       }),
     ]);
+    // Depois do commit, o worker é avisado para o e-mail e o push (Central RN02).
+    expect(notified).toContainEqual({ weddingId, userIds: [ana.userId] });
     // RN12: a restrição não vai na notificação nem no log.
     expect(JSON.stringify(notifications)).not.toContain('glúten');
     const ipLogs = await db.accessIpLog.findMany({

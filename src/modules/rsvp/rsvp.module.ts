@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { RsvpWriteRateLimit } from '../../shared/rate-limit/rsvp-write-rate-limit';
 import { AccessModule } from '../access/access.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { SiteModule } from '../site/site.module';
 import { ChangeGuestResponse, SetRsvpDeadline } from './application/couple-responses.use-cases';
 import { CoupleResponsesController } from './presentation/couple-responses.controller';
@@ -51,7 +52,7 @@ import { RsvpController } from './presentation/rsvp.controller';
 
 /** Contexto RSVP (F4): Confirmar presença no site do casal, o prazo e as respostas pelo casal. */
 @Module({
-  imports: [AccessModule, SiteModule],
+  imports: [AccessModule, SiteModule, NotificationsModule],
   controllers: [
     RsvpController,
     CoupleResponsesController,

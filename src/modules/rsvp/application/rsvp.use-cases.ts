@@ -31,6 +31,10 @@ import {
   PartySessionInvalidError,
 } from '../domain/rsvp.errors';
 import { RSVP_STORE, type RsvpStore } from './ports/rsvp-store.port';
+import {
+  NOTIFICATION_DISPATCHER,
+  type NotificationDispatcher,
+} from '../../notifications/application/ports/notification-dispatcher.port';
 import { responseStatsDelta } from './response-stats';
 import { RsvpSessions } from './rsvp-sessions.service';
 import { rsvpView, type RsvpView } from './rsvp-view';
@@ -115,6 +119,7 @@ export class SubmitRsvp {
     @Inject(ACCESS_IP_LOG_WRITER) private readonly ipLog: AccessIpLogWriter,
     @Inject(PRODUCT_EVENT_RECORDER) private readonly productEvents: ProductEventRecorder,
     @Inject(AFTER_COMMIT) private readonly afterCommit: AfterCommit,
+    @Inject(NOTIFICATION_DISPATCHER) private readonly dispatcher: NotificationDispatcher,
   ) {}
 
   async execute({
@@ -231,6 +236,10 @@ export class SubmitRsvp {
             uuidV7({ now: now.getTime() + index }),
           ),
         });
+        // E-mail e push saem por job depois do commit (Central RN02).
+        this.afterCommit.schedule(() =>
+          this.dispatcher.notified({ weddingId, userIds: notified.recipients }),
+        );
         if (notified.firstResponse && context.publishedAt) {
           const days = daysBetween({
             from: localDate({ at: new Date(context.publishedAt), timezone: context.timezone }),
