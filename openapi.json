@@ -208,6 +208,16 @@
             },
             "description": ""
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulatorDisabledErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
           "429": {
             "content": {
               "application/json": {
@@ -8363,6 +8373,24 @@
         "required": [
           "statusCode",
           "error",
+          "message"
+        ]
+      },
+      "SimulatorDisabledErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
           "message"
         ]
       },

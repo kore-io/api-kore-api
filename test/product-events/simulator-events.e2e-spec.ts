@@ -97,7 +97,9 @@ describe('Métricas do simulador (banco real)', () => {
     });
     const since = new Date();
     try {
-      await send(disabled, { name: 'simule_pronto' }).expect(404);
+      const response = await send(disabled, { name: 'simule_pronto' }).expect(404);
+      // O corpo declarado no OpenAPI (SimulatorDisabledErrorBody).
+      expect(response.body).toEqual({ statusCode: 404, message: expect.any(String) });
       expect(
         await db.productEvent.count({
           where: { name: 'simule_pronto', createdAt: { gte: since } },

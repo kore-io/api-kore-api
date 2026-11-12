@@ -24,6 +24,13 @@ import {
 } from '../application/ports/product-event-recorder.port';
 import { SIMULATOR_EVENT_NAMES, type SimulatorEventName } from '../domain/product-event';
 
+/** Com SIMULATOR_ENABLED desligada (Simule RN01): o 404 nativo do NestJS, sem código. */
+export class SimulatorDisabledErrorBody {
+  static readonly status = 404;
+  @ApiProperty({ enum: [404] }) statusCode: 404;
+  @ApiProperty() message: string;
+}
+
 export class SimulatorEventBody {
   /** Só estes nomes, e nada mais (Simule RN11; decisão 205, D26). */
   @ApiProperty({ enum: SIMULATOR_EVENT_NAMES })
@@ -53,7 +60,7 @@ export class SimulatorEventsController {
   @Post('simulator')
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(SimulatorEventRateLimitGuard)
-  @ApiErrorResponses(...commonErrors({ validated: true, write: true }))
+  @ApiErrorResponses(...commonErrors({ validated: true, write: true }), SimulatorDisabledErrorBody)
   async record(@Body() body: SimulatorEventBody): Promise<void> {
     // Fora de local e test, até o PO liberar a publicação (Simule RN01).
     if (!this.enabled) throw new NotFoundException();
