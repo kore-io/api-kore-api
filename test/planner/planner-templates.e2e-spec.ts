@@ -176,6 +176,9 @@ describe('Modelos do cerimonialista (banco real; decisões 223 e 224)', () => {
       content: { text: 'Texto novo.' },
     });
     await update(juliana.cookie, body.id as string, { kind: 'faq' }).expect(400);
+    // null no nome não é "não muda": 400, não 500 (revisão do Crivo).
+    const nullName = await update(juliana.cookie, body.id as string, { name: null }).expect(400);
+    expect(nullName.body.errors).toContainEqual(expect.objectContaining({ path: 'name' }));
     // A validação do conteúdo segue o tipo e a seção gravados.
     await update(juliana.cookie, body.id as string, { content: { questions: [] } }).expect(400);
   });

@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsIn, IsObject, IsOptional, IsString, Length } from 'class-validator';
+import { IsIn, IsObject, IsOptional, IsString, Length, ValidateIf } from 'class-validator';
 import { trim } from '../../access/presentation/weddings.dto';
 import type { PlannerTemplate } from '../application/ports/planner-template-store.port';
 import {
@@ -54,7 +54,8 @@ export class CreatePlannerTemplateBody {
 export class UpdatePlannerTemplateBody {
   @ApiProperty({ required: false })
   @Transform(trim)
-  @IsOptional()
+  // Ausente não muda; null não é ausente: cai no IsString (400), não na coluna NOT NULL.
+  @ValidateIf((_, value) => value !== undefined)
   @IsString()
   @Length(1, TEMPLATE_NAME_MAX)
   name?: string;
