@@ -14,11 +14,17 @@ import {
 import { LocalGatewayStore } from './infrastructure/backoffice/local-gateway/local-gateway.store';
 import { PAYMENT_GATEWAY_PROVIDERS } from './infrastructure/backoffice/payment-gateway.providers';
 import { PaymentWebhooksController } from './presentation/payment-webhooks.controller';
+import { BillingQuoteController, PricingController } from './presentation/pricing.controller';
+import { AccessModule } from '../access/access.module';
+import { QUOTE_TARGET_READER } from './application/ports/quote-target.reader.port';
+import { QuoteBilling } from './application/quote-billing.use-case';
+import { PrismaQuoteTargetReader } from './infrastructure/prisma-quote-target.reader';
+import { PrismaPublicPricingReader } from './infrastructure/prisma-public-pricing.reader';
 
-/** Cobrança e publicação (F3), do lado da API: a porta do gateway e o webhook. */
+/** Cobrança e publicação (F3), do lado da API: a porta do gateway, o webhook, o preço e a cotação. */
 @Module({
-  imports: [BullModule.registerQueue({ name: GATEWAY_EVENTS_QUEUE })],
-  controllers: [PaymentWebhooksController],
+  imports: [AccessModule, BullModule.registerQueue({ name: GATEWAY_EVENTS_QUEUE })],
+  controllers: [PaymentWebhooksController, PricingController, BillingQuoteController],
   providers: [
     ...PAYMENT_GATEWAY_PROVIDERS,
     { provide: GATEWAY_EVENT_STORE, useClass: PrismaGatewayEventStore },
@@ -26,6 +32,9 @@ import { PaymentWebhooksController } from './presentation/payment-webhooks.contr
     ReceiveGatewayWebhook,
     ProcessGatewayEvent,
     PaymentWebhookRateLimitGuard,
+    { provide: QUOTE_TARGET_READER, useClass: PrismaQuoteTargetReader },
+    QuoteBilling,
+    PrismaPublicPricingReader,
   ],
   exports: [PAYMENT_GATEWAY, LocalGatewayStore, ReceiveGatewayWebhook, ProcessGatewayEvent],
 })

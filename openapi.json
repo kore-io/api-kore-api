@@ -8322,6 +8322,202 @@
           "billing"
         ]
       }
+    },
+    "/v1/pricing": {
+      "get": {
+        "operationId": "PricingController_pricing_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricingResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/billing/quote": {
+      "get": {
+        "operationId": "BillingQuoteController_getQuote_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "publication",
+                "extension"
+              ]
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "description": "`AAAA-MM-DD`. Sem ela, a resposta só traz os limites (endDateMin, endDateMax, canExtend).",
+            "schema": {
+              "example": "2027-02-14",
+              "type": "string"
+            }
+          },
+          {
+            "name": "method",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pix",
+                "card"
+              ]
+            }
+          },
+          {
+            "name": "installments",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 12,
+              "default": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingQuoteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ValidationErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/InstallmentsOutOfRangeErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/NotDraftErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NotPublishedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteSlugMissingErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/EventDateMissingErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndDateOutOfRangeErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "billing"
+        ]
+      }
     }
   },
   "info": {
@@ -16769,6 +16965,299 @@
         },
         "required": [
           "received"
+        ]
+      },
+      "PricingInstallmentsDto": {
+        "type": "object",
+        "properties": {
+          "max": {
+            "type": "number",
+            "example": 12
+          },
+          "interestFreeUpTo": {
+            "type": "number",
+            "example": 6
+          },
+          "interestPercent": {
+            "type": "number",
+            "description": "3,99% de 7x a 12x. Só para mostrar: a conta em inteiros usa interestBasisPoints.",
+            "example": 3.99
+          },
+          "interestBasisPoints": {
+            "type": "number",
+            "example": 399
+          },
+          "interestFixedCents": {
+            "type": "number",
+            "example": 49
+          },
+          "minInstallmentCents": {
+            "type": "number",
+            "example": 500
+          }
+        },
+        "required": [
+          "max",
+          "interestFreeUpTo",
+          "interestPercent",
+          "interestBasisPoints",
+          "interestFixedCents",
+          "minInstallmentCents"
+        ]
+      },
+      "PricingResponse": {
+        "type": "object",
+        "properties": {
+          "priceVersion": {
+            "type": "string",
+            "example": "2026-11"
+          },
+          "activationCents": {
+            "type": "number",
+            "example": 14900
+          },
+          "monthlyCents": {
+            "type": "number",
+            "example": 2900
+          },
+          "capCents": {
+            "type": "number",
+            "example": 44900
+          },
+          "pixDiscountPercent": {
+            "type": "number",
+            "example": 3
+          },
+          "installments": {
+            "$ref": "#/components/schemas/PricingInstallmentsDto"
+          },
+          "endDateMaxMonthsAfterEvent": {
+            "type": "number",
+            "example": 12
+          },
+          "referralDiscountPercent": {
+            "type": "number",
+            "example": 10
+          }
+        },
+        "required": [
+          "priceVersion",
+          "activationCents",
+          "monthlyCents",
+          "capCents",
+          "pixDiscountPercent",
+          "installments",
+          "endDateMaxMonthsAfterEvent",
+          "referralDiscountPercent"
+        ]
+      },
+      "InstallmentsOutOfRangeErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              400
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "INSTALLMENTS_OUT_OF_RANGE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "maxInstallments": {
+            "type": "number",
+            "example": 5
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "maxInstallments"
+        ]
+      },
+      "NotPublishedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "NOT_PUBLISHED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "TotalsByMethodDto": {
+        "type": "object",
+        "properties": {
+          "pix": {
+            "type": "number",
+            "example": 32699
+          },
+          "cardUpTo6": {
+            "type": "number",
+            "example": 33710
+          },
+          "cardChosen": {
+            "type": "number",
+            "example": 35104
+          }
+        },
+        "required": [
+          "pix",
+          "cardUpTo6",
+          "cardChosen"
+        ]
+      },
+      "BillingQuoteResponse": {
+        "type": "object",
+        "properties": {
+          "priceVersion": {
+            "type": "string",
+            "example": "2026-11"
+          },
+          "monthsCovered": {
+            "type": "number",
+            "nullable": true,
+            "example": 7
+          },
+          "periodStart": {
+            "type": "string",
+            "example": "2026-08-10"
+          },
+          "periodEnd": {
+            "type": "string",
+            "nullable": true,
+            "example": "2027-02-14"
+          },
+          "activationListCents": {
+            "type": "number",
+            "nullable": true
+          },
+          "monthlyListCents": {
+            "type": "number",
+            "nullable": true,
+            "description": "O preço de tabela de um mês."
+          },
+          "listTotalCents": {
+            "type": "number",
+            "nullable": true
+          },
+          "capDiscountCents": {
+            "type": "number",
+            "nullable": true
+          },
+          "referralDiscountCents": {
+            "type": "number",
+            "nullable": true
+          },
+          "referralLabel": {
+            "nullable": true,
+            "enum": [
+              "assessoria",
+              "indicacao"
+            ],
+            "type": "string"
+          },
+          "pixDiscountCents": {
+            "type": "number",
+            "nullable": true
+          },
+          "installmentInterestCents": {
+            "type": "number",
+            "nullable": true
+          },
+          "totalCents": {
+            "type": "number",
+            "nullable": true
+          },
+          "installments": {
+            "type": "number",
+            "nullable": true
+          },
+          "installmentCents": {
+            "type": "number",
+            "nullable": true
+          },
+          "firstInstallmentCents": {
+            "type": "number",
+            "nullable": true
+          },
+          "maxInstallments": {
+            "type": "number",
+            "nullable": true
+          },
+          "totalsByMethod": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TotalsByMethodDto"
+              }
+            ]
+          },
+          "endDateMin": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-11-15"
+          },
+          "endDateMax": {
+            "type": "string",
+            "example": "2027-11-14"
+          },
+          "canExtend": {
+            "type": "boolean"
+          },
+          "cannotExtendReason": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "END_DATE_LIMIT_REACHED"
+            ]
+          }
+        },
+        "required": [
+          "priceVersion",
+          "monthsCovered",
+          "periodStart",
+          "periodEnd",
+          "activationListCents",
+          "monthlyListCents",
+          "listTotalCents",
+          "capDiscountCents",
+          "referralDiscountCents",
+          "referralLabel",
+          "pixDiscountCents",
+          "installmentInterestCents",
+          "totalCents",
+          "installments",
+          "installmentCents",
+          "firstInstallmentCents",
+          "maxInstallments",
+          "totalsByMethod",
+          "endDateMin",
+          "endDateMax",
+          "canExtend",
+          "cannotExtendReason"
         ]
       },
       "SpreadsheetTemplateHeaders": {

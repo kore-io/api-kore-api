@@ -42,6 +42,11 @@ describe('Matriz de papéis (Papéis e permissões)', () => {
     expect(roleAllows({ role: 'collaborator', action: 'publish_site' })).toBe(false);
   });
 
+  it('Preço e cotação RN04 e Publicar e pagar RN01 - só o dono cota e paga (manage_billing)', () => {
+    expect(roleAllows({ role: 'owner', action: 'manage_billing' })).toBe(true);
+    expect(roleAllows({ role: 'collaborator', action: 'manage_billing' })).toBe(false);
+  });
+
   it('Prazo RN04 - depois do prazo, só o dono altera respostas', () => {
     expect(roleAllows({ role: 'owner', action: 'edit_response_after_deadline' })).toBe(true);
     expect(roleAllows({ role: 'collaborator', action: 'edit_response_after_deadline' })).toBe(
