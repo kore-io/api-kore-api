@@ -154,7 +154,7 @@ describe('Central de notificações (banco real)', () => {
     const defaults = await get(ana.cookie, 'notification-preferences', { weddingId }).expect(200);
     expect(defaults.body).toEqual({
       items: [{ type: 'rsvp', inApp: true, email: 'daily', push: false }],
-      push: { subscribed: false, vapidPublicKey: null },
+      push: { subscribed: false, vapidPublicKey: process.env.VAPID_PUBLIC_KEY },
     });
 
     const saved = await http()

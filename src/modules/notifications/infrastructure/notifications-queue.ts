@@ -1,6 +1,7 @@
 /**
  * A fila das notificações (E-mail e push): `notified` (a API avisa depois do
- * commit da resposta), `email` (o "Na hora" de uma pessoa num casamento) e o
+ * commit da resposta), `push` (o aviso nos aparelhos de uma pessoa), `email`
+ * (o "Na hora" de uma pessoa num casamento) e o
  * job do agendamento (a rotina de 15 minutos: o Resumo diário e a rede de
  * segurança).
  */

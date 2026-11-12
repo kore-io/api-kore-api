@@ -3,6 +3,11 @@ import { Module } from '@nestjs/common';
 import { LogsWorkerModule } from '../logs/logs-worker.module';
 import { NOTIFICATION_EMAIL_STORE } from './application/ports/notification-email-store.port';
 import { RsvpEmails } from './application/rsvp-emails.use-cases';
+import { RsvpPush } from './application/rsvp-push.use-case';
+import { PUSH_SENDER } from './application/ports/push-sender.port';
+import { PUSH_STORE } from './application/ports/push-store.port';
+import { PrismaPushStore } from './infrastructure/backoffice/prisma-push.store';
+import { WebPushSender } from './infrastructure/web-push-sender';
 import { PrismaNotificationEmailStore } from './infrastructure/backoffice/prisma-notification-email.store';
 import { NOTIFICATIONS_QUEUE } from './infrastructure/notifications-queue';
 import {
@@ -28,6 +33,9 @@ import {
   providers: [
     { provide: NOTIFICATION_EMAIL_STORE, useClass: PrismaNotificationEmailStore },
     RsvpEmails,
+    { provide: PUSH_STORE, useClass: PrismaPushStore },
+    { provide: PUSH_SENDER, useClass: WebPushSender },
+    RsvpPush,
     NotificationsProcessor,
     NotificationsSweepScheduler,
     { provide: NOTIFICATION_RETENTION, useClass: PrismaNotificationRetention },

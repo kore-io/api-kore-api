@@ -6983,6 +6983,141 @@
           "notifications"
         ]
       }
+    },
+    "/v1/me/push-subscriptions": {
+      "post": {
+        "operationId": "PushSubscriptionsController_subscribe_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushSubscriptionBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ValidationErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PushEndpointNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Liga o push neste aparelho: grava ou atualiza pelo endpoint, presa à sessão atual.",
+        "tags": [
+          "notifications"
+        ]
+      },
+      "delete": {
+        "operationId": "PushSubscriptionsController_unsubscribe_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushUnsubscribeBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Desliga o push neste aparelho.",
+        "tags": [
+          "notifications"
+        ]
+      }
     }
   },
   "info": {
@@ -14082,6 +14217,76 @@
           "type",
           "email",
           "weddingId"
+        ]
+      },
+      "PushEndpointNotAllowedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              400
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PUSH_ENDPOINT_NOT_ALLOWED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PushKeysBody": {
+        "type": "object",
+        "properties": {
+          "p256dh": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "auth": {
+            "type": "string",
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "p256dh",
+          "auth"
+        ]
+      },
+      "PushSubscriptionBody": {
+        "type": "object",
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "keys": {
+            "$ref": "#/components/schemas/PushKeysBody"
+          }
+        },
+        "required": [
+          "endpoint",
+          "keys"
+        ]
+      },
+      "PushUnsubscribeBody": {
+        "type": "object",
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "endpoint"
         ]
       },
       "SpreadsheetTemplateHeaders": {

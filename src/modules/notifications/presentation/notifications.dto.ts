@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsIn, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsIn, IsOptional, IsString, IsUUID, MaxLength, ValidateNested } from 'class-validator';
 import {
   NOTIFICATION_TYPES,
   type EmailFrequency,
@@ -86,5 +87,31 @@ export class NotificationNotFoundErrorBody {
   static readonly status = 404;
   @ApiProperty({ enum: [404] }) statusCode: 404;
   @ApiProperty({ enum: ['NOTIFICATION_NOT_FOUND'] }) error: 'NOTIFICATION_NOT_FOUND';
+  @ApiProperty() message: string;
+}
+
+class PushKeysBody {
+  @IsString() @MaxLength(200) p256dh: string;
+  @IsString() @MaxLength(100) auth: string;
+}
+
+/** A assinatura do aparelho (E-mail e push RN07). O endpoint é conferido contra a lista dos serviços de push. */
+export class PushSubscriptionBody {
+  @IsString() @MaxLength(1000) endpoint: string;
+
+  @ValidateNested()
+  @Type(() => PushKeysBody)
+  keys: PushKeysBody;
+}
+
+export class PushUnsubscribeBody {
+  @IsString() @MaxLength(1000) endpoint: string;
+}
+
+/** O endpoint fora dos serviços de push aceitos (https, sem IP e sem porta fora da 443). */
+export class PushEndpointNotAllowedErrorBody {
+  static readonly status = 400;
+  @ApiProperty({ enum: [400] }) statusCode: 400;
+  @ApiProperty({ enum: ['PUSH_ENDPOINT_NOT_ALLOWED'] }) error: 'PUSH_ENDPOINT_NOT_ALLOWED';
   @ApiProperty() message: string;
 }
