@@ -232,4 +232,31 @@ describe('Transação do grupo (banco real, usuário kore_api sem sessão)', () 
       await api.query('ROLLBACK');
     }
   });
+
+  it('Central RN02 - a notify_rsvp só aceita a gravação do próprio grupo, e a API não a chama', async () => {
+    const foreignSubmission = await db.rsvpSubmission.create({
+      data: { weddingId, partyId: duarte, actor: 'party', confirmedCount: 0, declinedCount: 0 },
+    });
+    try {
+      await asParty({}, async () => {
+        await rejects(
+          'SELECT notify_rsvp($1, $2)',
+          [foreignSubmission.id, [uuidV7()]],
+          /fora do grupo da transação/,
+        );
+      });
+      await api.query('BEGIN');
+      try {
+        await rejects(
+          'SELECT notify_rsvp($1, $2)',
+          [foreignSubmission.id, [uuidV7()]],
+          /permission denied/,
+        );
+      } finally {
+        await api.query('ROLLBACK');
+      }
+    } finally {
+      await db.rsvpSubmission.delete({ where: { id: foreignSubmission.id } });
+    }
+  });
 });
