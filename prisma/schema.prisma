@@ -28,6 +28,9 @@ model ApplicationLog {
   data             Json?
   ipHash           String?             @map("ip_hash")
 
+  // FK desde a F3 (Backoffice - acesso, Mudanças no modelo de dados).
+  supportSession SupportSession? @relation(fields: [supportSessionId], references: [id], onDelete: SetNull)
+
   @@index([weddingId, createdAt(sort: Desc)], map: "idx_application_logs_wedding_id_created_at")
   @@index([actorUserId, createdAt(sort: Desc)], map: "idx_application_logs_actor_user_id_created_at")
   @@index([action, createdAt(sort: Desc)], map: "idx_application_logs_action_created_at")
@@ -109,6 +112,14 @@ model User {
   notificationEmailStates   NotificationEmailState[]
   pushSubscriptions         PushSubscription[]
   notificationDigestState   NotificationDigestState?
+  paymentsCreated           Payment[]                @relation("PaymentCreatedBy")
+  paymentRefundsRequested   Payment[]                @relation("PaymentRefundRequestedBy")
+  commissionAdjustments     CommissionAdjustment[]   @relation("CommissionAdjustmentCreatedBy")
+  payoutsPaid               Payout[]                 @relation("PayoutPaidBy")
+  supportSessions           SupportSession[]         @relation("SupportSessionAdmin")
+  courtesyExtensions        CourtesyExtension[]      @relation("CourtesyExtensionAdmin")
+  weddingsBlocked           Wedding[]                @relation("WeddingBlockedBy")
+  weddingDeletionsRequested Wedding[]                @relation("WeddingDeletionRequestedBy")
 
   @@map("users")
 }
@@ -165,14 +176,18 @@ model Session {
   authMethod       AuthProvider @map("auth_method")
   activeProfile    ProfileKind? @map("active_profile")
   supportSessionId String?      @map("support_session_id") @db.Uuid
+  // A declaração hd verificada do Google (Backoffice - acesso RN01; B9-2).
+  staffDomain      String?      @map("staff_domain")
   userAgent        String?      @map("user_agent")
   revokedAt        DateTime?    @map("revoked_at") @db.Timestamptz(3)
 
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  supportSession    SupportSession?    @relation(fields: [supportSessionId], references: [id], onDelete: SetNull)
   pushSubscriptions PushSubscription[]
 
   @@index([userId], map: "idx_sessions_user_id")
   @@index([expiresAt], map: "idx_sessions_expires_at")
+  @@index([supportSessionId], map: "idx_sessions_support_session_id")
   @@map("sessions")
 }
 
@@ -263,66 +278,76 @@ enum LoginOrigin {
 // RLS por vínculo (ADR de multi-tenant; decisão 153). Campos das próximas
 // fases entram com elas.
 model Wedding {
-  id                  String             @id @default(uuid(7)) @db.Uuid
-  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt           DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id                        String             @id @default(uuid(7)) @db.Uuid
+  createdAt                 DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                 DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
   // Endereço do site; único e minúsculo (RN04 e RN05 de Cadastro).
-  slug                String?            @unique(map: "uq_weddings_slug") @db.Citext
-  status              WeddingStatus
-  eventDate           DateTime?          @map("event_date") @db.Date
+  slug                      String?            @unique(map: "uq_weddings_slug") @db.Citext
+  status                    WeddingStatus
+  eventDate                 DateTime?          @map("event_date") @db.Date
   // Derivado da UF (RN03 de Cadastro).
-  timezone            String?
-  city                String?
-  state               String?            @db.Char(2)
-  createdByUserId     String?            @map("created_by_user_id") @db.Uuid
+  timezone                  String?
+  city                      String?
+  state                     String?            @db.Char(2)
+  createdByUserId           String?            @map("created_by_user_id") @db.Uuid
   // Atividade que zera o prazo de exclusão sem dono (RN13 de Convites; decisão 136).
-  lastActivityAt      DateTime           @default(now()) @map("last_activity_at") @db.Timestamptz(3)
+  lastActivityAt            DateTime           @default(now()) @map("last_activity_at") @db.Timestamptz(3)
   // Indicador que trouxe o casal (RN08 de Cadastro).
-  referrerId          String?            @map("referrer_id") @db.Uuid
-  referralSource      ReferralSource?    @map("referral_source")
+  referrerId                String?            @map("referrer_id") @db.Uuid
+  referralSource            ReferralSource?    @map("referral_source")
   // Origem do cadastro (decisões 135 e 166).
-  signupSource        SignupSource?      @map("signup_source")
-  utmSource           String?            @map("utm_source")
-  utmMedium           String?            @map("utm_medium")
-  utmCampaign         String?            @map("utm_campaign")
+  signupSource              SignupSource?      @map("signup_source")
+  utmSource                 String?            @map("utm_source")
+  utmMedium                 String?            @map("utm_medium")
+  utmCampaign               String?            @map("utm_campaign")
   // Aviso de 30 dias do expurgo sem dono (RN13 de Convites; decisão 180).
-  purgeNoticeSentAt   DateTime?          @map("purge_notice_sent_at") @db.Timestamptz(3)
+  purgeNoticeSentAt         DateTime?          @map("purge_notice_sent_at") @db.Timestamptz(3)
   // Lápide: no expurgo, ficam id, status, purgedAt, o indicador e createdAt.
-  purgedAt            DateTime?          @map("purged_at") @db.Timestamptz(3)
+  purgedAt                  DateTime?          @map("purged_at") @db.Timestamptz(3)
   // Site do casal (F2). Contato só para o grupo identificado (Dados básicos RN08).
-  contactEmail        String?            @map("contact_email") @db.Citext
+  contactEmail              String?            @map("contact_email") @db.Citext
   // E.164.
-  contactWhatsapp     String?            @map("contact_whatsapp")
+  contactWhatsapp           String?            @map("contact_whatsapp")
   // Foto de capa: FK composta (id, cover_image_id) → site_images (wedding_id, id),
   // ON DELETE SET NULL, só no SQL (Imagens do site RN10).
-  coverImageId        String?            @map("cover_image_id") @db.Uuid
-  locales             String[]           @default(["pt-BR"])
+  coverImageId              String?            @map("cover_image_id") @db.Uuid
+  locales                   String[]           @default(["pt-BR"])
   // A última gravação do Editor, para o "salvo às" (Dados básicos RN10).
-  siteUpdatedAt       DateTime?          @map("site_updated_at") @db.Timestamptz(3)
+  siteUpdatedAt             DateTime?          @map("site_updated_at") @db.Timestamptz(3)
   // Nula até a publicação (F4); trava o endereço (Dados básicos RN05; decisão 207(14)).
-  publishedAt         DateTime?          @map("published_at") @db.Timestamptz(3)
+  publishedAt               DateTime?          @map("published_at") @db.Timestamptz(3)
   // Aparência (Aparência do site RN01 e RN02); nulas só na lápide.
-  fontPairKey         String?            @default("romantico") @map("font_pair_key")
-  starterPaletteKey   String?            @default("terracota") @map("starter_palette_key")
-  primaryColor        String?            @default("#A94F37") @map("primary_color")
-  accentColor         String?            @default("#7A8B69") @map("accent_color")
-  backgroundMode      String?            @default("cream") @map("background_mode")
+  fontPairKey               String?            @default("romantico") @map("font_pair_key")
+  starterPaletteKey         String?            @default("terracota") @map("starter_palette_key")
+  primaryColor              String?            @default("#A94F37") @map("primary_color")
+  accentColor               String?            @default("#7A8B69") @map("accent_color")
+  backgroundMode            String?            @default("cream") @map("background_mode")
   // Primeira gravação da Aparência ou criação pelo simulador (Aparência RN10).
-  appearanceSetAt     DateTime?          @map("appearance_set_at") @db.Timestamptz(3)
+  appearanceSetAt           DateTime?          @map("appearance_set_at") @db.Timestamptz(3)
   // Publicação (F4; Publicação por Cortesia RN05). A data de saída do ar, de quem
   // publicou e como. paidThrough fica nulo na Cortesia (decisão 217(4)): só a F3
   // escreve, e o kore_app não tem GRANT nela.
-  endDate             DateTime?          @map("end_date") @db.Date
-  paidThrough         DateTime?          @map("paid_through") @db.Date
-  publicationSource   PublicationSource? @map("publication_source")
-  publishedByUserId   String?            @map("published_by_user_id") @db.Uuid
+  endDate                   DateTime?          @map("end_date") @db.Date
+  paidThrough               DateTime?          @map("paid_through") @db.Date
+  publicationSource         PublicationSource? @map("publication_source")
+  publishedByUserId         String?            @map("published_by_user_id") @db.Uuid
   // Prazo de resposta (Prazo de resposta RN01): nulo = sem prazo.
-  rsvpDeadline        DateTime?          @map("rsvp_deadline") @db.Date
+  rsvpDeadline              DateTime?          @map("rsvp_deadline") @db.Date
   // Pergunta de música (Música RN01): desligada por padrão; texto nulo = o padrão.
-  songQuestionEnabled Boolean            @default(false) @map("song_question_enabled")
-  songQuestionText    String?            @map("song_question_text")
+  songQuestionEnabled       Boolean            @default(false) @map("song_question_enabled")
+  songQuestionText          String?            @map("song_question_text")
   // Assinatura do cerimonialista no rodapé (Assinatura RN05): só o dono muda.
-  showPlannerCredit   Boolean            @default(true) @map("show_planner_credit")
+  showPlannerCredit         Boolean            @default(true) @map("show_planner_credit")
+  // Ciclo de vida da F3 (Data de saída do ar RN02): datas no fuso do casamento.
+  graceUntil                DateTime?          @map("grace_until") @db.Date
+  expiredAt                 DateTime?          @map("expired_at") @db.Date
+  purgeAt                   DateTime?          @map("purge_at") @db.Date
+  // Bloqueio pelo staff (Casamento bloqueado): ortogonal ao status.
+  blockedAt                 DateTime?          @map("blocked_at") @db.Timestamptz(3)
+  blockedByUserId           String?            @map("blocked_by_user_id") @db.Uuid
+  // Exclusão agendada pelo dono (Retenção RN05; B5-1): ortogonal ao status.
+  deletionScheduledFor      DateTime?          @map("deletion_scheduled_for") @db.Date
+  deletionRequestedByUserId String?            @map("deletion_requested_by_user_id") @db.Uuid
 
   createdBy               User?                    @relation("WeddingCreatedBy", fields: [createdByUserId], references: [id])
   publishedBy             User?                    @relation("WeddingPublishedBy", fields: [publishedByUserId], references: [id], onDelete: SetNull)
@@ -347,8 +372,18 @@ model Wedding {
   notifications           Notification[]
   notificationPreferences NotificationPreference[]
   notificationEmailStates NotificationEmailState[]
+  blockedBy               User?                    @relation("WeddingBlockedBy", fields: [blockedByUserId], references: [id], onDelete: SetNull)
+  deletionRequestedBy     User?                    @relation("WeddingDeletionRequestedBy", fields: [deletionRequestedByUserId], references: [id], onDelete: SetNull)
+  payments                Payment[]
+  gatewayCustomers        GatewayCustomer[]
+  commissions             Commission[]
+  supportSessions         SupportSession[]
+  courtesyExtensions      CourtesyExtension[]
+  billingNoticeLogs       BillingNoticeLog[]
 
   @@index([createdByUserId], map: "idx_weddings_created_by_user_id")
+  @@index([blockedByUserId], map: "idx_weddings_blocked_by_user_id")
+  @@index([deletionRequestedByUserId], map: "idx_weddings_deletion_requested_by_user_id")
   @@index([publishedByUserId], map: "idx_weddings_published_by_user_id")
   @@index([referrerId, status], map: "idx_weddings_referrer_id_status")
   @@map("weddings")
@@ -472,11 +507,21 @@ model Referrer {
   // Só no vendedor, que o Admin cadastra.
   createdByAdminUserId    String?        @map("created_by_admin_user_id") @db.Uuid
   deactivatedAt           DateTime?      @map("deactivated_at") @db.Timestamptz(3)
+  // CPF ou CNPJ para receber (Repasse RN02): cifrado pelo KMS e o HMAC da
+  // porta TaxIdHasher, único entre os indicadores.
+  taxIdType               TaxIdType?     @map("tax_id_type")
+  taxIdEncrypted          String?        @map("tax_id_encrypted")
+  taxIdHash               String?        @unique(map: "uq_referrers_tax_id_hash") @map("tax_id_hash")
+  taxIdHashVersion        Int?           @map("tax_id_hash_version") @db.SmallInt
 
-  user           User      @relation("ReferrerUser", fields: [userId], references: [id])
-  createdByAdmin User?     @relation("ReferrerCreatedByAdmin", fields: [createdByAdminUserId], references: [id])
-  planner        Planner?
-  weddings       Wedding[]
+  user                  User                   @relation("ReferrerUser", fields: [userId], references: [id])
+  createdByAdmin        User?                  @relation("ReferrerCreatedByAdmin", fields: [createdByAdminUserId], references: [id])
+  planner               Planner?
+  weddings              Wedding[]
+  commissions           Commission[]
+  commissionAdjustments CommissionAdjustment[]
+  payouts               Payout[]
+  pixKeys               ReferrerPixKey[]
 
   @@index([kind, status], map: "idx_referrers_kind_status")
   @@index([createdByAdminUserId], map: "idx_referrers_created_by_admin_user_id")
@@ -1109,6 +1154,9 @@ enum NotificationType {
   rsvp
   wedding_published
   membership_removed
+  billing
+  commission
+  referrer_reassigned
 
   @@map("notification_type")
 }
@@ -1221,4 +1269,503 @@ model PushSubscription {
   @@index([userId], map: "idx_push_subscriptions_user_id")
   @@index([sessionId], map: "idx_push_subscriptions_session_id")
   @@map("push_subscriptions")
+}
+
+// ---------------------------------------------------------------------------
+// F3: cobrança e publicação (card 75; specs da F3; decisões 230 e 231).
+// RLS, GRANT, CHECK e índices parciais ficam no SQL manual da migration
+// 75-modelo. Valores em centavos inteiros.
+// ---------------------------------------------------------------------------
+
+enum PaymentKind {
+  publication
+  extension
+
+  @@map("payment_kind")
+}
+
+// Máquina de estados (Publicar e pagar RN10; decisão 231, B2-2 e B3-1).
+enum PaymentStatus {
+  pending
+  paid
+  failed
+  canceled
+  refund_requested
+  refunded
+  disputed
+
+  @@map("payment_status")
+}
+
+enum PaymentMethod {
+  pix
+  card
+
+  @@map("payment_method")
+}
+
+// Adaptador da porta PaymentGateway (Publicar e pagar RN14); o asaas entra com o card 65.
+enum PaymentGatewayName {
+  local
+  asaas
+
+  @@map("payment_gateway_name")
+}
+
+// Quem pediu o estorno (Pagamentos e arrependimento; Backoffice - cobrança RN11).
+enum RefundOrigin {
+  couple
+  admin
+  automatic
+  chargeback
+  manual
+
+  @@map("refund_origin")
+}
+
+// Cobrança do casal (Publicar e pagar, Mudanças no modelo de dados). Só o
+// worker (kore_backoffice) e as funções SECURITY DEFINER mudam o estado; o
+// kore_app lê nos casamentos de que é dono e insere só pendente (RN20).
+// appliedAt marca o dinheiro aplicado (decisão 231, B2-2): receita, comissão
+// e CSV contam só os aplicados.
+model Payment {
+  id                       String             @id @default(uuid(7)) @db.Uuid
+  createdAt                DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  // P-0431 no Backoffice (Backoffice - cobrança, Mudanças no modelo de dados).
+  shortCode                Int                @unique(map: "uq_payments_short_code") @default(autoincrement()) @map("short_code")
+  weddingId                String             @map("wedding_id") @db.Uuid
+  kind                     PaymentKind
+  status                   PaymentStatus      @default(pending)
+  method                   PaymentMethod
+  installments             Int                @default(1) @db.SmallInt
+  // Linhas da cotação (Preço e cotação RN01), gravadas e nunca recalculadas.
+  priceVersion             String             @map("price_version")
+  periodStart              DateTime           @map("period_start") @db.Date
+  periodEnd                DateTime           @map("period_end") @db.Date
+  monthsCovered            Int                @map("months_covered") @db.SmallInt
+  activationListCents      Int                @map("activation_list_cents")
+  // Preço de tabela de um mês na data.
+  monthlyListCents         Int                @map("monthly_list_cents")
+  capDiscountCents         Int                @default(0) @map("cap_discount_cents")
+  referralDiscountCents    Int                @default(0) @map("referral_discount_cents")
+  pixDiscountCents         Int                @default(0) @map("pix_discount_cents")
+  installmentInterestCents Int                @default(0) @map("installment_interest_cents")
+  // O total que o casal viu; CHECK com as linhas (RN12; B2-19).
+  amountCents              Int                @map("amount_cents")
+  // Do gateway (RN06 e RN12): total cobrado, taxa e líquido.
+  gatewayChargedCents      Int?               @map("gateway_charged_cents")
+  gatewayFeeCents          Int?               @map("gateway_fee_cents")
+  netCents                 Int?               @map("net_cents")
+  gateway                  PaymentGatewayName
+  // = id (RN03, passo 1): a referência que vai ao gateway.
+  externalReference        String             @unique(map: "uq_payments_external_reference") @map("external_reference")
+  // Nulo até o passo 3 da RN03.
+  gatewayPaymentId         String?            @unique(map: "uq_payments_gateway_payment_id") @map("gateway_payment_id")
+  pixCopyPaste             String?            @map("pix_copy_paste")
+  cardLast4                String?            @map("card_last4") @db.Char(4)
+  // Quem paga (RN02): nome, HMAC do CPF e os 4 últimos dígitos; nunca o número inteiro.
+  payerName                String             @map("payer_name")
+  payerTaxIdHash           String             @map("payer_tax_id_hash")
+  payerTaxIdHashVersion    Int                @map("payer_tax_id_hash_version") @db.SmallInt
+  payerTaxIdLast4          String             @map("payer_tax_id_last4") @db.Char(4)
+  // Idempotency-Key (B2-10): única por casamento, com o hash do corpo.
+  idempotencyKey           String             @map("idempotency_key") @db.Uuid
+  requestHash              String             @map("request_hash")
+  createdByUserId          String?            @map("created_by_user_id") @db.Uuid
+  replacesPaymentId        String?            @map("replaces_payment_id") @db.Uuid
+  dueAt                    DateTime?          @map("due_at") @db.Timestamptz(3)
+  paidAt                   DateTime?          @map("paid_at") @db.Timestamptz(3)
+  appliedAt                DateTime?          @map("applied_at") @db.Timestamptz(3)
+  // Aplicar mesmo assim (Backoffice - cobrança RN11).
+  appliedByAdminAt         DateTime?          @map("applied_by_admin_at") @db.Timestamptz(3)
+  failureReason            String?            @map("failure_reason")
+  canceledAt               DateTime?          @map("canceled_at") @db.Timestamptz(3)
+  // Extensão (B3-5): a data e o pago antes dela, para a volta no estorno.
+  previousEndDate          DateTime?          @map("previous_end_date") @db.Date
+  previousPaidThrough      DateTime?          @map("previous_paid_through") @db.Date
+  // Estorno (Pagamentos e arrependimento; B3-1): o que falha fica em refund_requested.
+  refundOrigin             RefundOrigin?      @map("refund_origin")
+  refundRequestedAt        DateTime?          @map("refund_requested_at") @db.Timestamptz(3)
+  refundRequestedByUserId  String?            @map("refund_requested_by_user_id") @db.Uuid
+  // Texto livre do casal; nulo no expurgo (Retenção RN03).
+  refundReason             String?            @map("refund_reason")
+  refundAttempts           Int                @default(0) @map("refund_attempts") @db.SmallInt
+  refundLastError          String?            @map("refund_last_error")
+  refundFailedAt           DateTime?          @map("refund_failed_at") @db.Timestamptz(3)
+  refundedOutsideGateway   Boolean            @default(false) @map("refunded_outside_gateway")
+  refundReceiptKey         String?            @map("refund_receipt_key")
+  refundedAt               DateTime?          @map("refunded_at") @db.Timestamptz(3)
+  // Contestação (Pagamentos e arrependimento RN06).
+  disputedAt               DateTime?          @map("disputed_at") @db.Timestamptz(3)
+  disputeDeadline          DateTime?          @map("dispute_deadline") @db.Date
+  disputeResolvedAt        DateTime?          @map("dispute_resolved_at") @db.Timestamptz(3)
+
+  wedding         Wedding     @relation(fields: [weddingId], references: [id])
+  createdBy       User?       @relation("PaymentCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  refundRequester User?       @relation("PaymentRefundRequestedBy", fields: [refundRequestedByUserId], references: [id], onDelete: SetNull)
+  replaces        Payment?    @relation("PaymentReplaces", fields: [replacesPaymentId], references: [id], onDelete: SetNull)
+  replacedBy      Payment[]   @relation("PaymentReplaces")
+  commission      Commission?
+
+  @@unique([weddingId, idempotencyKey], map: "uq_payments_wedding_id_idempotency_key")
+  @@index([weddingId, createdAt(sort: Desc)], map: "idx_payments_wedding_id_created_at")
+  @@index([createdByUserId], map: "idx_payments_created_by_user_id")
+  @@index([refundRequestedByUserId], map: "idx_payments_refund_requested_by_user_id")
+  @@index([replacesPaymentId], map: "idx_payments_replaces_payment_id")
+  @@index([createdAt(sort: Desc)], map: "idx_payments_created_at")
+  @@map("payments")
+}
+
+// Webhook recebido (Publicar e pagar RN09): único por gateway e id do evento.
+// O payload guarda só os campos permitidos (RN02, B2-13). Sem GRANT ao kore_app.
+model GatewayEvent {
+  id             String             @id @default(uuid(7)) @db.Uuid
+  gateway        PaymentGatewayName
+  gatewayEventId String             @map("gateway_event_id")
+  type           String
+  payload        Json
+  receivedAt     DateTime           @default(now()) @map("received_at") @db.Timestamptz(3)
+  processedAt    DateTime?          @map("processed_at") @db.Timestamptz(3)
+  // O que o processamento fez (applied, ignored, orphan…), para o Backoffice.
+  result         String?
+
+  @@unique([gateway, gatewayEventId], map: "uq_gateway_events_gateway_gateway_event_id")
+  @@map("gateway_events")
+}
+
+// Cliente do gateway por pagador do casamento (B2-11). Sem GRANT ao kore_app.
+model GatewayCustomer {
+  id                String             @id @default(uuid(7)) @db.Uuid
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  weddingId         String             @map("wedding_id") @db.Uuid
+  gateway           PaymentGatewayName
+  payerTaxIdHash    String             @map("payer_tax_id_hash")
+  gatewayCustomerId String             @map("gateway_customer_id")
+
+  wedding Wedding @relation(fields: [weddingId], references: [id])
+
+  @@unique([weddingId, gateway, payerTaxIdHash], map: "uq_gateway_customers_wedding_id_gateway_payer_tax_id_hash")
+  @@map("gateway_customers")
+}
+
+enum CommissionStatus {
+  pending
+  available
+  paid
+  reversed
+  blocked
+  held
+
+  @@map("commission_status")
+}
+
+enum CommissionBlockReason {
+  self_referral
+  referrer_blocked
+  admin
+
+  @@map("commission_block_reason")
+}
+
+// Comissão do indicador (Comissões RN01 a RN06): uma por pagamento aplicado,
+// nasce na mesma transação. RLS por referrerId; o kore_app só lê.
+model Commission {
+  id              String                 @id @default(uuid(7)) @db.Uuid
+  createdAt       DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime               @updatedAt @map("updated_at") @db.Timestamptz(3)
+  referrerId      String                 @map("referrer_id") @db.Uuid
+  weddingId       String                 @map("wedding_id") @db.Uuid
+  paymentId       String                 @unique(map: "uq_commissions_payment_id") @map("payment_id") @db.Uuid
+  // Valor pago sem os juros do cartão.
+  baseAmountCents Int                    @map("base_amount_cents")
+  ratePercent     Int                    @map("rate_percent") @db.SmallInt
+  amountCents     Int                    @map("amount_cents")
+  status          CommissionStatus
+  blockReason     CommissionBlockReason? @map("block_reason")
+  availableAt     DateTime               @map("available_at") @db.Timestamptz(3)
+  reversedAt      DateTime?              @map("reversed_at") @db.Timestamptz(3)
+  paidAt          DateTime?              @map("paid_at") @db.Timestamptz(3)
+  payoutId        String?                @map("payout_id") @db.Uuid
+
+  referrer    Referrer               @relation(fields: [referrerId], references: [id])
+  wedding     Wedding                @relation(fields: [weddingId], references: [id])
+  payment     Payment                @relation(fields: [paymentId], references: [id])
+  payout      Payout?                @relation(fields: [payoutId], references: [id], onDelete: SetNull)
+  adjustments CommissionAdjustment[]
+
+  @@index([referrerId, status, availableAt], map: "idx_commissions_referrer_id_status_available_at")
+  @@index([referrerId, createdAt], map: "idx_commissions_referrer_id_created_at")
+  @@index([weddingId], map: "idx_commissions_wedding_id")
+  @@index([payoutId], map: "idx_commissions_payout_id")
+  @@map("commissions")
+}
+
+enum CommissionAdjustmentReason {
+  refund
+  chargeback
+  manual
+
+  @@map("commission_adjustment_reason")
+}
+
+// Ajuste de comissão (Comissões RN05; Backoffice - cobrança): abate ou soma no
+// próximo repasse. RLS por referrerId; o kore_app só lê.
+model CommissionAdjustment {
+  id              String                     @id @default(uuid(7)) @db.Uuid
+  createdAt       DateTime                   @default(now()) @map("created_at") @db.Timestamptz(3)
+  referrerId      String                     @map("referrer_id") @db.Uuid
+  // Nulo no ajuste manual do Admin.
+  commissionId    String?                    @map("commission_id") @db.Uuid
+  amountCents     Int                        @map("amount_cents")
+  reason          CommissionAdjustmentReason
+  note            String?
+  createdByUserId String?                    @map("created_by_user_id") @db.Uuid
+  payoutId        String?                    @map("payout_id") @db.Uuid
+
+  referrer   Referrer    @relation(fields: [referrerId], references: [id])
+  commission Commission? @relation(fields: [commissionId], references: [id])
+  createdBy  User?       @relation("CommissionAdjustmentCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  payout     Payout?     @relation(fields: [payoutId], references: [id], onDelete: SetNull)
+
+  @@index([referrerId, createdAt], map: "idx_commission_adjustments_referrer_id_created_at")
+  @@index([commissionId], map: "idx_commission_adjustments_commission_id")
+  @@index([createdByUserId], map: "idx_commission_adjustments_created_by_user_id")
+  @@index([payoutId], map: "idx_commission_adjustments_payout_id")
+  @@map("commission_adjustments")
+}
+
+enum PayoutStatus {
+  requested
+  held
+  processing
+  paid
+  rejected
+
+  @@map("payout_status")
+}
+
+enum PayoutHoldReason {
+  refund
+  pix_key_change
+  referrer_blocked
+  dispute
+  commission_blocked
+
+  @@map("payout_hold_reason")
+}
+
+// Repasse ao indicador (Repasse RN04 a RN07): um aberto por indicador. O
+// kore_app só lê; o pedido grava por função SECURITY DEFINER.
+model Payout {
+  id                String            @id @default(uuid(7)) @db.Uuid
+  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+  referrerId        String            @map("referrer_id") @db.Uuid
+  amountCents       Int               @map("amount_cents")
+  status            PayoutStatus      @default(requested)
+  holdReason        PayoutHoldReason? @map("hold_reason")
+  pixKeyId          String            @map("pix_key_id") @db.Uuid
+  pixKeyMasked      String            @map("pix_key_masked")
+  // Referência única do Pix de saída (idempotente; decisão 230, risco 5).
+  externalRef       String            @unique(map: "uq_payouts_external_ref") @map("external_ref")
+  gatewayTransferId String?           @map("gateway_transfer_id")
+  idempotencyKey    String            @map("idempotency_key") @db.Uuid
+  requestedAt       DateTime          @map("requested_at") @db.Timestamptz(3)
+  processingAt      DateTime?         @map("processing_at") @db.Timestamptz(3)
+  lastError         String?           @map("last_error")
+  paidAt            DateTime?         @map("paid_at") @db.Timestamptz(3)
+  paidByUserId      String?           @map("paid_by_user_id") @db.Uuid
+  receiptKey        String?           @map("receipt_key")
+  rejectedAt        DateTime?         @map("rejected_at") @db.Timestamptz(3)
+  rejectReason      String?           @map("reject_reason")
+
+  referrer    Referrer               @relation(fields: [referrerId], references: [id])
+  pixKey      ReferrerPixKey         @relation(fields: [pixKeyId], references: [id])
+  paidBy      User?                  @relation("PayoutPaidBy", fields: [paidByUserId], references: [id], onDelete: SetNull)
+  commissions Commission[]
+  adjustments CommissionAdjustment[]
+
+  @@unique([referrerId, idempotencyKey], map: "uq_payouts_referrer_id_idempotency_key")
+  @@index([referrerId, requestedAt(sort: Desc)], map: "idx_payouts_referrer_id_requested_at")
+  @@index([status, requestedAt], map: "idx_payouts_status_requested_at")
+  @@index([pixKeyId], map: "idx_payouts_pix_key_id")
+  @@index([paidByUserId], map: "idx_payouts_paid_by_user_id")
+  @@map("payouts")
+}
+
+enum TaxIdType {
+  cpf
+  cnpj
+
+  @@map("tax_id_type")
+}
+
+enum PixKeyType {
+  cpf
+  cnpj
+  email
+  phone
+  random
+
+  @@map("pix_key_type")
+}
+
+enum PixKeyStatus {
+  pending_confirmation
+  pending_activation
+  active
+  replaced
+  canceled
+
+  @@map("pix_key_status")
+}
+
+// Chave Pix do indicador (Repasse RN03): só a máscara sai do banco para o app.
+model ReferrerPixKey {
+  id               String       @id @default(uuid(7)) @db.Uuid
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  referrerId       String       @map("referrer_id") @db.Uuid
+  keyType          PixKeyType   @map("key_type")
+  keyEncrypted     String       @map("key_encrypted")
+  keyHash          String       @map("key_hash")
+  keyMasked        String       @map("key_masked")
+  status           PixKeyStatus @default(pending_confirmation)
+  confirmTokenHash String?      @map("confirm_token_hash")
+  confirmExpiresAt DateTime?    @map("confirm_expires_at") @db.Timestamptz(3)
+  confirmedAt      DateTime?    @map("confirmed_at") @db.Timestamptz(3)
+  activeFrom       DateTime?    @map("active_from") @db.Timestamptz(3)
+  replacedAt       DateTime?    @map("replaced_at") @db.Timestamptz(3)
+  canceledAt       DateTime?    @map("canceled_at") @db.Timestamptz(3)
+
+  referrer Referrer @relation(fields: [referrerId], references: [id])
+  payouts  Payout[]
+
+  @@index([referrerId, createdAt(sort: Desc)], map: "idx_referrer_pix_keys_referrer_id_created_at")
+  @@map("referrer_pix_keys")
+}
+
+enum AlertType {
+  pix_key_churn
+  login_abuse
+  photo_flood
+  webhook_failure
+  orphan_payment
+  gateway_amount_mismatch
+  refund_failed
+  payment_disputed
+  dispute_lost
+  repeated_refund
+  payout_failed
+  purge_failed
+  access_email_changed
+  manual_adjustment
+
+  @@map("alert_type")
+}
+
+enum AlertStatus {
+  open
+  resolved
+
+  @@map("alert_status")
+}
+
+// Alerta do backoffice (Backoffice - acesso RN12): um aberto por tipo e
+// entidade (B9-7). Sem GRANT ao kore_app; fica pelo prazo do log.
+model Alert {
+  id               String      @id @default(uuid(7)) @db.Uuid
+  createdAt        DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  type             AlertType
+  status           AlertStatus @default(open)
+  // Sem FK: o alerta sobrevive à lápide e à exclusão da conta.
+  weddingId        String?     @map("wedding_id") @db.Uuid
+  userId           String?     @map("user_id") @db.Uuid
+  entityType       String      @map("entity_type")
+  entityId         String      @map("entity_id")
+  data             Json?
+  resolvedByUserId String?     @map("resolved_by_user_id") @db.Uuid
+  resolvedAt       DateTime?   @map("resolved_at") @db.Timestamptz(3)
+
+  @@index([weddingId], map: "idx_alerts_wedding_id")
+  @@map("alerts")
+}
+
+enum SupportSessionEndReason {
+  exit
+  idle
+  max_duration
+  logout
+
+  @@map("support_session_end_reason")
+}
+
+// Ver como o casal (Backoffice - acesso RN08). Sem GRANT ao kore_app.
+model SupportSession {
+  id          String                   @id @default(uuid(7)) @db.Uuid
+  createdAt   DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
+  adminUserId String                   @map("admin_user_id") @db.Uuid
+  weddingId   String                   @map("wedding_id") @db.Uuid
+  reason      String
+  startedAt   DateTime                 @map("started_at") @db.Timestamptz(3)
+  lastSeenAt  DateTime                 @map("last_seen_at") @db.Timestamptz(3)
+  endedAt     DateTime?                @map("ended_at") @db.Timestamptz(3)
+  endReason   SupportSessionEndReason? @map("end_reason")
+
+  adminUser User             @relation("SupportSessionAdmin", fields: [adminUserId], references: [id])
+  wedding   Wedding          @relation(fields: [weddingId], references: [id])
+  sessions  Session[]
+  logs      ApplicationLog[]
+
+  @@index([adminUserId, startedAt(sort: Desc)], map: "idx_support_sessions_admin_user_id_started_at")
+  @@index([weddingId], map: "idx_support_sessions_wedding_id")
+  @@map("support_sessions")
+}
+
+// Extensão como cortesia do Admin (decisão 73): não é Payment nem gera
+// comissão. Só inserção; sem GRANT ao kore_app.
+model CourtesyExtension {
+  id                  String    @id @default(uuid(7)) @db.Uuid
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  weddingId           String    @map("wedding_id") @db.Uuid
+  adminUserId         String?   @map("admin_user_id") @db.Uuid
+  months              Int       @db.SmallInt
+  reason              String
+  previousEndDate     DateTime  @map("previous_end_date") @db.Date
+  previousPaidThrough DateTime? @map("previous_paid_through") @db.Date
+  newEndDate          DateTime  @map("new_end_date") @db.Date
+  periodStart         DateTime  @map("period_start") @db.Date
+  periodEnd           DateTime  @map("period_end") @db.Date
+
+  wedding   Wedding @relation(fields: [weddingId], references: [id])
+  adminUser User?   @relation("CourtesyExtensionAdmin", fields: [adminUserId], references: [id], onDelete: SetNull)
+
+  @@index([weddingId, createdAt], map: "idx_courtesy_extensions_wedding_id_created_at")
+  @@index([adminUserId], map: "idx_courtesy_extensions_admin_user_id")
+  @@map("courtesy_extensions")
+}
+
+enum BillingNotice {
+  end_date_in_7_days
+  grace_day_1
+  grace_day_5
+  expired
+
+  @@map("billing_notice")
+}
+
+// Avisos de saída do ar já mandados (Data de saída do ar RN03): um por aviso e
+// data. Só o worker lê e grava.
+model BillingNoticeLog {
+  id        String        @id @default(uuid(7)) @db.Uuid
+  weddingId String        @map("wedding_id") @db.Uuid
+  notice    BillingNotice
+  endDate   DateTime      @map("end_date") @db.Date
+  sentAt    DateTime      @default(now()) @map("sent_at") @db.Timestamptz(3)
+
+  wedding Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+
+  @@unique([weddingId, notice, endDate], map: "uq_billing_notice_logs_wedding_id_notice_end_date")
+  @@map("billing_notice_logs")
 }

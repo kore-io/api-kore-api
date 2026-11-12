@@ -195,6 +195,7 @@ describe('Expurgo do casamento sem dono (RN13 de Convites; decisões 136 e 180; 
   // (e, se for apagada, no cenário do segundo caso).
   const PURGED_TABLES = [
     'access_invitations',
+    'billing_notice_logs',
     'guest_responses',
     'guest_tags',
     'guests',
@@ -215,8 +216,17 @@ describe('Expurgo do casamento sem dono (RN13 de Convites; decisões 136 e 180; 
     'tags',
     'wedding_stats',
   ];
-  // O log fica pelo prazo próprio (Modelo de Dados, Expurgo).
-  const KEPT_TABLES = ['application_logs'];
+  // O log fica pelo prazo próprio (Modelo de Dados, Expurgo). Os registros de
+  // dinheiro e do Backoffice da F3 ficam apontando para a lápide (Retenção RN03).
+  const KEPT_TABLES = [
+    'alerts',
+    'application_logs',
+    'commissions',
+    'courtesy_extensions',
+    'gateway_customers',
+    'payments',
+    'support_sessions',
+  ];
 
   it('decisão 207(17) - toda tabela com wedding_id é apagada pelo expurgo ou fica de propósito', async () => {
     const rows = await db.$queryRaw<{ table_name: string }[]>`
@@ -321,6 +331,10 @@ describe('Expurgo do casamento sem dono (RN13 de Convites; decisões 136 e 180; 
       });
       await db.notificationEmailState.create({
         data: { userId: owner.userId, weddingId, emailedThrough: new Date() },
+      });
+      // F3: um aviso de saída do ar já mandado (Retenção RN03).
+      await db.billingNoticeLog.create({
+        data: { weddingId, notice: 'end_date_in_7_days', endDate: new Date('2015-02-14') },
       });
       await db.wedding.update({
         where: { id: weddingId },
