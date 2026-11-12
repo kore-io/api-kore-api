@@ -22,7 +22,7 @@ import {
   SLUG_MIN_LENGTH,
   type BrazilianState,
 } from '../domain/wedding-signup';
-import { DATE_ONLY, SLUG, trim } from './weddings.dto';
+import { DATE_ONLY, lowercaseSlug, SLUG, trim } from './weddings.dto';
 
 /**
  * O DTO só confere a forma e põe um teto no tamanho do pedido; as regras dos
@@ -148,7 +148,9 @@ export class CreatePlannerWeddingBody {
   @Transform(trim) @IsString() @Length(1, 80) city: string;
   @ApiProperty({ enum: BRAZILIAN_STATES }) @IsIn(BRAZILIAN_STATES) state: BrazilianState;
 
+  /** Minúsculas, como no Editor (sugestão do Crivo): "Fernanda-E-Joao" vale "fernanda-e-joao". */
   @ApiProperty({ example: 'fernanda-e-joao' })
+  @Transform(lowercaseSlug)
   @IsString()
   @Length(SLUG_MIN_LENGTH, SLUG_MAX_LENGTH)
   @Matches(SLUG)

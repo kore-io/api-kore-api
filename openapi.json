@@ -8432,6 +8432,7 @@
           },
           "slug": {
             "type": "string",
+            "description": "Minúsculas, como no Editor (sugestão do Crivo): \"Fernanda-E-Joao\" vale \"fernanda-e-joao\".",
             "minLength": 3,
             "maxLength": 40,
             "example": "fernanda-e-joao"

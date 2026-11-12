@@ -111,6 +111,17 @@ describe('Novo casamento pela cerimonialista (banco real; decisões 223 e 224)',
       expect(me.body.activeProfile).toBeNull();
     });
 
+    it('o endereço com maiúsculas vira minúsculas, como no Editor', async () => {
+      const planner = await juliana();
+      const lower = slug();
+
+      const response = await create(planner.cookie, body({ slug: lower.toUpperCase() })).expect(
+        201,
+      );
+
+      expect(response.body.slug).toBe(lower);
+    });
+
     it('RN03 - a Aparência do passo 2 entra, com o guarda-corpo do contraste', async () => {
       const planner = await juliana();
 
