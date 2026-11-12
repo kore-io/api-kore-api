@@ -43,6 +43,13 @@ export class BackofficeTransaction implements AfterCommit {
     return result;
   }
 
+  /** O cliente da transação corrente; fora dela, erro (nada escapa da transação). */
+  client(): Prisma.TransactionClient {
+    const current = this.current.getStore();
+    if (!current) throw new Error('Consulta fora da transação do backoffice.');
+    return current.tx;
+  }
+
   schedule(work: () => Promise<void>): void {
     const current = this.current.getStore();
     if (!current) throw new Error('Agendamento fora da transação do backoffice.');

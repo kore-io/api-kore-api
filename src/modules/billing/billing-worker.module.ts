@@ -14,12 +14,37 @@ import {
   GATEWAY_EVENTS_QUEUE,
 } from './infrastructure/gateway-events.queue';
 import { PAYMENT_GATEWAY_PROVIDERS } from './infrastructure/backoffice/payment-gateway.providers';
+import { PAYMENT_PROCESSING_PROVIDERS } from './infrastructure/payment-processing.providers';
+import { AppConfigService } from '../../shared/config/app-config.service';
+import { EMAIL_OUTBOX } from '../../shared/email/application/email-outbox.port';
+import { EMAIL_SENDER } from '../../shared/email/application/email-sender.port';
+import { EmailQueuesModule } from '../../shared/email/email-queues.module';
+import { BullmqEmailOutbox } from '../../shared/email/infrastructure/bullmq-email-outbox';
+import { SmtpEmailSender } from '../../shared/email/infrastructure/smtp-email-sender';
+import { PRODUCT_EVENT_RECORDER } from '../product-events/application/ports/product-event-recorder.port';
+import { PrismaProductEventRecorder } from '../product-events/infrastructure/prisma-product-event-recorder';
+import { WeddingPseudonymizer } from '../product-events/infrastructure/wedding-pseudonymizer';
 
 /** Cobrança e publicação (F3), do lado do worker: o processamento dos eventos do gateway. */
 @Module({
-  imports: [BullModule.registerQueue({ name: GATEWAY_EVENTS_QUEUE })],
+  imports: [
+    BullModule.registerQueue({ name: GATEWAY_EVENTS_QUEUE }),
+    // O e-mail do pagamento confirmado entra na fila de e-mail, como na API.
+    EmailQueuesModule,
+  ],
   providers: [
     ...PAYMENT_GATEWAY_PROVIDERS,
+    ...PAYMENT_PROCESSING_PROVIDERS,
+    { provide: EMAIL_SENDER, useClass: SmtpEmailSender },
+    { provide: EMAIL_OUTBOX, useClass: BullmqEmailOutbox },
+    {
+      provide: WeddingPseudonymizer,
+      inject: [AppConfigService],
+      useFactory: (config: AppConfigService) =>
+        new WeddingPseudonymizer({ keyBase64: config.get({ key: 'PRODUCT_EVENT_KEY' }) }),
+    },
+    // O evento de produto `publicado` da primeira publicação (decisão 216, D29).
+    { provide: PRODUCT_EVENT_RECORDER, useClass: PrismaProductEventRecorder },
     { provide: GATEWAY_EVENT_STORE, useClass: PrismaGatewayEventStore },
     { provide: GATEWAY_EVENT_QUEUE, useClass: BullmqGatewayEventQueue },
     ProcessGatewayEvent,

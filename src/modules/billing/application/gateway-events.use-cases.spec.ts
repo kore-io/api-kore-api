@@ -6,6 +6,7 @@ import type {
   WebhookVerification,
 } from './ports/payment-gateway.port';
 import { ProcessGatewayEvent } from './process-gateway-event.use-case';
+import type { SyncPaymentWithGateway } from './sync-payment.use-case';
 import { ReceiveGatewayWebhook } from './receive-gateway-webhook.use-case';
 import { RequeueGatewayEvents } from './requeue-gateway-events.use-case';
 
@@ -152,39 +153,84 @@ describe('ProcessGatewayEvent (Publicar e pagar RN09)', () => {
     event,
     processedAt: null,
   };
+  const charge = {
+    gatewayPaymentId: 'pay_local_1',
+    externalReference: 'pay-1',
+    status: 'confirmed' as const,
+    chargedCents: 33710,
+    feeCents: 199,
+    netCents: 33511,
+    cardLast4: '4242',
+    failureReason: null,
+  };
+  const setup = (store: jest.Mocked<GatewayEventStore>, found = true) => {
+    const gateway = {
+      getCharge: jest.fn().mockResolvedValue(found ? charge : null),
+    } as unknown as PaymentGateway;
+    const sync = { execute: jest.fn().mockResolvedValue('applied') };
+    return {
+      gateway,
+      sync,
+      process: new ProcessGatewayEvent(store, gateway, sync as unknown as SyncPaymentWithGateway),
+    };
+  };
 
-  it('B2-1 - acha o pagamento pela referência do Kore e marca o evento com ele', async () => {
+  it('B2-1 e B2-6 - acha o pagamento pela referência, consulta a cobrança e aplica o que a consulta diz', async () => {
     const store = storeMock({ byId: jest.fn().mockResolvedValue(stored) });
-    const result = await new ProcessGatewayEvent(store).execute({ eventId: 'e1', now });
+    const { gateway, sync, process } = setup(store);
+    const result = await process.execute({ eventId: 'e1', now });
     expect(store.paymentIdFor).toHaveBeenCalledWith({
       externalReference: 'pay-1',
       gatewayPaymentId: 'pay_local_1',
     });
+    expect(gateway.getCharge).toHaveBeenCalledWith({ externalReference: 'pay-1' });
+    expect(sync.execute).toHaveBeenCalledWith({ paymentId: 'pay-1', charge, now });
     expect(store.markProcessed).toHaveBeenCalledWith({
       id: 'e1',
       paymentId: 'pay-1',
-      result: 'recorded',
+      result: 'applied',
       now,
     });
-    expect(result).toEqual({ kind: 'processed', paymentId: 'pay-1', result: 'recorded' });
+    expect(result).toEqual({ kind: 'processed', paymentId: 'pay-1', result: 'applied' });
   });
 
   it('RN09 - o evento já processado não é processado de novo', async () => {
     const store = storeMock({ byId: jest.fn().mockResolvedValue({ ...stored, processedAt: now }) });
-    expect(await new ProcessGatewayEvent(store).execute({ eventId: 'e1', now })).toEqual({
-      kind: 'already_processed',
-    });
+    const { sync, process } = setup(store);
+    expect(await process.execute({ eventId: 'e1', now })).toEqual({ kind: 'already_processed' });
+    expect(sync.execute).not.toHaveBeenCalled();
     expect(store.markProcessed).not.toHaveBeenCalled();
   });
 
-  it('RN11 - cobrança sem Payment: processado como no_payment', async () => {
+  it('RN11 - cobrança sem Payment: processado como no_payment, sem consultar', async () => {
     const store = storeMock({
       byId: jest.fn().mockResolvedValue(stored),
       paymentIdFor: jest.fn().mockResolvedValue(null),
     });
-    expect(await new ProcessGatewayEvent(store).execute({ eventId: 'e1', now })).toMatchObject({
-      result: 'no_payment',
+    const { gateway, process } = setup(store);
+    expect(await process.execute({ eventId: 'e1', now })).toMatchObject({ result: 'no_payment' });
+    expect(gateway.getCharge).not.toHaveBeenCalled();
+  });
+
+  it('RN09 - a consulta não acha a cobrança: nada muda', async () => {
+    const store = storeMock({ byId: jest.fn().mockResolvedValue(stored) });
+    const { sync, process } = setup(store, false);
+    expect(await process.execute({ eventId: 'e1', now })).toMatchObject({
+      result: 'charge_not_found',
     });
+    expect(sync.execute).not.toHaveBeenCalled();
+  });
+
+  it('RN09 - a consulta falhou: o erro sobe e o evento fica sem processedAt', async () => {
+    const store = storeMock({ byId: jest.fn().mockResolvedValue(stored) });
+    const gateway = {
+      getCharge: jest.fn().mockRejectedValue(new Error('timeout')),
+    } as unknown as PaymentGateway;
+    const process = new ProcessGatewayEvent(store, gateway, {
+      execute: jest.fn(),
+    } as unknown as SyncPaymentWithGateway);
+    await expect(process.execute({ eventId: 'e1', now })).rejects.toThrow('timeout');
+    expect(store.markProcessed).not.toHaveBeenCalled();
   });
 });
 

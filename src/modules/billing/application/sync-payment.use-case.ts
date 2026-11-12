@@ -1,0 +1,251 @@
+import { Inject, Injectable } from '@nestjs/common';
+import { BackofficeTransaction } from '../../../shared/database/backoffice-transaction';
+import { daysBetween, localDate } from '../../../shared/time/local-date';
+import {
+  PRODUCT_EVENT_RECORDER,
+  type ProductEventRecorder,
+} from '../../product-events/application/ports/product-event-recorder.port';
+import { decideConfirmation } from '../domain/payment-confirmation';
+import { BILLING_MAILER, type BillingMailer } from './ports/billing-mailer.port';
+import type { GatewayCharge } from './ports/payment-gateway.port';
+import {
+  type LedgerPayment,
+  type LedgerWedding,
+  PAYMENT_LEDGER,
+  type PaymentLedger,
+} from './ports/payment-ledger.port';
+
+export type SyncResult =
+  | 'no_payment'
+  | 'unchanged'
+  | 'failed'
+  | 'canceled'
+  | 'already_confirmed'
+  | 'applied'
+  | 'undercharged'
+  | 'orphan'
+  | 'not_handled';
+
+/**
+ * Aplica ao Payment o estado que o gateway devolveu na consulta (Publicar e
+ * pagar RN09: o webhook é gatilho, a consulta é a fonte), pela máquina de
+ * estados da RN10, numa transação do backoffice com o Wedding travado antes do
+ * Payment (RN18). Serve ao webhook e à reconciliação (RN11).
+ *
+ * - confirmado: decide entre aplicar (RN05), recebido a menos (RN09) e sem
+ *   destino (RN08); o mesmo fato de novo não faz nada;
+ * - recusado e cancelado: pendente → failed · canceled;
+ * - estorno e disputa: o PR de Pagamentos e arrependimento.
+ *
+ * Aplicar a publicação: o Payment pago com appliedAt; o casamento publicado
+ * até a data paga (paidThrough = endDate, origem payment); os logs; a
+ * notificação `billing` às pessoas donas e, na primeira publicação, o
+ * `wedding_published` ao indicador; depois do commit, o e-mail e o evento de
+ * produto `publicado`. A comissão nasce aqui, no PR das comissões.
+ */
+@Injectable()
+export class SyncPaymentWithGateway {
+  constructor(
+    private readonly transaction: BackofficeTransaction,
+    @Inject(PAYMENT_LEDGER) private readonly ledger: PaymentLedger,
+    @Inject(BILLING_MAILER) private readonly mailer: BillingMailer,
+    @Inject(PRODUCT_EVENT_RECORDER) private readonly productEvents: ProductEventRecorder,
+  ) {}
+
+  execute({
+    paymentId,
+    charge,
+    now,
+  }: {
+    paymentId: string;
+    charge: GatewayCharge;
+    now: Date;
+  }): Promise<SyncResult> {
+    return this.transaction.run(async () => {
+      const locked = await this.ledger.lock({ paymentId });
+      if (!locked) return 'no_payment';
+      const { wedding, payment } = locked;
+
+      switch (charge.status) {
+        case 'pending':
+        case 'overdue':
+          return 'unchanged';
+        case 'refused':
+          if (payment.status !== 'pending') return 'unchanged';
+          await this.ledger.markFailed({
+            paymentId,
+            reason: charge.failureReason ?? 'refused',
+            gatewayPaymentId: charge.gatewayPaymentId,
+          });
+          await this.ledger.log({
+            entry: {
+              action: 'payment.failed',
+              weddingId: wedding.id,
+              entityType: 'payment',
+              entityId: paymentId,
+              data: { reason: charge.failureReason ?? 'refused' },
+            },
+          });
+          return 'failed';
+        case 'canceled':
+          if (payment.status !== 'pending') return 'unchanged';
+          await this.ledger.markCanceled({ paymentId, now });
+          await this.ledger.log({
+            entry: {
+              action: 'payment.canceled',
+              weddingId: wedding.id,
+              entityType: 'payment',
+              entityId: paymentId,
+            },
+          });
+          return 'canceled';
+        case 'confirmed':
+          break;
+        default:
+          return 'not_handled';
+      }
+
+      const chargedCents = charge.chargedCents ?? payment.amountCents;
+      const decision = decideConfirmation({
+        payment,
+        wedding,
+        chargedCents,
+        otherPublicationApplied:
+          payment.kind === 'publication' &&
+          (await this.ledger.otherPublicationApplied({ weddingId: wedding.id, paymentId })),
+      });
+      if (decision.kind === 'already_confirmed') return 'already_confirmed';
+      if (payment.kind === 'extension') return 'not_handled';
+
+      await this.ledger.markPaid({
+        paymentId,
+        paidAt: now,
+        chargedCents,
+        feeCents: charge.feeCents,
+        netCents: charge.netCents,
+        gatewayPaymentId: charge.gatewayPaymentId,
+        cardLast4: charge.cardLast4,
+      });
+      await this.ledger.log({
+        entry: {
+          action: 'payment.paid',
+          weddingId: wedding.id,
+          entityType: 'payment',
+          entityId: paymentId,
+          data: {
+            chargedCents,
+            amountCents: payment.amountCents,
+            applied: decision.kind === 'apply',
+          },
+        },
+      });
+
+      if (decision.kind === 'undercharged' || (decision.kind === 'apply' && decision.overcharged)) {
+        await this.ledger.openAlert({
+          type: 'gateway_amount_mismatch',
+          weddingId: wedding.id,
+          entityType: 'payment',
+          entityId: paymentId,
+          data: {
+            shortCode: payment.shortCode,
+            chargedCents,
+            amountCents: payment.amountCents,
+            applied: decision.kind === 'apply',
+          },
+        });
+      }
+      if (decision.kind === 'undercharged') return 'undercharged';
+      if (decision.kind === 'orphan') {
+        // RN08: fica pago sem appliedAt; o estorno automático entra no PR de
+        // Pagamentos e arrependimento.
+        await this.ledger.openAlert({
+          type: 'orphan_payment',
+          weddingId: wedding.id,
+          entityType: 'payment',
+          entityId: paymentId,
+          data: { shortCode: payment.shortCode, reason: decision.reason },
+        });
+        return 'orphan';
+      }
+
+      await this.apply({ wedding, payment, now });
+      return 'applied';
+    });
+  }
+
+  private async apply({
+    wedding,
+    payment,
+    now,
+  }: {
+    wedding: LedgerWedding;
+    payment: LedgerPayment;
+    now: Date;
+  }): Promise<void> {
+    const firstPublication = wedding.publishedAt === null;
+    await this.ledger.markApplied({ paymentId: payment.id, now });
+    await this.ledger.publish({
+      weddingId: wedding.id,
+      endDate: payment.periodEnd,
+      publishedByUserId: payment.createdByUserId,
+      now,
+    });
+    await this.ledger.log({
+      entry: {
+        action: 'wedding.published',
+        weddingId: wedding.id,
+        entityType: 'wedding',
+        entityId: wedding.id,
+        data: { paymentId: payment.id },
+      },
+    });
+    const recipients = await this.ledger.billingRecipients({ weddingId: wedding.id });
+    await this.ledger.notifyBilling({
+      weddingId: wedding.id,
+      paymentId: payment.id,
+      userIds: recipients.map((recipient) => recipient.userId),
+      payload: {
+        kind: 'payment_confirmed',
+        paymentId: payment.id,
+        endDate: payment.periodEnd,
+        amountCents: payment.amountCents,
+        method: payment.method,
+        installments: payment.installments,
+        at: now.toISOString(),
+      },
+      now,
+    });
+    // Notificações da cerimonialista RN03: só na primeira publicação.
+    if (firstPublication) await this.ledger.notifyWeddingPublished({ weddingId: wedding.id, now });
+
+    const partnerNames = await this.ledger.partnerNames({ weddingId: wedding.id });
+    for (const recipient of recipients) {
+      this.transaction.schedule(() =>
+        this.mailer.paymentConfirmed({
+          notice: {
+            to: recipient.email,
+            firstName: recipient.firstName,
+            endDate: payment.periodEnd,
+            partnerNames,
+          },
+        }),
+      );
+    }
+    if (firstPublication && wedding.eventDate) {
+      const daysUntilWedding = daysBetween({
+        from: localDate({ at: now, timezone: wedding.timezone }),
+        to: wedding.eventDate,
+      });
+      this.transaction.schedule(() =>
+        this.productEvents.record({
+          event: {
+            name: 'publicado',
+            weddingId: wedding.id,
+            props: { dias_ate_casamento: daysUntilWedding },
+          },
+          occurredAt: now,
+        }),
+      );
+    }
+  }
+}

@@ -1,6 +1,8 @@
 import {
   BadRequestException,
   ConflictException,
+  HttpException,
+  HttpStatus,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { toHttpError as toAccessHttpError } from '../../access/presentation/access-http-errors';
@@ -9,7 +11,12 @@ import {
   BillingEventDateMissingError,
   BillingNotDraftError,
   BillingSlugMissingError,
+  IdempotencyKeyReusedError,
   NotPublishedError,
+  PaymentGatewayUnavailableError,
+  PaymentPendingError,
+  PriceChangedError,
+  RefundInProgressError,
 } from '../domain/billing.errors';
 import { InstallmentsOutOfRangeError } from '../domain/pricing';
 
@@ -58,5 +65,39 @@ export function toHttpError(error: unknown): unknown {
       message: 'The number of installments is not available for this amount.',
       maxInstallments: error.maxInstallments,
     });
+  if (error instanceof PaymentPendingError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'PAYMENT_PENDING',
+      message: 'There is already a payment awaiting confirmation.',
+    });
+  if (error instanceof RefundInProgressError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'REFUND_IN_PROGRESS',
+      message: 'The previous publication is still being refunded.',
+    });
+  if (error instanceof PriceChangedError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'PRICE_CHANGED',
+      message: 'The price changed. Fetch the quote again.',
+    });
+  if (error instanceof IdempotencyKeyReusedError)
+    return new UnprocessableEntityException({
+      statusCode: 422,
+      error: 'IDEMPOTENCY_KEY_REUSED',
+      message: 'This Idempotency-Key was used with a different request.',
+    });
+  if (error instanceof PaymentGatewayUnavailableError)
+    return new HttpException(
+      {
+        statusCode: 503,
+        error: 'GATEWAY_UNAVAILABLE',
+        message: 'The payment gateway did not answer. Try again with the same Idempotency-Key.',
+        paymentId: error.paymentId,
+      },
+      HttpStatus.SERVICE_UNAVAILABLE,
+    );
   return toAccessHttpError(error);
 }

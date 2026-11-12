@@ -1,0 +1,34 @@
+import { Inject, Injectable } from '@nestjs/common';
+import { AppConfigService } from '../../../shared/config/app-config.service';
+import {
+  EMAIL_OUTBOX,
+  type EmailOutbox,
+} from '../../../shared/email/application/email-outbox.port';
+import type {
+  BillingMailer,
+  PaymentConfirmedNotice,
+} from '../application/ports/billing-mailer.port';
+import { paymentConfirmedEmail } from './emails/billing.email';
+
+/** Cobrança e publicação, na Área do Casal (página 21). */
+const BILLING_PATH = '/app/cobranca';
+
+@Injectable()
+export class OutboxBillingMailer implements BillingMailer {
+  private readonly appUrl: string;
+
+  constructor(
+    @Inject(EMAIL_OUTBOX) private readonly outbox: EmailOutbox,
+    config: AppConfigService,
+  ) {
+    this.appUrl = config.get({ key: 'APP_URL' });
+  }
+
+  async paymentConfirmed({ notice }: { notice: PaymentConfirmedNotice }): Promise<void> {
+    const url = new URL(BILLING_PATH, this.appUrl).toString();
+    await this.outbox.enqueue({
+      message: paymentConfirmedEmail({ notice, url }),
+      priority: 'default',
+    });
+  }
+}
