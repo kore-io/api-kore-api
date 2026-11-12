@@ -2,11 +2,23 @@ import type { EmailFrequency } from './notification-store.port';
 
 /** O estado do e-mail de uma pessoa num casamento, travado para o envio (E-mail e push RN02). */
 export interface LockedEmailState {
-  /** O vínculo ativo: perder o vínculo para os envios (RN09). */
+  /** O vínculo ativo: perder o vínculo para os envios (RN09; D18). */
   member: boolean;
+  /**
+   * Quem recebe, conferido na hora de mandar: o dono (os textos e a
+   * preferência do casamento) ou a cerimonialista colaboradora com Planner
+   * (os textos dela e a preferência geral; Notificações da cerimonialista RN06
+   * e RN07). Nulo sem vínculo.
+   */
+  role: 'owner' | 'planner' | null;
+  /** Os primeiros nomes do casal, para os textos da cerimonialista. */
+  partnerNames: [string, string];
   email: string;
   firstName: string | null;
-  /** A preferência do tipo `rsvp`; sem linha, o padrão (Resumo diário). */
+  /**
+   * A preferência do tipo `rsvp`: a do casamento para o dono, a geral para a
+   * cerimonialista; sem linha, o padrão (Resumo diário).
+   */
   frequency: EmailFrequency;
   timezone: string;
   emailedThrough: Date | null;
@@ -46,7 +58,7 @@ export interface NotificationEmailStore {
     weddingId: string;
     work: (state: LockedEmailState) => Promise<EmailStateChange | null>;
   }): Promise<void>;
-  /** A preferência e o último "Na hora", sem travar (para agendar o envio). */
+  /** A preferência (pelo papel) e o último "Na hora", sem travar (para agendar o envio). */
   peek({
     userId,
     weddingId,

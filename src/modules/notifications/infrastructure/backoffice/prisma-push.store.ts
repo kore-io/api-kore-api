@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
 import type { PushStore, StoredPushSubscription } from '../../application/ports/push-store.port';
+import { partnerNamesOf, preferenceWhere, recipientRole } from './notification-recipient';
 
 /** Pela conexão do backoffice (sem RLS): o worker atravessa as pessoas. */
 @Injectable()
@@ -16,15 +17,14 @@ export class PrismaPushStore implements PushStore {
     weddingId: string;
     now: Date;
   }): ReturnType<PushStore['recipient']> {
-    const [membership, preference, subscriptions, notification] = await Promise.all([
-      this.prisma.membership.findFirst({
-        where: { userId, weddingId, removedAt: null },
-        select: { id: true },
-      }),
-      this.prisma.notificationPreference.findFirst({
-        where: { userId, weddingId, type: 'rsvp' },
-        select: { push: true },
-      }),
+    const role = await recipientRole({ db: this.prisma, userId, weddingId });
+    const [preference, subscriptions, notification] = await Promise.all([
+      role
+        ? this.prisma.notificationPreference.findFirst({
+            where: preferenceWhere({ role, userId, weddingId, type: 'rsvp' }),
+            select: { push: true },
+          })
+        : null,
       this.prisma.pushSubscription.findMany({
         where: { userId },
         select: {
@@ -45,7 +45,10 @@ export class PrismaPushStore implements PushStore {
       ? (notification.payload as { name?: string }[])[0]
       : undefined;
     return {
-      member: membership !== null,
+      member: role !== null,
+      role,
+      partnerNames:
+        role === 'planner' ? await partnerNamesOf({ db: this.prisma, weddingId }) : ['', ''],
       push: preference?.push ?? false,
       subscriptions: subscriptions.map(({ session, ...subscription }): StoredPushSubscription => ({
         ...subscription,

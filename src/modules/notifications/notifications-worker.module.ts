@@ -22,6 +22,9 @@ import {
   NotificationRetentionProcessor,
   NotificationRetentionScheduler,
 } from './infrastructure/notification-retention.job';
+import { PlannerDigest } from './application/planner-digest.use-case';
+import { PLANNER_DIGEST_STORE } from './application/ports/planner-digest-store.port';
+import { PrismaPlannerDigestStore } from './infrastructure/backoffice/prisma-planner-digest.store';
 
 /** Rotinas das notificações, do lado do worker: a retenção da central e os e-mails. */
 @Module({
@@ -36,6 +39,8 @@ import {
     { provide: PUSH_STORE, useClass: PrismaPushStore },
     { provide: PUSH_SENDER, useClass: WebPushSender },
     RsvpPush,
+    { provide: PLANNER_DIGEST_STORE, useClass: PrismaPlannerDigestStore },
+    PlannerDigest,
     NotificationsProcessor,
     NotificationsSweepScheduler,
     { provide: NOTIFICATION_RETENTION, useClass: PrismaNotificationRetention },

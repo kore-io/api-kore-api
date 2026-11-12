@@ -342,7 +342,9 @@ describe('Cadastro e perfil do cerimonialista (banco real; decisões 223 e 224)'
     });
 
     it('RN10 - perfil mínimo: incompleto, pede os Termos para salvar e completa com cidade e Termos', async () => {
-      const name = `Clara ${randomUUID().slice(0, 8)}`;
+      // Sem dígitos: um sufixo hexadecimal só de números teria 8 dígitos, e o
+      // nome não passaria no predicado do Nome da assessoria (RN04).
+      const name = `Clara ${randomUUID().slice(0, 8).replace(/[0-9]/g, 'x')}`;
       const { userId } = await seedReferrer({ db, kind: 'planner', name });
       const cookie = await openSession({ app, userId });
 

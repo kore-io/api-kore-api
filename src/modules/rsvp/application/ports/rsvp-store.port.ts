@@ -94,14 +94,17 @@ export interface RsvpStore {
     weddingId: string;
     rsvpDeadline: string | null;
   }): Promise<void>;
-  /** A notificação dos donos pela notify_rsvp (Central RN02 a RN04). */
+  /**
+   * A notificação pela notify_rsvp (Central RN02 a RN04): os donos e, à parte,
+   * a cerimonialista colaboradora (Notificações da cerimonialista RN02).
+   */
   notify({
     submissionId,
     notificationIds,
   }: {
     submissionId: string;
     notificationIds: readonly string[];
-  }): Promise<{ firstResponse: boolean; recipients: string[] }>;
+  }): Promise<{ firstResponse: boolean; recipients: string[]; plannerRecipients: string[] }>;
 }
 
 export const RSVP_STORE = Symbol('RsvpStore');

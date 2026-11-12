@@ -10,6 +10,21 @@ export class PushRetryError extends Error {
 }
 
 /** O texto do aviso: só o nome do grupo, sem números nem dado sensível (RN07; Voz). */
+/**
+ * O push da cerimonialista (Notificações da cerimonialista RN07; Pena): sem
+ * nome de convidado nem de grupo; o nome do casal diz de qual casamento é.
+ */
+export function plannerPushBody({
+  count,
+  partnerNames,
+}: {
+  count: number;
+  partnerNames: readonly [string, string];
+}): string {
+  const couple = partnerNames.filter((name) => name.length > 0).join(' e ');
+  return count > 1 ? `${count} grupos responderam em ${couple}` : `Novas respostas em ${couple}`;
+}
+
 export function pushBody({
   count,
   firstGroupName,
@@ -32,13 +47,17 @@ export function pushBody({
 @Injectable()
 export class RsvpPush {
   private readonly url: string;
+  private readonly plannerUrl: string;
 
   constructor(
     @Inject(PUSH_STORE) private readonly store: PushStore,
     @Inject(PUSH_SENDER) private readonly sender: PushSender,
     config: AppConfigService,
   ) {
-    this.url = `${config.get({ key: 'APP_URL' }).replace(/\/+$/, '')}/app/notificacoes`;
+    const appUrl = config.get({ key: 'APP_URL' }).replace(/\/+$/, '');
+    this.url = `${appUrl}/app/notificacoes`;
+    // A central da cerimonialista (Notificações da cerimonialista RN05).
+    this.plannerUrl = `${appUrl}/cerimonialista/notificacoes`;
   }
 
   async send({
@@ -59,11 +78,17 @@ export class RsvpPush {
         !subscription.sessionActive || !isAllowedPushEndpoint({ endpoint: subscription.endpoint }),
     );
     await this.store.remove({ ids: stale.map((subscription) => subscription.id) });
+    const planner = recipient.role === 'planner';
     const payload = JSON.stringify({
       title: 'Kore',
-      body: pushBody(recipient.notification),
+      body: planner
+        ? plannerPushBody({
+            count: recipient.notification.count,
+            partnerNames: recipient.partnerNames,
+          })
+        : pushBody(recipient.notification),
       tag: recipient.notification.groupKey,
-      url: this.url,
+      url: planner ? this.plannerUrl : this.url,
     });
     const sent: string[] = [];
     const gone: string[] = [];
