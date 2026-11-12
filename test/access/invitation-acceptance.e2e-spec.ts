@@ -142,6 +142,8 @@ describe('Convites de acesso: ler, aceitar e recusar (banco real; decisões 168 
           partnerNames: ['Fernanda Alves', 'João Lima'],
         },
         sitePreview: null,
+        // A cerimonialista que criou é a colaboradora: a prévia do aceite mostra a assinatura (Assinatura RN04).
+        plannerCredit: { name: 'Juliana Prado' },
         referrer: { name: 'Juliana Prado', discountPercent: 10 },
         sessionEmailMismatch: false,
         needsName: false,

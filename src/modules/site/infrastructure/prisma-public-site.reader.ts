@@ -6,6 +6,7 @@ import type {
   PublicSiteReader,
   PublicSiteRow,
 } from '../application/ports/public-site-reader.port';
+import { creditNameForSite } from '../../access/domain/planner-profile';
 import { LIVE_SITE_STATUSES } from '../domain/public-site';
 
 /**
@@ -24,7 +25,20 @@ export class PrismaPublicSiteReader implements PublicSiteReader {
     if (!site) return null;
     const status = String(site.status);
     if (!LIVE_SITE_STATUSES.includes(status)) return { status, live: false };
-    return { ...(site as Omit<PublicSiteRow & { live: true }, 'live'>), status, live: true };
+    const live = site as Omit<PublicSiteRow & { live: true }, 'live'>;
+    // Assinatura RN03: o predicado do nome, no helper único.
+    return {
+      ...live,
+      plannerCredit: creditNameForSite({ raw: live.plannerCredit }),
+      status,
+      live: true,
+    };
+  }
+
+  async plannerCredit({ weddingId }: { weddingId: string }): Promise<string | null> {
+    const [row] = await this.prisma.$queryRaw<[{ name: string | null }]>`
+      SELECT wedding_planner_credit(${weddingId}::uuid) AS name`;
+    return creditNameForSite({ raw: row?.name ?? null });
   }
 
   async partyByToken({ token }: { token: string }): Promise<PartyByToken | null> {

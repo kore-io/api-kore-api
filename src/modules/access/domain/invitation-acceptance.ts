@@ -45,6 +45,8 @@ export interface InvitationSnapshot {
   /** O indicador a que o casamento está atribuído, se houver. */
   referrer: ReferrerRecord | null;
   referralDiscountPercent: number;
+  /** A assinatura da assessoria, pela wedding_planner_credit (Assinatura RN04). */
+  plannerCredit: string | null;
 }
 
 /** RN12: por que o link já não vale (sem dados do casamento). */

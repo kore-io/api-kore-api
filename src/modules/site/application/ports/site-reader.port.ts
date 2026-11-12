@@ -17,6 +17,8 @@ export interface SiteSnapshot {
   coverImageId: string | null;
   /** A pergunta de música (Música RN01); o texto nulo vale o padrão. */
   songQuestion: { enabled: boolean; text: string | null };
+  /** A escolha do casal sobre a assinatura da assessoria (Assinatura RN05). */
+  showPlannerCredit: boolean;
   appearance: {
     fontPairKey: string;
     starterPaletteKey: string | null;
@@ -43,8 +45,22 @@ export interface ReadySiteImage {
 }
 
 /** O site do casamento, na transação da requisição (RLS). */
+/** A cerimonialista colaboradora, pela wedding_planner_collaborator (Assinatura RN02 e RN05). */
+export interface PlannerCollaboratorCredit {
+  /** Nulo quando o nome não passa no predicado (RN03). */
+  name: string | null;
+  hiddenByKore: boolean;
+}
+
 export interface SiteReader {
   read({ weddingId }: { weddingId: string }): Promise<SiteSnapshot | null>;
+
+  /** Sem cerimonialista colaboradora (ou com o vendedor), nulo. */
+  plannerCollaborator({
+    weddingId,
+  }: {
+    weddingId: string;
+  }): Promise<PlannerCollaboratorCredit | null>;
 
   /** As imagens `ready` do casamento entre os ids pedidos (as outras somem da leitura). */
   readyImages({

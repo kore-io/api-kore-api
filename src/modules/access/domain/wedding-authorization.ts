@@ -24,7 +24,9 @@ export type WeddingAction =
   /** Publicar o site (Publicação por Cortesia RN02; F4): só o dono. */
   | 'publish_site'
   /** Alterar resposta depois do prazo ou no pós-evento (Prazo RN04; F4): só o dono. */
-  | 'edit_response_after_deadline';
+  | 'edit_response_after_deadline'
+  /** Mostrar ou ocultar a assinatura da assessoria (Assinatura RN05; F6): só o dono. */
+  | 'manage_planner_credit';
 
 const OWNER_ONLY: ReadonlySet<WeddingAction> = new Set([
   'invite_partner',
@@ -33,6 +35,7 @@ const OWNER_ONLY: ReadonlySet<WeddingAction> = new Set([
   'trash_responded',
   'publish_site',
   'edit_response_after_deadline',
+  'manage_planner_credit',
 ]);
 
 /**

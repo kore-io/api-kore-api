@@ -49,7 +49,8 @@ export class SiteFieldNotAllowedErrorBody {
   @ApiProperty({ enum: [403] }) statusCode: 403;
   @ApiProperty({ enum: ['FIELD_NOT_ALLOWED'] }) error: 'FIELD_NOT_ALLOWED';
   @ApiProperty() message: string;
-  @ApiProperty({ type: [String], enum: ['eventDate', 'state', 'slug'] }) fields: string[];
+  @ApiProperty({ type: [String], enum: ['eventDate', 'state', 'slug', 'showPlannerCredit'] })
+  fields: string[];
 }
 
 /** "O site já foi publicado, então o endereço não muda mais." (Dados básicos RN05). */

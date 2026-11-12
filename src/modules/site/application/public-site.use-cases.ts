@@ -76,6 +76,8 @@ export interface PublicSiteView {
   /** Só para o grupo identificado (RN05 e RN10). */
   contact: { whatsapp: string | null; email: string | null } | null;
   sections: PublicSection[];
+  /** "Assessoria: {name}" no rodapé, para todos (Assinatura RN01 e RN02). */
+  plannerCredit: { name: string } | null;
 }
 
 export interface PublicSiteRead {
@@ -135,12 +137,19 @@ export class GetPublicSite {
           ...snapshot.sections.flatMap((section) => sectionImageIds(section)),
         ];
         const images = await this.siteReader.readyImages({ weddingId, ids });
-        return { snapshot, images, party };
+        // A prévia mostra a assinatura com as mesmas condições (Assinatura RN04).
+        const plannerCredit = await this.reader.plannerCredit({ weddingId });
+        return { snapshot, images, party, plannerCredit };
       },
     });
     if (preview) {
-      const { snapshot, images, party } = preview.value;
-      const site = liveFromSnapshot({ weddingId: preview.context.weddingId, snapshot, images });
+      const { snapshot, images, party, plannerCredit } = preview.value;
+      const site = liveFromSnapshot({
+        weddingId: preview.context.weddingId,
+        snapshot,
+        images,
+        plannerCredit,
+      });
       const partyView = party && previewPartyView({ snapshot, partyName: party.name });
       const view = this.view({ site, party: partyView });
       return {
@@ -214,6 +223,7 @@ export class GetPublicSite {
         : { kind: 'visitor', party: null, preview: null },
       contact: party ? { whatsapp: party.contactWhatsapp, email: party.contactEmail } : null,
       sections: this.sections({ site, image, party }),
+      plannerCredit: site.plannerCredit ? { name: site.plannerCredit } : null,
     };
   }
 
@@ -331,10 +341,12 @@ function liveFromSnapshot({
   weddingId,
   snapshot,
   images,
+  plannerCredit,
 }: {
   weddingId: string;
   snapshot: SiteSnapshot;
   images: readonly ReadySiteImage[];
+  plannerCredit: string | null;
 }): LiveSite {
   return {
     status: snapshot.status,
@@ -362,6 +374,7 @@ function liveFromSnapshot({
             : content,
       })),
     images: images.map((image) => ({ ...image })),
+    plannerCredit,
   };
 }
 

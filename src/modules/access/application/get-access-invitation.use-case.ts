@@ -34,6 +34,8 @@ export interface AccessInvitationView {
   };
   /** Só no do casal; nulo até a fase da Aparência (decisão 168, item 5). */
   sitePreview?: null;
+  /** Só no do casal: a assinatura da assessoria na prévia do aceite (Assinatura RN04). */
+  plannerCredit?: { name: string } | null;
   /** Só no do casal: o indicador válido e o desconto (RN09 de Cadastro). */
   referrer?: { name: string; discountPercent: number | null } | null;
   sessionEmailMismatch: boolean;
@@ -116,6 +118,7 @@ export class GetAccessInvitation {
       ...(invitation.kind === 'couple'
         ? {
             sitePreview: null,
+            plannerCredit: invitation.plannerCredit ? { name: invitation.plannerCredit } : null,
             referrer: invitation.referrer
               ? (() => {
                   const referral = toReferral({
