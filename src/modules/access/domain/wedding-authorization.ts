@@ -26,7 +26,12 @@ export type WeddingAction =
   /** Alterar resposta depois do prazo ou no pós-evento (Prazo RN04; F4): só o dono. */
   | 'edit_response_after_deadline'
   /** Mostrar ou ocultar a assinatura da assessoria (Assinatura RN05; F6): só o dono. */
-  | 'manage_planner_credit';
+  | 'manage_planner_credit'
+  /**
+   * Cotar, pagar e ver os valores da cobrança (Preço e cotação RN04; Publicar
+   * e pagar RN01; F3): só o dono. Inclui publicar (`publish_site`).
+   */
+  | 'manage_billing';
 
 const OWNER_ONLY: ReadonlySet<WeddingAction> = new Set([
   'invite_partner',
@@ -36,6 +41,7 @@ const OWNER_ONLY: ReadonlySet<WeddingAction> = new Set([
   'publish_site',
   'edit_response_after_deadline',
   'manage_planner_credit',
+  'manage_billing',
 ]);
 
 /**
