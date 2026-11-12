@@ -36,4 +36,9 @@ describe('Matriz de papéis (Papéis e permissões)', () => {
   it('Lixeira RN07 - dado o colaborador, quando tenta mandar para a lixeira quem já respondeu, então não pode (decisão 184(15))', () => {
     expect(roleAllows({ role: 'collaborator', action: 'trash_responded' })).toBe(false);
   });
+
+  it('Publicação RN02 - só o dono publica o site; a colaboradora, não', () => {
+    expect(roleAllows({ role: 'owner', action: 'publish_site' })).toBe(true);
+    expect(roleAllows({ role: 'collaborator', action: 'publish_site' })).toBe(false);
+  });
 });

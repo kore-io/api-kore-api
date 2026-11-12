@@ -12,11 +12,20 @@ import {
   SiteImageCleanupProcessor,
   SiteImageCleanupScheduler,
 } from './infrastructure/site-image-cleanup.job';
+import { MoveToPostEvent } from './application/move-to-post-event.use-case';
+import { POST_EVENT_TRANSITION } from './application/ports/post-event-transition.port';
+import { PrismaPostEventTransition } from './infrastructure/backoffice/prisma-post-event-transition';
+import {
+  POST_EVENT_QUEUE,
+  PostEventProcessor,
+  PostEventScheduler,
+} from './infrastructure/post-event.job';
 
-/** Rotinas do contexto Site, do lado do worker. */
+/** Rotinas do contexto Site, do lado do worker: a limpeza e o pós-evento. */
 @Module({
   imports: [
     BullModule.registerQueue({ name: SITE_IMAGE_CLEANUP_QUEUE }),
+    BullModule.registerQueue({ name: POST_EVENT_QUEUE }),
     // O log da aplicação pela conexão do backoffice (registro da execução).
     LogsWorkerModule,
   ],
@@ -27,6 +36,10 @@ import {
     CleanSitePreviewTokens,
     SiteImageCleanupProcessor,
     SiteImageCleanupScheduler,
+    { provide: POST_EVENT_TRANSITION, useClass: PrismaPostEventTransition },
+    MoveToPostEvent,
+    PostEventProcessor,
+    PostEventScheduler,
   ],
 })
 export class SiteWorkerModule {}

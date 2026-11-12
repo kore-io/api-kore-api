@@ -3,7 +3,9 @@ import {
   OBJECT_STORAGE,
   type ObjectStorage,
 } from '../../../shared/storage/application/object-storage.port';
+import { AppConfigService } from '../../../shared/config/app-config.service';
 import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
+import { endDateRange } from '../domain/publication';
 import { isSectionEmpty, sectionImageIds, type SiteSectionType } from '../domain/site-sections';
 import {
   SITE_READER,
@@ -30,12 +32,18 @@ export interface SiteEditorSection {
 
 export interface SiteEditorView extends Omit<
   SiteSnapshot,
-  'eventDate' | 'coverImageId' | 'sections'
+  'eventDate' | 'endDate' | 'coverImageId' | 'sections'
 > {
   eventDate: string | null;
   cover: SiteImageRef | null;
   sections: SiteEditorSection[];
   editable: { names: boolean; eventDate: boolean; state: boolean; slug: boolean };
+  /**
+   * A tela Publicar o site (Publicação RN01; decisão 217(13)): a chave do
+   * servidor e os limites da data de saída do ar, calculados aqui no fuso do
+   * casamento; nulos sem data ou sem fuso. O app não repete a conta.
+   */
+  publication: { courtesyEnabled: boolean; endDateMin: string | null; endDateMax: string | null };
 }
 
 /**
@@ -49,6 +57,7 @@ export class SiteEditorViews {
     private readonly authorization: WeddingAuthorization,
     @Inject(SITE_READER) private readonly reader: SiteReader,
     @Inject(OBJECT_STORAGE) private readonly storage: ObjectStorage,
+    private readonly config: AppConfigService,
   ) {}
 
   async build({
@@ -75,7 +84,12 @@ export class SiteEditorViews {
     };
     const readyIds = new Set(ready.keys());
 
-    const { coverImageId, sections, eventDate, ...rest } = site;
+    // A data de saída do ar não está no contrato do Editor (Publicação RN01).
+    const { coverImageId, sections, eventDate, ...snapshot } = site;
+    const rest: Omit<typeof snapshot, 'endDate'> & { endDate?: Date | null } = { ...snapshot };
+    delete rest.endDate;
+    const day = eventDate ? eventDate.toISOString().slice(0, 10) : null;
+    const range = endDateRange({ eventDate: day, timezone: site.timezone });
     return {
       ...rest,
       eventDate: eventDate ? eventDate.toISOString().slice(0, 10) : null,
@@ -92,6 +106,11 @@ export class SiteEditorViews {
         eventDate: identity,
         state: identity,
         slug: identity && site.publishedAt === null,
+      },
+      publication: {
+        courtesyEnabled: this.config.get({ key: 'COURTESY_PUBLICATION_ENABLED' }),
+        endDateMin: range?.min ?? null,
+        endDateMax: range?.max ?? null,
       },
     };
   }

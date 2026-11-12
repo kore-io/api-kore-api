@@ -20,13 +20,16 @@ export type WeddingAction =
   /** Mandar para a lixeira quem já respondeu (Lixeira RN07): só o dono (184(15)). */
   | 'trash_responded'
   /** Editar o site e enviar imagens (Dados básicos RN04; F2): qualquer vínculo. */
-  | 'manage_site';
+  | 'manage_site'
+  /** Publicar o site (Publicação por Cortesia RN02; F4): só o dono. */
+  | 'publish_site';
 
 const OWNER_ONLY: ReadonlySet<WeddingAction> = new Set([
   'invite_partner',
   'invite_planner',
   'remove_collaborator',
   'trash_responded',
+  'publish_site',
 ]);
 
 /**

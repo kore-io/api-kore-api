@@ -4,7 +4,9 @@ import { WeddingAuthorization } from '../../access/application/wedding-authoriza
 import { timezoneForState, type BrazilianState } from '../../access/domain/wedding-signup';
 import { parsePhone } from '../../guests/domain/phone';
 import { imagesInUse } from '../domain/site-sections';
+import { endDateRange, isEndDateInRange } from '../domain/publication';
 import {
+  EndDateOutOfRangeError,
   SiteFieldNotAllowedError,
   SiteFieldsInvalidError,
   SiteImageNotFoundError,
@@ -126,6 +128,21 @@ export class UpdateSiteBasics {
       else changes.slug = input.slug;
     }
     if (issues.length > 0) throw new SiteFieldsInvalidError({ issues });
+
+    // Publicação RN11 (revisão técnica R1-5): num casamento publicado, a data
+    // nova não pode deixar a data de saída do ar fora dos limites da RN04.
+    // Sem data, não há limite, e a gravação também é recusada.
+    if (changed.eventDate && site.endDate) {
+      const range = endDateRange({
+        eventDate: dayOf(changes.eventDate ?? null),
+        timezone: changes.timezone ?? site.timezone,
+      });
+      if (!range || !isEndDateInRange({ endDate: dayOf(site.endDate)!, range }))
+        throw new EndDateOutOfRangeError({
+          endDateMin: range?.min ?? null,
+          endDateMax: range?.max ?? null,
+        });
+    }
 
     if (input.coverImageId !== undefined) {
       if (input.coverImageId !== null) {

@@ -4440,6 +4440,16 @@
             },
             "description": ""
           },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndDateOutOfRangeErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
           "429": {
             "content": {
               "application/json": {
@@ -5008,6 +5018,137 @@
           }
         },
         "summary": "O token da prévia e a `url` do site com ele; vale 5 minutos e uma vez só.",
+        "tags": [
+          "site"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/publication": {
+      "post": {
+        "operationId": "PublicationController_create_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishWeddingBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/CourtesyDisabledErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NotDraftErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteSlugMissingErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/EventDateMissingErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndDateOutOfRangeErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Publica o site sem pagamento, com a data de saída do ar (Publicação RN01 a RN06).",
         "tags": [
           "site"
         ]
@@ -9275,6 +9416,32 @@
           "slug"
         ]
       },
+      "SitePublicationResponse": {
+        "type": "object",
+        "properties": {
+          "endDateMin": {
+            "type": "string",
+            "nullable": true,
+            "description": "O dia seguinte ao casamento; nulo sem data ou sem fuso.",
+            "example": "2026-11-15"
+          },
+          "endDateMax": {
+            "type": "string",
+            "nullable": true,
+            "description": "12 meses depois do casamento (29/02 → 28/02); nulo sem data ou sem fuso.",
+            "example": "2027-11-14"
+          },
+          "courtesyEnabled": {
+            "type": "boolean",
+            "description": "A chave do servidor; o app só esconde o botão, quem decide é o servidor."
+          }
+        },
+        "required": [
+          "endDateMin",
+          "endDateMax",
+          "courtesyEnabled"
+        ]
+      },
       "SiteEditorResponse": {
         "type": "object",
         "properties": {
@@ -9345,6 +9512,9 @@
           "editable": {
             "$ref": "#/components/schemas/SiteEditableResponse"
           },
+          "publication": {
+            "$ref": "#/components/schemas/SitePublicationResponse"
+          },
           "status": {
             "type": "string"
           }
@@ -9364,6 +9534,7 @@
           "appearance",
           "sections",
           "editable",
+          "publication",
           "status"
         ]
       },
@@ -9465,6 +9636,43 @@
           "message",
           "reason",
           "suggestion"
+        ]
+      },
+      "EndDateOutOfRangeErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "END_DATE_OUT_OF_RANGE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "endDateMin": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-11-15"
+          },
+          "endDateMax": {
+            "type": "string",
+            "nullable": true,
+            "example": "2027-11-14"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "endDateMin",
+          "endDateMax"
         ]
       },
       "SitePartnerBody": {
@@ -10203,6 +10411,125 @@
         "required": [
           "expiresAt",
           "url"
+        ]
+      },
+      "CourtesyDisabledErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "COURTESY_DISABLED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "NotDraftErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "NOT_DRAFT"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "EventDateMissingErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "EVENT_DATE_MISSING"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PublishWeddingBody": {
+        "type": "object",
+        "properties": {
+          "endDate": {
+            "type": "string",
+            "description": "`AAAA-MM-DD`: do dia seguinte ao casamento até 12 meses depois dele.",
+            "example": "2027-02-14"
+          }
+        },
+        "required": [
+          "endDate"
+        ]
+      },
+      "PublicationResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "published"
+            ]
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endDate": {
+            "type": "string",
+            "example": "2027-02-14"
+          },
+          "publicationSource": {
+            "type": "string",
+            "enum": [
+              "courtesy"
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "publishedAt",
+          "endDate",
+          "publicationSource"
         ]
       },
       "SpreadsheetTemplateHeaders": {

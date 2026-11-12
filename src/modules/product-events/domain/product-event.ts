@@ -26,6 +26,8 @@ export type ProductEvent =
         filtro: 'all' | 'confirmed' | 'tag';
       };
     }
+  /** Publicação RN05 (decisão 216, D29): na publicação, com os dias até o casamento. */
+  | { name: 'publicado'; weddingId: string; props: { dias_ate_casamento: number } }
   /** Simule RN11: o funil do simulador, anônimo: sem casamento, sem props e sem o IP. */
   | { name: SimulatorEventName };
 

@@ -149,3 +149,41 @@ export class PreviewInvalidError extends Error {
 export class PreviewRequiredError extends Error {
   override name = 'PreviewRequiredError';
 }
+
+/** A chave da Cortesia está desligada (409 COURTESY_DISABLED; Publicação RN01). */
+export class CourtesyDisabledError extends Error {
+  override name = 'CourtesyDisabledError';
+}
+
+/** Só se publica de rascunho (409 NOT_DRAFT; Publicação RN03). */
+export class NotDraftError extends Error {
+  override name = 'NotDraftError';
+}
+
+/** Sem data ou sem fuso do casamento (409 EVENT_DATE_MISSING; Publicação RN04). */
+export class EventDateMissingError extends Error {
+  override name = 'EventDateMissingError';
+}
+
+/**
+ * Data de saída do ar fora dos limites (422 END_DATE_OUT_OF_RANGE; Publicação
+ * RN04 e RN11), com os limites para o texto "Escolham uma data depois do
+ * casamento e até {limite}.".
+ */
+export class EndDateOutOfRangeError extends Error {
+  override name = 'EndDateOutOfRangeError';
+  readonly endDateMin: string | null;
+  readonly endDateMax: string | null;
+
+  constructor({
+    endDateMin,
+    endDateMax,
+  }: {
+    endDateMin: string | null;
+    endDateMax: string | null;
+  }) {
+    super();
+    this.endDateMin = endDateMin;
+    this.endDateMax = endDateMax;
+  }
+}

@@ -34,6 +34,7 @@ export class PrismaSiteReader implements SiteReader {
     return {
       status: wedding.status,
       publishedAt: wedding.publishedAt,
+      endDate: wedding.endDate,
       siteUpdatedAt: wedding.siteUpdatedAt,
       partners: wedding.partners.map((partner) => ({
         id: partner.id,

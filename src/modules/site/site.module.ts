@@ -39,6 +39,10 @@ import {
   SiteLinkPreviewController,
 } from './presentation/public-site.controller';
 import { SiteController } from './presentation/site.controller';
+import { PublicationController } from './presentation/publication.controller';
+import { PublishWedding } from './application/publish-wedding.use-case';
+import { PUBLICATION_STORE } from './application/ports/publication-store.port';
+import { PrismaPublicationStore } from './infrastructure/prisma-publication.store';
 import { SITE_IMAGE_STORE } from './application/ports/site-image-store.port';
 import { PrismaSiteImageStore } from './infrastructure/prisma-site-image.store';
 import { SiteImagesController } from './presentation/site-images.controller';
@@ -52,6 +56,7 @@ import { SiteImagesController } from './presentation/site-images.controller';
     PublicSiteController,
     SiteLinkPreviewController,
     SitePreviewsController,
+    PublicationController,
   ],
   providers: [
     { provide: SITE_IMAGE_STORE, useClass: PrismaSiteImageStore },
@@ -80,6 +85,8 @@ import { SiteImagesController } from './presentation/site-images.controller';
     ListPreviewParties,
     GetSiteLinkPreview,
     SiteImageRateLimitGuard,
+    { provide: PUBLICATION_STORE, useClass: PrismaPublicationStore },
+    PublishWedding,
   ],
 })
 export class SiteModule {}
