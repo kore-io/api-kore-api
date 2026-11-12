@@ -3,6 +3,7 @@ import { BackofficePrismaService } from './backoffice-prisma.service';
 import { PrismaService } from './prisma.service';
 import { AFTER_COMMIT } from './after-commit.port';
 import { TenantTransaction } from './tenant-transaction';
+import { BackofficeTransaction } from './backoffice-transaction';
 
 @Global()
 @Module({
@@ -10,8 +11,15 @@ import { TenantTransaction } from './tenant-transaction';
     PrismaService,
     BackofficePrismaService,
     TenantTransaction,
+    BackofficeTransaction,
     { provide: AFTER_COMMIT, useExisting: TenantTransaction },
   ],
-  exports: [PrismaService, BackofficePrismaService, TenantTransaction, AFTER_COMMIT],
+  exports: [
+    PrismaService,
+    BackofficePrismaService,
+    TenantTransaction,
+    BackofficeTransaction,
+    AFTER_COMMIT,
+  ],
 })
 export class DatabaseModule {}

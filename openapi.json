@@ -8252,6 +8252,76 @@
           "planner"
         ]
       }
+    },
+    "/v1/webhooks/payments/{gateway}": {
+      "post": {
+        "operationId": "PaymentWebhooksController_receiveEvent_v1",
+        "parameters": [
+          {
+            "name": "gateway",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookReceivedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MalformedWebhookErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidSignatureErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnknownGatewayErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "billing"
+        ]
+      }
     }
   },
   "info": {
@@ -16618,6 +16688,88 @@
             "description": "Por tipo: section_content → { text }; faq → { questions: [{ question, answer }] }; appearance → { fontPairKey, starterPaletteKey?, primaryColor, accentColor, backgroundMode }."
           }
         }
+      },
+      "MalformedWebhookErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              400
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "MALFORMED_EVENT"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "InvalidSignatureErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              401
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "INVALID_SIGNATURE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "UnknownGatewayErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "message"
+        ]
+      },
+      "WebhookReceivedResponse": {
+        "type": "object",
+        "properties": {
+          "received": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "received"
+        ]
       },
       "SpreadsheetTemplateHeaders": {
         "type": "string",

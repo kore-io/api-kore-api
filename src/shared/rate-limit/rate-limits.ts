@@ -66,3 +66,11 @@ export const RSVP_WRITES_PER_MINUTE = 20;
  */
 export const PLANNER_WEDDING_THROTTLER = 'planner_wedding';
 export const PLANNER_WEDDINGS_PER_MINUTE = 10;
+
+/**
+ * Webhook do gateway de pagamento (Publicar e pagar RN09; B2-6): limite próprio
+ * por IP, fora do limite geral, para um lote de eventos do gateway não ser
+ * barrado junto com o tráfego do app (nem o contrário).
+ */
+export const PAYMENT_WEBHOOK_THROTTLER = 'payment_webhook';
+export const PAYMENT_WEBHOOK_PER_MINUTE = 600;
