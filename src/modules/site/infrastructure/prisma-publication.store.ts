@@ -13,7 +13,8 @@ export class PrismaPublicationStore implements PublicationStore {
   async lock({ weddingId }: { weddingId: string }): Promise<PublicationTarget | null> {
     const [row] = await this.tenant.client().$queryRaw<PublicationTarget[]>`
       SELECT status::text AS status, slug::text AS slug,
-             to_char(event_date, 'YYYY-MM-DD') AS "eventDate", timezone
+             to_char(event_date, 'YYYY-MM-DD') AS "eventDate", timezone,
+             published_at AS "publishedAt"
       FROM weddings WHERE id = ${weddingId}::uuid FOR UPDATE`;
     return row ?? null;
   }
@@ -40,5 +41,15 @@ export class PrismaPublicationStore implements PublicationStore {
         publishedByUserId: userId,
       },
     });
+  }
+
+  async notifyPublished({
+    notificationIds,
+  }: {
+    notificationIds: readonly string[];
+  }): Promise<string[]> {
+    const [row] = await this.tenant.client().$queryRaw<[{ recipients: string[] }]>`
+      SELECT notify_wedding_published(${[...notificationIds]}::uuid[]) AS recipients`;
+    return row?.recipients ?? [];
   }
 }

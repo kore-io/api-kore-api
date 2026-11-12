@@ -62,4 +62,15 @@ export class PrismaWeddingMembersStore implements WeddingMembersStore {
   async releasePartnerLogin({ weddingId }: { weddingId: string }): Promise<void> {
     await this.tenant.client().$executeRaw`SELECT release_partner_login(${weddingId}::uuid)`;
   }
+
+  async notifyRemoved({
+    membershipId,
+    notificationId,
+  }: {
+    membershipId: string;
+    notificationId: string;
+  }): Promise<void> {
+    await this.tenant.client().$queryRaw`
+      SELECT notify_membership_removed(${membershipId}::uuid, ${notificationId}::uuid)`;
+  }
 }

@@ -1,15 +1,36 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AppConfigService } from '../../../shared/config/app-config.service';
+import {
+  PLANNER_PROFILES,
+  type PlannerProfiles,
+} from '../../access/application/ports/planner-profiles.port';
 import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
+import { ProfileNotOwnedError } from '../../access/domain/access.errors';
 import {
   NOTIFICATION_STORE,
   NOTIFICATION_TYPES,
+  PLANNER_NOTIFICATION_TYPES,
   type EmailFrequency,
   type NotificationRow,
   type NotificationStore,
   type NotificationType,
+  type PlannerNotificationType,
   type PreferenceRow,
 } from './ports/notification-store.port';
+
+/**
+ * As rotas da cerimonialista exigem ter o perfil (Notificações da
+ * cerimonialista RN05; decisão 224(3)): sem ele, 403 PROFILE_NOT_OWNED.
+ */
+async function requirePlannerProfile({
+  profiles,
+  userId,
+}: {
+  profiles: PlannerProfiles;
+  userId: string;
+}): Promise<void> {
+  if (!(await profiles.findOwn({ userId }))) throw new ProfileNotOwnedError();
+}
 
 /** 20 por vez, com Carregar mais (Central RN06). */
 const PAGE_SIZE = 20;
@@ -52,7 +73,43 @@ export class NotificationCenter {
   constructor(
     private readonly authorization: WeddingAuthorization,
     @Inject(NOTIFICATION_STORE) private readonly store: NotificationStore,
+    @Inject(PLANNER_PROFILES) private readonly profiles: PlannerProfiles,
   ) {}
+
+  /**
+   * A central da cerimonialista (`scope=planner`; Notificações da cerimonialista
+   * RN05): todos os casamentos dela numa página, sem o de que é dona.
+   */
+  async listPlanner({
+    userId,
+    type,
+    cursor,
+  }: {
+    userId: string;
+    type: PlannerNotificationType | null;
+    cursor?: string;
+  }): Promise<{ items: NotificationRow[]; nextCursor: string | null }> {
+    await requirePlannerProfile({ profiles: this.profiles, userId });
+    const after = cursor === undefined ? null : decodeCursor({ cursor });
+    const rows = await this.store.listPlanner({ userId, type, after, limit: PAGE_SIZE + 1 });
+    const items = rows.slice(0, PAGE_SIZE);
+    return {
+      items,
+      nextCursor: rows.length > PAGE_SIZE ? encodeCursor({ row: items[items.length - 1] }) : null,
+    };
+  }
+
+  /** O sino dela, com o mesmo escopo (RN05 e RN08). */
+  async unreadCountPlanner({ userId }: { userId: string }): Promise<number> {
+    await requirePlannerProfile({ profiles: this.profiles, userId });
+    return this.store.unreadCountPlanner({ userId });
+  }
+
+  /** Marcar todas como lidas na central dela não marca as do casal (RN05). */
+  async readAllPlanner({ userId, now }: { userId: string; now: Date }): Promise<void> {
+    await requirePlannerProfile({ profiles: this.profiles, userId });
+    await this.store.markAllReadPlanner({ userId, now });
+  }
 
   async list({
     userId,
@@ -119,7 +176,47 @@ export class NotificationPreferences {
     private readonly authorization: WeddingAuthorization,
     @Inject(NOTIFICATION_STORE) private readonly store: NotificationStore,
     private readonly config: AppConfigService,
+    @Inject(PLANNER_PROFILES) private readonly profiles: PlannerProfiles,
   ) {}
+
+  /**
+   * A preferência geral da cerimonialista (Notificações da cerimonialista RN06),
+   * sem casamento, para os 3 tipos; sem linha, o padrão.
+   */
+  async getGeneral({
+    userId,
+    sessionId,
+  }: {
+    userId: string;
+    sessionId: string;
+  }): Promise<PreferencesView> {
+    await requirePlannerProfile({ profiles: this.profiles, userId });
+    const saved = new Map(
+      (await this.store.generalPreferences({ userId })).map((row) => [row.type, row]),
+    );
+    return {
+      items: PLANNER_NOTIFICATION_TYPES.map(
+        (type) => saved.get(type) ?? { type, ...DEFAULT_PREFERENCE },
+      ),
+      push: {
+        subscribed: await this.store.hasPushSubscription({ sessionId }),
+        vapidPublicKey: this.config.get({ key: 'VAPID_PUBLIC_KEY' }) ?? null,
+      },
+    };
+  }
+
+  async saveGeneralEmail({
+    userId,
+    type,
+    email,
+  }: {
+    userId: string;
+    type: PlannerNotificationType;
+    email: EmailFrequency;
+  }): Promise<PreferenceRow> {
+    await requirePlannerProfile({ profiles: this.profiles, userId });
+    return this.store.saveGeneralEmailPreference({ userId, type, email });
+  }
 
   async get({
     userId,

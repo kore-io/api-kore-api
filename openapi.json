@@ -7070,14 +7070,36 @@
         "operationId": "NotificationsController_list_v1",
         "parameters": [
           {
-            "name": "type",
+            "name": "weddingId",
             "required": false,
             "in": "query",
-            "description": "Filtro por tipo (Todas · Respostas).",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
             "schema": {
               "type": "string",
               "enum": [
-                "rsvp"
+                "planner"
+              ]
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "description": "Filtro por tipo (casal: Respostas; cerimonialista: os 3).",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "rsvp",
+                "wedding_published",
+                "membership_removed"
               ]
             }
           },
@@ -7088,16 +7110,6 @@
             "description": "O `nextCursor` da página anterior.",
             "schema": {
               "maxLength": 200,
-              "type": "string"
-            }
-          },
-          {
-            "name": "weddingId",
-            "required": true,
-            "in": "query",
-            "description": "O casamento ativo.",
-            "schema": {
-              "format": "uuid",
               "type": "string"
             }
           }
@@ -7133,6 +7145,16 @@
             },
             "description": ""
           },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
           "404": {
             "content": {
               "application/json": {
@@ -7154,7 +7176,7 @@
             "description": ""
           }
         },
-        "summary": "A página Notificações do casamento ativo (Central RN06).",
+        "summary": "A página Notificações do casamento ativo (Central RN06), ou a da\ncerimonialista com `scope=planner` (Notificações da cerimonialista RN05).",
         "tags": [
           "notifications"
         ]
@@ -7166,12 +7188,22 @@
         "parameters": [
           {
             "name": "weddingId",
-            "required": true,
+            "required": false,
             "in": "query",
-            "description": "O casamento ativo.",
             "schema": {
               "format": "uuid",
               "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "planner"
+              ]
             }
           }
         ],
@@ -7201,6 +7233,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
                 }
               }
             },
@@ -7239,12 +7281,22 @@
         "parameters": [
           {
             "name": "weddingId",
-            "required": true,
+            "required": false,
             "in": "query",
-            "description": "O casamento ativo.",
             "schema": {
               "format": "uuid",
               "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "planner"
+              ]
             }
           }
         ],
@@ -7276,7 +7328,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                    }
+                  ]
                 }
               }
             },
@@ -7389,9 +7448,8 @@
         "parameters": [
           {
             "name": "weddingId",
-            "required": true,
+            "required": false,
             "in": "query",
-            "description": "O casamento ativo.",
             "schema": {
               "format": "uuid",
               "type": "string"
@@ -7429,6 +7487,16 @@
             },
             "description": ""
           },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
           "404": {
             "content": {
               "application/json": {
@@ -7450,7 +7518,7 @@
             "description": ""
           }
         },
-        "summary": "Configurações › Notificações (Central RN07).",
+        "summary": "Configurações › Notificações (Central RN07). Sem `weddingId`, a preferência\ngeral da cerimonialista (Notificações da cerimonialista RN06).",
         "tags": [
           "notifications"
         ]
@@ -7503,7 +7571,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                    }
+                  ]
                 }
               }
             },
@@ -15682,13 +15757,26 @@
         "type": "object",
         "properties": {
           "type": {
-            "type": "string",
             "enum": [
-              "rsvp"
-            ]
+              "rsvp",
+              "wedding_published",
+              "membership_removed"
+            ],
+            "type": "string"
+          },
+          "partnerNames": {
+            "description": "Os primeiros nomes do casal; o app junta.",
+            "example": [
+              "Ana",
+              "Marcos"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "payload": {
-            "description": "Por grupo, sem restrição, música nem nome de convidado (Central RN04).",
+            "description": "rsvp: por grupo, sem restrição, música nem nome de convidado (Central RN04).\nwedding_published e membership_removed: [{ partnerNames }] (revisão C8-3).",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/NotificationEntryResponse"
@@ -15706,6 +15794,10 @@
           "id": {
             "type": "string"
           },
+          "weddingId": {
+            "type": "string",
+            "description": "A central da cerimonialista junta vários casamentos (revisão C8-5)."
+          },
           "count": {
             "type": "number",
             "description": "Grupos distintos (1: \"Família Moreira respondeu o convite\"; mais: \"{n} grupos responderam\")."
@@ -15713,10 +15805,12 @@
         },
         "required": [
           "type",
+          "partnerNames",
           "payload",
           "readAt",
           "updatedAt",
           "id",
+          "weddingId",
           "count"
         ]
       },
@@ -15780,10 +15874,12 @@
         "type": "object",
         "properties": {
           "type": {
-            "type": "string",
             "enum": [
-              "rsvp"
-            ]
+              "rsvp",
+              "wedding_published",
+              "membership_removed"
+            ],
+            "type": "string"
           },
           "email": {
             "enum": [
@@ -15848,11 +15944,18 @@
       "SavePreferenceBody": {
         "type": "object",
         "properties": {
-          "type": {
+          "weddingId": {
             "type": "string",
+            "description": "Sem `weddingId`, a preferência geral da cerimonialista (RN06).",
+            "format": "uuid"
+          },
+          "type": {
             "enum": [
-              "rsvp"
-            ]
+              "rsvp",
+              "wedding_published",
+              "membership_removed"
+            ],
+            "type": "string"
           },
           "email": {
             "enum": [
@@ -15861,16 +15964,11 @@
               "daily"
             ],
             "type": "string"
-          },
-          "weddingId": {
-            "type": "string",
-            "format": "uuid"
           }
         },
         "required": [
           "type",
-          "email",
-          "weddingId"
+          "email"
         ]
       },
       "PushEndpointNotAllowedErrorBody": {

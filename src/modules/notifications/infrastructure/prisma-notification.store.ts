@@ -1,34 +1,113 @@
 import { Injectable } from '@nestjs/common';
+import type { Prisma } from '../../../generated/prisma/client';
 import { TenantTransaction } from '../../../shared/database/tenant-transaction';
 import {
   NOTIFICATION_TYPES,
+  PLANNER_NOTIFICATION_TYPES,
   type EmailFrequency,
   type NotificationRow,
   type NotificationStore,
   type NotificationType,
+  type PlannerNotificationType,
   type PreferenceRow,
 } from '../application/ports/notification-store.port';
 
 const PREFERENCE_SELECT = { type: true, inApp: true, email: true, push: true } as const;
-/**
- * A central do casal mostra só os tipos dela; os da cerimonialista (F6) ficam
- * de fora até a central da cerimonialista (Notificações da cerimonialista RN05).
- */
+/** A central do casal mostra só os tipos dela (Central RN01). */
 const COUPLE_TYPES = { in: [...NOTIFICATION_TYPES] };
+const PLANNER_TYPES = { in: [...PLANNER_NOTIFICATION_TYPES] };
 
-function isCoupleType(type: string): type is NotificationType {
-  return (NOTIFICATION_TYPES as readonly string[]).includes(type);
+const NOTIFICATION_SELECT = {
+  id: true,
+  type: true,
+  weddingId: true,
+  count: true,
+  payload: true,
+  readAt: true,
+  updatedAt: true,
+} as const;
+
+type Row = Prisma.NotificationGetPayload<{ select: typeof NOTIFICATION_SELECT }>;
+
+function isPlannerType(type: string): type is PlannerNotificationType {
+  return (PLANNER_NOTIFICATION_TYPES as readonly string[]).includes(type);
 }
 
-/** Estreita o tipo do banco aos da central do casal (já filtrados no where). */
-function coupleRows<T extends { type: string }>(rows: T[]): (T & { type: NotificationType })[] {
-  return rows.filter((row): row is T & { type: NotificationType } => isCoupleType(row.type));
+const firstName = (name: string): string => name.trim().split(/\s+/)[0] ?? '';
+
+/** O cursor da página: mais novas primeiro, pelo `updatedAt` e o id. */
+function afterCursor(after: { updatedAt: Date; id: string } | null): Prisma.NotificationWhereInput {
+  return after
+    ? {
+        OR: [
+          { updatedAt: { lt: after.updatedAt } },
+          { updatedAt: after.updatedAt, id: { lt: after.id } },
+        ],
+      }
+    : {};
 }
 
 /** Na transação da requisição, com a RLS ligada. */
 @Injectable()
 export class PrismaNotificationStore implements NotificationStore {
   constructor(private readonly tenant: TenantTransaction) {}
+
+  /**
+   * Os nomes do casal de cada linha. Nos tipos novos, vêm do payload (ela pode
+   * não ter mais vínculo, e a RLS de partners esconderia os noivos); no rsvp,
+   * dos noivos do casamento, que ela ainda vê.
+   */
+  private async toRows(rows: Row[]): Promise<NotificationRow[]> {
+    const rsvpWeddings = [
+      ...new Set(rows.filter((row) => row.type === 'rsvp').map((row) => row.weddingId)),
+    ];
+    const partners = rsvpWeddings.length
+      ? await this.tenant.client().partner.findMany({
+          where: { weddingId: { in: rsvpWeddings } },
+          select: { weddingId: true, slot: true, displayName: true },
+        })
+      : [];
+    const namesOf = (weddingId: string): [string, string] => {
+      const name = (slot: number) =>
+        firstName(
+          partners.find((partner) => partner.weddingId === weddingId && partner.slot === slot)
+            ?.displayName ?? '',
+        );
+      return [name(1), name(2)];
+    };
+    return rows.flatMap((row) => {
+      if (!isPlannerType(row.type)) return [];
+      const fromPayload = Array.isArray(row.payload)
+        ? (row.payload[0] as { partnerNames?: unknown } | undefined)?.partnerNames
+        : undefined;
+      const partnerNames =
+        row.type !== 'rsvp' && Array.isArray(fromPayload) && fromPayload.length === 2
+          ? (fromPayload as [string, string])
+          : namesOf(row.weddingId);
+      return [{ ...row, type: row.type, partnerNames }];
+    });
+  }
+
+  /** Os casamentos de que ela é dona: ficam na central do casal (RN05). */
+  private async ownedWeddingIds({ userId }: { userId: string }): Promise<string[]> {
+    const owned = await this.tenant.client().membership.findMany({
+      where: { userId, role: 'owner', removedAt: null },
+      select: { weddingId: true },
+    });
+    return owned.map(({ weddingId }) => weddingId);
+  }
+
+  private async plannerWhere({
+    userId,
+  }: {
+    userId: string;
+  }): Promise<Prisma.NotificationWhereInput> {
+    return {
+      userId,
+      type: PLANNER_TYPES,
+      weddingId: { notIn: await this.ownedWeddingIds({ userId }) },
+    };
+  }
 
   async list({
     userId,
@@ -44,24 +123,12 @@ export class PrismaNotificationStore implements NotificationStore {
     limit: number;
   }): Promise<NotificationRow[]> {
     const rows = await this.tenant.client().notification.findMany({
-      where: {
-        userId,
-        weddingId,
-        type: type ?? COUPLE_TYPES,
-        ...(after
-          ? {
-              OR: [
-                { updatedAt: { lt: after.updatedAt } },
-                { updatedAt: after.updatedAt, id: { lt: after.id } },
-              ],
-            }
-          : {}),
-      },
+      where: { userId, weddingId, type: type ?? COUPLE_TYPES, ...afterCursor(after) },
       orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
       take: limit,
-      select: { id: true, type: true, count: true, payload: true, readAt: true, updatedAt: true },
+      select: NOTIFICATION_SELECT,
     });
-    return coupleRows(rows);
+    return this.toRows(rows);
   }
 
   unreadCount({ userId, weddingId }: { userId: string; weddingId: string }): Promise<number> {
@@ -104,7 +171,7 @@ export class PrismaNotificationStore implements NotificationStore {
       where: { userId, weddingId, type: COUPLE_TYPES },
       select: PREFERENCE_SELECT,
     });
-    return coupleRows(rows);
+    return rows.flatMap((row) => (isPlannerType(row.type) ? [{ ...row, type: row.type }] : []));
   }
 
   async saveEmailPreference({
@@ -129,5 +196,76 @@ export class PrismaNotificationStore implements NotificationStore {
 
   async hasPushSubscription({ sessionId }: { sessionId: string }): Promise<boolean> {
     return (await this.tenant.client().pushSubscription.count({ where: { sessionId } })) > 0;
+  }
+
+  async listPlanner({
+    userId,
+    type,
+    after,
+    limit,
+  }: {
+    userId: string;
+    type: PlannerNotificationType | null;
+    after: { updatedAt: Date; id: string } | null;
+    limit: number;
+  }): Promise<NotificationRow[]> {
+    const where = await this.plannerWhere({ userId });
+    const rows = await this.tenant.client().notification.findMany({
+      where: { ...where, ...(type ? { type } : {}), ...afterCursor(after) },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+      take: limit,
+      select: NOTIFICATION_SELECT,
+    });
+    return this.toRows(rows);
+  }
+
+  async unreadCountPlanner({ userId }: { userId: string }): Promise<number> {
+    return this.tenant.client().notification.count({
+      where: { ...(await this.plannerWhere({ userId })), readAt: null },
+    });
+  }
+
+  async markAllReadPlanner({ userId, now }: { userId: string; now: Date }): Promise<void> {
+    await this.tenant.client().notification.updateMany({
+      where: { ...(await this.plannerWhere({ userId })), readAt: null },
+      data: { readAt: now },
+    });
+  }
+
+  async generalPreferences({ userId }: { userId: string }): Promise<PreferenceRow[]> {
+    const rows = await this.tenant.client().notificationPreference.findMany({
+      where: { userId, weddingId: null, type: PLANNER_TYPES },
+      select: PREFERENCE_SELECT,
+    });
+    return rows.flatMap((row) => (isPlannerType(row.type) ? [{ ...row, type: row.type }] : []));
+  }
+
+  async saveGeneralEmailPreference({
+    userId,
+    type,
+    email,
+  }: {
+    userId: string;
+    type: PlannerNotificationType;
+    email: EmailFrequency;
+  }): Promise<PreferenceRow> {
+    const tx = this.tenant.client();
+    // O índice único da linha geral é parcial (weddingId nulo): o upsert do
+    // Prisma não o usa. Com dois pedidos juntos, o segundo bate no índice.
+    const found = await tx.notificationPreference.findFirst({
+      where: { userId, weddingId: null, type },
+      select: { id: true },
+    });
+    const row = found
+      ? await tx.notificationPreference.update({
+          where: { id: found.id },
+          data: { email },
+          select: PREFERENCE_SELECT,
+        })
+      : await tx.notificationPreference.create({
+          data: { userId, weddingId: null, type, email },
+          select: PREFERENCE_SELECT,
+        });
+    return { ...row, type };
   }
 }

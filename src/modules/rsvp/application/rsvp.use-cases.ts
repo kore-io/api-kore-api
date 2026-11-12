@@ -40,9 +40,10 @@ import { RsvpSessions } from './rsvp-sessions.service';
 import { rsvpView, type RsvpView } from './rsvp-view';
 
 /**
- * Ids das notificações novas por gravação, um por dono ativo: o casamento tem
- * no máximo 2 donos (os 2 noivos, Partner.slot 1 e 2; chk_partners_slot), e a
- * notify_rsvp usa um id por dono. A folga cobre a troca de dono no meio.
+ * Ids das notificações novas por gravação, um por destinatário: até 2 donos
+ * (os 2 noivos, Partner.slot 1 e 2; chk_partners_slot) e a cerimonialista
+ * colaboradora (Notificações da cerimonialista RN02). A folga cobre a troca de
+ * dono no meio.
  */
 const NOTIFICATION_IDS = 4;
 

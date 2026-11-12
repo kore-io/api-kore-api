@@ -26,6 +26,7 @@ function setup({ members, role }: { members: WeddingMember[]; role: 'owner' | 'c
     lockWedding: jest.fn().mockResolvedValue(undefined),
     remove: jest.fn().mockResolvedValue(undefined),
     releasePartnerLogin: jest.fn().mockResolvedValue(undefined),
+    notifyRemoved: jest.fn().mockResolvedValue(undefined),
   } satisfies WeddingMembersStore;
   const log: ApplicationLogWriter = { record: jest.fn().mockResolvedValue(undefined) };
   const authorization = {
@@ -53,6 +54,11 @@ describe('RemoveMembership (DELETE /v1/weddings/{weddingId}/memberships/{id})', 
       now,
     });
     expect(store.releasePartnerLogin).not.toHaveBeenCalled();
+    // Notificações da cerimonialista RN04: o aviso à colaboradora removida.
+    expect(store.notifyRemoved).toHaveBeenCalledWith({
+      membershipId: 'm-j',
+      notificationId: expect.any(String),
+    });
     expect(log.record).toHaveBeenCalledWith({
       entry: expect.objectContaining({
         action: 'membership.removed',

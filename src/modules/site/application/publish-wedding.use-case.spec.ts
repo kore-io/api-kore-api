@@ -14,6 +14,7 @@ const DRAFT: PublicationTarget = {
   slug: 'ana-e-marcos',
   eventDate: '2026-11-14',
   timezone: 'America/Sao_Paulo',
+  publishedAt: null,
 };
 
 function useCase({
@@ -26,6 +27,7 @@ function useCase({
   const store: jest.Mocked<PublicationStore> = {
     lock: jest.fn().mockResolvedValue(target),
     publishByCourtesy: jest.fn().mockResolvedValue(undefined),
+    notifyPublished: jest.fn().mockResolvedValue([]),
   };
   const publish = new PublishWedding(
     { require: jest.fn().mockResolvedValue(undefined) } as unknown as WeddingAuthorization,
@@ -86,5 +88,15 @@ describe('PublishWedding (Publicação por Cortesia)', () => {
     expect(store.publishByCourtesy).toHaveBeenCalledWith(
       expect.objectContaining({ weddingId: 'w1', endDate: '2027-02-14', userId: 'ana' }),
     );
+  });
+
+  it('Notificações da cerimonialista RN03 - o aviso wedding_published só na primeira publicação', async () => {
+    const first = useCase({ target: DRAFT });
+    await first.run();
+    expect(first.store.notifyPublished).toHaveBeenCalledTimes(1);
+
+    const again = useCase({ target: { ...DRAFT, publishedAt: new Date('2026-08-01T00:00:00Z') } });
+    await again.run();
+    expect(again.store.notifyPublished).not.toHaveBeenCalled();
   });
 });

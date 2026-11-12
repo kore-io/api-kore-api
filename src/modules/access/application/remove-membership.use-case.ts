@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { uuidV7 } from '../../../shared/ids/uuid-v7';
 import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,
@@ -64,6 +65,13 @@ export class RemoveMembership {
     await this.store.remove({ membershipId, removedByUserId: userId, now });
     const leaving = target.userId === userId;
     if (leaving && target.role === 'owner') await this.store.releasePartnerLogin({ weddingId });
+    // Notificações da cerimonialista RN04: o dono removeu a colaboradora; quando
+    // ela sai por conta própria, nada.
+    if (!leaving && target.role === 'collaborator')
+      await this.store.notifyRemoved({
+        membershipId,
+        notificationId: uuidV7({ now: now.getTime() }),
+      });
 
     await this.log.record({
       entry: {
