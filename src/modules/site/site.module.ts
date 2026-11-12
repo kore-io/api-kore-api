@@ -16,6 +16,8 @@ import { PrismaSiteStore } from './infrastructure/prisma-site.store';
 import { PartyLinkFailures } from '../../shared/rate-limit/party-link-failures';
 import { PARTY_COOKIES } from './application/ports/party-cookies.port';
 import { StartPartySession } from './application/start-party-session.use-case';
+import { PARTY_VISITS } from './application/ports/party-visits.port';
+import { PrismaPartyVisits } from './infrastructure/prisma-party-visits';
 import { HmacPartyCookies } from './infrastructure/hmac-party-cookies';
 import { PREVIEW_COOKIES } from './application/ports/preview-cookies.port';
 import { SITE_PREVIEW_STORE } from './application/ports/site-preview-store.port';
@@ -67,6 +69,7 @@ import { SiteImagesController } from './presentation/site-images.controller';
     GetPublicSite,
     { provide: PARTY_COOKIES, useClass: HmacPartyCookies },
     PartyLinkFailures,
+    { provide: PARTY_VISITS, useClass: PrismaPartyVisits },
     StartPartySession,
     { provide: PREVIEW_COOKIES, useClass: HmacPreviewCookies },
     { provide: SITE_PREVIEW_STORE, useClass: PrismaSitePreviewStore },

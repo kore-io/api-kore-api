@@ -8,6 +8,7 @@ import {
   SiteNotFoundError,
 } from '../domain/site.errors';
 import { PARTY_COOKIES, type PartyCookies } from './ports/party-cookies.port';
+import { PARTY_VISITS, type PartyVisits } from './ports/party-visits.port';
 import { PUBLIC_SITE_READER, type PublicSiteReader } from './ports/public-site-reader.port';
 
 export interface PartySession {
@@ -26,7 +27,9 @@ export interface PartySession {
  *   com token válido ou não, sem cookie.
  * - O limite `party_link` conta só as falhas (LINK_INVALID e SITE_NOT_FOUND):
  *   olhado antes de resolver, incrementado depois, só na falha.
- * - Não grava `firstViewedAt` na F2 (decisão 199).
+ * - Convite visualizado (RSVP RN02; decisão 216, D12): só esta troca grava,
+ *   pela transação do grupo; entrar pelo cookie, a prévia e o GET da prévia
+ *   do link não gravam nada.
  */
 @Injectable()
 export class StartPartySession {
@@ -34,6 +37,7 @@ export class StartPartySession {
     @Inject(PUBLIC_SITE_READER) private readonly reader: PublicSiteReader,
     @Inject(PARTY_COOKIES) private readonly cookies: PartyCookies,
     private readonly failures: PartyLinkFailures,
+    @Inject(PARTY_VISITS) private readonly visits: PartyVisits,
   ) {}
 
   async execute({
@@ -57,6 +61,11 @@ export class StartPartySession {
       throw new SiteDraftError();
 
     if (party && party.slug && LIVE_SITE_STATUSES.includes(party.status)) {
+      await this.visits.markViewed({
+        weddingId: party.weddingId,
+        partyId: party.partyId,
+        linkVersion: party.linkVersion,
+      });
       return {
         slug: party.slug,
         party: { name: party.partyName },
