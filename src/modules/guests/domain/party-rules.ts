@@ -9,6 +9,8 @@ export interface GroupMember {
   rsvpStatus: RsvpStatus;
   phone: string | null;
   email: string | null;
+  /** Quando respondeu (F4); ausente onde não importa (convidado novo). */
+  respondedAt?: Date | null;
 }
 
 /** Vaga vazia: acompanhante sem nome, em qualquer resposta (decisão 186, item 13). */
@@ -71,4 +73,29 @@ export function deliveryStatusAfter({
   if (current !== 'responded') return current;
   // Quem respondeu já recebeu o convite: sem visualização gravada, enviado.
   return firstViewedAt ? 'viewed' : 'sent';
+}
+
+/**
+ * O "Respondido em" do grupo depois de uma mudança (Prazo RN06; decisão 216,
+ * D13): a resposta mais recente entre os convidados com nome (a vaga não
+ * entra), nulo enquanto o grupo não está respondido. Recalculado ao responder,
+ * ao alterar, ao mover, na lixeira e na restauração.
+ */
+export function respondedAtAfter({
+  delivery,
+  members,
+}: {
+  delivery: DeliveryStatus;
+  members: readonly Pick<GroupMember, 'isPlusOne' | 'respondedAt'>[];
+}): Date | null {
+  if (delivery !== 'responded') return null;
+  const times = members
+    .filter((member) => !member.isPlusOne && member.respondedAt)
+    .map((member) => member.respondedAt!.getTime());
+  return times.length > 0 ? new Date(Math.max(...times)) : null;
+}
+
+/** Mesmo instante (ou os dois nulos). */
+export function sameInstant(a: Date | null, b: Date | null): boolean {
+  return (a?.getTime() ?? null) === (b?.getTime() ?? null);
 }

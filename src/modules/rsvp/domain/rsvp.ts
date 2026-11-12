@@ -230,3 +230,98 @@ export function partyRespondedAt({
     .map((guest) => guest.respondedAt!.getTime());
   return times.length > 0 ? new Date(Math.max(...times)) : null;
 }
+
+/** A alteração do casal (Prazo RN04): Vai · Não vai, a restrição e, na vaga, o nome. */
+export interface CoupleAnswer {
+  status: 'confirmed' | 'declined';
+  dietaryRestriction?: string | null;
+  name?: string | null;
+}
+
+/**
+ * Confere e monta a alteração de um convidado pelo casal (Prazo RN04):
+ * - o nome só na vaga; Vai na vaga pede o nome; Não vai sem nome é o "não vou
+ *   levar", e tirar o nome de uma vaga com resposta a deixa recusada;
+ * - a música não muda pelo casal; com Não vai, a restrição e a música são
+ *   apagadas (o CHECK do banco, na mesma escrita);
+ * - o "Respondido em" muda só com a resposta ou o nome da vaga.
+ */
+export function planCoupleResponse({
+  guest,
+  answer,
+  now,
+}: {
+  guest: RsvpGuest;
+  answer: CoupleAnswer;
+  now: Date;
+}): { ok: false; issues: RsvpIssue[] } | { ok: true; update: RsvpGuestUpdate | null } {
+  const issues: RsvpIssue[] = [];
+  const confirmed = answer.status === 'confirmed';
+  const name = guest.isPlusOne ? clean(answer.name) : guest.name;
+  if (!guest.isPlusOne && answer.name !== undefined && answer.name !== null)
+    issues.push({ path: 'name', code: 'NAME_NOT_ALLOWED', params: {} });
+  if (guest.isPlusOne && confirmed) {
+    if (name === null) issues.push({ path: 'name', code: 'IS_NOT_EMPTY', params: {} });
+    else if (CONTROL_CHARACTERS.test(name))
+      issues.push({ path: 'name', code: 'CONTROL_CHARACTER', params: {} });
+    else if (name.length > GUEST_NAME_MAX)
+      issues.push({ path: 'name', code: 'TOO_LONG', params: { max: GUEST_NAME_MAX } });
+  }
+  const dietary = clean(answer.dietaryRestriction);
+  if (confirmed && dietary !== null && dietary.length > DIETARY_RESTRICTION_MAX)
+    issues.push({
+      path: 'dietaryRestriction',
+      code: 'TOO_LONG',
+      params: { max: DIETARY_RESTRICTION_MAX },
+    });
+  if (issues.length > 0) return { ok: false, issues };
+
+  const nextName = guest.isPlusOne ? (confirmed ? name : null) : guest.name;
+  const dietaryRestriction = !confirmed
+    ? null
+    : answer.dietaryRestriction === undefined
+      ? guest.dietaryRestriction
+      : dietary;
+  const songSuggestion = confirmed ? guest.songSuggestion : null;
+  const statusChanged = answer.status !== guest.rsvpStatus;
+  const nameChanged = nextName !== guest.name;
+  if (
+    !statusChanged &&
+    !nameChanged &&
+    dietaryRestriction === guest.dietaryRestriction &&
+    songSuggestion === guest.songSuggestion
+  )
+    return { ok: true, update: null };
+  return {
+    ok: true,
+    update: {
+      before: guest,
+      after: {
+        ...guest,
+        name: nextName,
+        rsvpStatus: answer.status,
+        dietaryRestriction,
+        songSuggestion,
+        songSuggestedAt: songSuggestion === null ? null : guest.songSuggestedAt,
+        respondedAt: statusChanged || nameChanged ? now : guest.respondedAt,
+      },
+      statusChanged,
+    },
+  };
+}
+
+/** Depois do prazo ou no pós-evento, só o dono altera respostas (Prazo RN04). */
+export function isAfterDeadline({
+  status,
+  rsvpDeadline,
+  timezone,
+  now,
+}: {
+  status: string;
+  rsvpDeadline: string | null;
+  timezone: string | null;
+  now: Date;
+}): boolean {
+  if (status === 'post_event' || status === 'grace' || status === 'expired') return true;
+  return rsvpDeadline !== null && localDate({ at: now, timezone }) > rsvpDeadline;
+}

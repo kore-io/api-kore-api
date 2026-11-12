@@ -24,6 +24,8 @@ import {
   deliveryStatusAfter,
   hasPending,
   isEmptySlot,
+  respondedAtAfter,
+  sameInstant,
   type GroupMember,
 } from '../domain/party-rules';
 import { purgeAt } from '../domain/trash';
@@ -300,6 +302,8 @@ export class TrashGuest {
       members: after,
     });
     if (delivery !== group.deliveryStatus) changes.deliveryStatus = delivery;
+    const respondedAt = respondedAtAfter({ delivery, members: after });
+    if (!sameInstant(respondedAt, group.respondedAt)) changes.respondedAt = respondedAt;
     await support.groups.updateParty({ partyId: group.id, changes });
     await support.parties.applyStats({
       weddingId,
@@ -509,6 +513,8 @@ export class RestoreTrashItem {
       members: after,
     });
     if (delivery !== group.deliveryStatus) changes.deliveryStatus = delivery;
+    const respondedAt = respondedAtAfter({ delivery, members: after });
+    if (!sameInstant(respondedAt, group.respondedAt)) changes.respondedAt = respondedAt;
     await support.groups.updateParty({ partyId: group.id, changes });
     await support.parties.applyStats({
       weddingId,
@@ -571,6 +577,7 @@ export class RestoreTrashItem {
       rsvpStatus: guest.rsvpStatus,
       phone: guest.phone,
       email: guest.email,
+      respondedAt: guest.respondedAt,
     };
   }
 }

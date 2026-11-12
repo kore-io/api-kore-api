@@ -13,6 +13,8 @@ import {
 import {
   contactAfter,
   deliveryStatusAfter,
+  respondedAtAfter,
+  sameInstant,
   hasPending,
   isEmptySlot,
   type GroupMember,
@@ -158,6 +160,9 @@ export class MoveGuest {
       members,
     });
     if (delivery !== party.deliveryStatus) changes.deliveryStatus = delivery;
+    // O "Respondido em" do grupo (Prazo RN06): a resposta mais recente de quem ficou.
+    const respondedAt = respondedAtAfter({ delivery, members });
+    if (!sameInstant(respondedAt, party.respondedAt)) changes.respondedAt = respondedAt;
     return changes;
   }
 }

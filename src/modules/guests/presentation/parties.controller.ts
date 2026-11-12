@@ -137,6 +137,7 @@ export class PartiesController {
           rsvp: query.rsvp,
           sent: query.sent,
           tagId: query.tag,
+          remind: query.remind === 'true',
           cursor: query.cursor,
           limit: query.limit,
         }),

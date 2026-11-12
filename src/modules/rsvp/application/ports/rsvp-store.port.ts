@@ -11,10 +11,16 @@ export interface RsvpPartyRow {
   firstViewedAt: Date | null;
 }
 
-/** O que o RSVP lê do casamento (a prévia lê pela RLS do vínculo; o grupo, pelo contexto). */
+/** Quem grava: o grupo pelo RSVP (com quem assinou) ou o casal pelo Painel (Prazo RN04). */
+export type ResponseActorInput =
+  { kind: 'party'; signedByGuestId: string } | { kind: 'couple'; userId: string };
+
+/** O que o RSVP lê do casamento (a prévia e o casal leem pela RLS do vínculo; o grupo, pelo contexto). */
 export interface RsvpWeddingRow {
   status: string;
   timezone: string | null;
+  /** AAAA-MM-DD. */
+  eventDate: string | null;
   rsvpDeadline: string | null;
   publishedAt: string | null;
   songQuestionEnabled: boolean;
@@ -52,7 +58,7 @@ export interface RsvpStore {
     weddingId,
     partyId,
     submissionId,
-    signedByGuestId,
+    actor,
     counts,
     updates,
     now,
@@ -60,23 +66,33 @@ export interface RsvpStore {
     weddingId: string;
     partyId: string;
     submissionId: string;
-    signedByGuestId: string;
+    actor: ResponseActorInput;
     counts: { confirmed: number; declined: number };
     updates: readonly RsvpGuestUpdate[];
     now: Date;
   }): Promise<void>;
   applyStats({ weddingId, delta }: { weddingId: string; delta: StatsDelta }): Promise<void>;
-  /** A versão sobe; a última resposta é do grupo (Prazo RN07). */
+  /** A versão sobe; a última resposta, do grupo ou do casal (Prazo RN07). */
   markResponded({
     partyId,
     deliveryStatus,
     respondedAt,
-    signedByGuestId,
+    actor,
   }: {
     partyId: string;
     deliveryStatus: DeliveryStatus;
     respondedAt: Date | null;
-    signedByGuestId: string;
+    actor: ResponseActorInput;
+  }): Promise<void>;
+  /** O grupo ativo do convidado ativo (o Alterar resposta, pela RLS do vínculo). */
+  partyOfGuest({ guestId }: { guestId: string }): Promise<string | null>;
+  /** Grava o prazo de resposta (Prazo RN01); nulo tira. */
+  updateDeadline({
+    weddingId,
+    rsvpDeadline,
+  }: {
+    weddingId: string;
+    rsvpDeadline: string | null;
   }): Promise<void>;
   /** A notificação dos donos pela notify_rsvp (Central RN02 a RN04). */
   notify({

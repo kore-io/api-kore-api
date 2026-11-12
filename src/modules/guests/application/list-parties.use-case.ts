@@ -14,8 +14,8 @@ import {
 export interface PartyListItem extends Omit<PartyListRow, 'sortName' | 'contact'> {
   /** Sem o número inteiro (RN13; decisão 186, item 11). */
   contact: { guestId: string; name: string | null; phoneMasked: string | null } | null;
-  /** Quem assinou a resposta: Fase 4. */
-  respondedBy: null;
+  /** Mantido por compatibilidade: o nome de lastResponse (quem assinou ou quem alterou). */
+  respondedBy: string | null;
 }
 
 export interface PartyList {
@@ -43,6 +43,7 @@ export class ListParties {
     rsvp,
     sent,
     tagId,
+    remind,
     cursor,
     limit = 25,
   }: {
@@ -52,6 +53,7 @@ export class ListParties {
     rsvp?: RsvpStatus;
     sent?: DeliveryStatus;
     tagId?: string;
+    remind?: boolean;
     cursor?: string;
     limit?: number;
   }): Promise<PartyList> {
@@ -71,6 +73,7 @@ export class ListParties {
         rsvp,
         sent,
         tagId,
+        remind,
         after: after ?? undefined,
         limit: limit + 1,
       },
@@ -88,13 +91,14 @@ export class ListParties {
         counts: row.counts,
         deliveryStatus: row.deliveryStatus,
         respondedAt: row.respondedAt,
+        lastResponse: row.lastResponse,
         tags: row.tags,
         contact: contact && {
           guestId: contact.guestId,
           name: contact.name,
           phoneMasked: contact.phone ? maskPhone({ e164: contact.phone }) : null,
         },
-        respondedBy: null,
+        respondedBy: row.lastResponse?.signedByName ?? row.lastResponse?.actorName ?? null,
       })),
       nextCursor:
         rows.length > limit && last

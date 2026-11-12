@@ -22,7 +22,9 @@ export type WeddingAction =
   /** Editar o site e enviar imagens (Dados básicos RN04; F2): qualquer vínculo. */
   | 'manage_site'
   /** Publicar o site (Publicação por Cortesia RN02; F4): só o dono. */
-  | 'publish_site';
+  | 'publish_site'
+  /** Alterar resposta depois do prazo ou no pós-evento (Prazo RN04; F4): só o dono. */
+  | 'edit_response_after_deadline';
 
 const OWNER_ONLY: ReadonlySet<WeddingAction> = new Set([
   'invite_partner',
@@ -30,6 +32,7 @@ const OWNER_ONLY: ReadonlySet<WeddingAction> = new Set([
   'remove_collaborator',
   'trash_responded',
   'publish_site',
+  'edit_response_after_deadline',
 ]);
 
 /**
