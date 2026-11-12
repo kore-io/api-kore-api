@@ -152,6 +152,15 @@ export class PrismaOwnerlessWeddings implements OwnerlessWeddings {
       await tx.partner.deleteMany({ where: { weddingId } });
       // A lápide fica, então o cascade do Wedding não dispara: as filhas da F1 saem
       // à mão, das folhas para a raiz (decisão 207(17)).
+      // As F4 e F5: notificações, estado do e-mail, preferências, histórico de
+      // respostas e de envios e mensagens prontas.
+      await tx.notification.deleteMany({ where: { weddingId } });
+      await tx.notificationEmailState.deleteMany({ where: { weddingId } });
+      await tx.notificationPreference.deleteMany({ where: { weddingId } });
+      await tx.guestResponse.deleteMany({ where: { weddingId } });
+      await tx.rsvpSubmission.deleteMany({ where: { weddingId } });
+      await tx.partyDelivery.deleteMany({ where: { weddingId } });
+      await tx.messageTemplate.deleteMany({ where: { weddingId } });
       await tx.guestTag.deleteMany({ where: { weddingId } });
       await tx.partyTag.deleteMany({ where: { weddingId } });
       await tx.guest.deleteMany({ where: { weddingId } });
@@ -191,6 +200,13 @@ export class PrismaOwnerlessWeddings implements OwnerlessWeddings {
           accentColor: null,
           backgroundMode: null,
           appearanceSetAt: null,
+          // Prazo, pergunta de música e publicação (F4).
+          rsvpDeadline: null,
+          songQuestionEnabled: false,
+          songQuestionText: null,
+          endDate: null,
+          publicationSource: null,
+          publishedByUserId: null,
         },
       });
       await tx.applicationLog.create({
