@@ -1286,6 +1286,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/SellerCannotBePlannerErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SelfReferralErrorBody"
                     }
                   ]
                 }
@@ -1524,6 +1527,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/LastOwnerErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingHasNoOwnerErrorBody"
                     }
                   ]
                 }
@@ -8733,6 +8739,31 @@
           "message"
         ]
       },
+      "SelfReferralErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SELF_REFERRAL"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
       "AcceptAccessInvitationBody": {
         "type": "object",
         "properties": {
@@ -8963,6 +8994,31 @@
             "type": "string",
             "enum": [
               "LAST_OWNER"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "WeddingHasNoOwnerErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "WEDDING_HAS_NO_OWNER"
             ]
           },
           "message": {

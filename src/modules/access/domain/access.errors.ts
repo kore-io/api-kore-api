@@ -200,6 +200,19 @@ export class LastOwnerError extends Error {
   override name = 'LastOwnerError';
 }
 
+/** Decisão 224(1): o colaborador não sai de um casamento sem dono ativo. */
+export class WeddingHasNoOwnerError extends Error {
+  override name = 'WeddingHasNoOwnerError';
+}
+
+/**
+ * Decisão 224(2): o indicador a que o casamento está atribuído não aceita o
+ * convite do casal desse casamento (autoindicação).
+ */
+export class SelfReferralError extends Error {
+  override name = 'SelfReferralError';
+}
+
 /** O vínculo não existe neste casamento, ou já foi encerrado. */
 export class MembershipNotFoundError extends Error {
   override name = 'MembershipNotFoundError';

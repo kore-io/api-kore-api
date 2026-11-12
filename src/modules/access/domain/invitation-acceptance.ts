@@ -70,6 +70,21 @@ export function invalidReason({
   return null;
 }
 
+/**
+ * Decisão 224(2): no convite do casal (link ou e-mail), quem aceita não pode
+ * ser o indicador a que o casamento está atribuído. O convite do cerimonialista
+ * não entra: ali o indicador é quem deve aceitar (RN10).
+ */
+export function isSelfReferral({
+  invitation,
+  userId,
+}: {
+  invitation: Pick<InvitationSnapshot, 'kind' | 'referrer'>;
+  userId: string;
+}): boolean {
+  return invitation.kind === 'couple' && invitation.referrer?.userId === userId;
+}
+
 /** RN07: o convite por e-mail foi para outro endereço; o link sem e-mail não compara. */
 export function emailDiffers({
   invitationEmail,
