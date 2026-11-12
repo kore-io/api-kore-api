@@ -5,7 +5,7 @@ import {
   OBJECT_STORAGE,
   type ObjectStorage,
 } from '../../../../shared/storage/application/object-storage.port';
-import { siteImageKeys } from '../../../site/domain/site-image';
+import { deleteSiteImageObjects, purgeWeddingData } from './wedding-purge';
 import type {
   OwnerlessWedding,
   OwnerlessWeddings,
@@ -147,68 +147,11 @@ export class PrismaOwnerlessWeddings implements OwnerlessWeddings {
         select: { status: true },
       });
       if (!wedding) return false;
-      await tx.accessInvitation.deleteMany({ where: { weddingId } });
-      await tx.membership.deleteMany({ where: { weddingId } });
-      await tx.partner.deleteMany({ where: { weddingId } });
-      // A lápide fica, então o cascade do Wedding não dispara: as filhas da F1 saem
-      // à mão, das folhas para a raiz (decisão 207(17)).
-      // As F4 e F5: notificações, estado do e-mail, preferências, histórico de
-      // respostas e de envios e mensagens prontas.
-      await tx.notification.deleteMany({ where: { weddingId } });
-      await tx.notificationEmailState.deleteMany({ where: { weddingId } });
-      await tx.notificationPreference.deleteMany({ where: { weddingId } });
-      await tx.guestResponse.deleteMany({ where: { weddingId } });
-      await tx.rsvpSubmission.deleteMany({ where: { weddingId } });
-      await tx.partyDelivery.deleteMany({ where: { weddingId } });
-      await tx.messageTemplate.deleteMany({ where: { weddingId } });
-      await tx.guestTag.deleteMany({ where: { weddingId } });
-      await tx.partyTag.deleteMany({ where: { weddingId } });
-      await tx.guest.deleteMany({ where: { weddingId } });
-      await tx.party.deleteMany({ where: { weddingId } });
-      await tx.tag.deleteMany({ where: { weddingId } });
-      await tx.weddingStats.deleteMany({ where: { weddingId } });
-      // O site (Imagens do site RN11): seções, conteúdos e imagens com os arquivos.
-      await tx.sitePreviewToken.deleteMany({ where: { weddingId } });
-      await tx.sectionContent.deleteMany({ where: { weddingId } });
-      await tx.section.deleteMany({ where: { weddingId } });
-      await this.purgeSiteImages({ tx, weddingId });
-      // Lápide (Modelo de Dados): ficam id, status, purgedAt, o indicador e createdAt.
-      await tx.wedding.update({
-        where: { id: weddingId },
-        data: {
-          status: 'purged',
-          purgedAt: now,
-          slug: null,
-          eventDate: null,
-          timezone: null,
-          city: null,
-          state: null,
-          createdByUserId: null,
-          signupSource: null,
-          utmSource: null,
-          utmMedium: null,
-          utmCampaign: null,
-          purgeNoticeSentAt: null,
-          // Sem contato, aparência nem capa (Imagens do site RN11).
-          contactEmail: null,
-          contactWhatsapp: null,
-          coverImageId: null,
-          siteUpdatedAt: null,
-          fontPairKey: null,
-          starterPaletteKey: null,
-          primaryColor: null,
-          accentColor: null,
-          backgroundMode: null,
-          appearanceSetAt: null,
-          // Prazo, pergunta de música e publicação (F4).
-          rsvpDeadline: null,
-          songQuestionEnabled: false,
-          songQuestionText: null,
-          endDate: null,
-          publicationSource: null,
-          publishedByUserId: null,
-        },
-      });
+      const imageIds = await purgeWeddingData({ tx, weddingId, now });
+      // Os arquivos saem dentro da transação, com o casamento travado: se o
+      // armazenamento falhar, o erro desfaz o expurgo inteiro e a rotina tenta
+      // de novo no dia seguinte (Imagens do site RN11).
+      await deleteSiteImageObjects({ storage: this.storage, imageIds });
       await tx.applicationLog.create({
         data: {
           action: OWNERLESS_PURGED_ACTION,
@@ -220,32 +163,6 @@ export class PrismaOwnerlessWeddings implements OwnerlessWeddings {
         },
       });
       return true;
-    });
-  }
-
-  /**
-   * As imagens do site e os arquivos delas (Imagens do site RN11), pela lista
-   * do banco: as chaves não levam o casamento. Os objetos saem dentro da
-   * transação, com o casamento travado. Se o armazenamento falhar, o erro
-   * desfaz o expurgo inteiro no banco e a rotina tenta de novo no dia seguinte.
-   * Se o commit falhar depois de apagar os arquivos, as linhas voltam sem
-   * arquivo, o que é inofensivo: a rodada seguinte as apaga de novo.
-   */
-  private async purgeSiteImages({
-    tx,
-    weddingId,
-  }: {
-    tx: Prisma.TransactionClient;
-    weddingId: string;
-  }): Promise<void> {
-    const images = await tx.siteImage.findMany({ where: { weddingId }, select: { id: true } });
-    if (images.length === 0) return;
-    await tx.siteImage.deleteMany({ where: { weddingId } });
-    const keys = images.map(({ id }) => siteImageKeys({ imageId: id }));
-    await this.storage.delete({ bucket: 'private', keys: keys.map((key) => key.original) });
-    await this.storage.delete({
-      bucket: 'public',
-      keys: keys.flatMap((key) => [key.display, key.thumb, key.og]),
     });
   }
 }

@@ -38,6 +38,9 @@ import { VerifyLoginChallenge } from './application/verify-login-challenge.use-c
 import { EndAllSessions } from './application/end-all-sessions.use-case';
 import { EndSession } from './application/end-session.use-case';
 import { GetMe } from './application/get-me.use-case';
+import { DeleteWeddingByCreator } from './application/delete-wedding-by-creator.use-case';
+import { CREATOR_WEDDING_DELETER } from './application/ports/creator-wedding-deletion.port';
+import { PrismaCreatorWeddingDeleter } from './infrastructure/backoffice/prisma-creator-wedding-deleter';
 import { CreatePlannerWedding } from './application/create-planner-wedding.use-case';
 import { PlannerWeddingRateLimitGuard } from '../../shared/rate-limit/user-rate-limit.guard';
 import {
@@ -177,6 +180,8 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     UpdatePlannerProfile,
     GetMyReferrer,
     CreatePlannerWedding,
+    DeleteWeddingByCreator,
+    { provide: CREATOR_WEDDING_DELETER, useClass: PrismaCreatorWeddingDeleter },
     PlannerWeddingRateLimitGuard,
     ListWeddingMembers,
     RemoveMembership,

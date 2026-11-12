@@ -213,6 +213,13 @@ export class WeddingHasNoOwnerErrorBody {
   @ApiProperty() message: string;
 }
 
+export class WeddingHasOwnerErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['WEDDING_HAS_OWNER'] }) error: 'WEDDING_HAS_OWNER';
+  @ApiProperty() message: string;
+}
+
 export class OwnerlessWeddingsLimitErrorBody {
   static readonly status = 409;
   @ApiProperty({ enum: [409] }) statusCode: 409;
