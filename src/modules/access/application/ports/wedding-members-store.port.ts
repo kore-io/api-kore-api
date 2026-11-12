@@ -34,6 +34,18 @@ export interface WeddingMembersStore {
   }): Promise<void>;
   /** Dono que saiu: o noivo dele perde o login (decisão 177, item 10). */
   releasePartnerLogin({ weddingId }: { weddingId: string }): Promise<void>;
+  /**
+   * O aviso membership_removed à cerimonialista que o dono removeu
+   * (Notificações da cerimonialista RN04), na transação da remoção. A função
+   * do banco ignora o colaborador sem Planner (o vendedor).
+   */
+  notifyRemoved({
+    membershipId,
+    notificationId,
+  }: {
+    membershipId: string;
+    notificationId: string;
+  }): Promise<void>;
 }
 
 export const WEDDING_MEMBERS_STORE = Symbol('WeddingMembersStore');

@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AppConfigService } from '../../../shared/config/app-config.service';
+import { uuidV7 } from '../../../shared/ids/uuid-v7';
 import { AFTER_COMMIT, type AfterCommit } from '../../../shared/database/after-commit.port';
 import { daysBetween, localDate } from '../../../shared/time/local-date';
 import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
@@ -74,6 +75,13 @@ export class PublishWedding {
       throw new EndDateOutOfRangeError({ endDateMin: range.min, endDateMax: range.max });
 
     await this.store.publishByCourtesy({ weddingId, endDate, userId, now });
+    // Notificações da cerimonialista RN03: só na primeira publicação, na mesma
+    // transação; o "uma vez por casamento" não depende da retenção.
+    if (wedding.publishedAt === null)
+      await this.store.notifyPublished({
+        // No máximo 2 pessoas: a indicadora e a cerimonialista colaboradora.
+        notificationIds: [uuidV7({ now: now.getTime() }), uuidV7({ now: now.getTime() })],
+      });
     await this.log.record({
       entry: {
         action: 'wedding.published',

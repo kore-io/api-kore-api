@@ -1,25 +1,56 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsIn, IsOptional, IsString, IsUUID, MaxLength, ValidateNested } from 'class-validator';
 import {
-  NOTIFICATION_TYPES,
+  IsIn,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  ValidateIf,
+  ValidateNested,
+} from 'class-validator';
+import { OptionalNotNull } from '../../../shared/http/optional-not-null';
+import {
+  PLANNER_NOTIFICATION_TYPES,
   type EmailFrequency,
-  type NotificationType,
+  type PlannerNotificationType,
 } from '../application/ports/notification-store.port';
 
 const EMAIL_FREQUENCIES = ['off', 'immediate', 'daily'] as const;
 
+export const NOTIFICATION_SCOPES = ['planner'] as const;
+
+/**
+ * O casamento ativo, ou `scope=planner` (Notificações da cerimonialista RN05):
+ * a central dela, com todos os casamentos e sem `weddingId`. Sem `scope`, o
+ * `weddingId` é obrigatório (revisão C8-5).
+ */
 export class WeddingQuery {
-  /** O casamento ativo. */
-  @IsUUID() weddingId: string;
+  @ApiProperty({ required: false, format: 'uuid' })
+  @ValidateIf((query: WeddingQuery) => query.scope === undefined || query.weddingId !== undefined)
+  @IsUUID()
+  weddingId?: string;
+
+  @ApiProperty({ enum: NOTIFICATION_SCOPES, required: false })
+  @IsOptional()
+  @IsIn(NOTIFICATION_SCOPES)
+  scope?: 'planner';
+}
+
+/** Sem `weddingId`, a preferência geral da cerimonialista (Notificações da cerimonialista RN06). */
+export class PreferencesQuery {
+  @ApiProperty({ required: false, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  weddingId?: string;
 }
 
 export class NotificationsQuery extends WeddingQuery {
-  /** Filtro por tipo (Todas · Respostas). */
-  @ApiProperty({ enum: NOTIFICATION_TYPES, required: false })
+  /** Filtro por tipo (casal: Respostas; cerimonialista: os 3). */
+  @ApiProperty({ enum: PLANNER_NOTIFICATION_TYPES, required: false })
   @IsOptional()
-  @IsIn(NOTIFICATION_TYPES)
-  type?: NotificationType;
+  @IsIn(PLANNER_NOTIFICATION_TYPES)
+  type?: PlannerNotificationType;
 
   /** O `nextCursor` da página anterior. */
   @IsOptional() @IsString() @MaxLength(200) cursor?: string;
@@ -36,10 +67,17 @@ class NotificationEntryResponse {
 
 export class NotificationResponse {
   id: string;
-  @ApiProperty({ enum: NOTIFICATION_TYPES }) type: NotificationType;
+  @ApiProperty({ enum: PLANNER_NOTIFICATION_TYPES }) type: PlannerNotificationType;
+  /** A central da cerimonialista junta vários casamentos (revisão C8-5). */
+  weddingId: string;
+  /** Os primeiros nomes do casal; o app junta. */
+  @ApiProperty({ type: [String], example: ['Ana', 'Marcos'] }) partnerNames: [string, string];
   /** Grupos distintos (1: "Família Moreira respondeu o convite"; mais: "{n} grupos responderam"). */
   count: number;
-  /** Por grupo, sem restrição, música nem nome de convidado (Central RN04). */
+  /**
+   * rsvp: por grupo, sem restrição, música nem nome de convidado (Central RN04).
+   * wedding_published e membership_removed: [{ partnerNames }] (revisão C8-3).
+   */
   @ApiProperty({ type: [NotificationEntryResponse] }) payload: NotificationEntryResponse[];
   @ApiProperty({ type: String, format: 'date-time', nullable: true }) readAt: string | null;
   @ApiProperty({ format: 'date-time' }) updatedAt: string;
@@ -56,7 +94,7 @@ export class UnreadCountResponse {
 }
 
 export class PreferenceResponse {
-  @ApiProperty({ enum: NOTIFICATION_TYPES }) type: NotificationType;
+  @ApiProperty({ enum: PLANNER_NOTIFICATION_TYPES }) type: PlannerNotificationType;
   /** Sempre ligada no casal. */
   inApp: boolean;
   @ApiProperty({ enum: EMAIL_FREQUENCIES }) email: EmailFrequency;
@@ -78,8 +116,15 @@ export class PreferencesResponse {
 
 /** O e-mail de um tipo (Central RN07); o push muda pela assinatura do aparelho. */
 export class SavePreferenceBody {
-  @IsUUID() weddingId: string;
-  @ApiProperty({ enum: NOTIFICATION_TYPES }) @IsIn(NOTIFICATION_TYPES) type: NotificationType;
+  /** Sem `weddingId`, a preferência geral da cerimonialista (RN06). */
+  @ApiProperty({ required: false, format: 'uuid' })
+  @OptionalNotNull()
+  @IsUUID()
+  weddingId?: string;
+
+  @ApiProperty({ enum: PLANNER_NOTIFICATION_TYPES })
+  @IsIn(PLANNER_NOTIFICATION_TYPES)
+  type: PlannerNotificationType;
   @ApiProperty({ enum: EMAIL_FREQUENCIES }) @IsIn(EMAIL_FREQUENCIES) email: EmailFrequency;
 }
 
