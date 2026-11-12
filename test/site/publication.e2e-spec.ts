@@ -232,7 +232,7 @@ describe('Publicação por Cortesia (banco real)', () => {
       .expect(({ body }) => expect(body.error).toBe('SLUG_LOCKED'));
   });
 
-  it('RN11 - num casamento publicado, a data nova não deixa a saída do ar fora dos limites', async () => {
+  it('RN11 e decisão 219 - num casamento publicado, a data nova não deixa a saída do ar fora dos limites nem fica em branco', async () => {
     const { ana, weddingId, eventDate } = await anaWedding({ eventDate: inDays(30) });
     await publish(ana.cookie, weddingId, { endDate: inDays(60) }).expect(200);
     const patch = (body: Record<string, unknown>) =>
@@ -248,8 +248,11 @@ describe('Publicação por Cortesia (banco real)', () => {
       error: 'END_DATE_OUT_OF_RANGE',
       endDateMin: inDays(91),
     });
-    // Tirar a data também é recusado: sem data, não há limite.
-    await patch({ eventDate: null }).expect(422);
+    // Tirar a data: 400 com código próprio (decisão 219).
+    const blank = await patch({ eventDate: null }).expect(400);
+    expect(blank.body.errors).toEqual([
+      { path: 'eventDate', code: 'EVENT_DATE_REQUIRED_WHEN_PUBLISHED', params: {} },
+    ]);
     expect((await wedding(weddingId)).eventDate).toEqual(new Date(`${eventDate}T00:00:00Z`));
 
     // Uma data que mantém a saída do ar nos limites passa.
