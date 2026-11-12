@@ -3,6 +3,7 @@ import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { DelayedError, type Job, type Queue } from 'bullmq';
 import { upsertDailyScheduler } from '../../../shared/jobs/daily-scheduler';
 import { RsvpEmails } from '../application/rsvp-emails.use-cases';
+import { RsvpPush } from '../application/rsvp-push.use-case';
 import {
   NOTIFICATIONS_QUEUE,
   NOTIFICATIONS_SWEEP_SCHEDULER_ID,
@@ -20,6 +21,7 @@ const EMAIL_ATTEMPTS = 5;
 export class NotificationsProcessor extends WorkerHost {
   constructor(
     private readonly emails: RsvpEmails,
+    private readonly push: RsvpPush,
     @InjectQueue(NOTIFICATIONS_QUEUE) private readonly queue: Queue,
   ) {
     super();
@@ -28,6 +30,10 @@ export class NotificationsProcessor extends WorkerHost {
   async process(job: Job, token?: string): Promise<unknown> {
     const now = new Date();
     if (job.name === 'notified') return this.notified({ data: job.data as NotifiedJob, now });
+    if (job.name === 'push') {
+      const { userId, weddingId } = job.data as EmailJob;
+      return this.push.send({ userId, weddingId, now });
+    }
     if (job.name === 'email') {
       const { userId, weddingId } = job.data as EmailJob;
       const result = await this.emails.send({ userId, weddingId, mode: 'immediate', now });
@@ -53,6 +59,14 @@ export class NotificationsProcessor extends WorkerHost {
   private async notified({ data, now }: { data: NotifiedJob; now: Date }): Promise<number> {
     let scheduled = 0;
     for (const userId of data.userIds) {
+      // O push sai a cada soma (RN07), com novas tentativas para 429 e 5xx.
+      const target: EmailJob = { userId, weddingId: data.weddingId };
+      await this.queue.add('push', target, {
+        attempts: EMAIL_ATTEMPTS,
+        backoff: { type: 'exponential', delay: 30_000 },
+        removeOnComplete: true,
+        removeOnFail: 100,
+      });
       const at = await this.emails.immediateAt({ userId, weddingId: data.weddingId, now });
       if (!at) continue;
       const job: EmailJob = { userId, weddingId: data.weddingId };

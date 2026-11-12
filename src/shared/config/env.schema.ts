@@ -96,6 +96,17 @@ export const envSchema = z
       .enum(['true', 'false'])
       .default('false')
       .transform((value) => value === 'true'),
+    // Push com VAPID (E-mail e push RN07; decisão 216, D25): as chaves ficam
+    // fora de arquivo e são geradas no ambiente. Opcionais em local e test (sem
+    // elas, o push aparece desligado); obrigatórias em homolog e production.
+    // Trocar a chave privada invalida todas as assinaturas.
+    VAPID_PUBLIC_KEY: z.string().min(1).optional(),
+    VAPID_PRIVATE_KEY: z.string().min(1).optional(),
+    // mailto: ou https: (o contato do serviço de push).
+    VAPID_SUBJECT: z
+      .string()
+      .regex(/^(mailto:|https:\/\/)/)
+      .optional(),
     // Versão vigente dos Termos e da Política (RN11 de Cadastro; decisão 166).
     TERMS_VERSION: z.string().min(1).default('2026-09'),
     // Armazenamento compatível com S3 (Imagens do site, RN06): MinIO no local,
@@ -135,6 +146,17 @@ export const envSchema = z
         path: ['COURTESY_PUBLICATION_ENABLED'],
         message: 'a Cortesia só pode ser ligada com APP_ENV local ou test (decisão 217(11))',
       });
+    }
+    if (!LOCAL_KEY_ENVS.includes(env.APP_ENV)) {
+      for (const key of ['VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY', 'VAPID_SUBJECT'] as const) {
+        if (!env[key]) {
+          ctx.addIssue({
+            code: 'custom',
+            path: [key],
+            message: 'obrigatória com APP_ENV homolog ou production (o push, E-mail e push RN07)',
+          });
+        }
+      }
     }
     if (env.GOOGLE_PROVIDER === 'dev' && !LOCAL_KEY_ENVS.includes(env.APP_ENV)) {
       ctx.addIssue({

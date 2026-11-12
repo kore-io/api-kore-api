@@ -71,6 +71,7 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "sharp": "^0.35.5",
+    "web-push": "3.6.7",
     "yauzl": "^3.4.0",
     "zod": "^4.6.7"
   },
@@ -92,6 +93,7 @@
     "@types/pg": "^8.23.1",
     "@types/qrcode": "1.5.5",
     "@types/supertest": "^7.2.1",
+    "@types/web-push": "3.6.4",
     "@types/yauzl": "^3.4.0",
     "dotenv": "^18.0.9",
     "eslint": "^10.14.0",

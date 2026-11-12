@@ -164,4 +164,14 @@ describe('validateEnv', () => {
       }),
     ).not.toThrow(/COURTESY_PUBLICATION_ENABLED/);
   });
+
+  it('E-mail e push RN07 - as chaves VAPID são opcionais em local e test e obrigatórias em homolog e production', () => {
+    expect(() => validateEnv({ config: validConfig })).not.toThrow();
+    expect(() => validateEnv({ config: { ...validConfig, APP_ENV: 'homolog' } })).toThrow(
+      /VAPID_PUBLIC_KEY: obrigatória/,
+    );
+    expect(() =>
+      validateEnv({ config: { ...validConfig, VAPID_SUBJECT: 'kore@kore.com.br' } }),
+    ).toThrow(/VAPID_SUBJECT/);
+  });
 });

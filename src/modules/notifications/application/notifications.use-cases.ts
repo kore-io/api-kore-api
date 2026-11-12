@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { AppConfigService } from '../../../shared/config/app-config.service';
 import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
 import {
   NOTIFICATION_STORE,
@@ -117,6 +118,7 @@ export class NotificationPreferences {
   constructor(
     private readonly authorization: WeddingAuthorization,
     @Inject(NOTIFICATION_STORE) private readonly store: NotificationStore,
+    private readonly config: AppConfigService,
   ) {}
 
   async get({
@@ -136,8 +138,8 @@ export class NotificationPreferences {
       items: NOTIFICATION_TYPES.map((type) => saved.get(type) ?? { type, ...DEFAULT_PREFERENCE }),
       push: {
         subscribed: await this.store.hasPushSubscription({ sessionId }),
-        // A chave VAPID entra com o push (E-mail e push RN07); até lá, desligado.
-        vapidPublicKey: null,
+        // Pela API, sem variável de build (R8-6); nula com o push desligado no ambiente.
+        vapidPublicKey: this.config.get({ key: 'VAPID_PUBLIC_KEY' }) ?? null,
       },
     };
   }
