@@ -78,3 +78,47 @@ export class ResponseGuestNotFoundError extends Error {
 export class LinkPlaceholderMissingError extends Error {
   override name = 'LinkPlaceholderMissingError';
 }
+
+/** Os envios não valem agora (409 DELIVERIES_CLOSED; Envios RN01), com o motivo. */
+export class DeliveriesClosedError extends Error {
+  override name = 'DeliveriesClosedError';
+  readonly reason: 'not_published' | 'deadline_passed' | 'post_event';
+
+  constructor({ reason }: { reason: 'not_published' | 'deadline_passed' | 'post_event' }) {
+    super();
+    this.reason = reason;
+  }
+}
+
+/** Um grupo pedido não existe neste casamento ou está na lixeira (404 PARTY_NOT_FOUND). */
+export class DeliveryPartyNotFoundError extends Error {
+  override name = 'DeliveryPartyNotFoundError';
+  readonly partyIds: readonly string[];
+
+  constructor({ partyIds }: { partyIds: readonly string[] }) {
+    super();
+    this.partyIds = partyIds;
+  }
+}
+
+/**
+ * O envio não cabe (422 DELIVERY_NOT_ALLOWED; Envios RN03, RN05 e RN09): grupo
+ * fora da fila do lembrete ou o canal QR fora do convite.
+ */
+export class DeliveryNotAllowedError extends Error {
+  override name = 'DeliveryNotAllowedError';
+  readonly code: 'PARTY_NOT_REMINDABLE' | 'QR_ONLY_FOR_INVITE';
+  readonly partyIds: readonly string[];
+
+  constructor({
+    code,
+    partyIds = [],
+  }: {
+    code: 'PARTY_NOT_REMINDABLE' | 'QR_ONLY_FOR_INVITE';
+    partyIds?: readonly string[];
+  }) {
+    super();
+    this.code = code;
+    this.partyIds = partyIds;
+  }
+}

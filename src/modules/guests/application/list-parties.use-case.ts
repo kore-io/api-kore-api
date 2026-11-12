@@ -44,6 +44,7 @@ export class ListParties {
     sent,
     tagId,
     remind,
+    saveTheDate,
     cursor,
     limit = 25,
   }: {
@@ -54,6 +55,7 @@ export class ListParties {
     sent?: DeliveryStatus;
     tagId?: string;
     remind?: boolean;
+    saveTheDate?: 'sent' | 'not_sent';
     cursor?: string;
     limit?: number;
   }): Promise<PartyList> {
@@ -74,6 +76,7 @@ export class ListParties {
         sent,
         tagId,
         remind,
+        saveTheDate,
         after: after ?? undefined,
         limit: limit + 1,
       },

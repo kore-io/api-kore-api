@@ -77,6 +77,8 @@ export interface PartyListQuery {
    * algum convidado com nome pendente; a vaga não conta.
    */
   remind?: boolean;
+  /** O filtro do save the date (Envios RN03): enviado ou não. */
+  saveTheDate?: 'sent' | 'not_sent';
   /** Depois deste (nome normalizado, id), na ordem da lista. */
   after?: { name: string; id: string };
   limit: number;

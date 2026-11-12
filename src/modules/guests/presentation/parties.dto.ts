@@ -233,6 +233,12 @@ export class ListPartiesQuery {
   @IsIn(['true', 'false'])
   remind?: 'true' | 'false';
 
+  /** O filtro do save the date: enviado ou não (Envios RN03). */
+  @ApiProperty({ required: false, enum: ['sent', 'not_sent'] })
+  @IsOptional()
+  @IsIn(['sent', 'not_sent'])
+  saveTheDate?: 'sent' | 'not_sent';
+
   @IsOptional() @IsString() @MaxLength(500) cursor?: string;
 
   @ApiProperty({ required: false, minimum: 1, maximum: 100, default: 25 })
