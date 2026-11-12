@@ -8518,6 +8518,240 @@
           "billing"
         ]
       }
+    },
+    "/v1/weddings/{weddingId}/payments": {
+      "post": {
+        "operationId": "PaymentsController_pay_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "UUID (B2-10).",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePaymentBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentCreatedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ValidationErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/IdempotencyKeyRequiredErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/InstallmentsOutOfRangeErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/NotDraftErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteSlugMissingErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/EventDateMissingErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PaymentPendingErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RefundInProgressErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PriceChangedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/EndDateOutOfRangeErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/IdempotencyKeyReusedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayUnavailableErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Pagar (Publicar e pagar RN03): grava o pendente, cobra fora de transação\ne grava o retorno do gateway; o site só vai ao ar na confirmação (RN04).\nAbre as próprias transações (RN19: nenhuma chamada à porta dentro delas).",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/billing": {
+      "get": {
+        "operationId": "PaymentsController_billing_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "O status, as datas e, para o dono, os valores (Publicar e pagar, GET …/billing).",
+        "tags": [
+          "billing"
+        ]
+      }
     }
   },
   "info": {
@@ -17258,6 +17492,532 @@
           "endDateMax",
           "canExtend",
           "cannotExtendReason"
+        ]
+      },
+      "IdempotencyKeyRequiredErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              400
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "IDEMPOTENCY_KEY_REQUIRED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PaymentPendingErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PAYMENT_PENDING"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "RefundInProgressErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "REFUND_IN_PROGRESS"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PriceChangedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PRICE_CHANGED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "IdempotencyKeyReusedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "IDEMPOTENCY_KEY_REUSED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "GatewayUnavailableErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              503
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "GATEWAY_UNAVAILABLE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "paymentId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "paymentId"
+        ]
+      },
+      "PayerBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nome completo de quem paga (pode ser outra pessoa).",
+            "minLength": 2,
+            "maxLength": 200,
+            "pattern": "\\S",
+            "example": "Ana Beatriz Moreira"
+          },
+          "taxId": {
+            "type": "string",
+            "description": "CPF de quem paga: vai só ao gateway; o Kore guarda o HMAC e os 4 últimos (RN02).",
+            "example": "529.982.247-25"
+          }
+        },
+        "required": [
+          "name",
+          "taxId"
+        ]
+      },
+      "CreatePaymentBody": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "description": "Por ora só a publicação; a extensão entra no PR da data de saída do ar.",
+            "enum": [
+              "publication"
+            ]
+          },
+          "endDate": {
+            "type": "string",
+            "example": "2027-02-14"
+          },
+          "method": {
+            "enum": [
+              "pix",
+              "card"
+            ],
+            "type": "string"
+          },
+          "installments": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 12,
+            "example": 2
+          },
+          "payer": {
+            "$ref": "#/components/schemas/PayerBody"
+          },
+          "cardToken": {
+            "type": "string",
+            "description": "O token do cartão, quando o gateway tokeniza (B2-16); nunca o número.",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "priceVersion": {
+            "type": "string",
+            "maxLength": 20,
+            "example": "2026-11"
+          },
+          "expectedTotalCents": {
+            "type": "number",
+            "description": "O total que o casal viu na cotação (Preço e cotação RN05).",
+            "minimum": 1,
+            "example": 33710
+          }
+        },
+        "required": [
+          "kind",
+          "endDate",
+          "method",
+          "installments",
+          "payer",
+          "priceVersion",
+          "expectedTotalCents"
+        ]
+      },
+      "PixDto": {
+        "type": "object",
+        "properties": {
+          "copyPaste": {
+            "type": "string",
+            "description": "O QR é desenhado no navegador a partir do copia e cola."
+          }
+        },
+        "required": [
+          "copyPaste"
+        ]
+      },
+      "NextActionDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "none",
+              "redirect"
+            ],
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "PaymentCreatedResponse": {
+        "type": "object",
+        "properties": {
+          "paymentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "paid",
+              "failed",
+              "canceled",
+              "refund_requested",
+              "refunded",
+              "disputed"
+            ],
+            "type": "string"
+          },
+          "method": {
+            "enum": [
+              "pix",
+              "card"
+            ],
+            "type": "string"
+          },
+          "amountCents": {
+            "type": "number",
+            "example": 33710
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "pix": {
+            "$ref": "#/components/schemas/PixDto"
+          },
+          "failureReason": {
+            "type": "string",
+            "description": "Só no cartão recusado na hora: `card_declined`."
+          },
+          "nextAction": {
+            "$ref": "#/components/schemas/NextActionDto"
+          }
+        },
+        "required": [
+          "paymentId",
+          "status",
+          "method",
+          "amountCents",
+          "nextAction"
+        ]
+      },
+      "PendingPaymentDto": {
+        "type": "object",
+        "properties": {
+          "paymentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "enum": [
+              "publication",
+              "extension"
+            ],
+            "type": "string"
+          },
+          "method": {
+            "enum": [
+              "pix",
+              "card"
+            ],
+            "type": "string"
+          },
+          "amountCents": {
+            "type": "number"
+          },
+          "dueAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "pixCopyPaste": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "paymentId",
+          "kind",
+          "method",
+          "amountCents",
+          "dueAt",
+          "pixCopyPaste"
+        ]
+      },
+      "BillingPaymentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "enum": [
+              "publication",
+              "extension"
+            ],
+            "type": "string"
+          },
+          "periodStart": {
+            "type": "string",
+            "example": "2026-08-10"
+          },
+          "periodEnd": {
+            "type": "string",
+            "example": "2027-02-14"
+          },
+          "monthsCovered": {
+            "type": "number"
+          },
+          "amountCents": {
+            "type": "number"
+          },
+          "method": {
+            "enum": [
+              "pix",
+              "card"
+            ],
+            "type": "string"
+          },
+          "installments": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "paid",
+              "failed",
+              "canceled",
+              "refund_requested",
+              "refunded",
+              "disputed"
+            ]
+          },
+          "paidAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "periodStart",
+          "periodEnd",
+          "monthsCovered",
+          "amountCents",
+          "method",
+          "installments",
+          "status",
+          "paidAt"
+        ]
+      },
+      "PayerDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "taxIdLast4": {
+            "type": "string",
+            "example": "4821"
+          }
+        },
+        "required": [
+          "name",
+          "taxIdLast4"
+        ]
+      },
+      "BillingResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "publishedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "endDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "paidThrough": {
+            "type": "string",
+            "nullable": true
+          },
+          "graceUntil": {
+            "type": "string",
+            "nullable": true
+          },
+          "expiredAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "purgeAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "publicationSource": {
+            "nullable": true,
+            "enum": [
+              "courtesy",
+              "payment"
+            ],
+            "type": "string"
+          },
+          "awaitingPayment": {
+            "type": "boolean",
+            "description": "\"Aguardando pagamento\" (RN06): rascunho com publicação pendente."
+          },
+          "pendingPayment": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PendingPaymentDto"
+              }
+            ]
+          },
+          "payments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillingPaymentDto"
+            }
+          },
+          "payer": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PayerDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "publishedAt",
+          "endDate",
+          "paidThrough",
+          "graceUntil",
+          "expiredAt",
+          "purgeAt",
+          "publicationSource",
+          "awaitingPayment"
         ]
       },
       "SpreadsheetTemplateHeaders": {

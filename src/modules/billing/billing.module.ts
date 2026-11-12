@@ -20,11 +20,31 @@ import { QUOTE_TARGET_READER } from './application/ports/quote-target.reader.por
 import { QuoteBilling } from './application/quote-billing.use-case';
 import { PrismaQuoteTargetReader } from './infrastructure/prisma-quote-target.reader';
 import { PrismaPublicPricingReader } from './infrastructure/prisma-public-pricing.reader';
+import { PAYMENT_PROCESSING_PROVIDERS } from './infrastructure/payment-processing.providers';
+import { CreatePayment } from './application/create-payment.use-case';
+import { GetBilling } from './application/get-billing.use-case';
+import {
+  GATEWAY_CUSTOMERS,
+  PAYMENT_REQUEST_STORE,
+} from './application/ports/payment-request.store.port';
+import { BILLING_VIEW_READER } from './application/ports/billing-view.reader.port';
+import { PrismaPaymentRequestStore } from './infrastructure/prisma-payment-request.store';
+import { PrismaGatewayCustomers } from './infrastructure/backoffice/prisma-gateway-customers';
+import { PrismaBillingViewReader } from './infrastructure/prisma-billing-view.reader';
+import { PaymentsController } from './presentation/payments.controller';
 
-/** Cobrança e publicação (F3), do lado da API: a porta do gateway, o webhook, o preço e a cotação. */
+/**
+ * Cobrança e publicação (F3), do lado da API: a porta do gateway, o webhook, o
+ * preço, a cotação, o pagamento e a leitura da cobrança.
+ */
 @Module({
   imports: [AccessModule, BullModule.registerQueue({ name: GATEWAY_EVENTS_QUEUE })],
-  controllers: [PaymentWebhooksController, PricingController, BillingQuoteController],
+  controllers: [
+    PaymentWebhooksController,
+    PricingController,
+    BillingQuoteController,
+    PaymentsController,
+  ],
   providers: [
     ...PAYMENT_GATEWAY_PROVIDERS,
     { provide: GATEWAY_EVENT_STORE, useClass: PrismaGatewayEventStore },
@@ -35,6 +55,12 @@ import { PrismaPublicPricingReader } from './infrastructure/prisma-public-pricin
     { provide: QUOTE_TARGET_READER, useClass: PrismaQuoteTargetReader },
     QuoteBilling,
     PrismaPublicPricingReader,
+    ...PAYMENT_PROCESSING_PROVIDERS,
+    { provide: PAYMENT_REQUEST_STORE, useClass: PrismaPaymentRequestStore },
+    { provide: GATEWAY_CUSTOMERS, useClass: PrismaGatewayCustomers },
+    { provide: BILLING_VIEW_READER, useClass: PrismaBillingViewReader },
+    CreatePayment,
+    GetBilling,
   ],
   exports: [PAYMENT_GATEWAY, LocalGatewayStore, ReceiveGatewayWebhook, ProcessGatewayEvent],
 })

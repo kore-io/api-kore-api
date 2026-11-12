@@ -14,6 +14,7 @@ import {
   TAX_ID_HASHER,
   type TaxIdHasher,
 } from '../../src/shared/crypto/application/tax-id-hasher.port';
+import { LocalGatewayStore } from '../../src/modules/billing/infrastructure/backoffice/local-gateway/local-gateway.store';
 import { BackofficePrismaService } from '../../src/shared/database/backoffice-prisma.service';
 import { buildOpenApiDocument } from '../../src/shared/http/configure-app';
 import { createTestApp } from '../support/create-test-app';
@@ -39,6 +40,8 @@ describe('Gateway de pagamento e webhook (Publicar e pagar RN09, RN14 e RN15; ba
     app = await createTestApp();
     worker = await createTestWorker();
     db = app.get(BackofficePrismaService);
+    // A falha programada do gateway local é global: nenhuma sobra de outra rodada.
+    await app.get(LocalGatewayStore).failNextCalls({ count: 0 });
     gateway = app.get<PaymentGateway>(PAYMENT_GATEWAY);
   });
 
@@ -288,7 +291,8 @@ describe('Gateway de pagamento e webhook (Publicar e pagar RN09, RN14 e RN15; ba
       const event = await db.gatewayEvent.findFirstOrThrow({
         where: { gatewayEventId: response.body.gatewayEventId as string },
       });
-      expect(event).toMatchObject({ type: 'charge.confirmed', paymentId, result: 'recorded' });
+      // R$ 340,00 contra R$ 352,00: recebido a menos (RN09), não aplicado.
+      expect(event).toMatchObject({ type: 'charge.confirmed', paymentId, result: 'undercharged' });
       expect(event.processedAt).not.toBeNull();
       expect(event.payload).toMatchObject({
         gatewayPaymentId: charge.gatewayPaymentId,
@@ -359,7 +363,8 @@ describe('Gateway de pagamento e webhook (Publicar e pagar RN09, RN14 e RN15; ba
         await new Promise((resolve) => setTimeout(resolve, 100));
         processed = await db.gatewayEvent.findUniqueOrThrow({ where: { id: stored.id } });
       }
-      expect(processed).toMatchObject({ paymentId, result: 'recorded' });
+      // O evento é gatilho: a consulta diz que a cobrança segue pendente (RN09).
+      expect(processed).toMatchObject({ paymentId, result: 'unchanged' });
       expect(processed.processedAt).not.toBeNull();
     });
   });
