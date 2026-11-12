@@ -136,3 +136,14 @@ export class DeliveryNotAllowedErrorBody {
   @ApiProperty() message: string;
   @ApiProperty({ type: [String] }) partyIds: string[];
 }
+
+/** O QR do convite impresso (Envios RN09): PNG com 1 grupo; PDF com um por página. */
+export class QrCodesBody {
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(DELIVERY_PARTIES_MAX)
+  @IsUUID('all', { each: true })
+  partyIds: string[];
+
+  @ApiProperty({ enum: ['png', 'pdf'] }) @IsIn(['png', 'pdf']) format: 'png' | 'pdf';
+}

@@ -6044,6 +6044,128 @@
           "rsvp"
         ]
       }
+    },
+    "/v1/weddings/{weddingId}/parties/qr-codes": {
+      "post": {
+        "operationId": "QrCodesController_create_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QrCodesBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "O arquivo: PNG de 1024 × 1024 com 1 grupo; PDF A4 com um QR por página.",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DeliveryPartyNotFoundErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveriesClosedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Gera o arquivo e marca o envio do convite dos grupos, com o canal QR.\n`POST` (R4-1): nenhum `GET` marca grupo, e não há choque com `GET parties/:partyId`.",
+        "tags": [
+          "rsvp"
+        ]
+      }
     }
   },
   "info": {
@@ -12467,6 +12589,30 @@
         },
         "required": [
           "parties"
+        ]
+      },
+      "QrCodesBody": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "enum": [
+              "png",
+              "pdf"
+            ],
+            "type": "string"
+          },
+          "partyIds": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "format",
+          "partyIds"
         ]
       },
       "SpreadsheetTemplateHeaders": {
