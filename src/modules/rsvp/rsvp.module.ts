@@ -21,6 +21,10 @@ import {
 import { DELIVERY_STORE } from './application/ports/delivery-store.port';
 import { PrismaDeliveryStore } from './infrastructure/prisma-delivery.store';
 import { DeliveriesController } from './presentation/deliveries.controller';
+import { DownloadQrCodes } from './application/qr-codes.use-case';
+import { QR_RENDERER } from './application/ports/qr-renderer.port';
+import { QrcodeRenderer } from './infrastructure/qrcode-renderer';
+import { QrCodesController } from './presentation/qr-codes.controller';
 import { PARTY_LINKS } from '../guests/application/ports/party-links.port';
 import { RandomPartyLinks } from '../guests/infrastructure/random-party-links';
 import { RSVP_STORE } from './application/ports/rsvp-store.port';
@@ -37,6 +41,7 @@ import { RsvpController } from './presentation/rsvp.controller';
     CoupleResponsesController,
     MessageTemplatesController,
     DeliveriesController,
+    QrCodesController,
   ],
   providers: [
     { provide: RSVP_STORE, useClass: PrismaRsvpStore },
@@ -56,6 +61,8 @@ import { RsvpController } from './presentation/rsvp.controller';
     DeliveryMarker,
     GetDeliveryQueue,
     MarkDeliveries,
+    { provide: QR_RENDERER, useClass: QrcodeRenderer },
+    DownloadQrCodes,
   ],
 })
 export class RsvpModule {}
