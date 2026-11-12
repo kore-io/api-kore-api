@@ -212,7 +212,8 @@ describe('Pergunta de música e Músicas (banco real)', () => {
     );
     expect(response.headers['cache-control']).toBe('no-store');
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(response.body as Buffer);
+    const file = response.body as Buffer;
+    await workbook.xlsx.load(file as unknown as ArrayBuffer);
     const sheet = workbook.worksheets[0];
     const rows = [1, 2, 3].map((row) =>
       (sheet.getRow(row).values as unknown[]).slice(1).map((value) => value),
