@@ -38,6 +38,8 @@ import { VerifyLoginChallenge } from './application/verify-login-challenge.use-c
 import { EndAllSessions } from './application/end-all-sessions.use-case';
 import { EndSession } from './application/end-session.use-case';
 import { GetMe } from './application/get-me.use-case';
+import { CreatePlannerWedding } from './application/create-planner-wedding.use-case';
+import { PlannerWeddingRateLimitGuard } from '../../shared/rate-limit/user-rate-limit.guard';
 import {
   CreatePlannerProfile,
   GetMyReferrer,
@@ -174,6 +176,8 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     GetPlannerProfile,
     UpdatePlannerProfile,
     GetMyReferrer,
+    CreatePlannerWedding,
+    PlannerWeddingRateLimitGuard,
     ListWeddingMembers,
     RemoveMembership,
     GetReferral,

@@ -86,6 +86,9 @@ function setup({
     lockOwner: jest.fn().mockResolvedValue(undefined),
     findActiveOwnedWeddingId: jest.fn().mockResolvedValue(ownedWeddingId),
     create: jest.fn(),
+    lockPlannerWeddings: jest.fn(),
+    countOwnerlessCreated: jest.fn(),
+    createForPlanner: jest.fn(),
   } satisfies WeddingSignupStore;
   const users = { findProfileById: jest.fn().mockResolvedValue(user) } satisfies UserRepository;
   const names = { setName: jest.fn(), nameByEmail: jest.fn() } satisfies UserAccountNames;

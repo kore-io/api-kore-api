@@ -1,3 +1,7 @@
+import {
+  APPLICATION_LOG_WRITER,
+  type ApplicationLogWriter,
+} from '../../logs/application/ports/application-log-writer.port';
 import { Inject, Injectable } from '@nestjs/common';
 import { CheckSlugAvailability } from '../../access/application/check-slug-availability.use-case';
 import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
@@ -53,6 +57,7 @@ export class UpdateSiteBasics {
     @Inject(SITE_READER) private readonly reader: SiteReader,
     @Inject(SITE_STORE) private readonly store: SiteStore,
     @Inject(SITE_IMAGE_STORE) private readonly images: SiteImageStore,
+    @Inject(APPLICATION_LOG_WRITER) private readonly log: ApplicationLogWriter,
   ) {}
 
   async execute({
@@ -66,7 +71,7 @@ export class UpdateSiteBasics {
     input: SiteBasicsInput;
     now: Date;
   }): Promise<SiteEditorView> {
-    await this.authorization.require({ userId, weddingId, action: 'manage_site' });
+    const role = await this.authorization.require({ userId, weddingId, action: 'manage_site' });
     // O mesmo lock do limite, da rotina de limpeza e das seções (S4 RN07 e RN08).
     await this.images.lockWedding({ weddingId });
     const site = await this.reader.read({ weddingId });
@@ -165,6 +170,20 @@ export class UpdateSiteBasics {
     }
     if (input.partners?.length)
       await this.store.renamePartners({ weddingId, partners: input.partners });
+    // Novo casamento RN08 (decisão 223, D10): a data, a UF e o endereço mudados
+    // por quem não é dono (o indicador antes do aceite) vão para o log.
+    if (role !== 'owner' && identityFields.length > 0)
+      await this.log.record({
+        entry: {
+          action: 'wedding.identity_changed',
+          actorKind: 'user',
+          actorUserId: userId,
+          weddingId,
+          entityType: 'wedding',
+          entityId: weddingId,
+          data: { fields: identityFields },
+        },
+      });
     await this.store.markImageUsage({
       weddingId,
       inUse: imagesInUse({

@@ -101,7 +101,7 @@ describe('Convites de acesso: regras do aceite', () => {
     expect(nextReferralCode({ base, taken: ['ana-silva-3'] })).toBe('ana-silva');
   });
 
-  it('decisão 224 (2) - autoindicação: só o indicador do casamento, só no convite do casal', () => {
+  it('decisão 224 (2) e Novo casamento RN05 - autoindicação: o indicador ou quem criou, só no convite do casal', () => {
     const referrer = {
       referrerId: 'r1',
       userId: 'u-juliana',
@@ -112,16 +112,21 @@ describe('Convites de acesso: regras do aceite', () => {
       displayName: 'Prado Assessoria',
       referralDiscountEnabled: true,
     };
-    expect(isSelfReferral({ invitation: { kind: 'couple', referrer }, userId: 'u-juliana' })).toBe(
-      true,
-    );
-    expect(isSelfReferral({ invitation: { kind: 'couple', referrer }, userId: 'u-f' })).toBe(false);
-    expect(isSelfReferral({ invitation: { kind: 'couple', referrer: null }, userId: 'u-f' })).toBe(
-      false,
-    );
+    const couple = (createdByUserId: string, withReferrer = true) => ({
+      kind: 'couple' as const,
+      referrer: withReferrer ? referrer : null,
+      wedding: { createdByUserId },
+    });
+
+    expect(isSelfReferral({ invitation: couple('u-lucas'), userId: 'u-juliana' })).toBe(true);
+    expect(isSelfReferral({ invitation: couple('u-lucas', false), userId: 'u-lucas' })).toBe(true);
+    expect(isSelfReferral({ invitation: couple('u-lucas'), userId: 'u-f' })).toBe(false);
     // RN10: no convite do cerimonialista, é o indicador quem aceita.
-    expect(isSelfReferral({ invitation: { kind: 'planner', referrer }, userId: 'u-juliana' })).toBe(
-      false,
-    );
+    expect(
+      isSelfReferral({
+        invitation: { kind: 'planner', referrer, wedding: { createdByUserId: 'u-juliana' } },
+        userId: 'u-juliana',
+      }),
+    ).toBe(false);
   });
 });

@@ -700,6 +700,112 @@
         ]
       }
     },
+    "/v1/me/weddings": {
+      "post": {
+        "operationId": "PlannerController_createPlannerWedding_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlannerWeddingBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatePlannerWeddingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/SlugUnavailableErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/OwnerlessWeddingsLimitErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContrastTooLowErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Novo casamento pela cerimonialista (Novo casamento RN01 a RN04): sem dono,\ncom ela colaboradora. Exige ter o perfil; não muda o perfil ativo.",
+        "tags": [
+          "me"
+        ]
+      }
+    },
     "/v1/me/planner": {
       "post": {
         "operationId": "PlannerController_create_v1",
@@ -1323,6 +1429,16 @@
             },
             "description": ""
           },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelfInvitationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
           "429": {
             "content": {
               "application/json": {
@@ -1459,6 +1575,16 @@
                 }
               }
             }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelfReferralErrorBody"
+                }
+              }
+            },
+            "description": ""
           },
           "410": {
             "content": {
@@ -8103,6 +8229,262 @@
           "home"
         ]
       },
+      "SlugUnavailableErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SLUG_UNAVAILABLE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "suggestion": {
+            "type": "string",
+            "nullable": true,
+            "description": "Alternativa livre, com o ano ou um número (RN05)."
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "suggestion"
+        ]
+      },
+      "OwnerlessWeddingsLimitErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "OWNERLESS_WEDDINGS_LIMIT"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "ContrastTooLowErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "CONTRAST_TOO_LOW"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "check": {
+            "enum": [
+              "primary_foreground",
+              "primary_background"
+            ],
+            "type": "string"
+          },
+          "ratio": {
+            "type": "number",
+            "description": "A razão medida, com duas casas para baixo."
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "check",
+          "ratio"
+        ]
+      },
+      "UpdateSiteAppearanceBody": {
+        "type": "object",
+        "properties": {
+          "fontPairKey": {
+            "enum": [
+              "romantico",
+              "classico",
+              "leve",
+              "moderno"
+            ],
+            "type": "string"
+          },
+          "starterPaletteKey": {
+            "nullable": true,
+            "description": "Null é \"cor própria\"; se não bater com as cores, o servidor grava null (RN07).",
+            "enum": [
+              "terracota",
+              "salvia",
+              "rose",
+              "marfim",
+              "marinho",
+              "areia",
+              "por-do-sol",
+              "grafite",
+              "noite"
+            ],
+            "type": "string"
+          },
+          "primaryColor": {
+            "type": "string",
+            "description": "`#RRGGBB`, sem diferenciar maiúsculas; gravada em maiúsculas (RN06).",
+            "example": "#A94F37"
+          },
+          "accentColor": {
+            "type": "string",
+            "example": "#7A8B69"
+          },
+          "backgroundMode": {
+            "enum": [
+              "light",
+              "cream",
+              "dark"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "fontPairKey",
+          "starterPaletteKey",
+          "primaryColor",
+          "accentColor",
+          "backgroundMode"
+        ]
+      },
+      "CreatePlannerWeddingBody": {
+        "type": "object",
+        "properties": {
+          "partner1Name": {
+            "type": "string",
+            "description": "A pessoa 1 do casal; o título é escolhido no aceite (decisão 172).",
+            "minLength": 1,
+            "maxLength": 80,
+            "example": "Fernanda Alves"
+          },
+          "partner2Name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "example": "João Lima"
+          },
+          "eventDate": {
+            "type": "string",
+            "description": "Opcional, com as regras do Cadastro do casal.",
+            "example": "2027-03-20"
+          },
+          "state": {
+            "enum": [
+              "AC",
+              "AM",
+              "RR",
+              "RO",
+              "MT",
+              "MS",
+              "PA",
+              "AP",
+              "TO",
+              "MA",
+              "PI",
+              "CE",
+              "RN",
+              "PB",
+              "PE",
+              "AL",
+              "SE",
+              "BA",
+              "GO",
+              "DF",
+              "MG",
+              "ES",
+              "RJ",
+              "SP",
+              "PR",
+              "SC",
+              "RS"
+            ],
+            "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Minúsculas, como no Editor (sugestão do Crivo): \"Fernanda-E-Joao\" vale \"fernanda-e-joao\".",
+            "minLength": 3,
+            "maxLength": 40,
+            "example": "fernanda-e-joao"
+          },
+          "appearance": {
+            "description": "A Aparência do passo 2 (RN03), com o guarda-corpo do contraste.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UpdateSiteAppearanceBody"
+              }
+            ]
+          },
+          "city": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        },
+        "required": [
+          "partner1Name",
+          "partner2Name",
+          "state",
+          "slug",
+          "city"
+        ]
+      },
+      "CreatePlannerWeddingResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft"
+            ]
+          },
+          "weddingId": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "weddingId",
+          "slug",
+          "timezone"
+        ]
+      },
       "PlannerSignupDisabledErrorBody": {
         "type": "object",
         "properties": {
@@ -8514,37 +8896,6 @@
           "available"
         ]
       },
-      "SlugUnavailableErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              409
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "SLUG_UNAVAILABLE"
-            ]
-          },
-          "message": {
-            "type": "string"
-          },
-          "suggestion": {
-            "type": "string",
-            "nullable": true,
-            "description": "Alternativa livre, com o ano ou um número (RN05)."
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message",
-          "suggestion"
-        ]
-      },
       "AlreadyOwnerErrorBody": {
         "type": "object",
         "properties": {
@@ -8573,98 +8924,6 @@
           "error",
           "message",
           "weddingId"
-        ]
-      },
-      "ContrastTooLowErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              422
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "CONTRAST_TOO_LOW"
-            ]
-          },
-          "message": {
-            "type": "string"
-          },
-          "check": {
-            "enum": [
-              "primary_foreground",
-              "primary_background"
-            ],
-            "type": "string"
-          },
-          "ratio": {
-            "type": "number",
-            "description": "A razão medida, com duas casas para baixo."
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message",
-          "check",
-          "ratio"
-        ]
-      },
-      "UpdateSiteAppearanceBody": {
-        "type": "object",
-        "properties": {
-          "fontPairKey": {
-            "enum": [
-              "romantico",
-              "classico",
-              "leve",
-              "moderno"
-            ],
-            "type": "string"
-          },
-          "starterPaletteKey": {
-            "nullable": true,
-            "description": "Null é \"cor própria\"; se não bater com as cores, o servidor grava null (RN07).",
-            "enum": [
-              "terracota",
-              "salvia",
-              "rose",
-              "marfim",
-              "marinho",
-              "areia",
-              "por-do-sol",
-              "grafite",
-              "noite"
-            ],
-            "type": "string"
-          },
-          "primaryColor": {
-            "type": "string",
-            "description": "`#RRGGBB`, sem diferenciar maiúsculas; gravada em maiúsculas (RN06).",
-            "example": "#A94F37"
-          },
-          "accentColor": {
-            "type": "string",
-            "example": "#7A8B69"
-          },
-          "backgroundMode": {
-            "enum": [
-              "light",
-              "cream",
-              "dark"
-            ],
-            "type": "string"
-          }
-        },
-        "required": [
-          "fontPairKey",
-          "starterPaletteKey",
-          "primaryColor",
-          "accentColor",
-          "backgroundMode"
         ]
       },
       "CreateWeddingBody": {
@@ -8965,6 +9224,31 @@
           "message"
         ]
       },
+      "SelfInvitationErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SELF_INVITATION"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
       "SendAccessInvitationsBody": {
         "type": "object",
         "properties": {
@@ -9132,6 +9416,31 @@
           "reason"
         ]
       },
+      "SelfReferralErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SELF_REFERRAL"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
       "InvitationReferrerResponse": {
         "type": "object",
         "properties": {
@@ -9296,31 +9605,6 @@
             "type": "string",
             "enum": [
               "ALREADY_MEMBER"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
-        ]
-      },
-      "SelfReferralErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              409
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "SELF_REFERRAL"
             ]
           },
           "message": {

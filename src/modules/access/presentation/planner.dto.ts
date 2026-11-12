@@ -1,14 +1,28 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
+  IsIn,
+  IsISO8601,
   IsOptional,
   IsString,
   Length,
+  Matches,
   MaxLength,
   ValidateIf,
+  ValidateNested,
 } from 'class-validator';
+import { UpdateSiteAppearanceBody } from '../../site/presentation/site-appearance.dto';
+import type { CreatedPlannerWedding } from '../application/create-planner-wedding.use-case';
 import type { PlannerProfileView } from '../application/planner-profile.use-cases';
+import {
+  BRAZILIAN_STATES,
+  SLUG_MAX_LENGTH,
+  SLUG_MIN_LENGTH,
+  type BrazilianState,
+} from '../domain/wedding-signup';
+import { DATE_ONLY, lowercaseSlug, SLUG, trim } from './weddings.dto';
 
 /**
  * O DTO só confere a forma e põe um teto no tamanho do pedido; as regras dos
@@ -107,4 +121,56 @@ export class MyReferrerResponse {
   @ApiProperty({ example: 'https://kore.com.br/i/juliana-prado' }) link: string;
   /** Nulo com o desconto de indicação desligado. Sem o percentual da comissão (D4). */
   @ApiProperty({ type: Number, nullable: true, example: 10 }) discountPercent: number | null;
+}
+
+/** POST /v1/me/weddings: o passo 1 e a Aparência do passo 2 (Novo casamento RN02 a RN04). */
+export class CreatePlannerWeddingBody {
+  /** A pessoa 1 do casal; o título é escolhido no aceite (decisão 172). */
+  @ApiProperty({ example: 'Fernanda Alves' })
+  @Transform(trim)
+  @IsString()
+  @Length(1, 80)
+  partner1Name: string;
+
+  @ApiProperty({ example: 'João Lima' })
+  @Transform(trim)
+  @IsString()
+  @Length(1, 80)
+  partner2Name: string;
+
+  /** Opcional, com as regras do Cadastro do casal. */
+  @ApiProperty({ required: false, example: '2027-03-20' })
+  @IsOptional()
+  @Matches(DATE_ONLY)
+  @IsISO8601({ strict: true })
+  eventDate?: string;
+
+  @Transform(trim) @IsString() @Length(1, 80) city: string;
+  @ApiProperty({ enum: BRAZILIAN_STATES }) @IsIn(BRAZILIAN_STATES) state: BrazilianState;
+
+  /** Minúsculas, como no Editor (sugestão do Crivo): "Fernanda-E-Joao" vale "fernanda-e-joao". */
+  @ApiProperty({ example: 'fernanda-e-joao' })
+  @Transform(lowercaseSlug)
+  @IsString()
+  @Length(SLUG_MIN_LENGTH, SLUG_MAX_LENGTH)
+  @Matches(SLUG)
+  slug: string;
+
+  /** A Aparência do passo 2 (RN03), com o guarda-corpo do contraste. */
+  @ApiProperty({ type: UpdateSiteAppearanceBody, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => UpdateSiteAppearanceBody)
+  appearance?: UpdateSiteAppearanceBody;
+}
+
+export class CreatePlannerWeddingResponse {
+  weddingId: string;
+  slug: string;
+  @ApiProperty({ enum: ['draft'] }) status: 'draft';
+  timezone: string;
+
+  static from({ wedding }: { wedding: CreatedPlannerWedding }): CreatePlannerWeddingResponse {
+    return { ...wedding };
+  }
 }

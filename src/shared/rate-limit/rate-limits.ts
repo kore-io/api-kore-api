@@ -59,3 +59,10 @@ export const SIMULATOR_EVENTS_PER_MINUTE = 30;
  */
 export const RSVP_WRITE_THROTTLER = 'rsvp_write';
 export const RSVP_WRITES_PER_MINUTE = 20;
+
+/**
+ * Novo casamento pela cerimonialista (Novo casamento RN04; decisão 224(9)):
+ * além do teto de casamentos sem dono, um limite de pedidos por conta.
+ */
+export const PLANNER_WEDDING_THROTTLER = 'planner_wedding';
+export const PLANNER_WEDDINGS_PER_MINUTE = 10;

@@ -200,6 +200,19 @@ export class LastOwnerError extends Error {
   override name = 'LastOwnerError';
 }
 
+/**
+ * Novo casamento RN05: o convite do casal para o e-mail da própria conta. É
+ * ajuda de tela; a barreira de verdade é o SELF_REFERRAL do aceite.
+ */
+export class SelfInvitationError extends Error {
+  override name = 'SelfInvitationError';
+}
+
+/** Novo casamento RN04 (decisão 224(9)): o teto de casamentos sem dono da cerimonialista. */
+export class OwnerlessWeddingsLimitError extends Error {
+  override name = 'OwnerlessWeddingsLimitError';
+}
+
 /** Decisão 224(1): o colaborador não sai de um casamento sem dono ativo. */
 export class WeddingHasNoOwnerError extends Error {
   override name = 'WeddingHasNoOwnerError';

@@ -18,6 +18,7 @@ import {
   InvalidInvitationRecipientsError,
   OwnersFullError,
   PlannerAlreadyError,
+  SelfInvitationError,
   WeddingActionForbiddenError,
 } from '../domain/access.errors';
 import type { WeddingAction } from '../domain/wedding-authorization';
@@ -29,6 +30,7 @@ import {
 } from './ports/access-invitation-store.port';
 import { INVITATION_MAILER, type InvitationMailer } from './ports/invitation-mailer.port';
 import { INVITATION_TOKENS, type InvitationTokens } from './ports/invitation-tokens.port';
+import { USER_REPOSITORY, type UserRepository } from './ports/user-repository.port';
 import { WeddingAuthorization } from './wedding-authorization.service';
 
 export interface SentInvitation {
@@ -64,6 +66,7 @@ export class SendAccessInvitations {
     @Inject(INVITATION_MAILER) private readonly mailer: InvitationMailer,
     @Inject(PRODUCT_EVENT_RECORDER) private readonly productEvents: ProductEventRecorder,
     @Inject(AFTER_COMMIT) private readonly afterCommit: AfterCommit,
+    @Inject(USER_REPOSITORY) private readonly users: UserRepository,
   ) {}
 
   async execute({
@@ -96,6 +99,12 @@ export class SendAccessInvitations {
     if (refusal === 'owners_full') throw new OwnersFullError();
     if (refusal === 'planner_already') throw new PlannerAlreadyError();
     if (refusal) throw new WeddingActionForbiddenError();
+    // Novo casamento RN05: o convite do casal não vai para o e-mail de quem convida.
+    if (kind === 'couple' && recipients.length) {
+      const sender = await this.users.findProfileById({ userId });
+      if (sender && recipients.includes(sender.email.toLowerCase()))
+        throw new SelfInvitationError();
+    }
 
     const pending = await this.store.listPending({ weddingId });
     const replaced = pending.filter((invitation) => replaces({ kind, recipients, invitation }));
