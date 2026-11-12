@@ -9,6 +9,8 @@ export interface AccessCleanup {
    * dessa idade já venceu (vale 15 minutos, RN02).
    */
   deleteLoginChallengesCreatedBefore({ createdBefore }: { createdBefore: Date }): Promise<number>;
+  /** O token cifrado do link do casal que já venceu (Meus casamentos RN09; N1(b)). */
+  clearExpiredCoupleLinkTokens({ now }: { now: Date }): Promise<number>;
 }
 
 export const ACCESS_CLEANUP = Symbol('AccessCleanup');

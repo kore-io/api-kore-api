@@ -13,6 +13,7 @@ import type {
   PendingInvitation,
 } from './ports/access-invitation-store.port';
 import type { InvitationEmail, InvitationMailer } from './ports/invitation-mailer.port';
+import type { FieldCipher } from '../../../shared/crypto/application/field-cipher.port';
 import { SelfInvitationError } from '../domain/access.errors';
 import type { UserRepository } from './ports/user-repository.port';
 import { SendAccessInvitations } from './send-access-invitations.use-case';
@@ -97,6 +98,14 @@ function setup({
   const authorization = {
     require: jest.fn().mockResolvedValue(role),
   } as unknown as WeddingAuthorization;
+  // Cifra de mentira: marca o texto e o contexto, para o teste conferir os dois.
+  const cipher: FieldCipher = {
+    encrypt: ({ plaintext, context }) =>
+      Promise.resolve(
+        `cifrado(${plaintext}|${context.table}.${context.column}|${context.weddingId})`,
+      ),
+    decrypt: jest.fn(),
+  };
   const users = {
     findProfileById: jest.fn().mockResolvedValue({
       id: 'u-juliana',
@@ -113,6 +122,7 @@ function setup({
     productEvents,
     afterCommit,
     users,
+    cipher,
   );
   return { useCase, store, inserted, superseded, emails, productEvents, authorization, commit };
 }
@@ -207,6 +217,8 @@ describe('SendAccessInvitations (POST /v1/weddings/{weddingId}/access-invitation
 
     expect(superseded).toEqual(['fernanda-velho']);
     expect(inserted.map(({ email }) => email)).toEqual(['fernanda@x.com']);
+    // Com e-mail, nada de token guardado: só o link sem e-mail (N1(b), condição 1).
+    expect(inserted[0]?.tokenEncrypted).toBeNull();
     expect(sent[0]?.resent).toBe(true);
     expect(store.markAwaitingCouple).toHaveBeenCalledWith({ weddingId: 'w1' });
   });
@@ -263,7 +275,7 @@ describe('SendAccessInvitations (POST /v1/weddings/{weddingId}/access-invitation
   });
 
   it('RN14 - o link do casal sem e-mail devolve a URL, não manda e-mail, substitui o link anterior e registra cerim_link_gerado', async () => {
-    const { useCase, superseded, emails, productEvents, commit } = setup({
+    const { useCase, superseded, emails, productEvents, commit, inserted } = setup({
       wedding: { ...plannerWedding, status: 'awaiting_couple' },
       inviter: juliana,
       role: 'collaborator',
@@ -283,6 +295,8 @@ describe('SendAccessInvitations (POST /v1/weddings/{weddingId}/access-invitation
     await commit();
 
     expect(sent).toMatchObject({ email: null, resent: true, url: 'http://app/convite/t1' });
+    // N1(b): o link sem e-mail guarda o token cifrado, no contexto do casamento.
+    expect(inserted[0]?.tokenEncrypted).toBe('cifrado(t1|access_invitations.token_encrypted|w1)');
     expect(superseded).toEqual(['link-velho']);
     expect(emails).toEqual([]);
     expect(productEvents.record).toHaveBeenCalledWith({

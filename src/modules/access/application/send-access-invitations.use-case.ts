@@ -1,4 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
+import {
+  FIELD_CIPHER,
+  type FieldCipher,
+} from '../../../shared/crypto/application/field-cipher.port';
 import { AFTER_COMMIT, type AfterCommit } from '../../../shared/database/after-commit.port';
 import { uuidV7 } from '../../../shared/ids/uuid-v7';
 import {
@@ -7,6 +11,7 @@ import {
 } from '../../product-events/application/ports/product-event-recorder.port';
 import {
   coupleInvitationsFull,
+  coupleLinkCipherContext,
   invitationExpiresAt,
   recipientsAllowed,
   roleGrantedBy,
@@ -67,6 +72,7 @@ export class SendAccessInvitations {
     @Inject(PRODUCT_EVENT_RECORDER) private readonly productEvents: ProductEventRecorder,
     @Inject(AFTER_COMMIT) private readonly afterCommit: AfterCommit,
     @Inject(USER_REPOSITORY) private readonly users: UserRepository,
+    @Inject(FIELD_CIPHER) private readonly cipher: FieldCipher,
   ) {}
 
   async execute({
@@ -123,8 +129,18 @@ export class SendAccessInvitations {
 
     const expiresAt = invitationExpiresAt({ now });
     const targets: (string | null)[] = recipients.length ? recipients : [null];
-    const created = targets.map((email) => {
+    const created: { invitation: NewAccessInvitation; token: string; resent: boolean }[] = [];
+    for (const email of targets) {
       const { token, tokenHash } = this.tokens.generate();
+      // Meus casamentos RN09 (N1(b)): o link do casal sem e-mail guarda o token
+      // cifrado, para o detalhe mostrar o mesmo link. O hash segue validando o aceite.
+      const tokenEncrypted =
+        kind === 'couple' && email === null
+          ? await this.cipher.encrypt({
+              plaintext: token,
+              context: coupleLinkCipherContext({ weddingId }),
+            })
+          : null;
       const invitation: NewAccessInvitation = {
         id: uuidV7({ now: now.getTime() }),
         weddingId,
@@ -134,10 +150,11 @@ export class SendAccessInvitations {
         tokenHash,
         invitedByUserId: userId,
         expiresAt,
+        tokenEncrypted,
       };
       const resent = replaced.some((previous) => previous.email === email);
-      return { invitation, token, resent };
-    });
+      created.push({ invitation, token, resent });
+    }
     await this.store.insert({ invitations: created.map(({ invitation }) => invitation) });
     if (kind === 'couple' && wedding.status === 'draft')
       await this.store.markAwaitingCouple({ weddingId });
