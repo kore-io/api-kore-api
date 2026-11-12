@@ -99,7 +99,7 @@ export class SiteEditorViews {
 
     // A data de saída do ar não está no contrato do Editor (Publicação RN01).
     const { coverImageId, sections, eventDate, showPlannerCredit, ...snapshot } = site;
-    const collaborator = await this.reader.plannerCollaborator({ weddingId });
+    const collaborator = await this.reader.plannerCollaborator();
     const canChangeCredit =
       (await this.authorization.allowedRole({
         userId,

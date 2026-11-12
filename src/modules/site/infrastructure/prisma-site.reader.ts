@@ -71,15 +71,11 @@ export class PrismaSiteReader implements SiteReader {
     };
   }
 
-  async plannerCollaborator({
-    weddingId,
-  }: {
-    weddingId: string;
-  }): Promise<PlannerCollaboratorCredit | null> {
+  async plannerCollaborator(): Promise<PlannerCollaboratorCredit | null> {
     // A mesma base da wedding_planner_credit (Assinatura RN02): uma regra só.
     const [row] = await this.tenant.client().$queryRaw<
       { credit_name: string | null; hidden_by_kore: boolean }[]
-    >`SELECT credit_name, hidden_by_kore FROM wedding_planner_collaborator(${weddingId}::uuid)`;
+    >`SELECT credit_name, hidden_by_kore FROM session_wedding_planner_collaborator()`;
     return row
       ? { name: creditNameForSite({ raw: row.credit_name }), hiddenByKore: row.hidden_by_kore }
       : null;

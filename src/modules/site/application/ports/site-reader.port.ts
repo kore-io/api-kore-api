@@ -55,12 +55,11 @@ export interface PlannerCollaboratorCredit {
 export interface SiteReader {
   read({ weddingId }: { weddingId: string }): Promise<SiteSnapshot | null>;
 
-  /** Sem cerimonialista colaboradora (ou com o vendedor), nulo. */
-  plannerCollaborator({
-    weddingId,
-  }: {
-    weddingId: string;
-  }): Promise<PlannerCollaboratorCredit | null>;
+  /**
+   * A cerimonialista do casamento da transação; sem ela (ou com o vendedor),
+   * nulo. Sem parâmetro de id: só o casamento da sessão, com vínculo ativo.
+   */
+  plannerCollaborator(): Promise<PlannerCollaboratorCredit | null>;
 
   /** As imagens `ready` do casamento entre os ids pedidos (as outras somem da leitura). */
   readyImages({
