@@ -4,6 +4,7 @@ import { GuestsModule } from './modules/guests/guests.module';
 import { LogsModule } from './modules/logs/logs.module';
 import { ProductEventsModule } from './modules/product-events/product-events.module';
 import { RsvpModule } from './modules/rsvp/rsvp.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AppConfigModule } from './shared/config/app-config.module';
 import { CryptoModule } from './shared/crypto/crypto.module';
 import { DatabaseModule } from './shared/database/database.module';
@@ -39,6 +40,7 @@ import { RedisModule } from './shared/redis/redis.module';
     GuestsModule,
     SiteModule,
     RsvpModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}
