@@ -21,6 +21,8 @@ import { SmtpEmailSender } from './infrastructure/smtp-email-sender';
     DefaultEmailProcessor,
     EmailDeliveryFailures,
   ],
-  exports: [EmailDeliveryFailures],
+  // O EMAIL_SENDER também serve ao e-mail das respostas, que avança o cursor só
+  // depois do envio aceito (E-mail e push RN02).
+  exports: [EmailDeliveryFailures, EMAIL_SENDER],
 })
 export class EmailWorkerModule {}

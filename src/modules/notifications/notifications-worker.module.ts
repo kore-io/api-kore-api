@@ -1,5 +1,14 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
+import { LogsWorkerModule } from '../logs/logs-worker.module';
+import { NOTIFICATION_EMAIL_STORE } from './application/ports/notification-email-store.port';
+import { RsvpEmails } from './application/rsvp-emails.use-cases';
+import { PrismaNotificationEmailStore } from './infrastructure/backoffice/prisma-notification-email.store';
+import { NOTIFICATIONS_QUEUE } from './infrastructure/notifications-queue';
+import {
+  NotificationsProcessor,
+  NotificationsSweepScheduler,
+} from './infrastructure/notifications.processor';
 import { CleanNotifications } from './application/clean-notifications.use-case';
 import { NOTIFICATION_RETENTION } from './application/ports/notification-retention.port';
 import { PrismaNotificationRetention } from './infrastructure/backoffice/prisma-notification-retention';
@@ -9,10 +18,18 @@ import {
   NotificationRetentionScheduler,
 } from './infrastructure/notification-retention.job';
 
-/** Rotinas das notificações, do lado do worker: a retenção da central. */
+/** Rotinas das notificações, do lado do worker: a retenção da central e os e-mails. */
 @Module({
-  imports: [BullModule.registerQueue({ name: NOTIFICATION_RETENTION_QUEUE })],
+  imports: [
+    BullModule.registerQueue({ name: NOTIFICATION_RETENTION_QUEUE }, { name: NOTIFICATIONS_QUEUE }),
+    // O log da aplicação pela conexão do backoffice (notification.email_failed).
+    LogsWorkerModule,
+  ],
   providers: [
+    { provide: NOTIFICATION_EMAIL_STORE, useClass: PrismaNotificationEmailStore },
+    RsvpEmails,
+    NotificationsProcessor,
+    NotificationsSweepScheduler,
     { provide: NOTIFICATION_RETENTION, useClass: PrismaNotificationRetention },
     CleanNotifications,
     NotificationRetentionProcessor,
