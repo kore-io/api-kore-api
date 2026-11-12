@@ -17,6 +17,7 @@ import {
   SellerCannotBePlannerError,
   SessionExpiredError,
 } from '../domain/access.errors';
+import { firstName } from '../domain/access-invitation';
 import {
   emailDiffers,
   invalidReason,
@@ -29,6 +30,10 @@ import {
   INVITATION_ACCEPTANCE_STORE,
   type InvitationAcceptanceStore,
 } from './ports/invitation-acceptance-store.port';
+import {
+  COLLABORATION_NOTICE_MAILER,
+  type CollaborationNoticeMailer,
+} from './ports/collaboration-notice-mailer.port';
 import { INVITATION_TOKENS, type InvitationTokens } from './ports/invitation-tokens.port';
 import { PLANNER_PROFILES, type PlannerProfiles } from './ports/planner-profiles.port';
 import { USER_ACCOUNT_NAMES, type UserAccountNames } from './ports/user-account-names.port';
@@ -70,6 +75,7 @@ export class AcceptAccessInvitation {
     @Inject(PRODUCT_EVENT_RECORDER) private readonly productEvents: ProductEventRecorder,
     @Inject(AFTER_COMMIT) private readonly afterCommit: AfterCommit,
     @Inject(SESSION_REPOSITORY) private readonly sessions: SessionRepository,
+    @Inject(COLLABORATION_NOTICE_MAILER) private readonly mailer: CollaborationNoticeMailer,
   ) {}
 
   async execute({
@@ -157,6 +163,24 @@ export class AcceptAccessInvitation {
       this.afterCommit.schedule(() =>
         this.productEvents.record({ event: { name: 'casal_aceitou', weddingId }, occurredAt: now }),
       );
+      // Junto do casal_aceitou, só no criado pela cerimonialista (Notificações da
+      // cerimonialista RN09; D20): o e-mail à indicadora que criou.
+      if (wedding.referralSource === 'created_by_planner') {
+        const creator = await this.users.findProfileById({ userId: wedding.createdByUserId });
+        if (creator) {
+          const [partner1, partner2] = wedding.partners
+            .slice()
+            .sort((a, b) => a.slot - b.slot)
+            .map((partner) => firstName({ name: partner.displayName }));
+          const notice = {
+            to: creator.email,
+            plannerName: firstName({ name: creator.name ?? '' }),
+            partnerNames: [partner1 ?? '', partner2 ?? ''] as [string, string],
+            weddingId,
+          };
+          this.afterCommit.schedule(() => this.mailer.coupleAccepted({ notice }));
+        }
+      }
     }
 
     return {
