@@ -1,21 +1,36 @@
 import { Injectable } from '@nestjs/common';
 import { TenantTransaction } from '../../../shared/database/tenant-transaction';
-import type {
-  EmailFrequency,
-  NotificationRow,
-  NotificationStore,
-  NotificationType,
-  PreferenceRow,
+import {
+  NOTIFICATION_TYPES,
+  type EmailFrequency,
+  type NotificationRow,
+  type NotificationStore,
+  type NotificationType,
+  type PreferenceRow,
 } from '../application/ports/notification-store.port';
 
 const PREFERENCE_SELECT = { type: true, inApp: true, email: true, push: true } as const;
+/**
+ * A central do casal mostra só os tipos dela; os da cerimonialista (F6) ficam
+ * de fora até a central da cerimonialista (Notificações da cerimonialista RN05).
+ */
+const COUPLE_TYPES = { in: [...NOTIFICATION_TYPES] };
+
+function isCoupleType(type: string): type is NotificationType {
+  return (NOTIFICATION_TYPES as readonly string[]).includes(type);
+}
+
+/** Estreita o tipo do banco aos da central do casal (já filtrados no where). */
+function coupleRows<T extends { type: string }>(rows: T[]): (T & { type: NotificationType })[] {
+  return rows.filter((row): row is T & { type: NotificationType } => isCoupleType(row.type));
+}
 
 /** Na transação da requisição, com a RLS ligada. */
 @Injectable()
 export class PrismaNotificationStore implements NotificationStore {
   constructor(private readonly tenant: TenantTransaction) {}
 
-  list({
+  async list({
     userId,
     weddingId,
     type,
@@ -28,11 +43,11 @@ export class PrismaNotificationStore implements NotificationStore {
     after: { updatedAt: Date; id: string } | null;
     limit: number;
   }): Promise<NotificationRow[]> {
-    return this.tenant.client().notification.findMany({
+    const rows = await this.tenant.client().notification.findMany({
       where: {
         userId,
         weddingId,
-        ...(type ? { type } : {}),
+        type: type ?? COUPLE_TYPES,
         ...(after
           ? {
               OR: [
@@ -46,11 +61,12 @@ export class PrismaNotificationStore implements NotificationStore {
       take: limit,
       select: { id: true, type: true, count: true, payload: true, readAt: true, updatedAt: true },
     });
+    return coupleRows(rows);
   }
 
   unreadCount({ userId, weddingId }: { userId: string; weddingId: string }): Promise<number> {
     return this.tenant.client().notification.count({
-      where: { userId, weddingId, readAt: null },
+      where: { userId, weddingId, type: COUPLE_TYPES, readAt: null },
     });
   }
 
@@ -72,25 +88,26 @@ export class PrismaNotificationStore implements NotificationStore {
     now: Date;
   }): Promise<void> {
     await this.tenant.client().notification.updateMany({
-      where: { userId, weddingId, readAt: null },
+      where: { userId, weddingId, type: COUPLE_TYPES, readAt: null },
       data: { readAt: now },
     });
   }
 
-  preferences({
+  async preferences({
     userId,
     weddingId,
   }: {
     userId: string;
     weddingId: string;
   }): Promise<PreferenceRow[]> {
-    return this.tenant.client().notificationPreference.findMany({
-      where: { userId, weddingId },
+    const rows = await this.tenant.client().notificationPreference.findMany({
+      where: { userId, weddingId, type: COUPLE_TYPES },
       select: PREFERENCE_SELECT,
     });
+    return coupleRows(rows);
   }
 
-  saveEmailPreference({
+  async saveEmailPreference({
     userId,
     weddingId,
     type,
@@ -101,12 +118,13 @@ export class PrismaNotificationStore implements NotificationStore {
     type: NotificationType;
     email: EmailFrequency;
   }): Promise<PreferenceRow> {
-    return this.tenant.client().notificationPreference.upsert({
+    const row = await this.tenant.client().notificationPreference.upsert({
       where: { userId_weddingId_type: { userId, weddingId, type } },
       create: { userId, weddingId, type, email },
       update: { email },
       select: PREFERENCE_SELECT,
     });
+    return { ...row, type };
   }
 
   async hasPushSubscription({ sessionId }: { sessionId: string }): Promise<boolean> {
