@@ -178,7 +178,17 @@ export class ReconcilePayments {
    * mesmo caminho do webhook (vira pagamento sem destino, RN08). Os pendentes
    * ficam com a rodada de 10 minutos, e os pagos, com `settled`.
    */
-  async gatewayList({ now }: { now: Date }): Promise<ReconciliationTally> {
+  async gatewayList({
+    now,
+    weddingId,
+  }: {
+    now: Date;
+    /**
+     * Recorta a rodada às cobranças de um casamento (o teste: o kore_test é
+     * compartilhado). Sem casamento, a cobrança sem Payment fica fora.
+     */
+    weddingId?: string;
+  }): Promise<ReconciliationTally> {
     const tally = emptyTally();
     const charges = await this.gateway.listCharges({
       from: new Date(now.getTime() - GATEWAY_LIST_WINDOW_MS),
@@ -192,8 +202,9 @@ export class ReconcilePayments {
       ).map((payment) => [payment.id, payment]),
     );
     for (const charge of charges) {
-      tally.checked++;
       const payment = known.get(charge.externalReference);
+      if (weddingId && payment?.weddingId !== weddingId) continue;
+      tally.checked++;
       if (!payment) {
         await this.guarded(tally, charge.gatewayPaymentId, () =>
           this.unknownChargeAlert(tally, charge),
@@ -274,7 +285,9 @@ export class ReconcilePayments {
       await work();
     } catch (error) {
       tally.errors++;
-      logger.warn(`Reconciliação de ${id} falhou: ${(error as Error).name}`);
+      // O nome e o começo da mensagem (sem dado pessoal: ids e códigos do banco).
+      const { name, message } = error as Error;
+      logger.warn(`Reconciliação de ${id} falhou: ${name}: ${String(message).slice(0, 300)}`);
     }
   }
 }
