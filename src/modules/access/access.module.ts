@@ -1,3 +1,4 @@
+import { ReferralModule } from '../referral/referral.module';
 import { Module } from '@nestjs/common';
 import { AppConfigService } from '../../shared/config/app-config.service';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
@@ -102,6 +103,8 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
 
 /** Contexto Acesso: sessão, login, papéis e convites de acesso. */
 @Module({
+  // Os dados para receber no GET /v1/me/referrer (Repasse, Contrato).
+  imports: [ReferralModule],
   controllers: [
     AuthController,
     LoginController,

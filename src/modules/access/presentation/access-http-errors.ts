@@ -1,3 +1,4 @@
+import { ReauthRequiredError } from '../domain/recent-session';
 import { ContrastTooLowError } from '../../site/domain/site.errors';
 import {
   BadRequestException,
@@ -340,6 +341,13 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 404,
       error: 'MEMBERSHIP_NOT_FOUND',
       message: 'Membership not found.',
+    });
+  }
+  if (error instanceof ReauthRequiredError) {
+    return new ForbiddenException({
+      statusCode: 403,
+      error: 'REAUTH_REQUIRED',
+      message: 'Sign in again to continue.',
     });
   }
   if (error instanceof ProfileNotOwnedError) {

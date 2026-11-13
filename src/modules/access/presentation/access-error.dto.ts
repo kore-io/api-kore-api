@@ -254,3 +254,11 @@ export class MembershipNotFoundErrorBody {
   @ApiProperty({ enum: ['MEMBERSHIP_NOT_FOUND'] }) error: 'MEMBERSHIP_NOT_FOUND';
   @ApiProperty() message: string;
 }
+
+/** Sessão autenticada há mais de 10 minutos numa ação sensível (Retenção RN08). */
+export class ReauthRequiredErrorBody {
+  static readonly status = 403;
+  @ApiProperty({ enum: [403] }) statusCode: 403;
+  @ApiProperty({ enum: ['REAUTH_REQUIRED'] }) error: 'REAUTH_REQUIRED';
+  @ApiProperty() message: string;
+}

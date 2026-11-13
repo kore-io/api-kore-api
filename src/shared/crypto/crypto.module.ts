@@ -3,7 +3,8 @@ import { AppConfigService } from '../config/app-config.service';
 import { FIELD_CIPHER } from './application/field-cipher.port';
 import { KEY_MANAGEMENT, KeyManagement } from './application/key-management.port';
 import { TAX_ID_HASHER, type TaxIdHasher } from './application/tax-id-hasher.port';
-import { HmacTaxIdHasher } from './infrastructure/hmac-tax-id-hasher';
+import { PIX_KEY_HASHER, type PixKeyHasher } from './application/pix-key-hasher.port';
+import { HmacPixKeyHasher, HmacTaxIdHasher } from './infrastructure/hmac-tax-id-hasher';
 import { EnvelopeFieldCipher } from './infrastructure/envelope-field-cipher';
 import { LocalKeyManagement } from './infrastructure/local-key-management';
 
@@ -33,7 +34,18 @@ import { LocalKeyManagement } from './infrastructure/local-key-management';
           }),
         ),
     },
+    {
+      // A mesma chave de dados, com outro prefixo de domínio (Repasse RN03).
+      provide: PIX_KEY_HASHER,
+      inject: [AppConfigService, KEY_MANAGEMENT],
+      useFactory: async (config: AppConfigService, kms: KeyManagement): Promise<PixKeyHasher> =>
+        new HmacPixKeyHasher(
+          await kms.decryptDataKey({
+            encrypted: Buffer.from(config.get({ key: 'TAX_ID_HASH_KEY_ENCRYPTED' }), 'base64'),
+          }),
+        ),
+    },
   ],
-  exports: [FIELD_CIPHER, TAX_ID_HASHER],
+  exports: [FIELD_CIPHER, TAX_ID_HASHER, PIX_KEY_HASHER],
 })
 export class CryptoModule {}

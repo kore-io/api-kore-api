@@ -1,3 +1,4 @@
+import { PayoutDataUseCases } from '../../referral/application/payout-data.use-cases';
 import {
   Body,
   Controller,
@@ -58,6 +59,7 @@ export class PlannerController {
     private readonly updateProfile: UpdatePlannerProfile,
     private readonly getReferrer: GetMyReferrer,
     private readonly createWedding: CreatePlannerWedding,
+    private readonly payoutData: PayoutDataUseCases,
   ) {}
 
   /**
@@ -172,7 +174,15 @@ export class PlannerController {
   @ApiErrorResponses(...commonErrors({ session: true }), ProfileNotOwnedErrorBody)
   async referrer(@CurrentSession() session: AuthenticatedSession): Promise<MyReferrerResponse> {
     try {
-      return await this.getReferrer.execute({ userId: session.userId });
+      const referrer = await this.getReferrer.execute({ userId: session.userId });
+      // Os dados para receber, mascarados (Repasse, Contrato; decisão 244(2)).
+      const payout = await this.payoutData.summary();
+      return {
+        ...referrer,
+        taxIdMasked: payout?.taxIdMasked ?? null,
+        pixKeyMasked: payout?.pixKeyMasked ?? null,
+        payoutDataComplete: payout?.payoutDataComplete ?? false,
+      };
     } catch (error) {
       throw toHttpError(error);
     }

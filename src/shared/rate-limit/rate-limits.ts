@@ -31,6 +31,10 @@ export function isAuthRateLimited(context: ExecutionContext): boolean {
 export const GUEST_IMPORT_THROTTLER = 'guest_import';
 export const GUEST_IMPORT_PER_MINUTE = 20;
 
+/** O CPF ou CNPJ do indicador (Repasse RN02; decisão 244(3)): 5 por hora por usuário. */
+export const TAX_ID_THROTTLER = 'tax_id';
+export const TAX_ID_PER_HOUR = 5;
+
 /** Imagens do site (S4 RN07): 30 por minuto por usuário, autorização e confirmação somadas. */
 export const SITE_IMAGE_THROTTLER = 'site_image';
 export const SITE_IMAGE_PER_MINUTE = 30;

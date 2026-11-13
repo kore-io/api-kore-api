@@ -1,5 +1,6 @@
 import { createHmac } from 'node:crypto';
 import type { TaxIdDigest, TaxIdHasher } from '../application/tax-id-hasher.port';
+import type { PixKeyHasher } from '../application/pix-key-hasher.port';
 
 /** Prefixo de domínio (B2-12): o mesmo HMAC nunca serve a outro tipo de dado. */
 const DOMAIN_PREFIX = 'taxid:v1:';
@@ -27,5 +28,16 @@ export class HmacTaxIdHasher implements TaxIdHasher {
       .update(`${DOMAIN_PREFIX}${normalized}`)
       .digest('base64url');
     return { hash, version: TAX_ID_HASH_VERSION, last4: normalized.slice(-4) };
+  }
+}
+
+/** O HMAC da chave Pix (Repasse RN03), com o prefixo de domínio próprio. */
+export class HmacPixKeyHasher implements PixKeyHasher {
+  constructor(private readonly key: Buffer) {
+    if (key.length !== 32) throw new Error('PixKeyHasher: a chave precisa ter 32 bytes.');
+  }
+
+  digest({ type, key }: { type: string; key: string }): string {
+    return createHmac('sha256', this.key).update(`pixkey:v1:${type}:${key}`).digest('base64url');
   }
 }
