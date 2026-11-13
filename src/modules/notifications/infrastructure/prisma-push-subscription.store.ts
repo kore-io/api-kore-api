@@ -42,11 +42,12 @@ export class PrismaPushSubscriptionStore implements PushSubscriptionStore {
     const tx = this.tenant.client();
     const memberships = await tx.membership.findMany({
       where: { userId, removedAt: null },
-      select: { weddingId: true },
+      select: { weddingId: true, role: true },
     });
-    // O push é por aparelho: liga e desliga a resposta e a cobrança juntas (decisão 236).
-    for (const { weddingId } of memberships)
-      for (const type of ['rsvp', 'billing'] as const)
+    // O push é por aparelho: liga e desliga a resposta e, nos casamentos de que
+    // a pessoa é dona, a cobrança junto (decisão 236; a cobrança é só das donas).
+    for (const { weddingId, role } of memberships)
+      for (const type of role === 'owner' ? (['rsvp', 'billing'] as const) : (['rsvp'] as const))
         await tx.notificationPreference.upsert({
           where: { userId_weddingId_type: { userId, weddingId, type } },
           create: { userId, weddingId, type, push },

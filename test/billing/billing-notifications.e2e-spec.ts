@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import { randomBytes } from 'node:crypto';
 import request from 'supertest';
 import { addMonths } from '../../src/modules/billing/domain/pricing';
 import { BackofficePrismaService } from '../../src/shared/database/backoffice-prisma.service';
@@ -149,5 +150,41 @@ describe('Central: Cobrança (Publicar e pagar RN13; decisão 236; banco real)',
       .send({ weddingId, type: 'rsvp', email: 'off' })
       .expect(200);
     expect(saved.body).toMatchObject({ type: 'rsvp', email: 'off', emailEditable: true });
+  });
+
+  it('Publicar e pagar RN13 (G6) - a colaboradora não recebe a linha "Cobrança e pagamentos", e o push do aparelho dela não grava a cobrança', async () => {
+    const { ana, julianaCookie, weddingId } = await published();
+    const prefs = await http()
+      .get('/v1/me/notification-preferences')
+      .set('Cookie', julianaCookie)
+      .query({ weddingId })
+      .expect(200);
+    expect((prefs.body.items as { type: string }[]).map((item) => item.type)).toEqual(['rsvp']);
+
+    const subscribe = (cookie: string) =>
+      http()
+        .post('/v1/me/push-subscriptions')
+        .set('Cookie', cookie)
+        .set('Origin', ORIGIN)
+        .set('User-Agent', 'Kore e2e')
+        .send({
+          endpoint: `https://fcm.googleapis.com/fcm/send/${randomBytes(8).toString('hex')}`,
+          keys: { p256dh: 'BPk', auth: 'aut' },
+        });
+    const juliana = await db.membership.findFirstOrThrow({
+      where: { weddingId, role: 'collaborator' },
+    });
+    expect((await subscribe(julianaCookie)).status).toBeLessThan(300);
+    expect((await subscribe(ana.cookie)).status).toBeLessThan(300);
+    expect(
+      await db.notificationPreference.count({
+        where: { weddingId, userId: juliana.userId, type: 'billing' },
+      }),
+    ).toBe(0);
+    expect(
+      await db.notificationPreference.findFirstOrThrow({
+        where: { weddingId, userId: ana.userId, type: 'billing' },
+      }),
+    ).toMatchObject({ push: true });
   });
 });

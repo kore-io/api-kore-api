@@ -387,10 +387,13 @@ describe('Notificações da cerimonialista (banco real; decisões 223 e 224)', (
         [weddingId],
       );
       expect(rows.map((row) => row.type)).toEqual(['membership_removed']);
-      // E as funções de aviso não respondem fora do casamento da transação.
+      // E a função de aviso da publicação é só do worker (G5): o app não a chama.
       await expect(
-        api.query('SELECT notify_wedding_published($1::uuid[])', [[randomUUID()]]),
-      ).rejects.toThrow(/notify_wedding_published/);
+        api.query('SELECT notify_wedding_published_for($1::uuid, $2::uuid[])', [
+          weddingId,
+          [randomUUID()],
+        ]),
+      ).rejects.toThrow(/permission denied/);
     } finally {
       await api.query('ROLLBACK');
       await api.end();
