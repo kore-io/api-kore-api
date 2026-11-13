@@ -220,6 +220,7 @@ describe('O site no ar pela wedding_site_state (Data de saída do ar RN07 e RN08
       expect(membership).toMatchObject({
         lifecycle: {
           status: 'grace',
+          blocked: false,
           endDate: day(-2),
           graceUntil: day(5),
           expiredAt: null,

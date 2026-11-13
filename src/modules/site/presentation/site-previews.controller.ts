@@ -1,3 +1,4 @@
+import { AllowWhenBlocked } from '../../access/presentation/allow-when-blocked.decorator';
 import { Body, Controller, Param, Post, Res } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
@@ -23,6 +24,8 @@ export class SitePreviewsController {
   constructor(private readonly createPreview: CreateSitePreview) {}
 
   /** O token da prévia e a `url` do site com ele; vale 5 minutos e uma vez só. */
+  // Casamento bloqueado RN03: a pré-visualização é leitura.
+  @AllowWhenBlocked()
   @Post()
   @ApiErrorResponses(
     ...commonErrors({ validated: true, session: true, write: true }),

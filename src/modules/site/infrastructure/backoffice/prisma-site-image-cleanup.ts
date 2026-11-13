@@ -18,6 +18,8 @@ import {
 /** As condições da RN08: o que passou do prazo, pelo relógio de `now`. */
 function dueWhere({ now }: { now: Date }): Prisma.SiteImageWhereInput {
   return {
+    // Casamento bloqueado RN06: a limpeza para enquanto o bloqueio durar.
+    wedding: { blockedAt: null },
     OR: [
       // `updatedAt`: a confirmação que devolve a imagem a `uploading` dá mais 1 hora.
       {

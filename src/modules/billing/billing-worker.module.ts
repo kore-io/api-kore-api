@@ -1,5 +1,8 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
+import { BlockWedding } from './application/block-wedding.use-case';
+import { WEDDING_BLOCKS } from './application/ports/wedding-blocks.port';
+import { PrismaWeddingBlocks } from './infrastructure/backoffice/prisma-wedding-blocks';
 import { NOTIFICATIONS_QUEUE } from '../notifications/infrastructure/notifications-queue';
 import { GATEWAY_EVENT_QUEUE } from './application/ports/gateway-event.queue.port';
 import { GATEWAY_EVENT_STORE } from './application/ports/gateway-event.store.port';
@@ -85,6 +88,8 @@ import { WeddingPseudonymizer } from '../product-events/infrastructure/wedding-p
     PaymentReconciliationScheduler,
     ProcessRefund,
     PaymentRefundsProcessor,
+    { provide: WEDDING_BLOCKS, useClass: PrismaWeddingBlocks },
+    BlockWedding,
     { provide: WEDDING_LIFECYCLE_STORE, useClass: PrismaWeddingLifecycleStore },
     AdvanceWeddingLifecycle,
     WeddingLifecycleProcessor,

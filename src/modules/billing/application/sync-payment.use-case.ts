@@ -41,7 +41,12 @@ export type SyncResult =
  * cancelou sozinho), o Pix com o vencimento passado conta como vencido.
  */
 export type CancelReason =
-  'pix_expired' | 'replaced' | 'no_gateway_charge' | 'publication_refunded' | 'end_date_changed';
+  | 'pix_expired'
+  | 'replaced'
+  | 'no_gateway_charge'
+  | 'publication_refunded'
+  | 'end_date_changed'
+  | 'wedding_blocked';
 
 /**
  * Aplica ao Payment o estado que o gateway devolveu na consulta (Publicar e

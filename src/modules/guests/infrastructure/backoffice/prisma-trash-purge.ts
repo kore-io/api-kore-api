@@ -20,6 +20,8 @@ export class PrismaTrashPurge implements TrashPurge {
       const due = (table: string) => `
         SELECT x.id FROM ${table} x JOIN weddings w ON w.id = x.wedding_id
         WHERE x.deleted_at IS NOT NULL AND w.status <> 'purged'
+          -- Casamento bloqueado RN06: a lixeira para; os vencidos saem quando o bloqueio sai.
+          AND w.blocked_at IS NULL
           AND (x.deleted_at AT TIME ZONE coalesce(w.timezone, '${DEFAULT_TIMEZONE}'))::date
               + ${TRASH_RETENTION_DAYS}
             < ($1::timestamptz AT TIME ZONE coalesce(w.timezone, '${DEFAULT_TIMEZONE}'))::date`;

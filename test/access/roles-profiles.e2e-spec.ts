@@ -80,6 +80,7 @@ describe('Papéis e perfis: /me, perfil ativo e colaboradores (banco real; decis
           state: 'SP',
           lifecycle: {
             status: 'draft',
+            blocked: false,
             endDate: null,
             graceUntil: null,
             expiredAt: null,
@@ -95,6 +96,7 @@ describe('Papéis e perfis: /me, perfil ativo e colaboradores (banco real; decis
           state: 'SP',
           lifecycle: {
             status: 'draft',
+            blocked: false,
             endDate: null,
             graceUntil: null,
             expiredAt: null,

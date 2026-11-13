@@ -64,6 +64,7 @@ export class PrismaProfileDirectory implements ProfileDirectory {
               graceUntil: true,
               expiredAt: true,
               deletionScheduledFor: true,
+              blockedAt: true,
               partners: { select: { slot: true, displayName: true, title: true, userId: true } },
             },
           },
@@ -88,6 +89,7 @@ export class PrismaProfileDirectory implements ProfileDirectory {
       state: liveWeddingField({ value: wedding.state, field: 'state' }),
       lifecycle: {
         status: wedding.status,
+        blocked: wedding.blockedAt !== null,
         endDate: day(wedding.endDate),
         graceUntil: day(wedding.graceUntil),
         expiredAt: day(wedding.expiredAt),

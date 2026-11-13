@@ -70,7 +70,7 @@ function build({
     ledger as unknown as PaymentLedger,
     transaction as unknown as BackofficeTransaction,
     sync as unknown as SyncPaymentWithGateway,
-    { enqueue: jest.fn().mockResolvedValue(undefined) },
+    { enqueue: jest.fn().mockResolvedValue(undefined), enqueueCancel: jest.fn() },
   );
   return { useCase, sync, ledger };
 }

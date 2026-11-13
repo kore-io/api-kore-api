@@ -15,6 +15,8 @@ export interface MembershipSummary {
    */
   lifecycle: {
     status: string;
+    /** Casamento bloqueado (Casamento bloqueado RN07): a faixa do bloqueio. */
+    blocked: boolean;
     endDate: string | null;
     graceUntil: string | null;
     expiredAt: string | null;

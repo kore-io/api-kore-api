@@ -1,3 +1,4 @@
+import { AllowWhenBlocked } from './allow-when-blocked.decorator';
 import {
   Controller,
   Delete,
@@ -55,6 +56,8 @@ export class WeddingMembersController {
   }
 
   /** Remove o colaborador ou encerra o próprio vínculo (RN06, RN07, RN10 de Papéis). */
+  // Casamento bloqueado RN03: liberada (o caso de uso confere o resto).
+  @AllowWhenBlocked()
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiErrorResponses(
