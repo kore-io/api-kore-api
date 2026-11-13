@@ -276,17 +276,17 @@ describe('Site público: o link do grupo (banco real)', () => {
     await exchange(slug, 'curto').expect(400);
   });
 
-  it('Site público RN04 - fora do ar (expired): SITE_NOT_FOUND na leitura e na troca do link, sem cookie', async () => {
+  it('Data de saída do ar RN08 - expirado: SITE_EXPIRED (410) na leitura e na troca do link, sem cookie', async () => {
     const { weddingId, slug, party } = await wedding();
     await db.wedding.update({ where: { id: weddingId }, data: { status: 'expired' } });
 
     const read = await request(app.getHttpServer())
       .get(`/v1/sites/${slug}`)
       .set('Origin', SITE_ORIGIN)
-      .expect(404);
-    expect(read.body.error).toBe('SITE_NOT_FOUND');
-    const exchanged = await exchange(slug, party.linkToken).expect(404);
-    expect(exchanged.body.error).toBe('SITE_NOT_FOUND');
+      .expect(410);
+    expect(read.body.error).toBe('SITE_EXPIRED');
+    const exchanged = await exchange(slug, party.linkToken).expect(410);
+    expect(exchanged.body.error).toBe('SITE_EXPIRED');
     expect(cookieOf(exchanged)).toEqual([]);
   });
 

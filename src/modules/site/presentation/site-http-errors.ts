@@ -1,6 +1,7 @@
 import {
   ConflictException,
   ForbiddenException,
+  GoneException,
   HttpException,
   HttpStatus,
   NotFoundException,
@@ -17,7 +18,9 @@ import {
   PartyLinkRateLimitedError,
   SiteLinkInvalidError,
   SiteDraftError,
+  SiteExpiredError,
   SiteNotFoundError,
+  SiteUnavailableError,
   ContrastTooLowError,
   SiteImageInvalidError,
   SiteImageLimitReachedError,
@@ -101,6 +104,20 @@ export function toHttpError(error: unknown): unknown {
     return new HttpException(
       { statusCode: 429, error: 'RATE_LIMITED', message: 'Too many requests.' },
       HttpStatus.TOO_MANY_REQUESTS,
+    );
+  }
+  // Data de saída do ar RN08: sem dado do casal; o filtro global põe o no-store.
+  if (error instanceof SiteExpiredError) {
+    return new GoneException({
+      statusCode: 410,
+      error: 'SITE_EXPIRED',
+      message: 'This site is no longer available.',
+    });
+  }
+  if (error instanceof SiteUnavailableError) {
+    return new HttpException(
+      { statusCode: 423, error: 'SITE_UNAVAILABLE', message: 'This site is unavailable.' },
+      423,
     );
   }
   if (error instanceof SiteNotFoundError) {

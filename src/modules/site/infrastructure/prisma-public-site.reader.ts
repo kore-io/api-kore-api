@@ -8,7 +8,7 @@ import type {
   PublicSiteRow,
 } from '../application/ports/public-site-reader.port';
 import { creditNameForSite } from '../../access/domain/planner-profile';
-import { LIVE_SITE_STATUSES } from '../domain/public-site';
+import type { SiteState } from '../domain/public-site';
 
 /**
  * Pela função site_public_by_slug (SECURITY DEFINER de kore_rls): o visitante
@@ -28,7 +28,9 @@ export class PrismaPublicSiteReader implements PublicSiteReader {
     const site = row?.site;
     if (!site) return null;
     const status = String(site.status);
-    if (!LIVE_SITE_STATUSES.includes(status)) return { status, live: false };
+    // Fora do ar, a função devolve só o status e o estado (Data de saída do ar RN08).
+    if (typeof site.siteState === 'string')
+      return { status, live: false, siteState: site.siteState as SiteState };
     const live = site as Omit<PublicSiteRow & { live: true }, 'live'>;
     // Assinatura RN03: o predicado do nome, no helper único.
     return {

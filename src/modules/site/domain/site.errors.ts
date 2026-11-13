@@ -191,3 +191,13 @@ export class EndDateOutOfRangeError extends Error {
     this.endDateMax = endDateMax;
   }
 }
+
+/** Site expirado ou com exclusão agendada (410 SITE_EXPIRED; Data de saída do ar RN08). */
+export class SiteExpiredError extends Error {
+  override name = 'SiteExpiredError';
+}
+
+/** Site bloqueado (423 SITE_UNAVAILABLE; Casamento bloqueado RN05). */
+export class SiteUnavailableError extends Error {
+  override name = 'SiteUnavailableError';
+}

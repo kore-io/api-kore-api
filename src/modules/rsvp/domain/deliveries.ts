@@ -8,12 +8,15 @@ export type DeliveryChannel = (typeof DELIVERY_CHANNELS)[number];
 /** Até 200 grupos por envio, por leitura da fila e por arquivo de QR (Envios RN10). */
 export const DELIVERY_PARTIES_MAX = 200;
 
-export type DeliveriesClosedReason = 'not_published' | 'deadline_passed' | 'post_event';
+export type DeliveriesClosedReason =
+  'not_published' | 'deadline_passed' | 'post_event' | 'site_expired';
 
 /**
  * Quando os envios valem (Envios RN01; D19; R4-3): o convite e o save the
  * date só com o site publicado; o lembrete também com o prazo aberto (até as
- * 23h59 do dia, no fuso do casamento); no pós-evento, só leitura. Null = vale.
+ * 23h59 do dia, no fuso do casamento); no pós-evento e na carência, só
+ * leitura; expirado, `site_expired` (Data de saída do ar RN07: 409
+ * SITE_EXPIRED). Null = vale.
  */
 export function deliveriesClosedReason({
   kind,
@@ -28,7 +31,8 @@ export function deliveriesClosedReason({
   timezone: string | null;
   now: Date;
 }): DeliveriesClosedReason | null {
-  if (status === 'post_event' || status === 'grace' || status === 'expired') return 'post_event';
+  if (status === 'expired') return 'site_expired';
+  if (status === 'post_event' || status === 'grace') return 'post_event';
   if (status !== 'published') return 'not_published';
   if (kind === 'reminder' && rsvpDeadline && localDate({ at: now, timezone }) > rsvpDeadline)
     return 'deadline_passed';

@@ -78,6 +78,13 @@ describe('Papéis e perfis: /me, perfil ativo e colaboradores (banco real; decis
           eventDate: '2027-03-20',
           city: 'Valinhos',
           state: 'SP',
+          lifecycle: {
+            status: 'draft',
+            endDate: null,
+            graceUntil: null,
+            expiredAt: null,
+            deletionScheduledFor: null,
+          },
         },
         {
           weddingId: client.weddingId,
@@ -86,6 +93,13 @@ describe('Papéis e perfis: /me, perfil ativo e colaboradores (banco real; decis
           eventDate: null,
           city: 'Campinas',
           state: 'SP',
+          lifecycle: {
+            status: 'draft',
+            endDate: null,
+            graceUntil: null,
+            expiredAt: null,
+            deletionScheduledFor: null,
+          },
         },
       ]);
     });

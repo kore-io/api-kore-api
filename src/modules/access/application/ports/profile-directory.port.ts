@@ -9,6 +9,17 @@ export interface MembershipSummary {
   eventDate: Date | null;
   city: string;
   state: string;
+  /**
+   * O ciclo de vida do casamento (Data de saída do ar RN06; decisão 231): de
+   * onde saem as faixas e o selo da Topbar. Datas em AAAA-MM-DD.
+   */
+  lifecycle: {
+    status: string;
+    endDate: string | null;
+    graceUntil: string | null;
+    expiredAt: string | null;
+    deletionScheduledFor: string | null;
+  };
 }
 
 export interface AccountOverview {

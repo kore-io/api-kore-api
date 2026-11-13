@@ -32,6 +32,18 @@ export class PartyTransactionRevokedError extends Error {
   }
 }
 
+/**
+ * O site do grupo está fora do ar (Data de saída do ar RN07 e RN08): expirado
+ * (ou com exclusão agendada) ou bloqueado, pela wedding_site_state. Nada é
+ * gravado; a rota responde com o estado.
+ */
+export class PartySiteNotLiveError extends Error {
+  constructor(readonly state: 'expired' | 'unavailable') {
+    super('O site do grupo está fora do ar.');
+    this.name = 'PartySiteNotLiveError';
+  }
+}
+
 interface RequestTransaction {
   tx: Prisma.TransactionClient;
   afterCommit: (() => Promise<void>)[];
@@ -125,7 +137,13 @@ export class TenantTransaction implements AfterCommit {
         const [row] = await tx.$queryRaw<[{ context: PartyTransactionContext | null }]>`
           SELECT party_transaction_context(${linkVersion}::int) AS context`;
         if (!row?.context) throw new PartyTransactionRevokedError();
-        return work(row.context);
+        const { siteState, ...context } = row.context as PartyTransactionContext & {
+          siteState: string;
+        };
+        if (siteState === 'expired' || siteState === 'unavailable')
+          throw new PartySiteNotLiveError(siteState);
+        if (siteState !== 'live') throw new PartyTransactionRevokedError();
+        return work(context);
       },
     });
   }

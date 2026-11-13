@@ -1,11 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PartyLinkFailures } from '../../../shared/rate-limit/party-link-failures';
-import { DRAFT_SITE_STATUSES, LIVE_SITE_STATUSES } from '../domain/public-site';
+import { DRAFT_SITE_STATUSES } from '../domain/public-site';
 import {
   PartyLinkRateLimitedError,
   SiteDraftError,
+  SiteExpiredError,
   SiteLinkInvalidError,
   SiteNotFoundError,
+  SiteUnavailableError,
 } from '../domain/site.errors';
 import { PARTY_COOKIES, type PartyCookies } from './ports/party-cookies.port';
 import { PARTY_VISITS, type PartyVisits } from './ports/party-visits.port';
@@ -60,7 +62,7 @@ export class StartPartySession {
     if (isDraft(party?.status) || (site && !site.live && isDraft(site.status)))
       throw new SiteDraftError();
 
-    if (party && party.slug && LIVE_SITE_STATUSES.includes(party.status)) {
+    if (party && party.slug && party.siteState === 'live') {
       await this.visits.markViewed({
         weddingId: party.weddingId,
         partyId: party.partyId,
@@ -78,6 +80,18 @@ export class StartPartySession {
         },
       };
     }
+
+    // O link de um site fora do ar mostra a mesma página do site (RN08), sem contar falha.
+    if (
+      party?.siteState === 'expired' ||
+      (!party && site && !site.live && site.siteState === 'expired')
+    )
+      throw new SiteExpiredError();
+    if (
+      party?.siteState === 'unavailable' ||
+      (!party && site && !site.live && site.siteState === 'unavailable')
+    )
+      throw new SiteUnavailableError();
 
     await this.failures.recordFailure({ ip });
     // Site publicado e token que não resolve: o link não funciona mais.

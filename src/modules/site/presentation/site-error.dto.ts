@@ -92,6 +92,22 @@ export class ContrastTooLowErrorBody {
 }
 
 /** "Não encontramos este endereço." (Site público RN04). */
+/** Site expirado ou com exclusão agendada (Data de saída do ar RN08), com `Cache-Control: no-store`. */
+export class SiteExpiredErrorBody {
+  static readonly status = 410;
+  @ApiProperty({ enum: [410] }) statusCode: 410;
+  @ApiProperty({ enum: ['SITE_EXPIRED'] }) error: 'SITE_EXPIRED';
+  @ApiProperty() message: string;
+}
+
+/** Site bloqueado (Casamento bloqueado RN05), com `Cache-Control: no-store`. */
+export class SiteUnavailableErrorBody {
+  static readonly status = 423;
+  @ApiProperty({ enum: [423] }) statusCode: 423;
+  @ApiProperty({ enum: ['SITE_UNAVAILABLE'] }) error: 'SITE_UNAVAILABLE';
+  @ApiProperty() message: string;
+}
+
 export class SiteNotFoundErrorBody {
   static readonly status = 404;
   @ApiProperty({ enum: [404] }) statusCode: 404;
