@@ -1,4 +1,4 @@
-import type { CommissionRow } from '../../domain/commissions';
+import type { AdjustmentRow, CommissionRow } from '../../domain/commissions';
 
 /**
  * As comissões da própria pessoa indicadora pela função `referrer_commissions()`
@@ -6,6 +6,8 @@ import type { CommissionRow } from '../../domain/commissions';
  */
 export interface ReferrerCommissionsReader {
   list(): Promise<CommissionRow[]>;
+  /** Os ajustes da própria pessoa indicadora (RLS por referrerId; RN02). */
+  adjustments(): Promise<AdjustmentRow[]>;
 }
 
 export const REFERRER_COMMISSIONS_READER = Symbol('ReferrerCommissionsReader');

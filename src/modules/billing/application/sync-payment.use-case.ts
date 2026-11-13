@@ -359,7 +359,7 @@ export class SyncPaymentWithGateway {
     if (!['disputed', 'refund_requested', 'paid'].includes(payment.status)) return 'unchanged';
     await this.ledger.markDisputeLost({ paymentId: payment.id, now });
     // Comissões RN05 e RN06: só a do pagamento contestado.
-    await this.ledger.reverseCommission({ paymentId: payment.id, now });
+    await this.ledger.reverseCommission({ paymentId: payment.id, now, reason: 'chargeback' });
     await this.ledger.log({
       entry: {
         action: 'payment.dispute_lost',
@@ -399,8 +399,8 @@ export class SyncPaymentWithGateway {
         data: { refundOrigin: payment.refundOrigin, amountCents: payment.amountCents },
       },
     });
-    // Comissões RN05: a comissão vira reversed (dentro de um repasse: o PR do repasse).
-    await this.ledger.reverseCommission({ paymentId: payment.id, now });
+    // Comissões RN05: a comissão vira reversed (no repasse pedido, ele fica retido; já paga, o ajuste).
+    await this.ledger.reverseCommission({ paymentId: payment.id, now, reason: 'refund' });
     const recipients = await this.ledger.billingRecipients({ weddingId: wedding.id });
     await this.ledger.notifyBilling({
       weddingId: wedding.id,

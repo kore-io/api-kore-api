@@ -50,6 +50,7 @@ describe('validateEnv', () => {
       STORAGE_FORCE_PATH_STYLE: false,
       SIMULATOR_ENABLED: true,
       PLANNER_SIGNUP_ENABLED: false,
+      PAYOUTS_ENABLED: false,
       REFERRAL_LINK_URL: 'https://kore.com.br/i',
     });
   });
@@ -184,6 +185,18 @@ describe('validateEnv', () => {
         );
     },
   );
+
+  it('Repasse RN01 - sem valor, os repasses vêm desligados; ligados, só em local e test', () => {
+    expect(validateEnv({ config: validConfig }).PAYOUTS_ENABLED).toBe(false);
+    expect(
+      validateEnv({ config: { ...validConfig, APP_ENV: 'test', PAYOUTS_ENABLED: 'true' } })
+        .PAYOUTS_ENABLED,
+    ).toBe(true);
+    for (const APP_ENV of ['homolog', 'production'])
+      expect(() =>
+        validateEnv({ config: { ...validConfig, APP_ENV, PAYOUTS_ENABLED: 'true' } }),
+      ).toThrow(/PAYOUTS_ENABLED: os repasses só podem ser ligados com APP_ENV local ou test/);
+  });
 
   it('Cadastro e perfil RN02 - sem valor, o cadastro de cerimonialista vem desligado', () => {
     expect(validateEnv({ config: validConfig }).PLANNER_SIGNUP_ENABLED).toBe(false);

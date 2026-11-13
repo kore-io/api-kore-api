@@ -37,7 +37,10 @@ function useCase({
   return new ListReferredWeddings(
     { findOwn: jest.fn().mockResolvedValue(hasProfile ? {} : null) } as unknown as PlannerProfiles,
     { list: jest.fn().mockResolvedValue([row(true), row(false)]) } satisfies ReferredWeddingsReader,
-    { list: jest.fn().mockResolvedValue(commissions) },
+    {
+      list: jest.fn().mockResolvedValue(commissions),
+      adjustments: jest.fn().mockResolvedValue([]),
+    },
   );
 }
 
