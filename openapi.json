@@ -8522,6 +8522,58 @@
         ]
       }
     },
+    "/v1/me/referrer/commissions": {
+      "get": {
+        "operationId": "ReferrerCommissionsController_list_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferrerCommissionsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "A tela Comissões (Comissões do indicador RN02, RN07 e RN10).",
+        "tags": [
+          "planner"
+        ]
+      }
+    },
     "/v1/webhooks/payments/{gateway}": {
       "post": {
         "operationId": "PaymentWebhooksController_receiveEvent_v1",
@@ -17272,17 +17324,28 @@
       "MyWeddingsSummaryResponse": {
         "type": "object",
         "properties": {
+          "commissionAvailableCents": {
+            "type": "number",
+            "description": "Comissão disponível, em centavos (Comissões do indicador RN08; decisão 36).",
+            "example": 6742
+          },
           "active": {
             "type": "number",
             "description": "Todos menos pós-evento e expirado (RN03)."
           },
           "awaitingCouple": {
             "type": "number"
+          },
+          "awaitingPayment": {
+            "type": "number",
+            "description": "Aguardando pagamento: rascunho com o Pix pendente (Comissões do indicador RN08)."
           }
         },
         "required": [
+          "commissionAvailableCents",
           "active",
-          "awaitingCouple"
+          "awaitingCouple",
+          "awaitingPayment"
         ]
       },
       "PendingResponsesAlertResponse": {
@@ -17417,6 +17480,10 @@
           },
           "createdByMe": {
             "type": "boolean"
+          },
+          "awaitingPayment": {
+            "type": "boolean",
+            "description": "\"Aguardando pagamento\" (filtro e status derivado; Comissões RN08): só o booleano."
           }
         },
         "required": [
@@ -17429,7 +17496,8 @@
           "city",
           "state",
           "guestsTotal",
-          "createdByMe"
+          "createdByMe",
+          "awaitingPayment"
         ]
       },
       "MyWeddingsResponse": {
@@ -17598,6 +17666,10 @@
           },
           "createdByMe": {
             "type": "boolean"
+          },
+          "awaitingPayment": {
+            "type": "boolean",
+            "description": "\"Aguardando pagamento\" (filtro e status derivado; Comissões RN08): só o booleano."
           }
         },
         "required": [
@@ -17615,7 +17687,25 @@
           "city",
           "state",
           "guestsTotal",
-          "createdByMe"
+          "createdByMe",
+          "awaitingPayment"
+        ]
+      },
+      "ReferredWeddingCommissionResponse": {
+        "type": "object",
+        "properties": {
+          "availableCents": {
+            "type": "number",
+            "example": 6742
+          },
+          "pendingCents": {
+            "type": "number",
+            "example": 1740
+          }
+        },
+        "required": [
+          "availableCents",
+          "pendingCents"
         ]
       },
       "ReferredWeddingResponse": {
@@ -17645,12 +17735,22 @@
               "grace",
               "expired"
             ]
+          },
+          "commission": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReferredWeddingCommissionResponse"
+              }
+            ]
           }
         },
         "required": [
           "weddingId",
           "partnerNames",
-          "status"
+          "status",
+          "commission"
         ]
       },
       "PlannerTemplateResponse": {
@@ -17808,6 +17908,180 @@
             "description": "Por tipo: section_content → { text }; faq → { questions: [{ question, answer }] }; appearance → { fontPairKey, starterPaletteKey?, primaryColor, accentColor, backgroundMode }."
           }
         }
+      },
+      "CommissionBalancesResponse": {
+        "type": "object",
+        "properties": {
+          "availableCents": {
+            "type": "number",
+            "example": 6742
+          },
+          "pendingCents": {
+            "type": "number",
+            "example": 1740
+          },
+          "receivedCents": {
+            "type": "number",
+            "example": 0
+          },
+          "inPayoutCents": {
+            "type": "number",
+            "example": 0
+          }
+        },
+        "required": [
+          "availableCents",
+          "pendingCents",
+          "receivedCents",
+          "inPayoutCents"
+        ]
+      },
+      "CommissionItemResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "weddingId": {
+            "type": "string",
+            "nullable": true
+          },
+          "partnerNames": {
+            "nullable": true,
+            "example": [
+              "Ana",
+              "Marcos"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "paymentKind": {
+            "type": "string",
+            "enum": [
+              "publication",
+              "extension"
+            ]
+          },
+          "baseAmountCents": {
+            "type": "number",
+            "example": 33710
+          },
+          "amountCents": {
+            "type": "number",
+            "example": 6742
+          },
+          "ratePercent": {
+            "type": "number",
+            "example": 20
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "available",
+              "paid",
+              "reversed",
+              "blocked",
+              "held"
+            ]
+          },
+          "availableAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paidAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "weddingId",
+          "partnerNames",
+          "paymentKind",
+          "baseAmountCents",
+          "amountCents",
+          "ratePercent",
+          "status",
+          "availableAt",
+          "paidAt",
+          "createdAt"
+        ]
+      },
+      "WeddingCommissionsResponse": {
+        "type": "object",
+        "properties": {
+          "weddingId": {
+            "type": "string",
+            "nullable": true
+          },
+          "partnerNames": {
+            "nullable": true,
+            "example": [
+              "Ana",
+              "Marcos"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "availableCents": {
+            "type": "number",
+            "example": 6742
+          },
+          "pendingCents": {
+            "type": "number",
+            "example": 1740
+          },
+          "releaseDates": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "required": [
+          "weddingId",
+          "partnerNames",
+          "availableCents",
+          "pendingCents",
+          "releaseDates"
+        ]
+      },
+      "ReferrerCommissionsResponse": {
+        "type": "object",
+        "properties": {
+          "balances": {
+            "$ref": "#/components/schemas/CommissionBalancesResponse"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommissionItemResponse"
+            }
+          },
+          "byWedding": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeddingCommissionsResponse"
+            }
+          }
+        },
+        "required": [
+          "balances",
+          "items",
+          "byWedding"
+        ]
       },
       "MalformedWebhookErrorBody": {
         "type": "object",

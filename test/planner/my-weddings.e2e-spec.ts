@@ -129,6 +129,8 @@ describe('Meus casamentos e alertas (banco real; decisões 223 e 224)', () => {
           guestsTotal: 0,
           origin: 'couple_invite',
           createdByMe: false,
+          // Comissões RN08: sem Pix pendente.
+          awaitingPayment: false,
         },
         expect.objectContaining({
           weddingId: created.weddingId,
@@ -145,7 +147,13 @@ describe('Meus casamentos e alertas (banco real; decisões 223 e 224)', () => {
           createdByMe: false,
         }),
       ]);
-      expect(response.body.summary).toEqual({ active: 3, awaitingCouple: 1 });
+      expect(response.body.summary).toEqual({
+        active: 3,
+        awaitingCouple: 1,
+        // Comissões RN08: nenhum Pix pendente e nenhuma comissão disponível.
+        awaitingPayment: 0,
+        commissionAvailableCents: 0,
+      });
     });
 
     it('RN05 e RN06 - os alertas: respostas pendentes com prazo em 7 dias e convites não enviados a 90 dias; só os nomes do casal', async () => {

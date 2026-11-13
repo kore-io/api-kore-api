@@ -17,6 +17,10 @@ class MyWeddingsSummaryResponse {
   /** Todos menos pós-evento e expirado (RN03). */
   active: number;
   awaitingCouple: number;
+  /** Aguardando pagamento: rascunho com o Pix pendente (Comissões do indicador RN08). */
+  awaitingPayment: number;
+  /** Comissão disponível, em centavos (Comissões do indicador RN08; decisão 36). */
+  @ApiProperty({ example: 6742 }) commissionAvailableCents: number;
 }
 
 class PendingResponsesAlertResponse {
@@ -51,6 +55,8 @@ class MyWeddingItemResponse {
   guestsTotal: number;
   @ApiProperty({ enum: ORIGINS }) origin: WeddingOrigin;
   createdByMe: boolean;
+  /** "Aguardando pagamento" (filtro e status derivado; Comissões RN08): só o booleano. */
+  awaitingPayment: boolean;
 }
 
 /** GET /v1/me/weddings (Meus casamentos RN01 a RN07). */
