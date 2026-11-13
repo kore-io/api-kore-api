@@ -261,6 +261,8 @@ describe('E-mails das respostas (worker)', () => {
     // O sweep recortado ao casamento deste teste: o kore_test é compartilhado e
     // cresce, e varrer todos os candidatos estourava o tempo do caso.
     const store = worker.get<NotificationEmailStore>(NOTIFICATION_EMAIL_STORE);
+    // A consulta real dos candidatos traz o par deste teste (o recorte não a esconde).
+    expect(await store.candidates()).toContainEqual({ userId, weddingId });
     const scoped: NotificationEmailStore = Object.assign(
       Object.create(store) as NotificationEmailStore,
       {
