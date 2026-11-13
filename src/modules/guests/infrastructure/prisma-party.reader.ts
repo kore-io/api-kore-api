@@ -210,9 +210,23 @@ export class PrismaPartyReader implements PartyReader {
                    WHERE g.party_id = p.id AND g.deleted_at IS NULL
                      AND gt.tag_id = ${query.tagId}::uuid))`);
     const where = Prisma.join(filters, ' AND ');
-    const after = query.after
-      ? Prisma.sql`AND (lower(f_unaccent(p.name)), p.id) > (${query.after.name}, ${query.after.id}::uuid)`
-      : Prisma.empty;
+    const byResponse = query.order === 'respondedAt';
+    const cursor = query.afterResponded;
+    const after = byResponse
+      ? cursor
+        ? cursor.respondedAt
+          ? Prisma.sql`AND (p.responded_at < ${cursor.respondedAt}::timestamptz
+              OR (p.responded_at = ${cursor.respondedAt}::timestamptz AND p.id < ${cursor.id}::uuid)
+              OR p.responded_at IS NULL)`
+          : Prisma.sql`AND p.responded_at IS NULL AND p.id < ${cursor.id}::uuid`
+        : Prisma.empty
+      : query.after
+        ? Prisma.sql`AND (lower(f_unaccent(p.name)), p.id) > (${query.after.name}, ${query.after.id}::uuid)`
+        : Prisma.empty;
+    // Por "Respondido em": as mais recentes primeiro, as sem resposta no fim (decisão 246).
+    const order = byResponse
+      ? Prisma.sql`p.responded_at DESC NULLS LAST, p.id DESC`
+      : Prisma.sql`lower(f_unaccent(p.name)), p.id`;
 
     const [{ total }] = await tx.$queryRaw<[{ total: number }]>`
       SELECT count(*)::int AS total FROM parties p WHERE ${where}`;
@@ -235,7 +249,7 @@ export class PrismaPartyReader implements PartyReader {
              (SELECT u.name FROM users u WHERE u.id = p.last_response_user_id) AS actor_name
       FROM parties p
       WHERE ${where} ${after}
-      ORDER BY lower(f_unaccent(p.name)), p.id
+      ORDER BY ${order}
       LIMIT ${query.limit}`;
     if (page.length === 0) return { rows: [], total };
 

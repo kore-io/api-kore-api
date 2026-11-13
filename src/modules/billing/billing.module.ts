@@ -1,3 +1,4 @@
+import { producerQueue } from '../../shared/jobs/producer-queue';
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { BlockWedding } from './application/block-wedding.use-case';
@@ -50,7 +51,8 @@ import { PAYMENT_REFUNDS_QUEUE } from './infrastructure/refunds.queue';
   imports: [
     AccessModule,
     BullModule.registerQueue({ name: GATEWAY_EVENTS_QUEUE }),
-    BullModule.registerQueue({ name: NOTIFICATIONS_QUEUE }),
+    // O push da cobrança: a mesma fila produtora, sem fila offline (Central RN02).
+    producerQueue(NOTIFICATIONS_QUEUE),
     BullModule.registerQueue({ name: PAYMENT_REFUNDS_QUEUE }),
   ],
   controllers: [

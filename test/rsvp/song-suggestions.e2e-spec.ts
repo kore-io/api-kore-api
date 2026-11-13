@@ -189,7 +189,7 @@ describe('Pergunta de música e Músicas (banco real)', () => {
     expect((await list(ana.cookie, weddingId).expect(200)).body.total).toBe(1);
   });
 
-  it('RN06 - exportar para o DJ: o .xlsx com as colunas, a data no fuso do casamento e tudo como texto', async () => {
+  it('RN06 - exportar para o DJ: o .xlsx com as colunas, a data no fuso do casamento (hora da Voz) e tudo como texto', async () => {
     const { juliana, weddingId, slug, party, suggest } = await scenario();
     const moreira = await party('Família Moreira');
     await suggest({
@@ -204,6 +204,13 @@ describe('Pergunta de música e Músicas (banco real)', () => {
       song: '=SOMA(A1:A2)',
       at: '2026-09-13T10:05:00Z',
     });
+    // Hora cheia: "9h", sem os minutos (decisão 246; a regra da Voz para listas).
+    await suggest({
+      partyId: moreira.id,
+      name: 'Rita Moreira',
+      song: 'Garota de Ipanema',
+      at: '2026-09-14T12:00:00Z',
+    });
 
     const response = await exportFile(juliana.cookie, weddingId).expect(200);
 
@@ -215,13 +222,14 @@ describe('Pergunta de música e Músicas (banco real)', () => {
     const file = response.body as Buffer;
     await workbook.xlsx.load(file as unknown as ArrayBuffer);
     const sheet = workbook.worksheets[0];
-    const rows = [1, 2, 3].map((row) =>
+    const rows = [1, 2, 3, 4].map((row) =>
       (sheet.getRow(row).values as unknown[]).slice(1).map((value) => value),
     );
     expect(rows).toEqual([
       ['Música', 'Quem sugeriu', 'Grupo', 'Data da sugestão'],
       ['Evidências', 'Célia Moreira', 'Família Moreira', '12/09 às 20h14'],
-      ['=SOMA(A1:A2)', 'Luiz Moreira', 'Família Moreira', '13/09 às 07h05'],
+      ['=SOMA(A1:A2)', 'Luiz Moreira', 'Família Moreira', '13/09 às 7h05'],
+      ['Garota de Ipanema', 'Rita Moreira', 'Família Moreira', '14/09 às 9h'],
     ]);
     expect(sheet.getCell('A3').formula).toBeUndefined();
   });

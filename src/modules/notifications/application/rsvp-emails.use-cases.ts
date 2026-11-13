@@ -166,20 +166,31 @@ export class RsvpEmails {
    * rede de segurança do "Na hora". A falha de um envio fica no log e não para
    * os outros; o próximo envio leva o que faltou.
    */
-  async sweep({ now }: { now: Date }): Promise<{ sent: number; failed: number }> {
+  async sweep({
+    now,
+    weddingId: only,
+  }: {
+    now: Date;
+    /** Recorta a rodada a um casamento (o teste). */
+    weddingId?: string;
+  }): Promise<{ sent: number; failed: number }> {
     let sent = 0;
     let failed = 0;
-    for (const { userId, weddingId } of await this.store.candidates()) {
+    const failures: { userId: string; weddingId: string }[] = [];
+    for (const { userId, weddingId } of await this.store.candidates({ weddingId: only })) {
       for (const mode of ['digest', 'catch_up'] as const) {
         try {
           if ((await this.send({ userId, weddingId, mode, now })).kind === 'sent') sent++;
         } catch (error) {
           failed++;
+          failures.push({ userId, weddingId });
           logger.warn(`E-mail de respostas falhou (${(error as Error).name}).`);
           await this.recordFailure({ userId, weddingId });
         }
       }
     }
+    // Sem novidade, sem resumo, e o dia fica fechado (RN04; decisão 246).
+    await this.store.closeQuietDigests({ now, skip: failures, weddingId: only });
     return { sent, failed };
   }
 
