@@ -7,7 +7,10 @@ import {
   NOTIFICATIONS_QUEUE,
   NOTIFICATIONS_SWEEP_SCHEDULER_ID,
 } from '../../src/modules/notifications/infrastructure/notifications-queue';
-import { NOTIFICATION_EMAIL_STORE } from '../../src/modules/notifications/application/ports/notification-email-store.port';
+import {
+  NOTIFICATION_EMAIL_STORE,
+  type NotificationEmailStore,
+} from '../../src/modules/notifications/application/ports/notification-email-store.port';
 import { APPLICATION_LOG_WRITER } from '../../src/modules/logs/application/ports/application-log-writer.port';
 import { AppConfigService } from '../../src/shared/config/app-config.service';
 import { BackofficePrismaService } from '../../src/shared/database/backoffice-prisma.service';
@@ -255,8 +258,17 @@ describe('E-mails das respostas (worker)', () => {
   it('RN06 - o envio recusado não avança o cursor e grava notification.email_failed; o próximo leva o que faltou', async () => {
     const { userId, weddingId, moreira, entry, notify } = await scenario({});
     await notify([entry(moreira.id, 'Família Moreira', new Date(Date.now() - 20 * MINUTE))]);
+    // O sweep recortado ao casamento deste teste: o kore_test é compartilhado e
+    // cresce, e varrer todos os candidatos estourava o tempo do caso.
+    const store = worker.get<NotificationEmailStore>(NOTIFICATION_EMAIL_STORE);
+    const scoped: NotificationEmailStore = Object.assign(
+      Object.create(store) as NotificationEmailStore,
+      {
+        candidates: () => Promise.resolve([{ userId, weddingId }]),
+      },
+    );
     const failing = new RsvpEmails(
-      worker.get(NOTIFICATION_EMAIL_STORE),
+      scoped,
       { send: () => Promise.reject(new Error('SMTP fora')) },
       worker.get(APPLICATION_LOG_WRITER),
       worker.get(AppConfigService),
