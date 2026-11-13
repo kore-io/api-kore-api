@@ -2633,6 +2633,20 @@
             }
           },
           {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "A ordem: alfabética (o padrão) ou \"Respondido em\", mais recentes primeiro\ne os sem resposta no fim (Central RN05; Dashboard RN04; decisão 246). O\ncursor vale só na ordem que o deu.",
+            "schema": {
+              "default": "name",
+              "type": "string",
+              "enum": [
+                "name",
+                "respondedAt"
+              ]
+            }
+          },
+          {
             "name": "limit",
             "required": false,
             "in": "query",

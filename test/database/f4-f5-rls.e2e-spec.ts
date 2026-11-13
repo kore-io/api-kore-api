@@ -105,22 +105,28 @@ describe('Migration das F4 e F5 (banco real, usuário kore_api)', () => {
     });
   });
 
-  it('T3 e decisão 217(4) - a API grava as colunas novas por GRANT; o paidThrough, não', async () => {
+  it('T3, decisões 217(4) e 246 - a API grava as colunas novas por GRANT; as da publicação e o paidThrough, não', async () => {
     await as(ana, async () => {
       const wedding = await api.query(
-        `UPDATE weddings SET status = 'published', published_at = now(), event_date = '2026-11-14',
-           end_date = '2027-02-14', publication_source = 'courtesy', published_by_user_id = $2,
-           rsvp_deadline = '2026-10-15', song_question_enabled = true,
-           song_question_text = 'Qual música não pode faltar?'
+        `UPDATE weddings SET event_date = '2026-11-14', rsvp_deadline = '2026-10-15',
+           song_question_enabled = true, song_question_text = 'Qual música não pode faltar?'
          WHERE id = $1`,
-        [weddingId, ana],
+        [weddingId],
       );
       expect(wedding.rowCount).toBe(1);
-      await rejects(
-        `UPDATE weddings SET paid_through = '2027-02-14' WHERE id = $1`,
-        [weddingId],
-        /permission denied/,
-      );
+      // A Cortesia saiu (decisão 246): a API não publica por fora do pagamento.
+      for (const column of [
+        `end_date = '2027-02-14'`,
+        `publication_source = 'payment'`,
+        `published_by_user_id = '${ana}'`,
+        `paid_through = '2027-02-14'`,
+      ])
+        await rejects(
+          `UPDATE weddings SET ${column} WHERE id = $1`,
+          [weddingId],
+          /permission denied/,
+        );
+
       const party = await api.query(
         `UPDATE parties SET version = version + 1, sent_at = now(), first_viewed_at = now(),
            last_channel = 'whatsapp', save_the_date_sent_at = now(), last_reminder_at = now(),
@@ -140,18 +146,18 @@ describe('Migration das F4 e F5 (banco real, usuário kore_api)', () => {
   });
 
   it('Publicação RN04 e RN05, Música RN04 - os CHECKs das colunas novas', async () => {
+    // As da publicação, pelo backoffice (decisão 246: a API não as grava).
+    // Cada comando falha inteiro: nada fica gravado para os casos seguintes.
+    await expect(
+      db.$executeRaw`UPDATE weddings SET event_date = '2026-11-14', end_date = '2026-11-14'
+                     WHERE id = ${weddingId}::uuid`,
+    ).rejects.toThrow(/chk_weddings_end_date/);
+    await expect(
+      db.$executeRaw`UPDATE weddings SET publication_source = 'payment'
+                     WHERE id = ${weddingId}::uuid`,
+    ).rejects.toThrow(/chk_weddings_publication_source/);
     await as(ana, async () => {
       await api.query(`UPDATE weddings SET event_date = '2026-11-14' WHERE id = $1`, [weddingId]);
-      await rejects(
-        `UPDATE weddings SET end_date = '2026-11-14' WHERE id = $1`,
-        [weddingId],
-        /chk_weddings_end_date/,
-      );
-      await rejects(
-        `UPDATE weddings SET publication_source = 'courtesy' WHERE id = $1`,
-        [weddingId],
-        /chk_weddings_publication_source/,
-      );
       await rejects(
         `UPDATE weddings SET song_question_text = $2 WHERE id = $1`,
         [weddingId, 'a'.repeat(121)],

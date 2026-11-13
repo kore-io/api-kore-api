@@ -7,7 +7,11 @@ import type {
 
 const TITLES = ['Música', 'Quem sugeriu', 'Grupo', 'Data da sugestão'];
 
-/** "12/09 às 20h14", no fuso do casamento (Música RN05 e RN06). */
+/**
+ * "12/09 às 20h14", "13/09 às 7h05", "02/09 às 9h": no fuso do casamento, a
+ * hora sem o zero à esquerda e, na hora cheia, sem os minutos, como a página
+ * Músicas e a regra da Voz para listas (Música RN05 e RN06; decisão 246).
+ */
 export function suggestionDate({ at, timezone }: { at: Date; timezone: string }): string {
   const parts = Object.fromEntries(
     new Intl.DateTimeFormat('pt-BR', {
@@ -21,7 +25,8 @@ export function suggestionDate({ at, timezone }: { at: Date; timezone: string })
       .formatToParts(at)
       .map((part) => [part.type, part.value]),
   );
-  return `${parts.day}/${parts.month} às ${parts.hour}h${parts.minute}`;
+  const minutes = parts.minute === '00' ? '' : parts.minute;
+  return `${parts.day}/${parts.month} às ${Number(parts.hour)}h${minutes}`;
 }
 
 /**

@@ -1,3 +1,4 @@
+import { Prisma } from '../../../../generated/prisma/client';
 import { Injectable } from '@nestjs/common';
 import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
 import { DEFAULT_TIMEZONE } from '../../../../shared/time/local-date';
@@ -137,7 +138,8 @@ export class PrismaNotificationEmailStore implements NotificationEmailStore {
    * só com a geral em "Na hora" (o resumo dela é o agrupado, no PlannerDigest).
    * O envio confere tudo de novo, travado (D18).
    */
-  candidates(): Promise<EmailCandidate[]> {
+  candidates({ weddingId }: { weddingId?: string } = {}): Promise<EmailCandidate[]> {
+    const only = weddingId ? Prisma.sql`AND n.wedding_id = ${weddingId}::uuid` : Prisma.empty;
     return this.prisma.$queryRaw<EmailCandidate[]>`
       SELECT DISTINCT n.user_id::text AS "userId", n.wedding_id::text AS "weddingId"
       FROM notifications n
@@ -145,7 +147,7 @@ export class PrismaNotificationEmailStore implements NotificationEmailStore {
         ON m.user_id = n.user_id AND m.wedding_id = n.wedding_id AND m.removed_at IS NULL
       LEFT JOIN notification_email_states s
         ON s.user_id = n.user_id AND s.wedding_id = n.wedding_id
-      WHERE n.type = 'rsvp'
+      WHERE n.type = 'rsvp' ${only}
         AND (s.emailed_through IS NULL OR n.updated_at > s.emailed_through)
         AND (
           (m.role = 'owner' AND COALESCE((
@@ -160,5 +162,37 @@ export class PrismaNotificationEmailStore implements NotificationEmailStore {
               SELECT p.email::text FROM notification_preferences p
               WHERE p.user_id = n.user_id AND p.wedding_id IS NULL AND p.type = 'rsvp'
             ) = 'immediate'))`;
+  }
+
+  async closeQuietDigests({
+    now,
+    skip,
+    weddingId,
+  }: {
+    now: Date;
+    skip: readonly EmailCandidate[];
+    weddingId?: string;
+  }): Promise<number> {
+    const only = weddingId ? Prisma.sql`AND w.id = ${weddingId}::uuid` : Prisma.empty;
+    const skipUsers = skip.map((pair) => pair.userId);
+    const skipWeddings = skip.map((pair) => pair.weddingId);
+    return this.prisma.$executeRaw`
+      INSERT INTO notification_email_states (user_id, wedding_id, updated_at, last_digest_date)
+      SELECT m.user_id, m.wedding_id, now(), (${now}::timestamptz AT TIME ZONE COALESCE(w.timezone, 'America/Sao_Paulo'))::date
+      FROM memberships m
+      JOIN weddings w ON w.id = m.wedding_id
+      WHERE m.role = 'owner' AND m.removed_at IS NULL ${only}
+        AND w.status IN ('published', 'post_event', 'grace')
+        AND extract(hour FROM ${now}::timestamptz AT TIME ZONE COALESCE(w.timezone, 'America/Sao_Paulo')) >= 20
+        AND COALESCE((
+          SELECT p.email::text FROM notification_preferences p
+          WHERE p.user_id = m.user_id AND p.wedding_id = m.wedding_id AND p.type = 'rsvp'
+        ), 'daily') = 'daily'
+        AND NOT EXISTS (
+          SELECT 1 FROM unnest(${skipUsers}::uuid[], ${skipWeddings}::uuid[]) AS f(u, w2)
+          WHERE f.u = m.user_id AND f.w2 = m.wedding_id)
+      ON CONFLICT (user_id, wedding_id) DO UPDATE
+        SET last_digest_date = EXCLUDED.last_digest_date, updated_at = now()
+        WHERE notification_email_states.last_digest_date IS DISTINCT FROM EXCLUDED.last_digest_date`;
   }
 }

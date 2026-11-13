@@ -2,7 +2,12 @@ import { Inject, Injectable } from '@nestjs/common';
 import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
 import { GuestFieldsInvalidError, type FieldIssue } from '../domain/guests.errors';
 import type { DeliveryStatus, RsvpStatus } from '../domain/party';
-import { decodePartyCursor, encodePartyCursor } from '../domain/party-cursor';
+import {
+  decodePartyCursor,
+  decodeRespondedCursor,
+  encodePartyCursor,
+  encodeRespondedCursor,
+} from '../domain/party-cursor';
 import { maskPhone } from '../domain/phone';
 import {
   PARTY_READER,
@@ -45,6 +50,7 @@ export class ListParties {
     tagId,
     remind,
     saveTheDate,
+    order = 'name',
     cursor,
     limit = 25,
   }: {
@@ -56,14 +62,20 @@ export class ListParties {
     tagId?: string;
     remind?: boolean;
     saveTheDate?: 'sent' | 'not_sent';
+    /** Alfabética (o padrão) ou por "Respondido em" (Central RN05; decisão 246). */
+    order?: 'name' | 'respondedAt';
     cursor?: string;
     limit?: number;
   }): Promise<PartyList> {
     await this.authorization.require({ userId, weddingId, action: 'view' });
 
     const issues: FieldIssue[] = [];
-    const after = cursor === undefined ? undefined : decodePartyCursor({ cursor });
-    if (after === null) issues.push({ path: 'cursor', code: 'INVALID_CURSOR', params: {} });
+    const byResponse = order === 'respondedAt';
+    const after = cursor === undefined || byResponse ? undefined : decodePartyCursor({ cursor });
+    const afterResponded =
+      cursor === undefined || !byResponse ? undefined : decodeRespondedCursor({ cursor });
+    if (after === null || afterResponded === null)
+      issues.push({ path: 'cursor', code: 'INVALID_CURSOR', params: {} });
     if (tagId !== undefined && !(await this.reader.isActiveTag({ weddingId, tagId })))
       issues.push({ path: 'tag', code: 'TAG_NOT_FOUND', params: {} });
     if (issues.length > 0) throw new GuestFieldsInvalidError({ issues });
@@ -77,7 +89,9 @@ export class ListParties {
         tagId,
         remind,
         saveTheDate,
+        order,
         after: after ?? undefined,
+        afterResponded: afterResponded ?? undefined,
         limit: limit + 1,
       },
     });
@@ -105,7 +119,9 @@ export class ListParties {
       })),
       nextCursor:
         rows.length > limit && last
-          ? encodePartyCursor({ name: last.sortName, id: last.id })
+          ? byResponse
+            ? encodeRespondedCursor({ respondedAt: last.respondedAt, id: last.id })
+            : encodePartyCursor({ name: last.sortName, id: last.id })
           : null,
     };
   }

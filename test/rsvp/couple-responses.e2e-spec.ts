@@ -1,3 +1,4 @@
+import { uuidV7 } from '../../src/shared/ids/uuid-v7';
 import { INestApplication } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
@@ -420,6 +421,53 @@ describe('Prazo de resposta e respostas pelo casal (banco real)', () => {
       { kind: 'sent', at: '2026-09-02T22:10:00.000Z', channel: 'whatsapp' },
     ]);
     expect(JSON.stringify(panel.history)).not.toContain('glúten');
+  });
+
+  it('RN05 - o histórico tem no máximo 50 linhas: as mais recentes da junção dos envios e das respostas', async () => {
+    const { ana, weddingId, createParty } = await scenario();
+    const created = await createParty({
+      name: 'Família Moreira',
+      guests: [{ name: 'Célia Moreira' }],
+    });
+    const base = Date.parse('2026-09-01T12:00:00Z');
+    const minute = 60_000;
+    // 40 envios, um por minuto; 15 respostas entre eles, a cada 3 minutos e meio.
+    const sentAt = Array.from({ length: 40 }, (_, index) => new Date(base + index * minute));
+    const respondedAt = Array.from(
+      { length: 15 },
+      (_, index) => new Date(base + index * 3 * minute + 30_000),
+    );
+    await db.partyDelivery.createMany({
+      data: sentAt.map((createdAt) => ({
+        weddingId,
+        partyId: created.id,
+        kind: 'invite' as const,
+        channel: 'whatsapp' as const,
+        createdAt,
+      })),
+    });
+    await db.rsvpSubmission.createMany({
+      data: respondedAt.map((createdAt) => ({
+        id: uuidV7({ now: createdAt.getTime() }),
+        weddingId,
+        partyId: created.id,
+        actor: 'party' as const,
+        confirmedCount: 1,
+        declinedCount: 0,
+        createdAt,
+      })),
+    });
+
+    const panel = await party(ana.cookie, weddingId, created.id);
+
+    const expected = [
+      ...sentAt.map((at) => ({ kind: 'sent', at: at.toISOString() })),
+      ...respondedAt.map((at) => ({ kind: 'response', at: at.toISOString() })),
+    ]
+      .sort((left, right) => right.at.localeCompare(left.at))
+      .slice(0, 50);
+    expect(panel.history).toHaveLength(50);
+    expect(panel.history.map(({ kind, at }) => ({ kind, at }))).toEqual(expected);
   });
 
   it('RN06 - ao mover o pendente, o grupo fica respondido com o "Respondido em" de quem ficou', async () => {

@@ -30,3 +30,45 @@ export function decodePartyCursor({
     return null;
   }
 }
+
+/**
+ * O cursor da ordem por "Respondido em" (Central RN05; Dashboard RN04;
+ * decisão 246): o instante (nulo: ainda sem resposta) e o id do último grupo
+ * da página, marcado com "r" para não valer na ordem alfabética.
+ */
+export function encodeRespondedCursor({
+  respondedAt,
+  id,
+}: {
+  respondedAt: Date | null;
+  id: string;
+}): string {
+  return Buffer.from(
+    JSON.stringify(['r', respondedAt?.toISOString() ?? null, id]),
+    'utf8',
+  ).toString('base64url');
+}
+
+/** null quando o cursor não é um que a API deu nesta ordem. */
+export function decodeRespondedCursor({
+  cursor,
+}: {
+  cursor: string;
+}): { respondedAt: Date | null; id: string } | null {
+  try {
+    const value: unknown = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
+    if (
+      Array.isArray(value) &&
+      value.length === 3 &&
+      value[0] === 'r' &&
+      (value[1] === null ||
+        (typeof value[1] === 'string' && !Number.isNaN(Date.parse(value[1])))) &&
+      typeof value[2] === 'string' &&
+      UUID.test(value[2])
+    )
+      return { respondedAt: value[1] === null ? null : new Date(value[1] as string), id: value[2] };
+    return null;
+  } catch {
+    return null;
+  }
+}

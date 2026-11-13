@@ -664,4 +664,50 @@ describe('Grupos e convidados (banco real)', () => {
       expect(response.body.summary).toMatchObject({ guests: 5, parties: 2 });
     });
   });
+
+  describe('Ordem por "Respondido em" (Central RN05; Dashboard RN04; decisão 246)', () => {
+    const names = (body: { data: { name: string }[] }) => body.data.map((party) => party.name);
+
+    it('decisão 246 - as mais recentes primeiro, as sem resposta no fim, pelo cursor da ordem', async () => {
+      const { ana, weddingId } = await anaWedding();
+      const ids: Record<string, string> = {};
+      for (const name of ['Família Alves', 'Família Bento', 'Família Costa', 'Família Duarte']) {
+        const created = await create(ana.cookie, weddingId, {
+          name,
+          guests: [guest(`Pessoa ${name}`)],
+        }).expect(201);
+        ids[name] = created.body.id as string;
+      }
+      const respond = (name: string, at: string | null) =>
+        db.party.update({
+          where: { id: ids[name] },
+          data: { respondedAt: at === null ? null : new Date(at) },
+        });
+      await respond('Família Alves', '2026-09-20T12:00:00Z');
+      await respond('Família Bento', '2026-09-26T21:14:00Z');
+      await respond('Família Costa', null);
+      await respond('Família Duarte', '2026-09-24T09:00:00Z');
+
+      const first = await list(ana.cookie, weddingId, { order: 'respondedAt', limit: '2' }).expect(
+        200,
+      );
+      expect(names(first.body)).toEqual(['Família Bento', 'Família Duarte']);
+      const second = await list(ana.cookie, weddingId, {
+        order: 'respondedAt',
+        limit: '2',
+        cursor: first.body.nextCursor as string,
+      }).expect(200);
+      expect(names(second.body)).toEqual(['Família Alves', 'Família Costa']);
+      expect(second.body.nextCursor).toBeNull();
+
+      // O padrão segue alfabético, e o cursor de uma ordem não vale na outra.
+      const byName = await list(ana.cookie, weddingId, { limit: '2' }).expect(200);
+      expect(names(byName.body)).toEqual(['Família Alves', 'Família Bento']);
+      const mixed = await list(ana.cookie, weddingId, {
+        order: 'respondedAt',
+        cursor: byName.body.nextCursor as string,
+      }).expect(400);
+      expect(mixed.body.errors).toEqual([{ path: 'cursor', code: 'INVALID_CURSOR', params: {} }]);
+    });
+  });
 });

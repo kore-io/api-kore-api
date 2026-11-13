@@ -66,8 +66,22 @@ export interface NotificationEmailStore {
     userId: string;
     weddingId: string;
   }): Promise<{ frequency: EmailFrequency; lastImmediateAt: Date | null }>;
-  /** Os pares com notificação atualizada depois do cursor (a rotina de 15 minutos). */
-  candidates(): Promise<EmailCandidate[]>;
+  /**
+   * Os pares com notificação atualizada depois do cursor (a rotina de 15
+   * minutos); `weddingId` recorta a rodada (o teste).
+   */
+  candidates(input?: { weddingId?: string }): Promise<EmailCandidate[]>;
+  /**
+   * RN04 ("Sem novidade, sem resumo"; decisão 246): grava o `lastDigestDate`
+   * de hoje para os donos em Resumo diário dos casamentos que já passaram das
+   * 20h, mesmo sem novidade, para uma resposta das 22h ficar para o resumo do
+   * dia seguinte. `skip`: os pares cujo envio falhou nesta rodada.
+   */
+  closeQuietDigests(input: {
+    now: Date;
+    skip: readonly EmailCandidate[];
+    weddingId?: string;
+  }): Promise<number>;
 }
 
 export const NOTIFICATION_EMAIL_STORE = Symbol('NotificationEmailStore');

@@ -79,8 +79,15 @@ export interface PartyListQuery {
   remind?: boolean;
   /** O filtro do save the date (Envios RN03): enviado ou não. */
   saveTheDate?: 'sent' | 'not_sent';
-  /** Depois deste (nome normalizado, id), na ordem da lista. */
+  /**
+   * A ordem: alfabética sem acento (o padrão, RN13) ou por "Respondido em",
+   * mais recentes primeiro e os sem resposta no fim (Central RN05; decisão 246).
+   */
+  order?: 'name' | 'respondedAt';
+  /** Depois deste (nome normalizado, id), na ordem alfabética. */
   after?: { name: string; id: string };
+  /** Depois deste (respondido em, id), na ordem por "Respondido em". */
+  afterResponded?: { respondedAt: Date | null; id: string };
   limit: number;
 }
 
