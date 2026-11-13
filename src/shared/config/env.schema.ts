@@ -42,6 +42,13 @@ export const envSchema = z
     // (BYPASSRLS); todo acesso é registrado no log da aplicação (ADR de multi-tenant).
     DATABASE_BACKOFFICE_URL: postgresUrl,
     REDIS_URL: z.url({ protocol: /^rediss?$/ }),
+    // Prefixo das filas do BullMQ. Sem a variável, `kore:<APP_ENV>`. Só os e2e
+    // a definem: um prefixo por arquivo, para o worker de um arquivo não pegar
+    // os jobs de outro que roda junto (nem de outra rodada no mesmo Redis).
+    QUEUE_PREFIX: z
+      .string()
+      .regex(/^kore:test:[a-z0-9-]+$/)
+      .optional(),
     // Origens do app que podem chamar a API com o cookie de sessão (CORS e
     // proteção contra CSRF nas escritas).
     ALLOWED_ORIGINS: originList,
@@ -154,6 +161,13 @@ export const envSchema = z
         code: 'custom',
         path: ['ALLOWED_ORIGINS'],
         message: 'não pode ter a origem do SITE_URL (a origem do site vale só nas rotas do site)',
+      });
+    }
+    if (env.QUEUE_PREFIX !== undefined && env.APP_ENV !== 'test') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['QUEUE_PREFIX'],
+        message: 'só é aceito com APP_ENV test (o prefixo por arquivo dos e2e)',
       });
     }
     if (env.PLANNER_SIGNUP_ENABLED && !LOCAL_KEY_ENVS.includes(env.APP_ENV)) {
