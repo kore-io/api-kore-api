@@ -292,3 +292,49 @@ export function plannerDigestEmail({
     html: renderEmailHtml({ preheader: 'Respostas e publicações de hoje.', blocks, footer }),
   };
 }
+
+/**
+ * "Você tem comissão disponível" (Comissões do indicador RN09; decisão 242;
+ * textos da Pena): sem valor, um por rodada (Na hora) ou por dia (Resumo
+ * diário). O rodapé segue o dos outros e-mails de preferência.
+ */
+export function commissionAvailableEmail({
+  to,
+  firstName,
+  mode,
+  commissionsUrl,
+  settingsUrl,
+}: {
+  to: string;
+  firstName: string | null;
+  mode: 'immediate' | 'daily';
+  commissionsUrl: string;
+  settingsUrl: string;
+}): EmailMessage {
+  const blocks: EmailBlock[] = [
+    { kind: 'paragraph', text: firstName ? `Olá, ${firstName}!` : 'Olá!' },
+    {
+      kind: 'paragraph',
+      text: 'Uma comissão ficou disponível. Veja o valor e peça o repasse no Kore.',
+    },
+    { kind: 'button', text: 'Ver comissões', href: commissionsUrl },
+  ];
+  const why =
+    mode === 'immediate'
+      ? 'Você recebe este e-mail porque escolheu receber os avisos de comissão na hora.'
+      : 'Você recebe este e-mail porque escolheu o resumo diário.';
+  const footer = `${why} Para mudar, abra Configurações › Notificações no Kore. ${settingsUrl}`;
+  const preheader = 'Ela já pode entrar no seu próximo repasse.';
+  return {
+    to,
+    subject: 'Você tem comissão disponível',
+    text: [
+      ...blocks.map((block) =>
+        block.kind === 'button' ? `${block.text}: ${block.href ?? ''}` : block.text,
+      ),
+      SUPPORT_LINE,
+      footer,
+    ].join('\n\n'),
+    html: renderEmailHtml({ preheader, blocks, footer }),
+  };
+}

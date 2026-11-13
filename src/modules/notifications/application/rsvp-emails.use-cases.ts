@@ -33,6 +33,9 @@ export const NOTIFICATION_SETTINGS_PATH = '/app/configuracoes/notificacoes';
 /** As Configurações › Notificações da cerimonialista (Cadastro e perfil RN07). */
 export const PLANNER_NOTIFICATION_SETTINGS_PATH = '/cerimonialista/configuracoes/notificacoes';
 
+/** A tela Comissões do app da cerimonialista (Comissões do indicador RN07). */
+export const PLANNER_COMMISSIONS_PATH = '/cerimonialista/comissoes';
+
 /**
  * Como o e-mail sai: `immediate` é o job do "Na hora"; `catch_up` é a rede de
  * segurança da rotina de 15 minutos para o "Na hora" que se perdeu; `digest`

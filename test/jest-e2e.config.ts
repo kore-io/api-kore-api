@@ -15,6 +15,7 @@ const config: Config = {
   // Banco real em container (docker compose): prepara o kore_test antes da suíte.
   globalSetup: '<rootDir>/setup/global-setup.ts',
   setupFiles: ['<rootDir>/setup/load-test-env.ts'],
+  setupFilesAfterEnv: ['<rootDir>/setup/queue-cleanup.ts'],
   // Um arquivo por vez (o banco é um só), num worker que é trocado quando passa
   // de 1 GB: no --runInBand, cada arquivo recarrega a API inteira (e o SDK do
   // S3) no mesmo processo, e a memória acumulada estourava o heap de 2 GB.

@@ -302,7 +302,7 @@ describe('Notificações da cerimonialista (banco real; decisões 223 e 224)', (
     await central(ana.cookie, { weddingId, type: 'wedding_published' }).expect(400);
   });
 
-  it('RN06 - a preferência geral: os 3 tipos com o padrão, gravada sem casamento; a do casal não muda', async () => {
+  it('RN06 - a preferência geral: os 4 tipos (com a Comissão da F3) com o padrão, gravada sem casamento; a do casal não muda', async () => {
     const { ana, juliana, julianaCookie, weddingId } = await scenario();
 
     const before = await http()
@@ -313,6 +313,8 @@ describe('Notificações da cerimonialista (banco real; decisões 223 e 224)', (
       { type: 'rsvp', inApp: true, email: 'daily', push: false, emailEditable: true },
       { type: 'wedding_published', inApp: true, email: 'daily', push: false, emailEditable: true },
       { type: 'membership_removed', inApp: true, email: 'daily', push: false, emailEditable: true },
+      // Comissões do indicador RN09 (decisão 242): a linha Comissão, com o mesmo padrão.
+      { type: 'commission', inApp: true, email: 'daily', push: false, emailEditable: true },
     ]);
 
     const saved = await http()

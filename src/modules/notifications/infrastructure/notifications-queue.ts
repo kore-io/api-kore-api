@@ -19,7 +19,15 @@ export interface EmailJob {
   weddingId: string;
 }
 
-/** O push de uma pessoa: o da resposta (padrão) ou o da cobrança (Publicar e pagar RN13). */
+/**
+ * O push de uma pessoa: o da resposta (padrão), o da cobrança (Publicar e
+ * pagar RN13) ou o da comissão disponível (Comissões do indicador RN09).
+ */
 export interface PushJob extends EmailJob {
-  type?: 'rsvp' | 'billing';
+  type?: 'rsvp' | 'billing' | 'commission';
+}
+
+/** O e-mail "Na hora" da comissão de uma pessoa, depois da rodada da liberação (decisão 242). */
+export interface CommissionEmailJob {
+  userId: string;
 }

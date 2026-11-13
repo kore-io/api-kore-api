@@ -84,6 +84,20 @@ describe('validateEnv', () => {
     );
   });
 
+  it('dado QUEUE_PREFIX, quando valida, então só aceita em test e no formato kore:test:<id>', () => {
+    const local = { ...validConfig, APP_ENV: 'local', QUEUE_PREFIX: 'kore:test:abc123' };
+    expect(() => validateEnv({ config: local })).toThrow(
+      /QUEUE_PREFIX: só é aceito com APP_ENV test/,
+    );
+    expect(() =>
+      validateEnv({ config: { ...validConfig, APP_ENV: 'test', QUEUE_PREFIX: 'kore:local' } }),
+    ).toThrow(/QUEUE_PREFIX/);
+    expect(
+      validateEnv({ config: { ...validConfig, APP_ENV: 'test', QUEUE_PREFIX: 'kore:test:abc123' } })
+        .QUEUE_PREFIX,
+    ).toBe('kore:test:abc123');
+  });
+
   it('dada a chave KMS local com tamanho errado, quando valida, então recusa', () => {
     expect(() => validateEnv({ config: { ...validConfig, KMS_LOCAL_MASTER_KEY: 'YWJj' } })).toThrow(
       /KMS_LOCAL_MASTER_KEY/,
