@@ -13,6 +13,7 @@ import { createTestApp } from '../support/create-test-app';
 import { createTestWorker } from '../support/create-test-worker';
 import { expectStatus, payForExtension, publishByPayment } from '../support/payments';
 import { signedInUser } from '../support/sessions';
+import { seedInvitation } from '../support/invitations';
 import { seedWedding } from '../support/weddings';
 
 const ORIGIN = process.env.ALLOWED_ORIGINS?.split(',')[0] ?? 'http://localhost:5173';
@@ -240,5 +241,26 @@ describe('Casamento bloqueado (Casamento bloqueado RN01 a RN08; banco real)', ()
     expect(
       await db.applicationLog.count({ where: { weddingId, action: 'wedding.unblocked' } }),
     ).toBe(1);
+  });
+
+  it('RN02 (dúvida do Crivo no PR 7) - aceitar o convite de acesso de um casamento bloqueado: 403, sem vínculo', async () => {
+    const { ana, weddingId } = await blocked();
+    const marcos = await signedInUser({ app, name: 'Marcos' });
+    const email = (await db.user.findUniqueOrThrow({ where: { id: marcos.userId } })).email;
+    const { token } = await seedInvitation({
+      db,
+      weddingId,
+      kind: 'partner',
+      email,
+      invitedByUserId: ana.userId,
+    });
+    const refused = await http()
+      .post(`/v1/access-invitations/${token}/accept`)
+      .set('Cookie', marcos.cookie)
+      .set('Origin', ORIGIN)
+      .send({ myTitle: 'groom' })
+      .expect(403);
+    expect(refused.body.error).toBe('WEDDING_BLOCKED');
+    expect(await db.membership.count({ where: { weddingId, userId: marcos.userId } })).toBe(0);
   });
 });

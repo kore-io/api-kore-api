@@ -48,7 +48,7 @@ function setup({ members, role }: { members: WeddingMember[]; role: 'owner' | 'c
     log,
     mailer,
     { schedule: (work) => void scheduled.push(work) },
-    { blockOf: jest.fn().mockResolvedValue(null) },
+    { blockOf: jest.fn().mockResolvedValue(null), blockOfInvitedWedding: jest.fn() },
   );
   return { useCase, store, log, mailer, scheduled };
 }

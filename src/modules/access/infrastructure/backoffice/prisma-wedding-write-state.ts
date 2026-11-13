@@ -25,4 +25,13 @@ export class PrismaWeddingWriteState implements WeddingWriteState {
     if (row.blocked) return 'blocked' as const;
     return row.deletion ? ('deletion_scheduled' as const) : null;
   }
+
+  async blockOfInvitedWedding({ weddingId }: { weddingId: string }) {
+    const wedding = await this.prisma.wedding.findUnique({
+      where: { id: weddingId },
+      select: { blockedAt: true, deletionScheduledFor: true },
+    });
+    if (wedding?.blockedAt) return 'blocked' as const;
+    return wedding?.deletionScheduledFor ? ('deletion_scheduled' as const) : null;
+  }
 }

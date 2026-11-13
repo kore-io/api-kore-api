@@ -8,6 +8,16 @@ export interface WeddingWriteState {
     userId: string;
     weddingId: string;
   }): Promise<'blocked' | 'deletion_scheduled' | null>;
+  /**
+   * O mesmo, pelo casamento do convite (Casamento bloqueado RN02: os convites
+   * de acesso): quem aceita ainda não tem vínculo, e o token válido já mostra
+   * que o casamento existe.
+   */
+  blockOfInvitedWedding({
+    weddingId,
+  }: {
+    weddingId: string;
+  }): Promise<'blocked' | 'deletion_scheduled' | null>;
 }
 
 export const WEDDING_WRITE_STATE = Symbol('WeddingWriteState');
