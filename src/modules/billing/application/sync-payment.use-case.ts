@@ -77,7 +77,8 @@ export type CancelReason =
  * até a data paga (paidThrough = endDate, origem payment); os logs; a
  * notificação `billing` às pessoas donas e, na primeira publicação, o
  * `wedding_published` ao indicador; depois do commit, o push e o e-mail (que
- * sempre sai, decisão 236) e o evento de produto `publicado`. A comissão nasce aqui, no PR das comissões.
+ * sempre sai, decisão 236) e o evento de produto `publicado`. A comissão nasce
+ * aqui, na mesma transação (Comissões do indicador RN01).
  */
 @Injectable()
 export class SyncPaymentWithGateway {
@@ -309,12 +310,13 @@ export class SyncPaymentWithGateway {
         data: { amountCents: payment.amountCents, disputeDeadline: charge.disputeDeadline },
       },
     });
-    // A comissão do pagamento fica retida no PR das comissões.
+    // Comissões RN06: a comissão pending ou available fica retida.
+    await this.ledger.holdCommission({ paymentId: payment.id, now });
     await this.ledger.openAlert(alert);
     return 'disputed';
   }
 
-  /** Contestação ganha (RN06): volta a `paid`; a comissão volta a seguir o prazo (PR 8). */
+  /** Contestação ganha (RN06): volta a `paid`; a comissão volta a seguir o prazo. */
   private async disputeWon({
     wedding,
     payment,
@@ -325,6 +327,8 @@ export class SyncPaymentWithGateway {
     now: Date;
   }): Promise<SyncResult> {
     await this.ledger.markDisputeWon({ paymentId: payment.id, now });
+    // Comissões RN06: volta a seguir o prazo.
+    await this.ledger.releaseCommission({ paymentId: payment.id, now });
     await this.ledger.log({
       entry: {
         action: 'payment.dispute_won',
@@ -354,6 +358,8 @@ export class SyncPaymentWithGateway {
     // Também do `paid`: a abertura pode não ter chegado (a consulta é a fonte).
     if (!['disputed', 'refund_requested', 'paid'].includes(payment.status)) return 'unchanged';
     await this.ledger.markDisputeLost({ paymentId: payment.id, now });
+    // Comissões RN05 e RN06: só a do pagamento contestado.
+    await this.ledger.reverseCommission({ paymentId: payment.id, now });
     await this.ledger.log({
       entry: {
         action: 'payment.dispute_lost',
@@ -393,7 +399,8 @@ export class SyncPaymentWithGateway {
         data: { refundOrigin: payment.refundOrigin, amountCents: payment.amountCents },
       },
     });
-    // A comissão do pagamento vira reversed (ou ajuste negativo) no PR das comissões.
+    // Comissões RN05: a comissão vira reversed (dentro de um repasse: o PR do repasse).
+    await this.ledger.reverseCommission({ paymentId: payment.id, now });
     const recipients = await this.ledger.billingRecipients({ weddingId: wedding.id });
     await this.ledger.notifyBilling({
       weddingId: wedding.id,
@@ -552,6 +559,8 @@ export class SyncPaymentWithGateway {
   }): Promise<void> {
     const firstPublication = payment.kind === 'publication' && wedding.publishedAt === null;
     await this.ledger.markApplied({ paymentId: payment.id, now });
+    // Comissões RN01: na mesma transação que aplica o pagamento.
+    await this.ledger.createCommission({ weddingId: wedding.id, paymentId: payment.id, now });
     if (payment.kind === 'extension') {
       // Data de saída do ar RN04: a nova data; a carência e o expirado voltam.
       await this.ledger.extend({

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { AlertType, Prisma } from '../../../../generated/prisma/client';
 import { BackofficeTransaction } from '../../../../shared/database/backoffice-transaction';
 import { uuidV7 } from '../../../../shared/ids/uuid-v7';
+import { newCommission } from '../../domain/commission';
 import type {
   BillingRecipient,
   LedgerLogEntry,
@@ -443,6 +444,107 @@ export class PrismaPaymentLedger implements PaymentLedger {
       ON CONFLICT (wedding_id, notice, end_date) DO NOTHING
       RETURNING id::text AS id`;
     return rows.length > 0;
+  }
+
+  async createCommission({
+    weddingId,
+    paymentId,
+    now,
+  }: {
+    weddingId: string;
+    paymentId: string;
+    now: Date;
+  }): Promise<void> {
+    // A ordem única (RN18): o Wedding e o Payment já estão travados; agora o Referrer.
+    const [row] = await this.db().$queryRaw<
+      {
+        referrerId: string;
+        referrerStatus: 'active' | 'blocked' | 'inactive';
+        ratePercent: number;
+        referrerTaxIdHash: string | null;
+      }[]
+    >`
+      SELECT r.id::text AS "referrerId", r.status::text AS "referrerStatus",
+             r.rate_percent AS "ratePercent", r.tax_id_hash AS "referrerTaxIdHash"
+      FROM weddings w JOIN referrers r ON r.id = w.referrer_id
+      WHERE w.id = ${weddingId}::uuid
+      FOR UPDATE OF r`;
+    if (!row) return;
+    const payment = await this.db().payment.findUniqueOrThrow({
+      where: { id: paymentId },
+      select: {
+        amountCents: true,
+        installmentInterestCents: true,
+        payerTaxIdHash: true,
+        paidAt: true,
+      },
+    });
+    const commission = newCommission({
+      amountCents: payment.amountCents,
+      installmentInterestCents: payment.installmentInterestCents,
+      ratePercent: row.ratePercent,
+      referrerStatus: row.referrerStatus,
+      referrerTaxIdHash: row.referrerTaxIdHash,
+      payerTaxIdHash: payment.payerTaxIdHash,
+    });
+    if (commission.kind === 'none') return;
+    const settings = await this.db().referralSettings.findFirst({
+      orderBy: { createdAt: 'desc' },
+      select: { commissionHoldDays: true },
+    });
+    const paidAt = payment.paidAt ?? now;
+    const availableAt = new Date(
+      paidAt.getTime() + (settings?.commissionHoldDays ?? 30) * 24 * 60 * 60_000,
+    );
+    await this.db().commission.createMany({
+      data: [
+        {
+          id: uuidV7({ now: now.getTime() }),
+          referrerId: row.referrerId,
+          weddingId,
+          paymentId,
+          baseAmountCents: commission.baseAmountCents,
+          ratePercent: row.ratePercent,
+          amountCents: commission.amountCents,
+          status: commission.status,
+          blockReason: commission.blockReason,
+          availableAt,
+        },
+      ],
+      skipDuplicates: true,
+    });
+  }
+
+  async holdCommission({ paymentId }: { paymentId: string; now: Date }): Promise<void> {
+    await this.db().commission.updateMany({
+      where: { paymentId, status: { in: ['pending', 'available'] } },
+      data: { status: 'held' },
+    });
+  }
+
+  async releaseCommission({ paymentId, now }: { paymentId: string; now: Date }): Promise<void> {
+    // Volta pelo availableAt (RN06): a data no fuso de São Paulo, como a liberação.
+    await this.db().$executeRaw`
+      UPDATE commissions
+      SET status = CASE
+            WHEN (available_at AT TIME ZONE 'America/Sao_Paulo')::date
+                 <= (${now}::timestamptz AT TIME ZONE 'America/Sao_Paulo')::date
+              THEN 'available'::commission_status
+            ELSE 'pending'::commission_status END,
+          updated_at = ${now}
+      WHERE payment_id = ${paymentId}::uuid AND status = 'held'`;
+  }
+
+  async reverseCommission({ paymentId, now }: { paymentId: string; now: Date }): Promise<void> {
+    // Fora de repasse (RN05). Dentro de um repasse pedido ou pago: o PR do repasse.
+    await this.db().commission.updateMany({
+      where: {
+        paymentId,
+        payoutId: null,
+        status: { in: ['pending', 'available', 'blocked', 'held'] },
+      },
+      data: { status: 'reversed', reversedAt: now },
+    });
   }
 
   async openAlert({

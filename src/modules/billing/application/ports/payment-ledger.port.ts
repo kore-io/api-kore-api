@@ -169,6 +169,18 @@ export interface PaymentLedger {
     endDate: string;
     now: Date;
   }): Promise<boolean>;
+  /**
+   * A comissão do pagamento aplicado (Comissões RN01, RN03 e RN04), na mesma
+   * transação, com o indicador travado depois do Payment (RN18). Sem
+   * indicador, ou com o resultado zero, não nasce; a repetida não nasce de novo.
+   */
+  createCommission(input: { weddingId: string; paymentId: string; now: Date }): Promise<void>;
+  /** No pedido do reembolso e na contestação (RN05 e RN06): pending · available → held. */
+  holdCommission(input: { paymentId: string; now: Date }): Promise<void>;
+  /** Contestação ganha (RN06): held → available ou pending, pelo availableAt. */
+  releaseCommission(input: { paymentId: string; now: Date }): Promise<void>;
+  /** Reembolso confirmado ou contestação perdida (RN05): fora de repasse → reversed. */
+  reverseCommission(input: { paymentId: string; now: Date }): Promise<void>;
   /** Um alerta aberto por tipo e entidade (B9-7): o repetido não abre outro. */
   openAlert(input: {
     type: AlertType;

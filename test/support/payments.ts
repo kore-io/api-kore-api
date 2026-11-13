@@ -17,6 +17,8 @@ export interface PayArgs {
   key?: string;
   cardToken?: string;
   replacesPaymentId?: string;
+  /** O CPF de quem paga (padrão: PAYER_CPF). */
+  payerTaxId?: string;
   overrides?: Record<string, unknown>;
 }
 
@@ -35,6 +37,7 @@ export async function payForPublication({
   key = randomUUID(),
   cardToken = 'tok_local_4242',
   replacesPaymentId,
+  payerTaxId = PAYER_CPF,
   overrides = {},
 }: PayArgs): Promise<request.Response> {
   const quote = await request(app.getHttpServer())
@@ -53,7 +56,7 @@ export async function payForPublication({
       endDate,
       method,
       installments,
-      payer: { name: 'Ana Beatriz Moreira', taxId: PAYER_CPF },
+      payer: { name: 'Ana Beatriz Moreira', taxId: payerTaxId },
       ...(method === 'card' ? { cardToken } : {}),
       ...(replacesPaymentId ? { replacesPaymentId } : {}),
       priceVersion,
@@ -96,13 +99,18 @@ export async function publishByPayment({
   cookie,
   weddingId,
   endDate,
+  payerTaxId,
 }: {
   app: INestApplication;
   cookie: string;
   weddingId: string;
   endDate: string;
+  payerTaxId?: string;
 }): Promise<{ paymentId: string }> {
-  const created = expectStatus(await payForPublication({ app, cookie, weddingId, endDate }), 201);
+  const created = expectStatus(
+    await payForPublication({ app, cookie, weddingId, endDate, payerTaxId }),
+    201,
+  );
   const paymentId = created.body.paymentId as string;
   expectStatus(await devPaymentEvent({ app, paymentId, event: 'confirm' }), 200);
   return { paymentId };
@@ -222,4 +230,21 @@ export async function payForExtension({
       priceVersion,
       expectedTotalCents: totalCents,
     });
+}
+
+/**
+ * Um CPF válido e novo a cada chamada: o hash do CPF do indicador é único, e o
+ * kore_test compartilhado guarda os das rodadas anteriores.
+ */
+export function randomCpf(): string {
+  const digits = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10));
+  if (digits.every((digit) => digit === digits[0])) digits[0] = (digits[0] + 1) % 10;
+  for (const length of [9, 10]) {
+    const sum = digits
+      .slice(0, length)
+      .reduce((total, digit, index) => total + digit * (length + 1 - index), 0);
+    const rest = (sum * 10) % 11;
+    digits.push(rest === 10 ? 0 : rest);
+  }
+  return digits.join('');
 }

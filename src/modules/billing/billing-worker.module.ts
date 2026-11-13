@@ -12,6 +12,9 @@ import { PAYMENT_RECONCILIATION_READER } from './application/ports/payment-recon
 import { ReconcilePayments } from './application/reconcile-payments.use-case';
 import { ProcessRefund } from './application/process-refund.use-case';
 import { AdvanceWeddingLifecycle } from './application/advance-wedding-lifecycle.use-case';
+import { COMMISSION_RELEASE } from './application/ports/commission-release.port';
+import { ReleaseCommissions } from './application/release-commissions.use-case';
+import { PrismaCommissionRelease } from './infrastructure/backoffice/prisma-commission-release';
 import { WEDDING_LIFECYCLE_STORE } from './application/ports/wedding-lifecycle.port';
 import { PrismaWeddingLifecycleStore } from './infrastructure/backoffice/prisma-wedding-lifecycle.store';
 import {
@@ -92,6 +95,8 @@ import { WeddingPseudonymizer } from '../product-events/infrastructure/wedding-p
     BlockWedding,
     { provide: WEDDING_LIFECYCLE_STORE, useClass: PrismaWeddingLifecycleStore },
     AdvanceWeddingLifecycle,
+    { provide: COMMISSION_RELEASE, useClass: PrismaCommissionRelease },
+    ReleaseCommissions,
     WeddingLifecycleProcessor,
     WeddingLifecycleScheduler,
   ],

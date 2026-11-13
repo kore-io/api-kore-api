@@ -3,6 +3,7 @@ import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import type { Queue } from 'bullmq';
 import { upsertDailyScheduler } from '../../../shared/jobs/daily-scheduler';
 import { AdvanceWeddingLifecycle } from '../application/advance-wedding-lifecycle.use-case';
+import { ReleaseCommissions } from '../application/release-commissions.use-case';
 
 export const WEDDING_LIFECYCLE_QUEUE = 'wedding-lifecycle';
 export const WEDDING_LIFECYCLE_SCHEDULER_ID = 'advance-wedding-lifecycle';
@@ -12,15 +13,25 @@ const DAILY_AT_3_30AM = '30 3 * * *';
 
 const logger = new Logger('WeddingLifecycle');
 
-/** A carência, o expirado e os avisos de saída do ar (Data de saída do ar RN02 e RN03). */
+/**
+ * A carência, o expirado e os avisos de saída do ar (Data de saída do ar RN02
+ * e RN03) e a liberação das comissões (Comissões do indicador RN02).
+ */
 @Processor(WEDDING_LIFECYCLE_QUEUE)
 export class WeddingLifecycleProcessor extends WorkerHost {
-  constructor(private readonly advance: AdvanceWeddingLifecycle) {
+  constructor(
+    private readonly advance: AdvanceWeddingLifecycle,
+    private readonly commissions: ReleaseCommissions,
+  ) {
     super();
   }
 
   async process(): Promise<unknown> {
-    const tally = await this.advance.execute({ now: new Date() });
+    const now = new Date();
+    const tally = await this.advance.execute({ now });
+    // A liberação das comissões na mesma rodada diária (Comissões RN02).
+    const { released } = await this.commissions.execute({ now });
+    if (released > 0) logger.log(`Comissões liberadas: ${released}.`);
     logger.log(
       `Ciclo de vida: ${tally.grace} em carência, ${tally.expired} expirados, ` +
         `${tally.notices} avisos, ${tally.errors} falhas.`,
