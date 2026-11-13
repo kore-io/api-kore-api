@@ -451,7 +451,7 @@ describe('Publicar e pagar (Publicar e pagar RN01 a RN12; banco real)', () => {
     },
   );
 
-  it('RN08 e RN10 (B2-2) - Pix antigo pago depois do cartão: pago sem ser aplicado, alerta, e o cartão continua valendo', async () => {
+  it('RN08 e RN10 (B2-2) - Pix antigo pago depois do cartão: pago sem ser aplicado, estorno automático, alerta, e o cartão continua valendo', async () => {
     const { ana, weddingId } = await scenario();
     const pix = await pay({ cookie: ana.cookie, weddingId, method: 'pix', installments: 1 }).expect(
       201,
@@ -467,7 +467,9 @@ describe('Publicar e pagar (Publicar e pagar RN01 a RN12; banco real)', () => {
 
     await dev(pixId, 'confirm').expect(200);
     const orphan = await db.payment.findUniqueOrThrow({ where: { id: pixId } });
-    expect(orphan.status).toBe('paid');
+    // Pago e sem destino: vira estorno automático (Pagamentos e arrependimento).
+    expect(orphan).toMatchObject({ status: 'refund_requested', refundOrigin: 'automatic' });
+    expect(orphan.paidAt).not.toBeNull();
     expect(orphan.appliedAt).toBeNull();
     expect(
       await db.alert.count({ where: { type: 'orphan_payment', entityId: pixId, status: 'open' } }),

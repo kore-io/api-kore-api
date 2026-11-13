@@ -7,11 +7,19 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Post,
   Req,
 } from '@nestjs/common';
-import { ApiCreatedResponse, ApiHeader, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiAcceptedResponse,
+  ApiCreatedResponse,
+  ApiHeader,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { Request } from 'express';
+import { validationError } from '../../../shared/http/validation-errors';
 import {
   ApiErrorResponses,
   commonErrors,
@@ -31,18 +39,32 @@ import {
 } from '../../site/presentation/site-error.dto';
 import { CreatePayment } from '../application/create-payment.use-case';
 import { GetBilling } from '../application/get-billing.use-case';
+import { RequestRefund } from '../application/request-refund.use-case';
 import {
   GatewayUnavailableErrorBody,
   IdempotencyKeyRequiredErrorBody,
   IdempotencyKeyReusedErrorBody,
   InstallmentsOutOfRangeErrorBody,
   PaymentAlreadyPaidErrorBody,
+  PaymentDisputedErrorBody,
+  PaymentNotFoundErrorBody,
+  PaymentNotPaidErrorBody,
   PaymentPendingErrorBody,
   PriceChangedErrorBody,
+  RefundAlreadyRequestedErrorBody,
   RefundInProgressErrorBody,
+  RefundNotLastExtensionErrorBody,
+  RefundWindowClosedErrorBody,
+  WeddingBlockedErrorBody,
 } from './billing-error.dto';
 import { toHttpError } from './billing-http-errors';
-import { BillingResponse, CreatePaymentBody, PaymentCreatedResponse } from './payments.dto';
+import {
+  BillingResponse,
+  CreatePaymentBody,
+  PaymentCreatedResponse,
+  RefundRequestBody,
+  RefundRequestedResponse,
+} from './payments.dto';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -53,7 +75,56 @@ export class PaymentsController {
   constructor(
     private readonly createPayment: CreatePayment,
     private readonly getBilling: GetBilling,
+    private readonly requestRefund: RequestRefund,
   ) {}
+
+  /**
+   * Desistir e pedir reembolso (Pagamentos e arrependimento RN02 a RN04): o
+   * site muda no pedido; o estorno pela porta vem depois, por job.
+   */
+  @Post('payments/:paymentId/refund-request')
+  @OwnTransactions()
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiAcceptedResponse({ type: RefundRequestedResponse })
+  @ApiErrorResponses(
+    ...commonErrors({ validated: true, session: true, write: true }),
+    ActionNotAllowedErrorBody,
+    WeddingBlockedErrorBody,
+    WeddingNotFoundErrorBody,
+    PaymentNotFoundErrorBody,
+    RefundWindowClosedErrorBody,
+    RefundAlreadyRequestedErrorBody,
+    RefundNotLastExtensionErrorBody,
+    PaymentDisputedErrorBody,
+    PaymentNotPaidErrorBody,
+  )
+  async refund(
+    @CurrentSession() session: AuthenticatedSession,
+    @Param('weddingId') weddingId: string,
+    @Param(
+      'paymentId',
+      new ParseUUIDPipe({
+        exceptionFactory: () =>
+          validationError({ errors: [{ path: 'paymentId', code: 'IS_UUID', params: {} }] }),
+      }),
+    )
+    paymentId: string,
+    @Body() body: RefundRequestBody,
+    @Req() request: Request,
+  ): Promise<RefundRequestedResponse> {
+    try {
+      return await this.requestRefund.execute({
+        userId: session.userId,
+        weddingId,
+        paymentId,
+        reason: body.reason ?? null,
+        ip: request.ip ?? null,
+        now: new Date(),
+      });
+    } catch (error) {
+      throw toHttpError(error);
+    }
+  }
 
   /**
    * Pagar (Publicar e pagar RN03): grava o pendente, cobra fora de transação
@@ -128,7 +199,11 @@ export class PaymentsController {
   ): Promise<BillingResponse> {
     try {
       return BillingResponse.from({
-        view: await this.getBilling.execute({ userId: session.userId, weddingId }),
+        view: await this.getBilling.execute({
+          userId: session.userId,
+          weddingId,
+          now: new Date(),
+        }),
       });
     } catch (error) {
       throw toHttpError(error);

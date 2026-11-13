@@ -69,10 +69,12 @@ class NotificationEntryResponse {
 
 /** O item da cobrança (Publicar e pagar RN13): o app monta o título e o detalhe. */
 export class BillingEntryResponse {
-  @ApiProperty({ enum: ['payment_confirmed'] }) kind: 'payment_confirmed';
+  /** O pagamento confirmado (Publicar e pagar RN13) ou o reembolso concluído (Pagamentos e arrependimento RN07). */
+  @ApiProperty({ enum: ['payment_confirmed', 'refund_completed'] })
+  kind: 'payment_confirmed' | 'refund_completed';
   @ApiProperty({ format: 'uuid' }) paymentId: string;
-  /** A data de saída do ar paga, AAAA-MM-DD. */
-  endDate: string;
+  /** A data de saída do ar paga, AAAA-MM-DD (só no payment_confirmed). */
+  @ApiProperty({ required: false }) endDate?: string;
   @ApiProperty({ example: 33710 }) amountCents: number;
   @ApiProperty({ enum: ['pix', 'card'] }) method: 'pix' | 'card';
   installments: number;

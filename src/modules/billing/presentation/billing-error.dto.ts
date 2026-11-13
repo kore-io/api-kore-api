@@ -69,3 +69,61 @@ export class GatewayUnavailableErrorBody {
   @ApiProperty() message: string;
   @ApiProperty({ format: 'uuid' }) paymentId: string;
 }
+
+/** O pagamento não é deste casamento (Pagamentos e arrependimento). */
+export class PaymentNotFoundErrorBody {
+  static readonly status = 404;
+  @ApiProperty({ enum: [404] }) statusCode: 404;
+  @ApiProperty({ enum: ['PAYMENT_NOT_FOUND'] }) error: 'PAYMENT_NOT_FOUND';
+  @ApiProperty() message: string;
+}
+
+/** Casamento bloqueado: o app não desiste (RN02; decisão 83). */
+export class WeddingBlockedErrorBody {
+  static readonly status = 403;
+  @ApiProperty({ enum: [403] }) statusCode: 403;
+  @ApiProperty({ enum: ['WEDDING_BLOCKED'] }) error: 'WEDDING_BLOCKED';
+  @ApiProperty() message: string;
+}
+
+/** Só o pagamento pago e aplicado tem Desistir. */
+export class PaymentNotPaidErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['PAYMENT_NOT_PAID'] }) error: 'PAYMENT_NOT_PAID';
+  @ApiProperty() message: string;
+}
+
+/** Em contestação, sem Desistir (RN02). */
+export class PaymentDisputedErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['PAYMENT_DISPUTED'] }) error: 'PAYMENT_DISPUTED';
+  @ApiProperty() message: string;
+}
+
+/** O reembolso deste pagamento já foi pedido (RN04). */
+export class RefundAlreadyRequestedErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['REFUND_ALREADY_REQUESTED'] }) error: 'REFUND_ALREADY_REQUESTED';
+  @ApiProperty() message: string;
+}
+
+/** Há uma extensão (ou cortesia) mais recente (RN03). */
+export class RefundNotLastExtensionErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['REFUND_NOT_LAST_EXTENSION'] }) error: 'REFUND_NOT_LAST_EXTENSION';
+  @ApiProperty() message: string;
+}
+
+/** O prazo de 7 dias terminou (RN02), com o último instante dele. */
+export class RefundWindowClosedErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['REFUND_WINDOW_CLOSED'] }) error: 'REFUND_WINDOW_CLOSED';
+  @ApiProperty() message: string;
+  @ApiProperty({ type: String, format: 'date-time', nullable: true }) refundableUntil:
+    string | null;
+}

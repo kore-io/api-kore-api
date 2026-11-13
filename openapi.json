@@ -8392,6 +8392,148 @@
         ]
       }
     },
+    "/v1/weddings/{weddingId}/payments/{paymentId}/refund-request": {
+      "post": {
+        "operationId": "PaymentsController_refund_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paymentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefundRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundRequestedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PaymentNotFoundErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RefundWindowClosedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RefundAlreadyRequestedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RefundNotLastExtensionErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PaymentDisputedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PaymentNotPaidErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Desistir e pedir reembolso (Pagamentos e arrependimento RN02 a RN04): o\nsite muda no pedido; o estorno pela porta vem depois, por job.",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
     "/v1/weddings/{weddingId}/payments": {
       "post": {
         "operationId": "PaymentsController_pay_v1",
@@ -16072,14 +16214,20 @@
         "type": "object",
         "properties": {
           "kind": {
-            "type": "string",
+            "description": "O pagamento confirmado (Publicar e pagar RN13) ou o reembolso concluído (Pagamentos e arrependimento RN07).",
             "enum": [
-              "payment_confirmed"
-            ]
+              "payment_confirmed",
+              "refund_completed"
+            ],
+            "type": "string"
           },
           "paymentId": {
             "type": "string",
             "format": "uuid"
+          },
+          "endDate": {
+            "type": "string",
+            "description": "A data de saída do ar paga, AAAA-MM-DD (só no payment_confirmed)."
           },
           "amountCents": {
             "type": "number",
@@ -16101,10 +16249,6 @@
             "type": "string",
             "format": "date-time"
           },
-          "endDate": {
-            "type": "string",
-            "description": "A data de saída do ar paga, AAAA-MM-DD."
-          },
           "installments": {
             "type": "number"
           }
@@ -16116,7 +16260,6 @@
           "method",
           "cardLast4",
           "at",
-          "endDate",
           "installments"
         ]
       },
@@ -17389,6 +17532,220 @@
           "cannotExtendReason"
         ]
       },
+      "WeddingBlockedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              403
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "WEDDING_BLOCKED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PaymentNotFoundErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PAYMENT_NOT_FOUND"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "RefundWindowClosedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "REFUND_WINDOW_CLOSED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "refundableUntil": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "refundableUntil"
+        ]
+      },
+      "RefundAlreadyRequestedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "REFUND_ALREADY_REQUESTED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "RefundNotLastExtensionErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "REFUND_NOT_LAST_EXTENSION"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PaymentDisputedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PAYMENT_DISPUTED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PaymentNotPaidErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PAYMENT_NOT_PAID"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "RefundRequestBody": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "description": "O motivo, opcional (ex.: \"Decidimos adiar o casamento.\").",
+            "maxLength": 500
+          }
+        }
+      },
+      "RefundRequestedResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "refund_requested"
+            ]
+          },
+          "refundsPaymentIds": {
+            "description": "O pagamento pedido e, na publicação, as extensões pagas que vão junto (RN03).",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "status",
+          "refundsPaymentIds"
+        ]
+      },
       "IdempotencyKeyRequiredErrorBody": {
         "type": "object",
         "properties": {
@@ -17834,6 +18191,12 @@
             "type": "string",
             "nullable": true,
             "format": "date-time"
+          },
+          "refundableUntil": {
+            "type": "string",
+            "nullable": true,
+            "description": "O último instante para desistir, no fuso do casamento (Pagamentos e\narrependimento RN02); nulo fora do prazo ou fora de `paid`. O app mostra\no dia: \"Vocês podem desistir até 17 de ago.\".",
+            "format": "date-time"
           }
         },
         "required": [
@@ -17846,7 +18209,8 @@
           "method",
           "installments",
           "status",
-          "paidAt"
+          "paidAt",
+          "refundableUntil"
         ]
       },
       "PayerDto": {

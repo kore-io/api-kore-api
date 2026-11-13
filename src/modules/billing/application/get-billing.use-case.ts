@@ -26,14 +26,16 @@ export class GetBilling {
   async execute({
     userId,
     weddingId,
+    now,
   }: {
     userId: string;
     weddingId: string;
+    now: Date;
   }): Promise<BillingView> {
     await this.authorization.require({ userId, weddingId, action: 'view' });
     const lifecycle = await this.reader.lifecycle({ weddingId });
     if (!lifecycle) throw new WeddingNotFoundError();
     const owner = await this.authorization.can({ userId, weddingId, action: 'manage_billing' });
-    return { ...lifecycle, money: owner ? await this.reader.money({ weddingId }) : null };
+    return { ...lifecycle, money: owner ? await this.reader.money({ weddingId, now }) : null };
   }
 }

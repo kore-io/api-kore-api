@@ -65,6 +65,29 @@ export class PrismaPaymentReconciliationReader implements PaymentReconciliationR
     });
   }
 
+  refundsNeverAttempted({
+    requestedBefore,
+    weddingId,
+    limit,
+  }: {
+    requestedBefore: Date;
+    weddingId?: string;
+    limit: number;
+  }) {
+    return this.db.payment.findMany({
+      where: {
+        status: 'refund_requested',
+        refundAttempts: 0,
+        refundFailedAt: null,
+        refundRequestedAt: { lt: requestedBefore },
+        ...(weddingId ? { weddingId } : {}),
+      },
+      orderBy: { refundRequestedAt: 'asc' },
+      take: limit,
+      select: { id: true },
+    });
+  }
+
   byReferences({ references }: { references: string[] }): Promise<ReconcilingPayment[]> {
     // A referência de outro sistema no gateway não é um UUID: não é do Kore.
     const ids = references.filter((reference) => UUID.test(reference));

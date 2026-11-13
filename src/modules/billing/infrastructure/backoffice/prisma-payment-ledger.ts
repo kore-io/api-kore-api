@@ -67,6 +67,12 @@ export class PrismaPaymentLedger implements PaymentLedger {
         shortCode: true,
         dueAt: true,
         createdAt: true,
+        cardLast4: true,
+        refundOrigin: true,
+        refundRequestedAt: true,
+        refundAttempts: true,
+        refundLastError: true,
+        refundFailedAt: true,
       },
     });
     const ledgerWedding: LedgerWedding = {
@@ -207,12 +213,14 @@ export class PrismaPaymentLedger implements PaymentLedger {
   async notifyBilling({
     weddingId,
     paymentId,
+    event,
     userIds,
     payload,
     now,
   }: {
     weddingId: string;
     paymentId: string;
+    event: 'payment_confirmed' | 'refund_completed';
     userIds: string[];
     payload: Record<string, unknown>;
     now: Date;
@@ -224,7 +232,8 @@ export class PrismaPaymentLedger implements PaymentLedger {
         userId,
         weddingId,
         type: 'billing' as const,
-        groupKey: `billing:${paymentId}`,
+        groupKey:
+          event === 'payment_confirmed' ? `billing:${paymentId}` : `billing:${paymentId}:refund`,
         payload: [payload] as Prisma.InputJsonValue,
         createdAt: now,
         updatedAt: now,
@@ -244,6 +253,60 @@ export class PrismaPaymentLedger implements PaymentLedger {
     const ids = [uuidV7({ now: now.getTime() }), uuidV7({ now: now.getTime() })];
     await this.db().$queryRaw`
       SELECT notify_wedding_published_for(${weddingId}::uuid, ${ids}::uuid[])`;
+  }
+
+  async requestAutomaticRefund({ paymentId, now }: { paymentId: string; now: Date }) {
+    await this.db().payment.updateMany({
+      where: { id: paymentId, status: 'paid', appliedAt: null },
+      data: { status: 'refund_requested', refundOrigin: 'automatic', refundRequestedAt: now },
+    });
+  }
+
+  async countRefundAttempt({ paymentId }: { paymentId: string }): Promise<number> {
+    const updated = await this.db().payment.update({
+      where: { id: paymentId },
+      data: { refundAttempts: { increment: 1 }, refundLastError: null },
+      select: { refundAttempts: true },
+    });
+    return updated.refundAttempts;
+  }
+
+  async recordRefundFailure({
+    paymentId,
+    error,
+    gaveUp,
+    now,
+  }: {
+    paymentId: string;
+    error: string;
+    gaveUp: boolean;
+    now: Date;
+  }) {
+    await this.db().payment.update({
+      where: { id: paymentId },
+      data: { refundLastError: error.slice(0, 500), ...(gaveUp ? { refundFailedAt: now } : {}) },
+    });
+  }
+
+  async markRefunded({ paymentId, now }: { paymentId: string; now: Date }) {
+    await this.db().payment.updateMany({
+      where: { id: paymentId, status: 'refund_requested' },
+      data: { status: 'refunded', refundedAt: now },
+    });
+  }
+
+  sameRefundRequest({
+    weddingId,
+    refundRequestedAt,
+  }: {
+    weddingId: string;
+    refundRequestedAt: Date;
+  }) {
+    return this.db().payment.findMany({
+      where: { weddingId, refundRequestedAt },
+      orderBy: { periodStart: 'asc' },
+      select: { id: true, shortCode: true },
+    });
   }
 
   async openAlert({

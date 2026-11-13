@@ -59,11 +59,15 @@ function build({
   const ledger = { openAlert: jest.fn().mockResolvedValue(undefined) };
   const transaction = { run: (work: () => Promise<unknown>) => work() };
   const useCase = new ReconcilePayments(
-    payments as PaymentReconciliationReader,
+    {
+      refundsNeverAttempted: jest.fn().mockResolvedValue([]),
+      ...payments,
+    } as PaymentReconciliationReader,
     gateway as PaymentGateway,
     ledger as unknown as PaymentLedger,
     transaction as unknown as BackofficeTransaction,
     sync as unknown as SyncPaymentWithGateway,
+    { enqueue: jest.fn().mockResolvedValue(undefined) },
   );
   return { useCase, sync, ledger };
 }
@@ -75,7 +79,9 @@ describe('ReconcilePayments (Publicar e pagar RN11)', () => {
       .mockRejectedValueOnce(new GatewayUnavailableError())
       .mockResolvedValueOnce(charge('p2', 'confirmed'));
     const { useCase, sync } = build({
-      payments: { stalePending: jest.fn().mockResolvedValue([pending('p1'), pending('p2')]) },
+      payments: {
+        stalePending: jest.fn().mockResolvedValue([pending('p1'), pending('p2')]),
+      },
       gateway: { getCharge },
     });
     const tally = await useCase.pending({ now });
@@ -90,7 +96,9 @@ describe('ReconcilePayments (Publicar e pagar RN11)', () => {
       .mockResolvedValueOnce(charge('p1', 'confirmed'));
     const cancelCharge = jest.fn().mockResolvedValue({ result: 'already_paid' });
     const { useCase, sync } = build({
-      payments: { stalePending: jest.fn().mockResolvedValue([pending('p1')]) },
+      payments: {
+        stalePending: jest.fn().mockResolvedValue([pending('p1')]),
+      },
       gateway: { getCharge, cancelCharge },
     });
     await useCase.pending({ now });
@@ -110,7 +118,9 @@ describe('ReconcilePayments (Publicar e pagar RN11)', () => {
       .mockResolvedValueOnce(charge('p1', 'overdue'))
       .mockResolvedValueOnce(null);
     const { useCase, sync } = build({
-      payments: { stalePending: jest.fn().mockResolvedValue([pending('p1')]) },
+      payments: {
+        stalePending: jest.fn().mockResolvedValue([pending('p1')]),
+      },
       gateway: { getCharge, cancelCharge: jest.fn().mockResolvedValue({ result: 'canceled' }) },
     });
     const tally = await useCase.pending({ now });
@@ -138,7 +148,9 @@ describe('ReconcilePayments (Publicar e pagar RN11)', () => {
 
   it('RN11 - sem cobrança no gateway: cancela o pendente sem o id do gateway', async () => {
     const { useCase, sync } = build({
-      payments: { stalePending: jest.fn().mockResolvedValue([pending('p1', { method: 'card' })]) },
+      payments: {
+        stalePending: jest.fn().mockResolvedValue([pending('p1', { method: 'card' })]),
+      },
       gateway: { getCharge: jest.fn().mockResolvedValue(null) },
     });
     await useCase.pending({ now });

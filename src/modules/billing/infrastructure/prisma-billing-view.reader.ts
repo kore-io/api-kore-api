@@ -43,8 +43,20 @@ export class PrismaBillingViewReader implements BillingViewReader {
     };
   }
 
-  async money({ weddingId }: { weddingId: string }): Promise<BillingMoneyView> {
+  async money({ weddingId, now }: { weddingId: string; now: Date }): Promise<BillingMoneyView> {
     const db = this.tenant.client();
+    // O fim do prazo de desistir, no fuso do casamento (o mesmo cálculo da
+    // request_payment_refund): só nos pagos e dentro dele.
+    const windows = await db.$queryRaw<{ id: string; until: Date }[]>`
+      SELECT p.id, (((p.paid_at AT TIME ZONE COALESCE(w.timezone, 'America/Sao_Paulo'))::date
+                     + 8)::timestamp AT TIME ZONE COALESCE(w.timezone, 'America/Sao_Paulo'))
+                   - interval '1 millisecond' AS until
+      FROM payments p JOIN weddings w ON w.id = p.wedding_id
+      WHERE p.wedding_id = ${weddingId}::uuid AND p.status = 'paid'
+        AND p.applied_at IS NOT NULL AND p.paid_at IS NOT NULL`;
+    const refundable = new Map(
+      windows.filter((row) => row.until > now).map((row) => [row.id, row.until]),
+    );
     const [pending, applied, last] = await Promise.all([
       db.payment.findFirst({
         where: { weddingId, status: 'pending' },
@@ -94,6 +106,7 @@ export class PrismaBillingViewReader implements BillingViewReader {
         : null,
       payments: applied.map((payment) => ({
         ...payment,
+        refundableUntil: refundable.get(payment.id) ?? null,
         periodStart: day(payment.periodStart) ?? '',
         periodEnd: day(payment.periodEnd) ?? '',
       })),

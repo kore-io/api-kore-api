@@ -8,6 +8,8 @@ import {
 import { decideConfirmation } from '../domain/payment-confirmation';
 import { BILLING_MAILER, type BillingMailer } from './ports/billing-mailer.port';
 import { BILLING_PUSH, type BillingPush } from './ports/billing-push.port';
+import { REFUND_QUEUE, type RefundQueue } from './ports/refund-queue.port';
+import { afterRefundFailure } from '../domain/refund-attempts';
 import type { GatewayCharge } from './ports/payment-gateway.port';
 import {
   type LedgerPayment,
@@ -25,13 +27,17 @@ export type SyncResult =
   | 'applied'
   | 'undercharged'
   | 'orphan'
+  | 'refunded'
+  | 'refund_failed'
+  | 'refund_given_up'
   | 'not_handled';
 
 /**
  * Por que o pendente foi cancelado (RN07 e RN11). Sem motivo (o gateway
  * cancelou sozinho), o Pix com o vencimento passado conta como vencido.
  */
-export type CancelReason = 'pix_expired' | 'replaced' | 'no_gateway_charge';
+export type CancelReason =
+  'pix_expired' | 'replaced' | 'no_gateway_charge' | 'publication_refunded';
 
 /**
  * Aplica ao Payment o estado que o gateway devolveu na consulta (Publicar e
@@ -43,7 +49,12 @@ export type CancelReason = 'pix_expired' | 'replaced' | 'no_gateway_charge';
  *   destino (RN08); o mesmo fato de novo não faz nada;
  * - recusado e cancelado: pendente → failed · canceled; o Pix vencido manda o
  *   e-mail "O código Pix venceu" às pessoas donas, depois do commit (RN11);
- * - estorno e disputa: o PR de Pagamentos e arrependimento.
+ * - estornado (Pagamentos e arrependimento RN03 e RN07): refund_requested →
+ *   refunded, com o aviso "Reembolso concluído" (central e e-mail);
+ * - estorno recusado (RN05): a tentativa falha; de novo em 1 h, 6 h e 24 h, e
+ *   depois da 4ª o pagamento fica em refund_requested com o alerta;
+ * - o pago sem destino vira estorno automático (Publicar e pagar RN08);
+ * - disputa: o PR da contestação.
  *
  * Aplicar a publicação: o Payment pago com appliedAt; o casamento publicado
  * até a data paga (paidThrough = endDate, origem payment); os logs; a
@@ -58,6 +69,7 @@ export class SyncPaymentWithGateway {
     @Inject(PAYMENT_LEDGER) private readonly ledger: PaymentLedger,
     @Inject(BILLING_MAILER) private readonly mailer: BillingMailer,
     @Inject(BILLING_PUSH) private readonly push: BillingPush,
+    @Inject(REFUND_QUEUE) private readonly refunds: RefundQueue,
     @Inject(PRODUCT_EVENT_RECORDER) private readonly productEvents: ProductEventRecorder,
   ) {}
 
@@ -102,6 +114,21 @@ export class SyncPaymentWithGateway {
           if (payment.status !== 'pending') return 'unchanged';
           await this.cancel({ wedding, payment, now, reason: cancelReason ?? null });
           return 'canceled';
+        case 'refunded':
+          // O mesmo estorno de novo não faz nada; o pago que o gateway diz
+          // estornado sem pedido é diferença (a reconciliação diária alerta).
+          if (payment.status === 'refunded') return 'unchanged';
+          if (payment.status !== 'refund_requested') return 'not_handled';
+          await this.refunded({ wedding, payment, now });
+          return 'refunded';
+        case 'refund_failed':
+          if (payment.status !== 'refund_requested' || payment.refundFailedAt) return 'unchanged';
+          return this.refundFailure({
+            wedding,
+            payment,
+            error: charge.failureReason ?? 'refund_failed',
+            now,
+          });
         case 'confirmed':
           break;
         default:
@@ -159,8 +186,21 @@ export class SyncPaymentWithGateway {
       }
       if (decision.kind === 'undercharged') return 'undercharged';
       if (decision.kind === 'orphan') {
-        // RN08: fica pago sem appliedAt; o estorno automático entra no PR de
-        // Pagamentos e arrependimento.
+        // RN08: fica pago sem appliedAt e vira estorno automático, pela porta
+        // depois do commit (Pagamentos e arrependimento RN04).
+        await this.ledger.requestAutomaticRefund({ paymentId, now });
+        await this.ledger.log({
+          entry: {
+            action: 'payment.refund_requested',
+            weddingId: wedding.id,
+            entityType: 'payment',
+            entityId: paymentId,
+            data: { refundOrigin: 'automatic', amountCents: chargedCents },
+          },
+        });
+        this.transaction.schedule(() =>
+          this.refunds.enqueue({ paymentId, attempt: 1, delayMs: 0 }),
+        );
         await this.ledger.openAlert({
           type: 'orphan_payment',
           weddingId: wedding.id,
@@ -174,6 +214,140 @@ export class SyncPaymentWithGateway {
       await this.apply({ wedding, payment, now, cardLast4: charge.cardLast4 });
       return 'applied';
     });
+  }
+
+  /**
+   * A chamada de estorno à porta não teve resposta (Pagamentos e arrependimento
+   * RN05): a tentativa conta como falha, como a recusa que chega pelo webhook.
+   */
+  refundCallFailed({
+    paymentId,
+    error,
+    now,
+  }: {
+    paymentId: string;
+    error: string;
+    now: Date;
+  }): Promise<SyncResult> {
+    return this.transaction.run(async () => {
+      const locked = await this.ledger.lock({ paymentId });
+      if (!locked) return 'no_payment';
+      const { wedding, payment } = locked;
+      if (payment.status !== 'refund_requested' || payment.refundFailedAt) return 'unchanged';
+      return this.refundFailure({ wedding, payment, error, now });
+    });
+  }
+
+  /** O gateway estornou (RN03 e RN07): refunded, o log e o "Reembolso concluído". */
+  private async refunded({
+    wedding,
+    payment,
+    now,
+  }: {
+    wedding: LedgerWedding;
+    payment: LedgerPayment;
+    now: Date;
+  }): Promise<void> {
+    await this.ledger.markRefunded({ paymentId: payment.id, now });
+    await this.ledger.log({
+      entry: {
+        action: 'payment.refunded',
+        weddingId: wedding.id,
+        entityType: 'payment',
+        entityId: payment.id,
+        data: { refundOrigin: payment.refundOrigin, amountCents: payment.amountCents },
+      },
+    });
+    // A comissão do pagamento vira reversed (ou ajuste negativo) no PR das comissões.
+    const recipients = await this.ledger.billingRecipients({ weddingId: wedding.id });
+    await this.ledger.notifyBilling({
+      weddingId: wedding.id,
+      paymentId: payment.id,
+      event: 'refund_completed',
+      userIds: recipients.map((recipient) => recipient.userId),
+      payload: {
+        kind: 'refund_completed',
+        paymentId: payment.id,
+        amountCents: payment.amountCents,
+        method: payment.method,
+        installments: payment.installments,
+        cardLast4: payment.method === 'card' ? payment.cardLast4 : null,
+        at: now.toISOString(),
+      },
+      now,
+    });
+    const partnerNames = await this.ledger.partnerNames({ weddingId: wedding.id });
+    for (const recipient of recipients) {
+      this.transaction.schedule(() =>
+        this.mailer.refundCompleted({
+          notice: { to: recipient.email, firstName: recipient.firstName, partnerNames },
+        }),
+      );
+    }
+  }
+
+  /**
+   * A tentativa de estorno falhou (RN05): de novo em 1 h, 6 h e 24 h; depois da
+   * 4ª chamada, o pagamento fica em refund_requested (nunca volta a paid), com
+   * o refundFailedAt e o alerta `refund_failed`, que cita o pedido todo (B3-3).
+   */
+  private async refundFailure({
+    wedding,
+    payment,
+    error,
+    now,
+  }: {
+    wedding: LedgerWedding;
+    payment: LedgerPayment;
+    error: string;
+    now: Date;
+  }): Promise<SyncResult> {
+    // Uma falha por tentativa: o mesmo evento processado de novo (em linha e
+    // pela fila, ou repetido pelo gateway) não conta outra vez.
+    if (payment.refundLastError !== null) return 'unchanged';
+    const attempts = Math.max(1, payment.refundAttempts);
+    const decision = afterRefundFailure({ attempts });
+    const gaveUp = decision.kind === 'give_up';
+    await this.ledger.recordRefundFailure({ paymentId: payment.id, error, gaveUp, now });
+    await this.ledger.log({
+      entry: {
+        action: 'payment.refund_failed',
+        weddingId: wedding.id,
+        entityType: 'payment',
+        entityId: payment.id,
+        data: { attempt: attempts, error, gaveUp, refundOrigin: payment.refundOrigin },
+      },
+    });
+    if (decision.kind === 'retry') {
+      this.transaction.schedule(() =>
+        this.refunds.enqueue({
+          paymentId: payment.id,
+          attempt: decision.attempt,
+          delayMs: decision.delayMs,
+        }),
+      );
+      return 'refund_failed';
+    }
+    const request = payment.refundRequestedAt
+      ? await this.ledger.sameRefundRequest({
+          weddingId: wedding.id,
+          refundRequestedAt: payment.refundRequestedAt,
+        })
+      : [];
+    await this.ledger.openAlert({
+      type: 'refund_failed',
+      weddingId: wedding.id,
+      entityType: 'payment',
+      entityId: payment.id,
+      data: {
+        shortCode: payment.shortCode,
+        attempts,
+        error,
+        refundOrigin: payment.refundOrigin,
+        sameRequest: request.map((row) => row.shortCode),
+      },
+    });
+    return 'refund_given_up';
   }
 
   /**
@@ -262,6 +436,7 @@ export class SyncPaymentWithGateway {
     await this.ledger.notifyBilling({
       weddingId: wedding.id,
       paymentId: payment.id,
+      event: 'payment_confirmed',
       userIds: recipients.map((recipient) => recipient.userId),
       payload: {
         kind: 'payment_confirmed',

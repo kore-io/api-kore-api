@@ -6,6 +6,7 @@ import {
   type PaymentGateway,
 } from './ports/payment-gateway.port';
 import { PAYMENT_LEDGER, type PaymentLedger } from './ports/payment-ledger.port';
+import { REFUND_QUEUE, type RefundQueue } from './ports/refund-queue.port';
 import {
   PAYMENT_RECONCILIATION_READER,
   type PaymentReconciliationReader,
@@ -45,6 +46,7 @@ const UNRESOLVED: SyncResult[] = ['unchanged', 'not_handled', 'no_payment'];
  *   o pendente vira `canceled` (o pedido caiu entre os passos 1 e 2). O Pix
  *   vencido é consultado antes de cancelar: pago, aplica; senão, cancela no
  *   gateway e passa a `canceled`, com o e-mail "O código Pix venceu".
+ *   Também repõe na fila o estorno pedido que nunca tentou (RN04).
  * - `settled` e `gatewayList` (às 4h): os `paid`, `refund_requested` e
  *   `disputed`, e a lista das cobranças do gateway nas últimas 48 h, com
  *   `Alert` para a cobrança sem `Payment` e para a confirmação que chegou a um
@@ -59,6 +61,7 @@ export class ReconcilePayments {
     @Inject(PAYMENT_LEDGER) private readonly ledger: PaymentLedger,
     private readonly transaction: BackofficeTransaction,
     private readonly sync: SyncPaymentWithGateway,
+    @Inject(REFUND_QUEUE) private readonly refunds: RefundQueue,
   ) {}
 
   /** A rodada de 10 minutos. */
@@ -80,6 +83,20 @@ export class ReconcilePayments {
       await this.guarded(tally, payment.id, async () => {
         const result = await this.reconcilePending({ payment, now });
         if (result !== 'unchanged') tally.changed++;
+      });
+    }
+    // O estorno pedido que não entrou na fila (Pagamentos e arrependimento
+    // RN04): volta como a 1ª tentativa; o id fixo do job não duplica.
+    const refunds = await this.payments.refundsNeverAttempted({
+      requestedBefore: new Date(now.getTime() - PENDING_STALE_AFTER_MS),
+      weddingId,
+      limit: BATCH,
+    });
+    for (const refund of refunds) {
+      tally.checked++;
+      await this.guarded(tally, refund.id, async () => {
+        await this.refunds.enqueue({ paymentId: refund.id, attempt: 1, delayMs: 0 });
+        tally.changed++;
       });
     }
     return tally;

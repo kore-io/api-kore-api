@@ -169,6 +169,13 @@ export class BillingPaymentDto {
   @ApiProperty() installments: number;
   @ApiProperty({ enum: PAYMENT_STATUSES }) status: string;
   @ApiProperty({ type: String, format: 'date-time', nullable: true }) paidAt: string | null;
+  /**
+   * O último instante para desistir, no fuso do casamento (Pagamentos e
+   * arrependimento RN02); nulo fora do prazo ou fora de `paid`. O app mostra
+   * o dia: "Vocês podem desistir até 17 de ago.".
+   */
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  refundableUntil: string | null;
 }
 
 export class PayerDto {
@@ -219,8 +226,25 @@ export class BillingResponse {
       payments: payments.map((payment) => ({
         ...payment,
         paidAt: payment.paidAt?.toISOString() ?? null,
+        refundableUntil: payment.refundableUntil?.toISOString() ?? null,
       })),
       payer: lastPayer,
     };
   }
+}
+
+/** Desistir e pedir reembolso (Pagamentos e arrependimento RN02). */
+export class RefundRequestBody {
+  /** O motivo, opcional (ex.: "Decidimos adiar o casamento."). */
+  @ApiProperty({ required: false, maxLength: 500 })
+  @OptionalNotNull()
+  @IsString()
+  @MaxLength(500)
+  reason?: string;
+}
+
+export class RefundRequestedResponse {
+  @ApiProperty({ enum: ['refund_requested'] }) status: 'refund_requested';
+  /** O pagamento pedido e, na publicação, as extensões pagas que vão junto (RN03). */
+  @ApiProperty({ type: [String], format: 'uuid' }) refundsPaymentIds: string[];
 }

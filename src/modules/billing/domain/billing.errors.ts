@@ -64,3 +64,44 @@ export class PaymentGatewayUnavailableError extends Error {
     super();
   }
 }
+
+/** O pagamento não é deste casamento, ou não existe (Pagamentos e arrependimento, Contrato de API). */
+export class PaymentNotFoundError extends Error {
+  override name = 'PaymentNotFoundError';
+}
+
+/** Só se desiste de um pagamento pago e aplicado (409 PAYMENT_NOT_PAID). */
+export class PaymentNotPaidError extends Error {
+  override name = 'PaymentNotPaidError';
+}
+
+/** Em contestação não há Desistir (Pagamentos e arrependimento RN02; 409 PAYMENT_DISPUTED). */
+export class PaymentDisputedError extends Error {
+  override name = 'PaymentDisputedError';
+}
+
+/** O reembolso deste pagamento já foi pedido (RN04; 409 REFUND_ALREADY_REQUESTED). */
+export class RefundAlreadyRequestedError extends Error {
+  override name = 'RefundAlreadyRequestedError';
+}
+
+/** Há uma extensão (ou cortesia) mais recente (RN03; 409 REFUND_NOT_LAST_EXTENSION). */
+export class RefundNotLastExtensionError extends Error {
+  override name = 'RefundNotLastExtensionError';
+}
+
+/**
+ * O prazo de 7 dias terminou (RN02; 409 REFUND_WINDOW_CLOSED). Leva o último
+ * instante do prazo, para o Toast "O prazo para desistir terminou em 17 de ago.".
+ */
+export class RefundWindowClosedError extends Error {
+  override name = 'RefundWindowClosedError';
+  constructor(readonly refundableUntil: Date | null) {
+    super();
+  }
+}
+
+/** Casamento bloqueado: o app não desiste (RN02; decisão 83; 403 WEDDING_BLOCKED). */
+export class BillingWeddingBlockedError extends Error {
+  override name = 'BillingWeddingBlockedError';
+}

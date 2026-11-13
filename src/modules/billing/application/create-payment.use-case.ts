@@ -37,7 +37,7 @@ import {
   type PaymentGateway,
 } from './ports/payment-gateway.port';
 import { QUOTE_TARGET_READER, type QuoteTargetReader } from './ports/quote-target.reader.port';
-import { SyncPaymentWithGateway } from './sync-payment.use-case';
+import { CancelPendingPayment } from './cancel-pending-payment';
 
 /** O Pix vale 24 horas (decisão 41). */
 const PIX_VALIDITY_MS = 24 * 60 * 60 * 1000;
@@ -98,7 +98,7 @@ export class CreatePayment {
     @Inject(PAYMENT_GATEWAY) private readonly gateway: PaymentGateway,
     @Inject(TAX_ID_HASHER) private readonly taxIds: TaxIdHasher,
     @Inject(APPLICATION_LOG_WRITER) private readonly log: ApplicationLogWriter,
-    private readonly sync: SyncPaymentWithGateway,
+    private readonly cancelPending: CancelPendingPayment,
   ) {}
 
   async execute(input: CreatePaymentInput): Promise<PaymentCreated> {
@@ -311,24 +311,12 @@ export class CreatePayment {
 
     // Fora de transação (RN19).
     try {
-      let charge = await this.gateway.getCharge({ externalReference: replaced.id });
-      if (!charge) {
-        await this.sync.cancelWithoutCharge({ paymentId: replaced.id, now: input.now });
-        return;
-      }
-      if (charge.status === 'pending' || charge.status === 'overdue') {
-        await this.gateway.cancelCharge({ gatewayPaymentId: charge.gatewayPaymentId });
-        // O estado depois do cancelamento: cancelado, ou pago no meio do caminho.
-        charge = await this.gateway.getCharge({ externalReference: replaced.id });
-        if (!charge) return;
-      }
-      await this.sync.execute({
+      const result = await this.cancelPending.execute({
         paymentId: replaced.id,
-        charge,
+        reason: 'replaced',
         now: input.now,
-        cancelReason: 'replaced',
       });
-      if (charge.status === 'confirmed') throw new PaymentAlreadyPaidError();
+      if (result === 'paid') throw new PaymentAlreadyPaidError();
     } catch (error) {
       if (error instanceof GatewayUnavailableError)
         throw new PaymentGatewayUnavailableError(replaced.id);

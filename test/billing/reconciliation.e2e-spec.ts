@@ -393,7 +393,7 @@ describe('Reconciliação e troca do pendente (Publicar e pagar RN07 e RN11; ban
       await paidWithoutWebhook(pixId);
       await reconcile.gatewayList({ now: new Date() });
       const orphan = await payment(pixId);
-      expect(orphan.status).toBe('paid');
+      expect(orphan).toMatchObject({ status: 'refund_requested', refundOrigin: 'automatic' });
       expect(orphan.appliedAt).toBeNull();
       expect(
         await db.alert.count({
