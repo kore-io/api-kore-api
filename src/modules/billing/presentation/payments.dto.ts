@@ -50,10 +50,10 @@ export class PayerBody {
 
 /** POST …/payments (Publicar e pagar RN03). */
 export class CreatePaymentBody {
-  /** Por ora só a publicação; a extensão entra no PR da data de saída do ar. */
-  @ApiProperty({ enum: ['publication'] })
-  @IsIn(['publication'])
-  kind: 'publication';
+  /** A publicação ou a extensão (Data de saída do ar RN04: adiar e renovar). */
+  @ApiProperty({ enum: ['publication', 'extension'] })
+  @IsIn(['publication', 'extension'])
+  kind: 'publication' | 'extension';
 
   @ApiProperty({ example: '2027-02-14' })
   @Matches(DATE_ONLY)
@@ -251,4 +251,20 @@ export class RefundRequestedResponse {
   @ApiProperty({ enum: ['refund_requested'] }) status: 'refund_requested';
   /** O pagamento pedido e, na publicação, as extensões pagas que vão junto (RN03). */
   @ApiProperty({ type: [String], format: 'uuid' }) refundsPaymentIds: string[];
+}
+
+/** Antecipar ou voltar a data de saída do ar (Data de saída do ar RN05). */
+export class ChangeEndDateBody {
+  /** `AAAA-MM-DD`: de amanhã (e depois do casamento) até o paidThrough. */
+  @ApiProperty({ example: '2027-01-10' })
+  @Matches(DATE_ONLY)
+  @IsISO8601({ strict: true })
+  endDate: string;
+}
+
+export class EndDateChangedResponse {
+  @ApiProperty({ example: '2027-01-10' }) endDate: string;
+  /** Não muda: voltar a data vai até ele, de graça (B4-1). */
+  @ApiProperty({ type: String, nullable: true, example: '2027-02-14' }) paidThrough: string | null;
+  @ApiProperty({ enum: ['published', 'post_event', 'grace'] }) status: string;
 }

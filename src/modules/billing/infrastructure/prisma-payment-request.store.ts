@@ -42,7 +42,8 @@ export class PrismaPaymentRequestStore implements PaymentRequestStore {
              to_char(w.event_date, 'YYYY-MM-DD') AS "eventDate", w.timezone,
              to_char(w.end_date, 'YYYY-MM-DD') AS "endDate",
              to_char(w.paid_through, 'YYYY-MM-DD') AS "paidThrough",
-             w.published_at AS "publishedAt",
+             w.published_at AS "publishedAt", w.blocked_at AS "blockedAt",
+             w.deletion_scheduled_for AS "deletionScheduledFor",
              r.kind::text AS "referrerKind", r.status::text AS "referrerStatus",
              r.referral_discount_enabled AS "referralDiscountEnabled"
       FROM weddings w
@@ -146,5 +147,30 @@ export class PrismaPaymentRequestStore implements PaymentRequestStore {
         ${input.refused}, ${input.pixCopyPaste}, ${input.dueAt}::timestamptz, ${input.cardLast4},
         ${input.failureReason}) AS recorded`;
     return row?.recorded ?? false;
+  }
+
+  async setEndDate({
+    weddingId,
+    endDate,
+    today,
+    now,
+  }: {
+    weddingId: string;
+    endDate: string;
+    today: string;
+    now: Date;
+  }): Promise<string | null> {
+    const [row] = await this.tenant.client().$queryRaw<{ status: string | null }[]>`
+      SELECT set_wedding_end_date(${weddingId}::uuid, ${endDate}::date, ${today}::date,
+                                  ${now}::timestamptz) AS status`;
+    return row?.status ?? null;
+  }
+
+  async pendingExtensionId({ weddingId }: { weddingId: string }): Promise<string | null> {
+    const pending = await this.tenant.client().payment.findFirst({
+      where: { weddingId, kind: 'extension', status: 'pending' },
+      select: { id: true },
+    });
+    return pending?.id ?? null;
   }
 }

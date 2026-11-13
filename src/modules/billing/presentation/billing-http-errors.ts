@@ -16,6 +16,8 @@ import {
   IdempotencyKeyReusedError,
   NotPublishedError,
   BillingWeddingBlockedError,
+  EndDateBeyondPaidError,
+  WeddingDeletionScheduledError,
   PaymentAlreadyPaidError,
   PaymentDisputedError,
   PaymentNotFoundError,
@@ -80,6 +82,19 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 409,
       error: 'PAYMENT_PENDING',
       message: 'There is already a payment awaiting confirmation.',
+    });
+  if (error instanceof WeddingDeletionScheduledError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'WEDDING_DELETION_SCHEDULED',
+      message: 'The wedding deletion is scheduled.',
+    });
+  if (error instanceof EndDateBeyondPaidError)
+    return new UnprocessableEntityException({
+      statusCode: 422,
+      error: 'END_DATE_BEYOND_PAID',
+      message: 'The new date is after the paid period. Pay an extension for it.',
+      paidThrough: error.paidThrough,
     });
   if (error instanceof PaymentNotFoundError)
     return new NotFoundException({

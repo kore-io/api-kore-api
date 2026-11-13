@@ -72,12 +72,10 @@ export class AdvanceWeddingLifecycle {
       const renewUntil =
         endDateRange({ eventDate: due.eventDate, timezone: due.timezone ?? 'America/Sao_Paulo' })
           ?.max ?? null;
-      // Sem pagamento: a chave do agrupamento é a do aviso e da endDate.
-      await this.ledger.notifyBilling({
+      await this.ledger.notifyEndDateNotice({
         weddingId: due.weddingId,
-        paymentId: due.weddingId,
-        event: 'payment_confirmed',
-        groupKey: `billing:${due.notice}:${due.endDate}`,
+        notice: due.notice,
+        endDate: due.endDate,
         userIds: recipients.map((recipient) => recipient.userId),
         payload: payloadOf({ due, renewUntil, now }),
         now,

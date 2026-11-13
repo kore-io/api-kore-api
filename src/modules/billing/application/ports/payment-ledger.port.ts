@@ -4,6 +4,8 @@ import type { ConfirmingPayment, ConfirmingWedding } from '../../domain/payment-
 export interface LedgerWedding extends ConfirmingWedding {
   id: string;
   publishedAt: Date | null;
+  endDate: string | null;
+  paidThrough: string | null;
   timezone: string | null;
   eventDate: string | null;
 }
@@ -75,6 +77,19 @@ export interface PaymentLedger {
   markApplied(input: { paymentId: string; now: Date }): Promise<void>;
   markFailed(input: { paymentId: string; reason: string; gatewayPaymentId: string }): Promise<void>;
   markCanceled(input: { paymentId: string; now: Date }): Promise<void>;
+  /**
+   * A extensão paga (Data de saída do ar RN04): endDate e paidThrough na nova
+   * data; a carência volta a published (casamento ainda por vir) ou
+   * post_event; o expirado volta a post_event, sem expiredAt, purgeAt nem
+   * purgeNoticeSentAt (B4-3). Grava no Payment a data e o paidThrough de
+   * antes, para a desistência voltar (Pagamentos e arrependimento RN03).
+   */
+  extend(input: {
+    weddingId: string;
+    paymentId: string;
+    endDate: string;
+    now: Date;
+  }): Promise<void>;
   /** A publicação paga (RN05): status, datas, paidThrough, origem e quem publicou. */
   publish(input: {
     weddingId: string;
@@ -90,8 +105,18 @@ export interface PaymentLedger {
     paymentId: string;
     /** Um aviso por pagamento e fato: a confirmação e o reembolso concluído (RN13; RN07). */
     event: 'payment_confirmed' | 'refund_completed';
-    /** A chave do agrupamento, quando o aviso não é de um pagamento (os de saída do ar). */
-    groupKey?: string;
+    userIds: string[];
+    payload: Record<string, unknown>;
+    now: Date;
+  }): Promise<void>;
+  /**
+   * O aviso de saída do ar na central (Data de saída do ar RN03): a notificação
+   * `billing` às pessoas donas, uma por aviso e endDate.
+   */
+  notifyEndDateNotice(input: {
+    weddingId: string;
+    notice: 'end_date_in_7_days' | 'grace_day_1' | 'grace_day_5' | 'expired';
+    endDate: string;
     userIds: string[];
     payload: Record<string, unknown>;
     now: Date;

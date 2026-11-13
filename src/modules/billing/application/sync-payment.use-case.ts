@@ -41,7 +41,7 @@ export type SyncResult =
  * cancelou sozinho), o Pix com o vencimento passado conta como vencido.
  */
 export type CancelReason =
-  'pix_expired' | 'replaced' | 'no_gateway_charge' | 'publication_refunded';
+  'pix_expired' | 'replaced' | 'no_gateway_charge' | 'publication_refunded' | 'end_date_changed';
 
 /**
  * Aplica ao Payment o estado que o gateway devolveu na consulta (Publicar e
@@ -64,6 +64,9 @@ export type CancelReason =
  *   `refunded` com origem `chargeback` e o alerta `dispute_lost`, **sem
  *   cascata**: as extensões e o casamento não mudam (B3-4). O casamento
  *   apagado (lápide) não muda em nenhum caso (B3-8).
+ *
+ * Aplicar a extensão (Data de saída do ar RN04): a nova data, a carência e o
+ * expirado de volta, o log `wedding.extended` e os mesmos avisos do pagamento.
  *
  * Aplicar a publicação: o Payment pago com appliedAt; o casamento publicado
  * até a data paga (paidThrough = endDate, origem payment); os logs; a
@@ -159,7 +162,6 @@ export class SyncPaymentWithGateway {
           (await this.ledger.otherPublicationApplied({ weddingId: wedding.id, paymentId })),
       });
       if (decision.kind === 'already_confirmed') return 'already_confirmed';
-      if (payment.kind === 'extension') return 'not_handled';
 
       await this.ledger.markPaid({
         paymentId,
@@ -543,23 +545,47 @@ export class SyncPaymentWithGateway {
     now: Date;
     cardLast4: string | null;
   }): Promise<void> {
-    const firstPublication = wedding.publishedAt === null;
+    const firstPublication = payment.kind === 'publication' && wedding.publishedAt === null;
     await this.ledger.markApplied({ paymentId: payment.id, now });
-    await this.ledger.publish({
-      weddingId: wedding.id,
-      endDate: payment.periodEnd,
-      publishedByUserId: payment.createdByUserId,
-      now,
-    });
-    await this.ledger.log({
-      entry: {
-        action: 'wedding.published',
+    if (payment.kind === 'extension') {
+      // Data de saída do ar RN04: a nova data; a carência e o expirado voltam.
+      await this.ledger.extend({
         weddingId: wedding.id,
-        entityType: 'wedding',
-        entityId: wedding.id,
-        data: { paymentId: payment.id },
-      },
-    });
+        paymentId: payment.id,
+        endDate: payment.periodEnd,
+        now,
+      });
+      await this.ledger.log({
+        entry: {
+          action: 'wedding.extended',
+          weddingId: wedding.id,
+          entityType: 'wedding',
+          entityId: wedding.id,
+          data: {
+            paymentId: payment.id,
+            from: wedding.endDate,
+            to: payment.periodEnd,
+            previousStatus: wedding.status,
+          },
+        },
+      });
+    } else {
+      await this.ledger.publish({
+        weddingId: wedding.id,
+        endDate: payment.periodEnd,
+        publishedByUserId: payment.createdByUserId,
+        now,
+      });
+      await this.ledger.log({
+        entry: {
+          action: 'wedding.published',
+          weddingId: wedding.id,
+          entityType: 'wedding',
+          entityId: wedding.id,
+          data: { paymentId: payment.id },
+        },
+      });
+    }
     const recipients = await this.ledger.billingRecipients({ weddingId: wedding.id });
     await this.ledger.notifyBilling({
       weddingId: wedding.id,

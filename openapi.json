@@ -8476,6 +8476,141 @@
         ]
       }
     },
+    "/v1/weddings/{weddingId}/end-date": {
+      "patch": {
+        "operationId": "PaymentsController_endDate_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeEndDateBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndDateChangedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/NotPublishedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/EndDateOutOfRangeErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/EndDateBeyondPaidErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Antecipar ou voltar a data de saída do ar (Data de saída do ar RN05):\nsem cobrança nem reembolso, até o paidThrough; depois dele, a extensão.",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
     "/v1/weddings/{weddingId}/payments/{paymentId}/refund-request": {
       "post": {
         "operationId": "PaymentsController_refund_v1",
@@ -8701,6 +8836,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -8743,6 +8881,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/PriceChangedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NotPublishedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
                     }
                   ]
                 }
@@ -17795,6 +17939,102 @@
           "message"
         ]
       },
+      "WeddingDeletionScheduledErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "WEDDING_DELETION_SCHEDULED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "EndDateBeyondPaidErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "END_DATE_BEYOND_PAID"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "paidThrough": {
+            "type": "string",
+            "example": "2027-02-14"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "paidThrough"
+        ]
+      },
+      "ChangeEndDateBody": {
+        "type": "object",
+        "properties": {
+          "endDate": {
+            "type": "string",
+            "description": "`AAAA-MM-DD`: de amanhã (e depois do casamento) até o paidThrough.",
+            "example": "2027-01-10"
+          }
+        },
+        "required": [
+          "endDate"
+        ]
+      },
+      "EndDateChangedResponse": {
+        "type": "object",
+        "properties": {
+          "endDate": {
+            "type": "string",
+            "example": "2027-01-10"
+          },
+          "paidThrough": {
+            "type": "string",
+            "nullable": true,
+            "description": "Não muda: voltar a data vai até ele, de graça (B4-1).",
+            "example": "2027-02-14"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "published",
+              "post_event",
+              "grace"
+            ]
+          }
+        },
+        "required": [
+          "endDate",
+          "paidThrough",
+          "status"
+        ]
+      },
       "PaymentNotFoundErrorBody": {
         "type": "object",
         "properties": {
@@ -18190,11 +18430,12 @@
         "type": "object",
         "properties": {
           "kind": {
-            "type": "string",
-            "description": "Por ora só a publicação; a extensão entra no PR da data de saída do ar.",
+            "description": "A publicação ou a extensão (Data de saída do ar RN04: adiar e renovar).",
             "enum": [
-              "publication"
-            ]
+              "publication",
+              "extension"
+            ],
+            "type": "string"
           },
           "endDate": {
             "type": "string",

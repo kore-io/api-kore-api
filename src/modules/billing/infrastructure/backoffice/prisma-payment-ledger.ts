@@ -42,9 +42,12 @@ export class PrismaPaymentLedger implements PaymentLedger {
         publishedAt: Date | null;
         timezone: string | null;
         eventDate: Date | null;
+        endDate: Date | null;
+        paidThrough: Date | null;
       }[]
     >`
       SELECT id, status::text AS status, blocked_at AS "blockedAt",
+             end_date AS "endDate", paid_through AS "paidThrough",
              deletion_scheduled_for AS "deletionScheduledFor", published_at AS "publishedAt",
              timezone, event_date AS "eventDate"
       FROM weddings WHERE id = ${target.weddingId}::uuid FOR UPDATE`;
@@ -81,6 +84,8 @@ export class PrismaPaymentLedger implements PaymentLedger {
       ...wedding,
       deletionScheduledFor: day(wedding.deletionScheduledFor),
       eventDate: day(wedding.eventDate),
+      endDate: day(wedding.endDate),
+      paidThrough: day(wedding.paidThrough),
     };
     const ledgerPayment: LedgerPayment = {
       ...payment,
@@ -181,6 +186,37 @@ export class PrismaPaymentLedger implements PaymentLedger {
       WHERE id = ${weddingId}::uuid AND status = 'draft'`;
   }
 
+  async extend({
+    weddingId,
+    paymentId,
+    endDate,
+    now,
+  }: {
+    weddingId: string;
+    paymentId: string;
+    endDate: string;
+    now: Date;
+  }): Promise<void> {
+    const end = new Date(`${endDate}T00:00:00Z`);
+    // As datas de antes, na confirmação (Pagamentos e arrependimento RN03; B3-5).
+    await this.db().$executeRaw`
+      UPDATE payments p
+      SET previous_end_date = w.end_date, previous_paid_through = w.paid_through
+      FROM weddings w
+      WHERE p.id = ${paymentId}::uuid AND w.id = p.wedding_id`;
+    await this.db().$executeRaw`
+      UPDATE weddings
+      SET end_date = ${end}, paid_through = ${end},
+          status = CASE
+            WHEN status = 'grace' AND event_date >= (${now}::timestamptz AT TIME ZONE
+                   coalesce(timezone, 'America/Sao_Paulo'))::date THEN 'published'::wedding_status
+            WHEN status IN ('grace', 'expired') THEN 'post_event'::wedding_status
+            ELSE status END,
+          grace_until = NULL, expired_at = NULL, purge_at = NULL, purge_notice_sent_at = NULL,
+          updated_at = ${now}
+      WHERE id = ${weddingId}::uuid`;
+  }
+
   async billingRecipients({ weddingId }: { weddingId: string }): Promise<BillingRecipient[]> {
     const owners = await this.db().membership.findMany({
       where: { weddingId, role: 'owner', removedAt: null, user: { status: 'active' } },
@@ -216,7 +252,6 @@ export class PrismaPaymentLedger implements PaymentLedger {
     weddingId,
     paymentId,
     event,
-    groupKey,
     userIds,
     payload,
     now,
@@ -224,7 +259,6 @@ export class PrismaPaymentLedger implements PaymentLedger {
     weddingId: string;
     paymentId: string;
     event: 'payment_confirmed' | 'refund_completed';
-    groupKey?: string;
     userIds: string[];
     payload: Record<string, unknown>;
     now: Date;
@@ -237,8 +271,38 @@ export class PrismaPaymentLedger implements PaymentLedger {
         weddingId,
         type: 'billing' as const,
         groupKey:
-          groupKey ??
-          (event === 'payment_confirmed' ? `billing:${paymentId}` : `billing:${paymentId}:refund`),
+          event === 'payment_confirmed' ? `billing:${paymentId}` : `billing:${paymentId}:refund`,
+        payload: [payload] as Prisma.InputJsonValue,
+        createdAt: now,
+        updatedAt: now,
+      })),
+      skipDuplicates: true,
+    });
+  }
+
+  async notifyEndDateNotice({
+    weddingId,
+    notice,
+    endDate,
+    userIds,
+    payload,
+    now,
+  }: {
+    weddingId: string;
+    notice: 'end_date_in_7_days' | 'grace_day_1' | 'grace_day_5' | 'expired';
+    endDate: string;
+    userIds: string[];
+    payload: Record<string, unknown>;
+    now: Date;
+  }): Promise<void> {
+    if (userIds.length === 0) return;
+    await this.db().notification.createMany({
+      data: userIds.map((userId) => ({
+        id: uuidV7({ now: now.getTime() }),
+        userId,
+        weddingId,
+        type: 'billing' as const,
+        groupKey: `billing:${notice}:${endDate}`,
         payload: [payload] as Prisma.InputJsonValue,
         createdAt: now,
         updatedAt: now,

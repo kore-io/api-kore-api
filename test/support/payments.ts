@@ -187,3 +187,39 @@ export async function seedPaidExtension({
   });
   return id;
 }
+
+/**
+ * Cota e paga a extensão (Data de saída do ar RN04) pela API, como o app: a
+ * cotação `kind = extension` do momento e o total esperado.
+ */
+export async function payForExtension({
+  app,
+  cookie,
+  weddingId,
+  endDate,
+  method = 'card',
+  installments = 1,
+  key = randomUUID(),
+}: Omit<PayArgs, 'cardToken' | 'replacesPaymentId' | 'overrides'>): Promise<request.Response> {
+  const quote = await request(app.getHttpServer())
+    .get(`/v1/weddings/${weddingId}/billing/quote`)
+    .set('Cookie', cookie)
+    .query({ kind: 'extension', endDate, method, installments })
+    .expect(200);
+  const { totalCents, priceVersion } = quote.body as { totalCents: number; priceVersion: string };
+  return request(app.getHttpServer())
+    .post(`/v1/weddings/${weddingId}/payments`)
+    .set('Cookie', cookie)
+    .set('Origin', ORIGIN)
+    .set('Idempotency-Key', key)
+    .send({
+      kind: 'extension',
+      endDate,
+      method,
+      installments,
+      payer: { name: 'Ana Beatriz Moreira', taxId: PAYER_CPF },
+      ...(method === 'card' ? { cardToken: 'tok_local_4242' } : {}),
+      priceVersion,
+      expectedTotalCents: totalCents,
+    });
+}

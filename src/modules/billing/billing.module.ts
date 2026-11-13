@@ -35,6 +35,7 @@ import { PrismaBillingViewReader } from './infrastructure/prisma-billing-view.re
 import { PaymentsController } from './presentation/payments.controller';
 import { REFUND_REQUEST_STORE } from './application/ports/refund-request.store.port';
 import { RequestRefund } from './application/request-refund.use-case';
+import { ChangeEndDate } from './application/change-end-date.use-case';
 import { PrismaRefundRequestStore } from './infrastructure/prisma-refund-request.store';
 import { PAYMENT_REFUNDS_QUEUE } from './infrastructure/refunds.queue';
 
@@ -73,6 +74,7 @@ import { PAYMENT_REFUNDS_QUEUE } from './infrastructure/refunds.queue';
     GetBilling,
     { provide: REFUND_REQUEST_STORE, useClass: PrismaRefundRequestStore },
     RequestRefund,
+    ChangeEndDate,
   ],
   exports: [PAYMENT_GATEWAY, LocalGatewayStore, ReceiveGatewayWebhook, ProcessGatewayEvent],
 })
