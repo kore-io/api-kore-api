@@ -7,6 +7,7 @@ import {
 } from '../../product-events/application/ports/product-event-recorder.port';
 import { decideConfirmation } from '../domain/payment-confirmation';
 import { BILLING_MAILER, type BillingMailer } from './ports/billing-mailer.port';
+import { BILLING_PUSH, type BillingPush } from './ports/billing-push.port';
 import type { GatewayCharge } from './ports/payment-gateway.port';
 import {
   type LedgerPayment,
@@ -47,8 +48,8 @@ export type CancelReason = 'pix_expired' | 'replaced' | 'no_gateway_charge';
  * Aplicar a publicação: o Payment pago com appliedAt; o casamento publicado
  * até a data paga (paidThrough = endDate, origem payment); os logs; a
  * notificação `billing` às pessoas donas e, na primeira publicação, o
- * `wedding_published` ao indicador; depois do commit, o e-mail e o evento de
- * produto `publicado`. A comissão nasce aqui, no PR das comissões.
+ * `wedding_published` ao indicador; depois do commit, o push e o e-mail (que
+ * sempre sai, decisão 236) e o evento de produto `publicado`. A comissão nasce aqui, no PR das comissões.
  */
 @Injectable()
 export class SyncPaymentWithGateway {
@@ -56,6 +57,7 @@ export class SyncPaymentWithGateway {
     private readonly transaction: BackofficeTransaction,
     @Inject(PAYMENT_LEDGER) private readonly ledger: PaymentLedger,
     @Inject(BILLING_MAILER) private readonly mailer: BillingMailer,
+    @Inject(BILLING_PUSH) private readonly push: BillingPush,
     @Inject(PRODUCT_EVENT_RECORDER) private readonly productEvents: ProductEventRecorder,
   ) {}
 
@@ -169,7 +171,7 @@ export class SyncPaymentWithGateway {
         return 'orphan';
       }
 
-      await this.apply({ wedding, payment, now });
+      await this.apply({ wedding, payment, now, cardLast4: charge.cardLast4 });
       return 'applied';
     });
   }
@@ -232,10 +234,12 @@ export class SyncPaymentWithGateway {
     wedding,
     payment,
     now,
+    cardLast4,
   }: {
     wedding: LedgerWedding;
     payment: LedgerPayment;
     now: Date;
+    cardLast4: string | null;
   }): Promise<void> {
     const firstPublication = wedding.publishedAt === null;
     await this.ledger.markApplied({ paymentId: payment.id, now });
@@ -266,6 +270,8 @@ export class SyncPaymentWithGateway {
         amountCents: payment.amountCents,
         method: payment.method,
         installments: payment.installments,
+        // O detalhe da central: "no cartão final 4821, 2x" (RN13).
+        cardLast4: payment.method === 'card' ? cardLast4 : null,
         at: now.toISOString(),
       },
       now,
@@ -273,6 +279,13 @@ export class SyncPaymentWithGateway {
     // Notificações da cerimonialista RN03: só na primeira publicação.
     if (firstPublication) await this.ledger.notifyWeddingPublished({ weddingId: wedding.id, now });
 
+    // O push segue a preferência Push de cada pessoa (decisão 236); o worker confere.
+    this.transaction.schedule(() =>
+      this.push.paymentConfirmed({
+        weddingId: wedding.id,
+        userIds: recipients.map((recipient) => recipient.userId),
+      }),
+    );
     const partnerNames = await this.ledger.partnerNames({ weddingId: wedding.id });
     for (const recipient of recipients) {
       this.transaction.schedule(() =>

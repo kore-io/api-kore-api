@@ -27,8 +27,8 @@ import {
   SiteFieldNotAllowedError,
   SiteFieldsInvalidError,
   SiteSlugLockedError,
+  SitePaymentPendingError,
   SiteSlugUnavailableError,
-  CourtesyDisabledError,
   NotDraftError,
   EventDateMissingError,
   EndDateOutOfRangeError,
@@ -39,13 +39,6 @@ import {
  * WEDDING_NOT_FOUND e 403 ACTION_NOT_ALLOWED) seguem o mapa do Acesso.
  */
 export function toHttpError(error: unknown): unknown {
-  if (error instanceof CourtesyDisabledError) {
-    return new ConflictException({
-      statusCode: 409,
-      error: 'COURTESY_DISABLED',
-      message: 'Publishing is not available yet.',
-    });
-  }
   if (error instanceof NotDraftError) {
     return new ConflictException({
       statusCode: 409,
@@ -140,6 +133,13 @@ export function toHttpError(error: unknown): unknown {
       error: 'FIELD_NOT_ALLOWED',
       message: 'Only the couple can change these fields.',
       fields: error.fields,
+    });
+  }
+  if (error instanceof SitePaymentPendingError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'PAYMENT_PENDING',
+      message: 'A publication payment is awaiting confirmation.',
     });
   }
   if (error instanceof SiteSlugLockedError) {

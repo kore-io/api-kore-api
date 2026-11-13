@@ -153,7 +153,11 @@ describe('Central de notificações (banco real)', () => {
 
     const defaults = await get(ana.cookie, 'notification-preferences', { weddingId }).expect(200);
     expect(defaults.body).toEqual({
-      items: [{ type: 'rsvp', inApp: true, email: 'daily', push: false }],
+      items: [
+        { type: 'rsvp', inApp: true, email: 'daily', push: false, emailEditable: true },
+        // Cobrança e pagamentos (F3): o e-mail sempre sai, sem seletor (decisão 236).
+        { type: 'billing', inApp: true, email: 'always', push: false, emailEditable: false },
+      ],
       push: { subscribed: false, vapidPublicKey: process.env.VAPID_PUBLIC_KEY },
     });
 
@@ -163,7 +167,13 @@ describe('Central de notificações (banco real)', () => {
       .set('Origin', APP_ORIGIN)
       .send({ weddingId, type: 'rsvp', email: 'immediate' })
       .expect(200);
-    expect(saved.body).toEqual({ type: 'rsvp', inApp: true, email: 'immediate', push: false });
+    expect(saved.body).toEqual({
+      type: 'rsvp',
+      inApp: true,
+      email: 'immediate',
+      push: false,
+      emailEditable: true,
+    });
     // Cada pessoa tem as suas.
     expect(
       (await get(juliana.cookie, 'notification-preferences', { weddingId }).expect(200)).body

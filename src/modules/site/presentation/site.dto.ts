@@ -178,10 +178,8 @@ export class UpdateSongQuestionBody {
   text: string | null;
 }
 
-/** A tela Publicar o site (Publicação RN01; decisão 217(13)). */
+/** A tela Publicar o site: os limites da data de saída do ar (Publicação RN04; a Cortesia saiu na F3). */
 export class SitePublicationResponse {
-  /** A chave do servidor; o app só esconde o botão, quem decide é o servidor. */
-  courtesyEnabled: boolean;
   /** O dia seguinte ao casamento; nulo sem data ou sem fuso. */
   @ApiProperty({ type: String, nullable: true, example: '2026-11-15' }) endDateMin: string | null;
   /** 12 meses depois do casamento (29/02 → 28/02); nulo sem data ou sem fuso. */

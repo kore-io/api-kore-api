@@ -1,5 +1,6 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
+import { NOTIFICATIONS_QUEUE } from '../notifications/infrastructure/notifications-queue';
 import { PaymentWebhookRateLimitGuard } from '../../shared/rate-limit/payment-webhook-rate-limit.guard';
 import { GATEWAY_EVENT_QUEUE } from './application/ports/gateway-event.queue.port';
 import { GATEWAY_EVENT_STORE } from './application/ports/gateway-event.store.port';
@@ -38,7 +39,11 @@ import { PaymentsController } from './presentation/payments.controller';
  * preço, a cotação, o pagamento e a leitura da cobrança.
  */
 @Module({
-  imports: [AccessModule, BullModule.registerQueue({ name: GATEWAY_EVENTS_QUEUE })],
+  imports: [
+    AccessModule,
+    BullModule.registerQueue({ name: GATEWAY_EVENTS_QUEUE }),
+    BullModule.registerQueue({ name: NOTIFICATIONS_QUEUE }),
+  ],
   controllers: [
     PaymentWebhooksController,
     PricingController,

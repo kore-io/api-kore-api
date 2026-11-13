@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import type { Prisma } from '../../../generated/prisma/client';
 import { TenantTransaction } from '../../../shared/database/tenant-transaction';
 import {
+  CENTER_NOTIFICATION_TYPES,
+  type CenterNotificationType,
   NOTIFICATION_TYPES,
   PLANNER_NOTIFICATION_TYPES,
   type EmailFrequency,
@@ -33,6 +35,13 @@ function isPlannerType(type: string): type is PlannerNotificationType {
   return (PLANNER_NOTIFICATION_TYPES as readonly string[]).includes(type);
 }
 
+function isCenterType(type: string): type is CenterNotificationType {
+  return (CENTER_NOTIFICATION_TYPES as readonly string[]).includes(type);
+}
+
+/** Do casal (rsvp e billing): os nomes vêm dos noivos do casamento, que a pessoa dona vê. */
+const NAMES_FROM_WEDDING: readonly string[] = ['rsvp', 'billing'];
+
 const firstName = (name: string): string => name.trim().split(/\s+/)[0] ?? '';
 
 /** O cursor da página: mais novas primeiro, pelo `updatedAt` e o id. */
@@ -59,7 +68,9 @@ export class PrismaNotificationStore implements NotificationStore {
    */
   private async toRows(rows: Row[]): Promise<NotificationRow[]> {
     const rsvpWeddings = [
-      ...new Set(rows.filter((row) => row.type === 'rsvp').map((row) => row.weddingId)),
+      ...new Set(
+        rows.filter((row) => NAMES_FROM_WEDDING.includes(row.type)).map((row) => row.weddingId),
+      ),
     ];
     const partners = rsvpWeddings.length
       ? await this.tenant.client().partner.findMany({
@@ -76,12 +87,14 @@ export class PrismaNotificationStore implements NotificationStore {
       return [name(1), name(2)];
     };
     return rows.flatMap((row) => {
-      if (!isPlannerType(row.type)) return [];
+      if (!isCenterType(row.type)) return [];
       const fromPayload = Array.isArray(row.payload)
         ? (row.payload[0] as { partnerNames?: unknown } | undefined)?.partnerNames
         : undefined;
       const partnerNames =
-        row.type !== 'rsvp' && Array.isArray(fromPayload) && fromPayload.length === 2
+        !NAMES_FROM_WEDDING.includes(row.type) &&
+        Array.isArray(fromPayload) &&
+        fromPayload.length === 2
           ? (fromPayload as [string, string])
           : namesOf(row.weddingId);
       return [{ ...row, type: row.type, partnerNames }];
@@ -171,7 +184,7 @@ export class PrismaNotificationStore implements NotificationStore {
       where: { userId, weddingId, type: COUPLE_TYPES },
       select: PREFERENCE_SELECT,
     });
-    return rows.flatMap((row) => (isPlannerType(row.type) ? [{ ...row, type: row.type }] : []));
+    return rows.flatMap((row) => (isCenterType(row.type) ? [{ ...row, type: row.type }] : []));
   }
 
   async saveEmailPreference({
