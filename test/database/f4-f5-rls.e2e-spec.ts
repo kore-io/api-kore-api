@@ -145,6 +145,33 @@ describe('Migration das F4 e F5 (banco real, usuário kore_api)', () => {
     });
   });
 
+  it('Decisão 248(2) - a API não publica nem grava o publishedAt; só troca o status entre rascunho e aguardando o casal', async () => {
+    await as(ana, async () => {
+      for (const status of ['published', 'post_event', 'grace', 'expired', 'purged'])
+        await rejects(
+          `UPDATE weddings SET status = '${status}' WHERE id = $1`,
+          [weddingId],
+          /weddings_app_status_guard/,
+        );
+      await rejects(
+        `UPDATE weddings SET published_at = now() WHERE id = $1`,
+        [weddingId],
+        /permission denied/,
+      );
+      // As duas trocas dos casos de uso: o convite do casal e o aceite.
+      const invited = await api.query(
+        `UPDATE weddings SET status = 'awaiting_couple' WHERE id = $1 AND status = 'draft'`,
+        [weddingId],
+      );
+      expect(invited.rowCount).toBe(1);
+      const accepted = await api.query(
+        `UPDATE weddings SET status = 'draft' WHERE id = $1 AND status = 'awaiting_couple'`,
+        [weddingId],
+      );
+      expect(accepted.rowCount).toBe(1);
+    });
+  });
+
   it('Publicação RN04 e RN05, Música RN04 - os CHECKs das colunas novas', async () => {
     // As da publicação, pelo backoffice (decisão 246: a API não as grava).
     // Cada comando falha inteiro: nada fica gravado para os casos seguintes.
