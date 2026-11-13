@@ -26,6 +26,7 @@ export interface LocalChargeRow {
   due_at: Date | null;
   card_last4: string | null;
   failure_reason: string | null;
+  dispute_deadline: Date | null;
   created_at: Date;
 }
 
@@ -63,6 +64,7 @@ CREATE TABLE IF NOT EXISTS ${LOCAL_GATEWAY_SCHEMA}.charges (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+ALTER TABLE ${LOCAL_GATEWAY_SCHEMA}.charges ADD COLUMN IF NOT EXISTS dispute_deadline date;
 CREATE TABLE IF NOT EXISTS ${LOCAL_GATEWAY_SCHEMA}.transfers (
   id text PRIMARY KEY,
   external_reference text NOT NULL UNIQUE,
@@ -229,11 +231,14 @@ export class LocalGatewayStore {
     status,
     chargedCents,
     failureReason = null,
+    disputeDeadline,
   }: {
     id: string;
     status: GatewayChargeStatus;
     chargedCents?: number | null;
     failureReason?: string | null;
+    /** AAAA-MM-DD; ausente mantém o que estava. */
+    disputeDeadline?: string | null;
   }): Promise<void> {
     await this.ensureTables();
     const fee = chargedCents == null ? null : LOCAL_GATEWAY_FEE_CENTS;
@@ -244,6 +249,7 @@ export class LocalGatewayStore {
            fee_cents = COALESCE($4, fee_cents),
            net_cents = COALESCE($3 - $4, net_cents),
            failure_reason = $5,
+           dispute_deadline = CASE WHEN $6 THEN $7::date ELSE dispute_deadline END,
            updated_at = now()
        WHERE id = $1`,
       id,
@@ -251,6 +257,8 @@ export class LocalGatewayStore {
       chargedCents ?? null,
       fee,
       failureReason,
+      disputeDeadline !== undefined,
+      disputeDeadline ?? null,
     );
   }
 

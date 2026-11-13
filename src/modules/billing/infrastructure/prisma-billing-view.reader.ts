@@ -85,6 +85,7 @@ export class PrismaBillingViewReader implements BillingViewReader {
           installments: true,
           status: true,
           paidAt: true,
+          disputeDeadline: true,
         },
       }),
       db.payment.findFirst({
@@ -107,6 +108,7 @@ export class PrismaBillingViewReader implements BillingViewReader {
       payments: applied.map((payment) => ({
         ...payment,
         refundableUntil: refundable.get(payment.id) ?? null,
+        disputeDeadline: payment.status === 'disputed' ? day(payment.disputeDeadline) : null,
         periodStart: day(payment.periodStart) ?? '',
         periodEnd: day(payment.periodEnd) ?? '',
       })),

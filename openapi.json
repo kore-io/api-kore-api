@@ -18197,6 +18197,12 @@
             "nullable": true,
             "description": "O último instante para desistir, no fuso do casamento (Pagamentos e\narrependimento RN02); nulo fora do prazo ou fora de `paid`. O app mostra\no dia: \"Vocês podem desistir até 17 de ago.\".",
             "format": "date-time"
+          },
+          "disputeDeadline": {
+            "type": "string",
+            "nullable": true,
+            "description": "O prazo da defesa, só em contestação (Pagamentos e arrependimento RN06).",
+            "example": "2026-09-10"
           }
         },
         "required": [
@@ -18210,7 +18216,8 @@
           "installments",
           "status",
           "paidAt",
-          "refundableUntil"
+          "refundableUntil",
+          "disputeDeadline"
         ]
       },
       "PayerDto": {

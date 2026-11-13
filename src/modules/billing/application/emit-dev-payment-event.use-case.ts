@@ -48,7 +48,7 @@ export class EmitDevPaymentEvent {
     failNextGatewayCall?: boolean;
     now: Date;
   }): Promise<DevEventResult> {
-    const body = await this.applyToGateway({ id, event, amountCents });
+    const body = await this.applyToGateway({ id, event, amountCents, now });
     if (!body) return { kind: 'not_found' };
 
     const eventIds = new Set<string>();
@@ -73,10 +73,12 @@ export class EmitDevPaymentEvent {
     id,
     event,
     amountCents,
+    now,
   }: {
     id: string;
     event: DevPaymentEvent;
     amountCents?: number;
+    now: Date;
   }): Promise<LocalWebhookBody | null> {
     const eventId = `evt_local_${randomUUID()}`;
     if (event === 'payout-paid' || event === 'payout-failed') {
@@ -108,6 +110,10 @@ export class EmitDevPaymentEvent {
       chargedCents: confirming ? (amountCents ?? charge.amount_cents) : undefined,
       failureReason:
         event === 'fail' ? 'card_declined' : event === 'refund-failed' ? 'refund_refused' : null,
+      // A contestação local tem 10 dias de prazo para a defesa (RN06).
+      ...(event === 'dispute'
+        ? { disputeDeadline: new Date(now.getTime() + 10 * 86_400_000).toISOString().slice(0, 10) }
+        : {}),
     });
     const updated = await this.store.chargeById({ id: charge.id });
     return {

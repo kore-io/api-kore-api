@@ -10,7 +10,12 @@ import { localDate } from '../../src/shared/time/local-date';
 import { createTestApp } from '../support/create-test-app';
 import { createTestWorker } from '../support/create-test-worker';
 import { waitForInbox } from '../support/mailpit';
-import { devPaymentEvent, expectStatus, publishByPayment } from '../support/payments';
+import {
+  devPaymentEvent,
+  expectStatus,
+  publishByPayment,
+  seedPaidExtension,
+} from '../support/payments';
 import { signedInUser } from '../support/sessions';
 import { seedWedding } from '../support/weddings';
 
@@ -86,75 +91,13 @@ describe('Pagamentos e arrependimento (RN02 a RN08; banco real)', () => {
     }
   }
 
-  /** Uma extensão paga e aplicada, com a cobrança confirmada no gateway local. */
-  async function seedExtension({
-    weddingId,
-    ownerId,
-    periodStart,
-    periodEnd,
-    paidAt = new Date(),
-  }: {
+  const seedExtension = (args: {
     weddingId: string;
     ownerId: string;
     periodStart: string;
     periodEnd: string;
     paidAt?: Date;
-  }) {
-    const before = await wedding(weddingId);
-    const id = randomUUID();
-    const customerId = await gateway.createCustomer({ name: 'Ana', taxIdLast4: '4725' });
-    const charge = await gateway.createCharge({
-      externalReference: id,
-      customerId,
-      method: 'card',
-      amountCents: 8700,
-      installments: 1,
-      status: 'confirmed',
-      pixCopyPaste: null,
-      dueAt: null,
-      cardLast4: '4242',
-      failureReason: null,
-    });
-    await gateway.updateCharge({ id: charge.id, status: 'confirmed', chargedCents: 8700 });
-    await db.payment.create({
-      data: {
-        id,
-        weddingId,
-        kind: 'extension',
-        status: 'paid',
-        method: 'card',
-        installments: 1,
-        priceVersion: '2026-11',
-        periodStart: day(periodStart),
-        periodEnd: day(periodEnd),
-        monthsCovered: 3,
-        activationListCents: 0,
-        monthlyListCents: 2900,
-        amountCents: 8700,
-        gateway: 'local',
-        externalReference: id,
-        gatewayPaymentId: charge.id,
-        gatewayChargedCents: 8700,
-        payerName: 'Ana Beatriz Moreira',
-        payerTaxIdHash: `hash-${id}`,
-        payerTaxIdHashVersion: 1,
-        payerTaxIdLast4: '4725',
-        idempotencyKey: randomUUID(),
-        requestHash: 'x',
-        createdByUserId: ownerId,
-        paidAt,
-        appliedAt: paidAt,
-        cardLast4: '4242',
-        previousEndDate: before.endDate,
-        previousPaidThrough: before.paidThrough,
-      },
-    });
-    await db.wedding.update({
-      where: { id: weddingId },
-      data: { endDate: day(periodEnd), paidThrough: day(periodEnd) },
-    });
-    return id;
-  }
+  }) => seedPaidExtension({ db, gateway, ...args });
 
   it('RN02, RN03 e RN07 - desistir da publicação: rascunho no pedido; o estorno confirmado avisa', async () => {
     const { ana, weddingId, paymentId } = await published();

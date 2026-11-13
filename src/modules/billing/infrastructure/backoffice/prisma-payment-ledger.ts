@@ -73,6 +73,8 @@ export class PrismaPaymentLedger implements PaymentLedger {
         refundAttempts: true,
         refundLastError: true,
         refundFailedAt: true,
+        disputedAt: true,
+        disputeResolvedAt: true,
       },
     });
     const ledgerWedding: LedgerWedding = {
@@ -306,6 +308,53 @@ export class PrismaPaymentLedger implements PaymentLedger {
       where: { weddingId, refundRequestedAt },
       orderBy: { periodStart: 'asc' },
       select: { id: true, shortCode: true },
+    });
+  }
+
+  async markDisputed({
+    paymentId,
+    now,
+    deadline,
+    keepStatus,
+  }: {
+    paymentId: string;
+    now: Date;
+    deadline: string | null;
+    keepStatus: boolean;
+  }) {
+    await this.db().payment.update({
+      where: { id: paymentId },
+      data: {
+        ...(keepStatus ? {} : { status: 'disputed' as const }),
+        disputedAt: now,
+        disputeDeadline: deadline ? new Date(`${deadline}T00:00:00Z`) : null,
+        disputeResolvedAt: null,
+      },
+    });
+  }
+
+  async markDisputeWon({ paymentId, now }: { paymentId: string; now: Date }) {
+    await this.db().payment.updateMany({
+      where: { id: paymentId, status: 'disputed' },
+      data: { status: 'paid', disputeResolvedAt: now },
+    });
+  }
+
+  async markDisputeLost({ paymentId, now }: { paymentId: string; now: Date }) {
+    await this.db().payment.updateMany({
+      where: { id: paymentId, status: { in: ['disputed', 'paid'] } },
+      data: {
+        status: 'refunded',
+        refundOrigin: 'chargeback',
+        refundedAt: now,
+        disputeResolvedAt: now,
+      },
+    });
+    // O estorno já pedido que o banco devolveu pela contestação: refunded,
+    // com a origem do pedido (o job de estorno para, sem estornar duas vezes).
+    await this.db().payment.updateMany({
+      where: { id: paymentId, status: 'refund_requested' },
+      data: { status: 'refunded', refundedAt: now, disputeResolvedAt: now },
     });
   }
 
