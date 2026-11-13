@@ -5128,6 +5128,9 @@
                       "$ref": "#/components/schemas/SiteSlugLockedErrorBody"
                     },
                     {
+                      "$ref": "#/components/schemas/SitePaymentPendingErrorBody"
+                    },
+                    {
                       "$ref": "#/components/schemas/SiteSlugUnavailableErrorBody"
                     }
                   ]
@@ -5714,137 +5717,6 @@
           }
         },
         "summary": "O token da prévia e a `url` do site com ele; vale 5 minutos e uma vez só.",
-        "tags": [
-          "site"
-        ]
-      }
-    },
-    "/v1/weddings/{weddingId}/publication": {
-      "post": {
-        "operationId": "PublicationController_create_v1",
-        "parameters": [
-          {
-            "name": "weddingId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PublishWeddingBody"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PublicationResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationErrorBody"
-                }
-              }
-            },
-            "description": ""
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
-                }
-              }
-            },
-            "description": ""
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
-                    }
-                  ]
-                }
-              }
-            },
-            "description": ""
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
-                }
-              }
-            },
-            "description": ""
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/CourtesyDisabledErrorBody"
-                    },
-                    {
-                      "$ref": "#/components/schemas/NotDraftErrorBody"
-                    },
-                    {
-                      "$ref": "#/components/schemas/SiteSlugMissingErrorBody"
-                    },
-                    {
-                      "$ref": "#/components/schemas/EventDateMissingErrorBody"
-                    }
-                  ]
-                }
-              }
-            },
-            "description": ""
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EndDateOutOfRangeErrorBody"
-                }
-              }
-            },
-            "description": ""
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RateLimitedErrorBody"
-                }
-              }
-            },
-            "description": ""
-          }
-        },
-        "summary": "Publica o site sem pagamento, com a data de saída do ar (Publicação RN01 a RN06).",
         "tags": [
           "site"
         ]
@@ -7113,13 +6985,14 @@
             "name": "type",
             "required": false,
             "in": "query",
-            "description": "Filtro por tipo (casal: Respostas; cerimonialista: os 3).",
+            "description": "Filtro por tipo (casal: Respostas e Cobrança; cerimonialista: os 3 dela).",
             "schema": {
               "type": "string",
               "enum": [
                 "rsvp",
                 "wedding_published",
-                "membership_removed"
+                "membership_removed",
+                "billing"
               ]
             }
           },
@@ -13730,16 +13603,11 @@
             "nullable": true,
             "description": "12 meses depois do casamento (29/02 → 28/02); nulo sem data ou sem fuso.",
             "example": "2027-11-14"
-          },
-          "courtesyEnabled": {
-            "type": "boolean",
-            "description": "A chave do servidor; o app só esconde o botão, quem decide é o servidor."
           }
         },
         "required": [
           "endDateMin",
-          "endDateMax",
-          "courtesyEnabled"
+          "endDateMax"
         ]
       },
       "SitePlannerCreditResponse": {
@@ -13932,6 +13800,31 @@
             "type": "string",
             "enum": [
               "SLUG_LOCKED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SitePaymentPendingErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PAYMENT_PENDING"
             ]
           },
           "message": {
@@ -14796,125 +14689,6 @@
         "required": [
           "expiresAt",
           "url"
-        ]
-      },
-      "CourtesyDisabledErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              409
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "COURTESY_DISABLED"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
-        ]
-      },
-      "NotDraftErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              409
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "NOT_DRAFT"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
-        ]
-      },
-      "EventDateMissingErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              409
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "EVENT_DATE_MISSING"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
-        ]
-      },
-      "PublishWeddingBody": {
-        "type": "object",
-        "properties": {
-          "endDate": {
-            "type": "string",
-            "description": "`AAAA-MM-DD`: do dia seguinte ao casamento até 12 meses depois dele.",
-            "example": "2027-02-14"
-          }
-        },
-        "required": [
-          "endDate"
-        ]
-      },
-      "PublicationResponse": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "published"
-            ]
-          },
-          "publishedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "endDate": {
-            "type": "string",
-            "example": "2027-02-14"
-          },
-          "publicationSource": {
-            "type": "string",
-            "enum": [
-              "courtesy"
-            ]
-          }
-        },
-        "required": [
-          "status",
-          "publishedAt",
-          "endDate",
-          "publicationSource"
         ]
       },
       "PartySessionInvalidErrorBody": {
@@ -16294,6 +16068,58 @@
           "declined"
         ]
       },
+      "BillingEntryResponse": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "payment_confirmed"
+            ]
+          },
+          "paymentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amountCents": {
+            "type": "number",
+            "example": 33710
+          },
+          "method": {
+            "enum": [
+              "pix",
+              "card"
+            ],
+            "type": "string"
+          },
+          "cardLast4": {
+            "type": "string",
+            "nullable": true,
+            "example": "4821"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endDate": {
+            "type": "string",
+            "description": "A data de saída do ar paga, AAAA-MM-DD."
+          },
+          "installments": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "kind",
+          "paymentId",
+          "amountCents",
+          "method",
+          "cardLast4",
+          "at",
+          "endDate",
+          "installments"
+        ]
+      },
       "NotificationResponse": {
         "type": "object",
         "properties": {
@@ -16301,7 +16127,8 @@
             "enum": [
               "rsvp",
               "wedding_published",
-              "membership_removed"
+              "membership_removed",
+              "billing"
             ],
             "type": "string"
           },
@@ -16317,10 +16144,17 @@
             }
           },
           "payload": {
-            "description": "rsvp: por grupo, sem restrição, música nem nome de convidado (Central RN04).\nwedding_published e membership_removed: [{ partnerNames }] (revisão C8-3).",
             "type": "array",
+            "description": "rsvp: por grupo, sem restrição, música nem nome de convidado (Central RN04).\nwedding_published e membership_removed: [{ partnerNames }] (revisão C8-3).\nbilling: um item por pagamento, com o valor só no detalhe (RN13).",
             "items": {
-              "$ref": "#/components/schemas/NotificationEntryResponse"
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/NotificationEntryResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/BillingEntryResponse"
+                }
+              ]
             }
           },
           "readAt": {
@@ -16418,21 +16252,28 @@
             "enum": [
               "rsvp",
               "wedding_published",
-              "membership_removed"
+              "membership_removed",
+              "billing"
             ],
             "type": "string"
           },
           "email": {
+            "description": "`always`: Cobrança e pagamentos, sempre por e-mail e sem seletor (decisão 236).",
             "enum": [
               "off",
               "immediate",
-              "daily"
+              "daily",
+              "always"
             ],
             "type": "string"
           },
           "inApp": {
             "type": "boolean",
             "description": "Sempre ligada no casal."
+          },
+          "emailEditable": {
+            "type": "boolean",
+            "description": "O app mostra o seletor de e-mail só quando é editável (decisão 236)."
           },
           "push": {
             "type": "boolean",
@@ -16443,6 +16284,7 @@
           "type",
           "email",
           "inApp",
+          "emailEditable",
           "push"
         ]
       },
@@ -17318,6 +17160,31 @@
           "maxInstallments"
         ]
       },
+      "NotDraftErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "NOT_DRAFT"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
       "NotPublishedErrorBody": {
         "type": "object",
         "properties": {
@@ -17331,6 +17198,31 @@
             "type": "string",
             "enum": [
               "NOT_PUBLISHED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "EventDateMissingErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "EVENT_DATE_MISSING"
             ]
           },
           "message": {

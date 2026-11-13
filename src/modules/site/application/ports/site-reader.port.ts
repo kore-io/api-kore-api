@@ -61,6 +61,12 @@ export interface SiteReader {
    */
   plannerCollaborator(): Promise<PlannerCollaboratorCredit | null>;
 
+  /**
+   * A publicação aguarda pagamento (Publicar e pagar RN06)? Pela
+   * `wedding_awaiting_payment`: só o booleano, para todo vínculo (G3).
+   */
+  awaitingPayment({ weddingId }: { weddingId: string }): Promise<boolean>;
+
   /** As imagens `ready` do casamento entre os ids pedidos (as outras somem da leitura). */
   readyImages({
     weddingId,

@@ -7,6 +7,7 @@ import {
 import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
 import { ProfileNotOwnedError } from '../../access/domain/access.errors';
 import {
+  EMAIL_PREFERENCE_TYPES,
   NOTIFICATION_STORE,
   NOTIFICATION_TYPES,
   PLANNER_NOTIFICATION_TYPES,
@@ -45,6 +46,11 @@ export const DEFAULT_PREFERENCE: Omit<PreferenceRow, 'type'> = {
 
 export class NotificationNotFoundError extends Error {
   override name = 'NotificationNotFoundError';
+}
+
+/** O e-mail da cobrança não tem seletor (decisão 236): sempre sai. */
+export class EmailPreferenceNotEditableError extends Error {
+  override name = 'EmailPreferenceNotEditableError';
 }
 
 export class NotificationCursorInvalidError extends Error {
@@ -232,7 +238,11 @@ export class NotificationPreferences {
       (await this.store.preferences({ userId, weddingId })).map((row) => [row.type, row]),
     );
     return {
-      items: NOTIFICATION_TYPES.map((type) => saved.get(type) ?? { type, ...DEFAULT_PREFERENCE }),
+      items: NOTIFICATION_TYPES.map((type) => {
+        const row = saved.get(type) ?? { type, ...DEFAULT_PREFERENCE };
+        // Cobrança e pagamentos: o e-mail sempre sai, sem seletor (decisão 236).
+        return type === 'billing' ? { ...row, email: 'always' as const } : row;
+      }),
       push: {
         subscribed: await this.store.hasPushSubscription({ sessionId }),
         // Pela API, sem variável de build (R8-6); nula com o push desligado no ambiente.
@@ -254,6 +264,8 @@ export class NotificationPreferences {
     email: EmailFrequency;
   }): Promise<PreferenceRow> {
     await this.authorization.require({ userId, weddingId, action: 'view' });
+    if (!(EMAIL_PREFERENCE_TYPES as readonly string[]).includes(type))
+      throw new EmailPreferenceNotEditableError();
     return this.store.saveEmailPreference({ userId, weddingId, type, email });
   }
 }

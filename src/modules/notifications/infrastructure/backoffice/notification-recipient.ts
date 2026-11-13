@@ -44,7 +44,7 @@ export function preferenceWhere({
   role: 'owner' | 'planner';
   userId: string;
   weddingId: string;
-  type: 'rsvp' | 'wedding_published' | 'membership_removed';
+  type: 'rsvp' | 'wedding_published' | 'membership_removed' | 'billing';
 }): Prisma.NotificationPreferenceWhereInput {
   return { userId, type, weddingId: role === 'owner' ? weddingId : null };
 }

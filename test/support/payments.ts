@@ -83,3 +83,25 @@ export function devPaymentEvent({
 }) {
   return request(app.getHttpServer()).post(`/v1/dev/payments/${paymentId}/${event}`).send(body);
 }
+
+/**
+ * Publica pelo caminho pago (Publicar e pagar RN17; B2-17): paga no cartão e
+ * confirma pela rota dev, que processa em linha (RN21). Substitui a Cortesia
+ * nos testes que só precisam de um site publicado.
+ */
+export async function publishByPayment({
+  app,
+  cookie,
+  weddingId,
+  endDate,
+}: {
+  app: INestApplication;
+  cookie: string;
+  weddingId: string;
+  endDate: string;
+}): Promise<{ paymentId: string }> {
+  const created = expectStatus(await payForPublication({ app, cookie, weddingId, endDate }), 201);
+  const paymentId = created.body.paymentId as string;
+  expectStatus(await devPaymentEvent({ app, paymentId, event: 'confirm' }), 200);
+  return { paymentId };
+}

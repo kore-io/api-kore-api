@@ -71,6 +71,15 @@ export class SiteSlugLockedError extends Error {
   override name = 'SiteSlugLockedError';
 }
 
+/**
+ * A data, a UF ou o endereço com uma publicação aguardando pagamento (409
+ * PAYMENT_PENDING; Publicar e pagar RN08, B2-9): o pagamento foi cotado com
+ * eles e, mudados, ele não teria destino.
+ */
+export class SitePaymentPendingError extends Error {
+  override name = 'SitePaymentPendingError';
+}
+
 /** Endereço em uso ou reservado (409 SLUG_UNAVAILABLE; Dados básicos RN06). */
 export class SiteSlugUnavailableError extends Error {
   override name = 'SiteSlugUnavailableError';
@@ -148,11 +157,6 @@ export class PreviewInvalidError extends Error {
 /** Sem cookie da prévia válido (401 PREVIEW_REQUIRED; Pré-visualização RN05 e RN06). */
 export class PreviewRequiredError extends Error {
   override name = 'PreviewRequiredError';
-}
-
-/** A chave da Cortesia está desligada (409 COURTESY_DISABLED; Publicação RN01). */
-export class CourtesyDisabledError extends Error {
-  override name = 'CourtesyDisabledError';
 }
 
 /** Só se publica de rascunho (409 NOT_DRAFT; Publicação RN03). */

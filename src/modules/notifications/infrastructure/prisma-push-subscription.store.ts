@@ -44,12 +44,14 @@ export class PrismaPushSubscriptionStore implements PushSubscriptionStore {
       where: { userId, removedAt: null },
       select: { weddingId: true },
     });
+    // O push é por aparelho: liga e desliga a resposta e a cobrança juntas (decisão 236).
     for (const { weddingId } of memberships)
-      await tx.notificationPreference.upsert({
-        where: { userId_weddingId_type: { userId, weddingId, type: 'rsvp' } },
-        create: { userId, weddingId, type: 'rsvp', push },
-        update: { push },
-        select: { id: true },
-      });
+      for (const type of ['rsvp', 'billing'] as const)
+        await tx.notificationPreference.upsert({
+          where: { userId_weddingId_type: { userId, weddingId, type } },
+          create: { userId, weddingId, type, push },
+          update: { push },
+          select: { id: true },
+        });
   }
 }

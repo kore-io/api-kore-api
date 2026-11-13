@@ -10,6 +10,7 @@ import {
   NOTIFICATIONS_SWEEP_SCHEDULER_ID,
   type EmailJob,
   type NotifiedJob,
+  type PushJob,
 } from './notifications-queue';
 
 const logger = new Logger('Notifications');
@@ -33,8 +34,8 @@ export class NotificationsProcessor extends WorkerHost {
     const now = new Date();
     if (job.name === 'notified') return this.notified({ data: job.data as NotifiedJob, now });
     if (job.name === 'push') {
-      const { userId, weddingId } = job.data as EmailJob;
-      return this.push.send({ userId, weddingId, now });
+      const { userId, weddingId, type = 'rsvp' } = job.data as PushJob;
+      return this.push.send({ userId, weddingId, type, now });
     }
     if (job.name === 'email') {
       const { userId, weddingId } = job.data as EmailJob;

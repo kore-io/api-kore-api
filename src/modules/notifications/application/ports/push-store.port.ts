@@ -11,7 +11,18 @@ export interface StoredPushSubscription {
 /** O que o push precisa, pela conexão do backoffice (o worker). */
 export interface PushStore {
   /** Vínculo ativo e a preferência push do tipo (sem linha, desligado). */
-  recipient({ userId, weddingId, now }: { userId: string; weddingId: string; now: Date }): Promise<{
+  recipient({
+    userId,
+    weddingId,
+    type,
+    now,
+  }: {
+    userId: string;
+    weddingId: string;
+    /** O tipo do aviso: a preferência e a notificação são as dele. */
+    type: 'rsvp' | 'billing';
+    now: Date;
+  }): Promise<{
     member: boolean;
     /** O dono ou a cerimonialista com Planner, conferido agora (D18); nulo sem vínculo. */
     role: 'owner' | 'planner' | null;

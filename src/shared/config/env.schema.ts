@@ -101,10 +101,6 @@ export const envSchema = z
     // Base do Link de indicação (Link de indicação RN01): o redirect /i/{código}
     // fica no Site Institucional (RN07), fora da API.
     REFERRAL_LINK_URL: z.url({ protocol: /^https?$/ }).default('https://kore.com.br/i'),
-    COURTESY_PUBLICATION_ENABLED: z
-      .enum(['true', 'false'])
-      .default('false')
-      .transform((value) => value === 'true'),
     // Push com VAPID (E-mail e push RN07; decisão 216, D25): as chaves ficam
     // fora de arquivo e são geradas no ambiente. Opcionais em local e test (sem
     // elas, o push aparece desligado); obrigatórias em homolog e production.
@@ -166,13 +162,6 @@ export const envSchema = z
         path: ['PLANNER_SIGNUP_ENABLED'],
         message:
           'o cadastro de cerimonialista só pode ser ligado com APP_ENV local ou test (decisão 224(8))',
-      });
-    }
-    if (env.COURTESY_PUBLICATION_ENABLED && !LOCAL_KEY_ENVS.includes(env.APP_ENV)) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['COURTESY_PUBLICATION_ENABLED'],
-        message: 'a Cortesia só pode ser ligada com APP_ENV local ou test (decisão 217(11))',
       });
     }
     if (env.PAYMENT_GATEWAY_PROVIDER === 'local' && !LOCAL_KEY_ENVS.includes(env.APP_ENV)) {

@@ -4,6 +4,7 @@ import { Client } from 'pg';
 import request from 'supertest';
 import { BackofficePrismaService } from '../../src/shared/database/backoffice-prisma.service';
 import { createTestApp } from '../support/create-test-app';
+import { publishByPayment } from '../support/payments';
 import { seedReferrer } from '../support/referrers';
 import { openSession, signedInUser } from '../support/sessions';
 import { seedWedding } from '../support/weddings';
@@ -172,12 +173,8 @@ describe('Notificações da cerimonialista (banco real; decisões 223 e 224)', (
       data: { referrerId: referrer.id, referralSource: 'referral_link' },
     });
 
-    await http()
-      .post(`/v1/weddings/${weddingId}/publication`)
-      .set('Cookie', ana.cookie)
-      .set('Origin', APP_ORIGIN)
-      .send({ endDate: day(90) })
-      .expect(200);
+    // A primeira publicação, pelo pagamento confirmado (Publicar e pagar RN05 e RN17).
+    await publishByPayment({ app, cookie: ana.cookie, weddingId, endDate: day(90) });
 
     const rows = await db.notification.findMany({
       where: { weddingId, type: 'wedding_published' },
@@ -214,12 +211,8 @@ describe('Notificações da cerimonialista (banco real; decisões 223 e 224)', (
       },
     });
 
-    await http()
-      .post(`/v1/weddings/${weddingId}/publication`)
-      .set('Cookie', ana.cookie)
-      .set('Origin', APP_ORIGIN)
-      .send({ endDate: day(90) })
-      .expect(200);
+    // A primeira publicação, pelo pagamento confirmado (Publicar e pagar RN05 e RN17).
+    await publishByPayment({ app, cookie: ana.cookie, weddingId, endDate: day(90) });
 
     const { body } = await central(julianaCookie).expect(200);
     expect(body.items).toEqual([expect.objectContaining({ type: 'wedding_published', weddingId })]);
@@ -317,9 +310,9 @@ describe('Notificações da cerimonialista (banco real; decisões 223 e 224)', (
       .set('Cookie', julianaCookie)
       .expect(200);
     expect(before.body.items).toEqual([
-      { type: 'rsvp', inApp: true, email: 'daily', push: false },
-      { type: 'wedding_published', inApp: true, email: 'daily', push: false },
-      { type: 'membership_removed', inApp: true, email: 'daily', push: false },
+      { type: 'rsvp', inApp: true, email: 'daily', push: false, emailEditable: true },
+      { type: 'wedding_published', inApp: true, email: 'daily', push: false, emailEditable: true },
+      { type: 'membership_removed', inApp: true, email: 'daily', push: false, emailEditable: true },
     ]);
 
     const saved = await http()
@@ -333,6 +326,7 @@ describe('Notificações da cerimonialista (banco real; decisões 223 e 224)', (
       inApp: true,
       email: 'immediate',
       push: false,
+      emailEditable: true,
     });
     await http()
       .put('/v1/me/notification-preferences')
@@ -353,7 +347,10 @@ describe('Notificações da cerimonialista (banco real; decisões 223 e 224)', (
       .query({ weddingId })
       .set('Cookie', ana.cookie)
       .expect(200);
-    expect((couple.body.items as { type: string }[]).map((item) => item.type)).toEqual(['rsvp']);
+    expect((couple.body.items as { type: string }[]).map((item) => item.type)).toEqual([
+      'rsvp',
+      'billing',
+    ]);
     expect(
       (await http().get('/v1/me/notification-preferences').set('Cookie', ana.cookie).expect(403))
         .body.error,

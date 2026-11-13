@@ -1,6 +1,15 @@
-/** Os tipos da central do casal (Central RN01): só a resposta do convite. */
-export const NOTIFICATION_TYPES = ['rsvp'] as const;
+/**
+ * Os tipos da central do casal (Central RN01): a resposta do convite e, desde
+ * a F3, a cobrança (Publicar e pagar RN13).
+ */
+export const NOTIFICATION_TYPES = ['rsvp', 'billing'] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+
+/**
+ * Os tipos do casal com o e-mail escolhido na preferência (Central RN07). Os
+ * e-mails da cobrança sempre saem, na hora (decisão 236).
+ */
+export const EMAIL_PREFERENCE_TYPES = ['rsvp'] as const;
 
 /**
  * Os tipos da cerimonialista (Notificações da cerimonialista RN01): Novas
@@ -13,27 +22,36 @@ export const PLANNER_NOTIFICATION_TYPES = [
 ] as const;
 export type PlannerNotificationType = (typeof PLANNER_NOTIFICATION_TYPES)[number];
 
+/** Todo tipo que alguma central mostra (a do casal e a da cerimonialista). */
+export const CENTER_NOTIFICATION_TYPES = [...PLANNER_NOTIFICATION_TYPES, 'billing'] as const;
+export type CenterNotificationType = (typeof CENTER_NOTIFICATION_TYPES)[number];
+
 export type EmailFrequency = 'off' | 'immediate' | 'daily';
 
 export interface NotificationRow {
   id: string;
-  type: PlannerNotificationType;
+  type: CenterNotificationType;
   /** A central da cerimonialista junta vários casamentos (revisão C8-5). */
   weddingId: string;
   /** Os primeiros nomes do casal; o app junta. */
   partnerNames: [string, string];
   /** Grupos distintos no payload (Central RN04). */
   count: number;
-  /** rsvp: por grupo { partyId, name, confirmed, declined, at }; os outros: [{ partnerNames }]. */
+  /**
+   * rsvp: por grupo { partyId, name, confirmed, declined, at }; billing: [{ kind,
+   * paymentId, endDate, amountCents, method, installments, cardLast4, at }]; os
+   * outros: [{ partnerNames }].
+   */
   payload: unknown;
   readAt: Date | null;
   updatedAt: Date;
 }
 
 export interface PreferenceRow {
-  type: PlannerNotificationType;
+  type: CenterNotificationType;
   inApp: boolean;
-  email: EmailFrequency;
+  /** `always`: a cobrança, sempre por e-mail, sem seletor (decisão 236). */
+  email: EmailFrequency | 'always';
   push: boolean;
 }
 

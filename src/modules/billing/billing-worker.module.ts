@@ -1,5 +1,6 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
+import { NOTIFICATIONS_QUEUE } from '../notifications/infrastructure/notifications-queue';
 import { GATEWAY_EVENT_QUEUE } from './application/ports/gateway-event.queue.port';
 import { GATEWAY_EVENT_STORE } from './application/ports/gateway-event.store.port';
 import { ProcessGatewayEvent } from './application/process-gateway-event.use-case';
@@ -41,6 +42,8 @@ import { WeddingPseudonymizer } from '../product-events/infrastructure/wedding-p
   imports: [
     BullModule.registerQueue({ name: GATEWAY_EVENTS_QUEUE }),
     BullModule.registerQueue({ name: PAYMENT_RECONCILIATION_QUEUE }),
+    // O push da cobrança entra na fila das notificações (decisão 236).
+    BullModule.registerQueue({ name: NOTIFICATIONS_QUEUE }),
     // O e-mail do pagamento confirmado entra na fila de e-mail, como na API.
     EmailQueuesModule,
   ],
