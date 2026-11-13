@@ -280,8 +280,12 @@ export class SyncPaymentWithGateway {
       await this.ledger.openAlert(alert);
       return 'disputed';
     }
-    // O mesmo fato de novo não faz nada (a contestação continua aberta).
-    if (payment.status === 'disputed' || payment.disputedAt) return 'dispute_open';
+    // O mesmo fato de novo não faz nada (a contestação continua aberta). Uma
+    // contestação nova depois da ganha (pré-arbitragem) abre de novo.
+    const open =
+      payment.status === 'disputed' ||
+      (payment.disputedAt !== null && payment.disputeResolvedAt === null);
+    if (open) return 'dispute_open';
     if (payment.status !== 'paid' && payment.status !== 'refund_requested') return 'unchanged';
     await this.ledger.markDisputed({
       paymentId: payment.id,
@@ -340,7 +344,8 @@ export class SyncPaymentWithGateway {
     payment: LedgerPayment;
     now: Date;
   }): Promise<SyncResult> {
-    if (payment.status !== 'disputed' && payment.status !== 'refund_requested') return 'unchanged';
+    // Também do `paid`: a abertura pode não ter chegado (a consulta é a fonte).
+    if (!['disputed', 'refund_requested', 'paid'].includes(payment.status)) return 'unchanged';
     await this.ledger.markDisputeLost({ paymentId: payment.id, now });
     await this.ledger.log({
       entry: {

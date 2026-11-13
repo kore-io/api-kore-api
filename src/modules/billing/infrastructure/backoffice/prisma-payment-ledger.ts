@@ -74,6 +74,7 @@ export class PrismaPaymentLedger implements PaymentLedger {
         refundLastError: true,
         refundFailedAt: true,
         disputedAt: true,
+        disputeResolvedAt: true,
       },
     });
     const ledgerWedding: LedgerWedding = {
@@ -341,7 +342,7 @@ export class PrismaPaymentLedger implements PaymentLedger {
 
   async markDisputeLost({ paymentId, now }: { paymentId: string; now: Date }) {
     await this.db().payment.updateMany({
-      where: { id: paymentId, status: 'disputed' },
+      where: { id: paymentId, status: { in: ['disputed', 'paid'] } },
       data: {
         status: 'refunded',
         refundOrigin: 'chargeback',

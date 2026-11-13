@@ -151,6 +151,47 @@ describe('Contestação (Pagamentos e arrependimento RN06; banco real)', () => {
     expect((await wedding(weddingId)).status).toBe('published');
   });
 
+  it('RN06 - aberta, ganha, aberta de novo (pré-arbitragem) e perdida: a 2ª contestação conta', async () => {
+    const { weddingId, paymentId } = await published();
+    await dispute(paymentId, 'dispute');
+    await dispute(paymentId, 'dispute-won');
+    expect(await payment(paymentId)).toMatchObject({ status: 'paid' });
+
+    await dispute(paymentId, 'dispute');
+    const reopened = await payment(paymentId);
+    expect(reopened.status).toBe('disputed');
+    expect(reopened.disputeResolvedAt).toBeNull();
+    expect(
+      await db.applicationLog.count({ where: { entityId: paymentId, action: 'payment.disputed' } }),
+    ).toBe(2);
+
+    await dispute(paymentId, 'dispute-lost');
+    expect(await payment(paymentId)).toMatchObject({
+      status: 'refunded',
+      refundOrigin: 'chargeback',
+    });
+    expect(
+      await db.alert.count({
+        where: { type: 'dispute_lost', entityId: paymentId, status: 'open' },
+      }),
+    ).toBe(1);
+    expect((await wedding(weddingId)).status).toBe('published');
+  });
+
+  it('RN06 - a perdida que chega com o pagamento ainda em paid (a abertura não chegou): refunded e alerta', async () => {
+    const { paymentId } = await published();
+    await dispute(paymentId, 'dispute-lost');
+    expect(await payment(paymentId)).toMatchObject({
+      status: 'refunded',
+      refundOrigin: 'chargeback',
+    });
+    expect(
+      await db.alert.count({
+        where: { type: 'dispute_lost', entityId: paymentId, status: 'open' },
+      }),
+    ).toBe(1);
+  });
+
   it('Publicar e pagar RN10 - contestação com o estorno já pedido: grava a data e o alerta e mantém refund_requested', async () => {
     const { ana, weddingId, paymentId } = await published();
     await request(app.getHttpServer())
