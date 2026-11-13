@@ -90,6 +90,8 @@ export interface PaymentLedger {
     paymentId: string;
     /** Um aviso por pagamento e fato: a confirmação e o reembolso concluído (RN13; RN07). */
     event: 'payment_confirmed' | 'refund_completed';
+    /** A chave do agrupamento, quando o aviso não é de um pagamento (os de saída do ar). */
+    groupKey?: string;
     userIds: string[];
     payload: Record<string, unknown>;
     now: Date;
@@ -132,6 +134,16 @@ export interface PaymentLedger {
    * `refund_requested` vai a `refunded` com a origem do pedido.
    */
   markDisputeLost(input: { paymentId: string; now: Date }): Promise<void>;
+  /**
+   * Grava o aviso de saída do ar (Data de saída do ar RN03): um por casamento,
+   * tipo e endDate (o único do BillingNoticeLog); false quando já foi enviado.
+   */
+  recordBillingNotice(input: {
+    weddingId: string;
+    notice: 'end_date_in_7_days' | 'grace_day_1' | 'grace_day_5' | 'expired';
+    endDate: string;
+    now: Date;
+  }): Promise<boolean>;
   /** Um alerta aberto por tipo e entidade (B9-7): o repetido não abre outro. */
   openAlert(input: {
     type: AlertType;

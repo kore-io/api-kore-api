@@ -216,6 +216,7 @@ export class PrismaPaymentLedger implements PaymentLedger {
     weddingId,
     paymentId,
     event,
+    groupKey,
     userIds,
     payload,
     now,
@@ -223,6 +224,7 @@ export class PrismaPaymentLedger implements PaymentLedger {
     weddingId: string;
     paymentId: string;
     event: 'payment_confirmed' | 'refund_completed';
+    groupKey?: string;
     userIds: string[];
     payload: Record<string, unknown>;
     now: Date;
@@ -235,7 +237,8 @@ export class PrismaPaymentLedger implements PaymentLedger {
         weddingId,
         type: 'billing' as const,
         groupKey:
-          event === 'payment_confirmed' ? `billing:${paymentId}` : `billing:${paymentId}:refund`,
+          groupKey ??
+          (event === 'payment_confirmed' ? `billing:${paymentId}` : `billing:${paymentId}:refund`),
         payload: [payload] as Prisma.InputJsonValue,
         createdAt: now,
         updatedAt: now,
@@ -356,6 +359,26 @@ export class PrismaPaymentLedger implements PaymentLedger {
       where: { id: paymentId, status: 'refund_requested' },
       data: { status: 'refunded', refundedAt: now, disputeResolvedAt: now },
     });
+  }
+
+  async recordBillingNotice({
+    weddingId,
+    notice,
+    endDate,
+    now,
+  }: {
+    weddingId: string;
+    notice: 'end_date_in_7_days' | 'grace_day_1' | 'grace_day_5' | 'expired';
+    endDate: string;
+    now: Date;
+  }): Promise<boolean> {
+    const rows = await this.db().$queryRaw<{ id: string }[]>`
+      INSERT INTO billing_notice_logs (id, wedding_id, notice, end_date, sent_at)
+      VALUES (${uuidV7({ now: now.getTime() })}::uuid, ${weddingId}::uuid,
+              ${notice}::billing_notice, ${endDate}::date, ${now})
+      ON CONFLICT (wedding_id, notice, end_date) DO NOTHING
+      RETURNING id::text AS id`;
+    return rows.length > 0;
   }
 
   async openAlert({

@@ -16429,13 +16429,44 @@
             "description": "O pagamento confirmado (Publicar e pagar RN13) ou o reembolso concluído (Pagamentos e arrependimento RN07).",
             "enum": [
               "payment_confirmed",
-              "refund_completed"
+              "refund_completed",
+              "end_date_soon",
+              "grace",
+              "expired"
             ],
             "type": "string"
           },
           "paymentId": {
             "type": "string",
+            "description": "Só nos avisos de pagamento.",
             "format": "uuid"
+          },
+          "daysLeft": {
+            "type": "number",
+            "description": "Os avisos de saída do ar (Data de saída do ar RN03): os dias até a endDate.",
+            "example": 7
+          },
+          "day": {
+            "description": "Carência: o 1º ou o 5º dia, e o último dia no ar.",
+            "enum": [
+              1,
+              5
+            ],
+            "type": "number"
+          },
+          "graceUntil": {
+            "type": "string",
+            "example": "2027-02-21"
+          },
+          "expiredAt": {
+            "type": "string",
+            "description": "Expirado: desde quando e até quando dá para renovar.",
+            "example": "2027-02-22"
+          },
+          "renewUntil": {
+            "type": "string",
+            "nullable": true,
+            "example": "2027-11-14"
           },
           "endDate": {
             "type": "string",
@@ -16452,6 +16483,9 @@
             ],
             "type": "string"
           },
+          "installments": {
+            "type": "number"
+          },
           "cardLast4": {
             "type": "string",
             "nullable": true,
@@ -16460,19 +16494,11 @@
           "at": {
             "type": "string",
             "format": "date-time"
-          },
-          "installments": {
-            "type": "number"
           }
         },
         "required": [
           "kind",
-          "paymentId",
-          "amountCents",
-          "method",
-          "cardLast4",
-          "at",
-          "installments"
+          "at"
         ]
       },
       "NotificationResponse": {

@@ -9,11 +9,17 @@ import type {
   PaymentConfirmedNotice,
   PixExpiredNotice,
   RefundCompletedNotice,
+  EndDateSoonNotice,
+  GraceNotice,
+  SiteExpiredNotice,
 } from '../application/ports/billing-mailer.port';
 import {
+  endDateSoonEmail,
+  graceEmail,
   paymentConfirmedEmail,
   pixExpiredEmail,
   refundCompletedEmail,
+  siteExpiredEmail,
 } from './emails/billing.email';
 
 /** Cobrança e publicação, na Área do Casal (página 21). */
@@ -49,5 +55,30 @@ export class OutboxBillingMailer implements BillingMailer {
       message: refundCompletedEmail({ notice, url }),
       priority: 'default',
     });
+  }
+
+  async endDateSoon({ notice }: { notice: EndDateSoonNotice }): Promise<void> {
+    await this.outbox.enqueue({
+      message: endDateSoonEmail({ notice, url: this.billingUrl() }),
+      priority: 'default',
+    });
+  }
+
+  async graceStarted({ notice }: { notice: GraceNotice }): Promise<void> {
+    await this.outbox.enqueue({
+      message: graceEmail({ notice, url: this.billingUrl() }),
+      priority: 'default',
+    });
+  }
+
+  async siteExpired({ notice }: { notice: SiteExpiredNotice }): Promise<void> {
+    await this.outbox.enqueue({
+      message: siteExpiredEmail({ notice, url: this.billingUrl() }),
+      priority: 'default',
+    });
+  }
+
+  private billingUrl(): string {
+    return new URL(BILLING_PATH, this.appUrl).toString();
   }
 }
