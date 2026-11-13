@@ -1,10 +1,15 @@
 import { Module } from '@nestjs/common';
+import { ConditionalModule } from '@nestjs/config';
+import { BillingModule } from './modules/billing/billing.module';
+import { DevPaymentsModule } from './modules/billing/dev-payments.module';
+import { devPaymentRoutesEnabled } from './modules/billing/dev-routes';
 import { AccessModule } from './modules/access/access.module';
 import { GuestsModule } from './modules/guests/guests.module';
 import { LogsModule } from './modules/logs/logs.module';
 import { ProductEventsModule } from './modules/product-events/product-events.module';
 import { RsvpModule } from './modules/rsvp/rsvp.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ReferralModule } from './modules/referral/referral.module';
 import { PlannerModule } from './modules/planner/planner.module';
 import { AppConfigModule } from './shared/config/app-config.module';
 import { CryptoModule } from './shared/crypto/crypto.module';
@@ -43,6 +48,10 @@ import { RedisModule } from './shared/redis/redis.module';
     RsvpModule,
     NotificationsModule,
     PlannerModule,
+    ReferralModule,
+    BillingModule,
+    // A rota dev de pagamentos só existe em local e test (Publicar e pagar RN15).
+    ConditionalModule.registerWhen(DevPaymentsModule, devPaymentRoutesEnabled),
   ],
 })
 export class AppModule {}

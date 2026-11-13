@@ -265,3 +265,13 @@ export class PlannerProfileInvalidError extends Error {
     this.issues = issues;
   }
 }
+
+/** Casamento bloqueado: só leitura (403 WEDDING_BLOCKED; Casamento bloqueado RN02). */
+export class WeddingBlockedError extends Error {
+  override name = 'WeddingBlockedError';
+}
+
+/** Exclusão agendada: só leitura (409 WEDDING_DELETION_SCHEDULED; Retenção RN05). */
+export class WeddingDeletionScheduledError extends Error {
+  override name = 'WeddingDeletionScheduledError';
+}

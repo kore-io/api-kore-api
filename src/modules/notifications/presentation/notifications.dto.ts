@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsIn,
@@ -11,7 +11,9 @@ import {
 } from 'class-validator';
 import { OptionalNotNull } from '../../../shared/http/optional-not-null';
 import {
+  CENTER_NOTIFICATION_TYPES,
   PLANNER_NOTIFICATION_TYPES,
+  type CenterNotificationType,
   type EmailFrequency,
   type PlannerNotificationType,
 } from '../application/ports/notification-store.port';
@@ -46,11 +48,11 @@ export class PreferencesQuery {
 }
 
 export class NotificationsQuery extends WeddingQuery {
-  /** Filtro por tipo (casal: Respostas; cerimonialista: os 3). */
-  @ApiProperty({ enum: PLANNER_NOTIFICATION_TYPES, required: false })
+  /** Filtro por tipo (casal: Respostas e Cobrança; cerimonialista: os 3 dela). */
+  @ApiProperty({ enum: CENTER_NOTIFICATION_TYPES, required: false })
   @IsOptional()
-  @IsIn(PLANNER_NOTIFICATION_TYPES)
-  type?: PlannerNotificationType;
+  @IsIn(CENTER_NOTIFICATION_TYPES)
+  type?: CenterNotificationType;
 
   /** O `nextCursor` da página anterior. */
   @IsOptional() @IsString() @MaxLength(200) cursor?: string;
@@ -65,9 +67,38 @@ class NotificationEntryResponse {
   @ApiProperty({ format: 'date-time' }) at: string;
 }
 
+/** O item da cobrança (Publicar e pagar RN13): o app monta o título e o detalhe. */
+export class BillingEntryResponse {
+  /** O pagamento confirmado (Publicar e pagar RN13) ou o reembolso concluído (Pagamentos e arrependimento RN07). */
+  @ApiProperty({
+    enum: ['payment_confirmed', 'refund_completed', 'end_date_soon', 'grace', 'expired'],
+  })
+  kind: 'payment_confirmed' | 'refund_completed' | 'end_date_soon' | 'grace' | 'expired';
+  /** Só nos avisos de pagamento. */
+  @ApiProperty({ format: 'uuid', required: false }) paymentId?: string;
+  /** Os avisos de saída do ar (Data de saída do ar RN03): os dias até a endDate. */
+  @ApiProperty({ required: false, example: 7 }) daysLeft?: number;
+  /** Carência: o 1º ou o 5º dia, e o último dia no ar. */
+  @ApiProperty({ required: false, enum: [1, 5] }) day?: 1 | 5;
+  @ApiProperty({ required: false, example: '2027-02-21' }) graceUntil?: string;
+  /** Expirado: desde quando e até quando dá para renovar. */
+  @ApiProperty({ required: false, example: '2027-02-22' }) expiredAt?: string;
+  @ApiProperty({ required: false, nullable: true, example: '2027-11-14' }) renewUntil?:
+    string | null;
+  /** A data de saída do ar paga, AAAA-MM-DD (só no payment_confirmed). */
+  @ApiProperty({ required: false }) endDate?: string;
+  @ApiProperty({ required: false, example: 33710 }) amountCents?: number;
+  @ApiProperty({ required: false, enum: ['pix', 'card'] }) method?: 'pix' | 'card';
+  @ApiProperty({ required: false }) installments?: number;
+  @ApiProperty({ type: String, nullable: true, required: false, example: '4821' })
+  cardLast4?: string | null;
+  @ApiProperty({ format: 'date-time' }) at: string;
+}
+
+@ApiExtraModels(NotificationEntryResponse, BillingEntryResponse)
 export class NotificationResponse {
   id: string;
-  @ApiProperty({ enum: PLANNER_NOTIFICATION_TYPES }) type: PlannerNotificationType;
+  @ApiProperty({ enum: CENTER_NOTIFICATION_TYPES }) type: CenterNotificationType;
   /** A central da cerimonialista junta vários casamentos (revisão C8-5). */
   weddingId: string;
   /** Os primeiros nomes do casal; o app junta. */
@@ -77,8 +108,18 @@ export class NotificationResponse {
   /**
    * rsvp: por grupo, sem restrição, música nem nome de convidado (Central RN04).
    * wedding_published e membership_removed: [{ partnerNames }] (revisão C8-3).
+   * billing: um item por pagamento, com o valor só no detalhe (RN13).
    */
-  @ApiProperty({ type: [NotificationEntryResponse] }) payload: NotificationEntryResponse[];
+  @ApiProperty({
+    type: 'array',
+    items: {
+      oneOf: [
+        { $ref: getSchemaPath(NotificationEntryResponse) },
+        { $ref: getSchemaPath(BillingEntryResponse) },
+      ],
+    },
+  })
+  payload: (NotificationEntryResponse | BillingEntryResponse)[];
   @ApiProperty({ type: String, format: 'date-time', nullable: true }) readAt: string | null;
   @ApiProperty({ format: 'date-time' }) updatedAt: string;
 }
@@ -94,10 +135,13 @@ export class UnreadCountResponse {
 }
 
 export class PreferenceResponse {
-  @ApiProperty({ enum: PLANNER_NOTIFICATION_TYPES }) type: PlannerNotificationType;
+  @ApiProperty({ enum: CENTER_NOTIFICATION_TYPES }) type: CenterNotificationType;
   /** Sempre ligada no casal. */
   inApp: boolean;
-  @ApiProperty({ enum: EMAIL_FREQUENCIES }) email: EmailFrequency;
+  /** `always`: Cobrança e pagamentos, sempre por e-mail e sem seletor (decisão 236). */
+  @ApiProperty({ enum: [...EMAIL_FREQUENCIES, 'always'] }) email: EmailFrequency | 'always';
+  /** O app mostra o seletor de e-mail só quando é editável (decisão 236). */
+  emailEditable: boolean;
   /** Vai a false só quando sai a última assinatura da pessoa (RN07; 217(8)). */
   push: boolean;
 }

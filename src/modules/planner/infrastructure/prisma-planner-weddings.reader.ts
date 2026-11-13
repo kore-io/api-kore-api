@@ -83,6 +83,14 @@ export class PrismaPlannerWeddingsReader implements PlannerWeddingsReader {
     return memberships.map(({ wedding }) => toRow(wedding));
   }
 
+  async awaitingPayment({ weddingIds }: { weddingIds: string[] }): Promise<Set<string>> {
+    if (weddingIds.length === 0) return new Set();
+    const rows = await this.tenant.client().$queryRaw<{ id: string }[]>`
+      SELECT id::text AS id FROM unnest(${weddingIds}::uuid[]) AS id
+      WHERE wedding_awaiting_payment(id)`;
+    return new Set(rows.map((row) => row.id));
+  }
+
   async deliveryCounts({
     weddingIds,
   }: {

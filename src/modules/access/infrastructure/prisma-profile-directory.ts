@@ -18,6 +18,8 @@ import { liveWeddingField } from './live-wedding-field';
  * (rota pública), numa transação curta com o app.user_id da conta que acabou
  * de entrar.
  */
+const day = (value: Date | null): string | null => value?.toISOString().slice(0, 10) ?? null;
+
 @Injectable()
 export class PrismaProfileDirectory implements ProfileDirectory {
   constructor(
@@ -57,6 +59,12 @@ export class PrismaProfileDirectory implements ProfileDirectory {
               eventDate: true,
               city: true,
               state: true,
+              status: true,
+              endDate: true,
+              graceUntil: true,
+              expiredAt: true,
+              deletionScheduledFor: true,
+              blockedAt: true,
               partners: { select: { slot: true, displayName: true, title: true, userId: true } },
             },
           },
@@ -79,6 +87,14 @@ export class PrismaProfileDirectory implements ProfileDirectory {
       eventDate: wedding.eventDate,
       city: liveWeddingField({ value: wedding.city, field: 'city' }),
       state: liveWeddingField({ value: wedding.state, field: 'state' }),
+      lifecycle: {
+        status: wedding.status,
+        blocked: wedding.blockedAt !== null,
+        endDate: day(wedding.endDate),
+        graceUntil: day(wedding.graceUntil),
+        expiredAt: day(wedding.expiredAt),
+        deletionScheduledFor: day(wedding.deletionScheduledFor),
+      },
     }));
     const profiles = profilesOf({
       ownsActiveWedding: summaries.some((membership) => membership.role === 'owner'),

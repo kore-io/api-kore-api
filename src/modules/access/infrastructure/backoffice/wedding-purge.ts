@@ -39,6 +39,9 @@ export async function purgeWeddingData({
   await tx.party.deleteMany({ where: { weddingId } });
   await tx.tag.deleteMany({ where: { weddingId } });
   await tx.weddingStats.deleteMany({ where: { weddingId } });
+  // F3: os avisos de saída do ar (Retenção RN03). Pagamento, cliente do
+  // gateway, comissão, cortesia, alerta e Ver como o casal ficam pela lápide.
+  await tx.billingNoticeLog.deleteMany({ where: { weddingId } });
   // O site (Imagens do site RN11): seções, conteúdos e imagens com os arquivos.
   await tx.sitePreviewToken.deleteMany({ where: { weddingId } });
   await tx.sectionContent.deleteMany({ where: { weddingId } });
@@ -80,6 +83,16 @@ export async function purgeWeddingData({
       endDate: null,
       publicationSource: null,
       publishedByUserId: null,
+      // Ciclo de vida, bloqueio e exclusão agendada da F3 (Retenção RN03;
+      // CHECK chk_weddings_f3_tombstone).
+      paidThrough: null,
+      graceUntil: null,
+      expiredAt: null,
+      purgeAt: null,
+      blockedAt: null,
+      blockedByUserId: null,
+      deletionScheduledFor: null,
+      deletionRequestedByUserId: null,
     },
   });
   return images.map(({ keyToken }) => keyToken);

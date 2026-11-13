@@ -14,6 +14,7 @@ import {
   SiteFieldNotAllowedError,
   SiteFieldsInvalidError,
   SiteImageNotFoundError,
+  SitePaymentPendingError,
   SiteSlugLockedError,
   SiteSlugUnavailableError,
   type SiteFieldIssue,
@@ -47,7 +48,9 @@ const dayOf = (date: Date | null): string | null => (date ? date.toISOString().s
  * PATCH …/site: os Dados básicos do Editor (Dados básicos RN02 a RN10).
  * `manage_site` para o pedido; a data, a UF e o endereço só mudam com
  * `manage_site_identity`, e o valor igual ao atual não é erro (RN04). O
- * endereço só muda em rascunho (RN05). Na mesma transação, com o lock do
+ * endereço só muda em rascunho (RN05). Com a publicação aguardando pagamento,
+ * a data, a UF e o endereço recebem 409 PAYMENT_PENDING (Publicar e pagar
+ * RN08). Na mesma transação, com o lock do
  * casamento, o "em uso" das imagens é recalculado (Imagens do site RN08).
  */
 @Injectable()
@@ -103,6 +106,10 @@ export class UpdateSiteBasics {
     )
       notAllowed.push('showPlannerCredit');
     if (notAllowed.length > 0) throw new SiteFieldNotAllowedError({ fields: notAllowed });
+    // Publicar e pagar RN08 (B2-9): com a publicação aguardando pagamento, a
+    // data, a UF e o endereço não mudam (o lock acima segura o pagamento novo).
+    if (identityFields.length > 0 && (await this.reader.awaitingPayment({ weddingId })))
+      throw new SitePaymentPendingError();
 
     const issues: SiteFieldIssue[] = [];
     const changes: SiteBasicsChanges = {};

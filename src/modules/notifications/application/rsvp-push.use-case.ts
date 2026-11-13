@@ -1,8 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AppConfigService } from '../../../shared/config/app-config.service';
 import { isAllowedPushEndpoint } from '../domain/push-endpoint';
+import { PLANNER_COMMISSIONS_PATH } from './rsvp-emails.use-cases';
 import { PUSH_SENDER, type PushSender } from './ports/push-sender.port';
-import { PUSH_STORE, type PushStore } from './ports/push-store.port';
+import { PUSH_STORE, type PushStore, type PushType } from './ports/push-store.port';
 
 /** O serviço de push pediu nova tentativa (429 ou 5xx): o job tenta de novo com espera. */
 export class PushRetryError extends Error {
@@ -25,6 +26,19 @@ export function plannerPushBody({
   return count > 1 ? `${count} grupos responderam em ${couple}` : `Novas respostas em ${couple}`;
 }
 
+/** O push da comissão disponível, sem valor (Comissões do indicador RN09; Pena). */
+export function commissionPushBody({
+  partnerNames,
+}: {
+  partnerNames: readonly [string, string];
+}): string {
+  const couple = partnerNames.filter((name) => name.length > 0).join(' e ');
+  return `Comissão de ${couple} disponível para repasse`;
+}
+
+/** O push da cobrança, sem valor (Publicar e pagar RN13; Pena). */
+export const BILLING_PUSH_BODY = 'Pagamento confirmado. O site está no ar';
+
 export function pushBody({
   count,
   firstGroupName,
@@ -38,7 +52,8 @@ export function pushBody({
 }
 
 /**
- * O push da resposta (E-mail e push RN07 a RN09): sai a cada soma, para cada
+ * O push da resposta (E-mail e push RN07 a RN09) e o da cobrança (Publicar e
+ * pagar RN13, sem valor; decisão 236): sai a cada soma, para cada
  * aparelho da pessoa com o push ligado, com `tag = groupKey` (um aviso por
  * casamento, trocado a cada soma). Confere de novo o vínculo, a preferência e
  * o endpoint; a assinatura de sessão revogada ou vencida, ou que o serviço
@@ -48,6 +63,8 @@ export function pushBody({
 export class RsvpPush {
   private readonly url: string;
   private readonly plannerUrl: string;
+  private readonly billingUrl: string;
+  private readonly commissionsUrl: string;
 
   constructor(
     @Inject(PUSH_STORE) private readonly store: PushStore,
@@ -58,19 +75,25 @@ export class RsvpPush {
     this.url = `${appUrl}/app/notificacoes`;
     // A central da cerimonialista (Notificações da cerimonialista RN05).
     this.plannerUrl = `${appUrl}/cerimonialista/notificacoes`;
+    // Cobrança e publicação, aonde o item da central leva (RN13).
+    this.billingUrl = `${appUrl}/app/cobranca`;
+    // A notificação abre Comissões (Comissões do indicador RN09).
+    this.commissionsUrl = `${appUrl}${PLANNER_COMMISSIONS_PATH}`;
   }
 
   async send({
     userId,
     weddingId,
+    type = 'rsvp',
     now,
   }: {
     userId: string;
     weddingId: string;
+    type?: PushType;
     now: Date;
   }): Promise<{ sent: number }> {
     if (!this.sender.enabled()) return { sent: 0 };
-    const recipient = await this.store.recipient({ userId, weddingId, now });
+    const recipient = await this.store.recipient({ userId, weddingId, type, now });
     if (!recipient.member || !recipient.push || !recipient.notification) return { sent: 0 };
 
     const stale = recipient.subscriptions.filter(
@@ -79,16 +102,28 @@ export class RsvpPush {
     );
     await this.store.remove({ ids: stale.map((subscription) => subscription.id) });
     const planner = recipient.role === 'planner';
+    const billing = type === 'billing';
+    const commission = type === 'commission';
     const payload = JSON.stringify({
       title: 'Kore',
-      body: planner
-        ? plannerPushBody({
-            count: recipient.notification.count,
-            partnerNames: recipient.partnerNames,
-          })
-        : pushBody(recipient.notification),
+      body: commission
+        ? commissionPushBody({ partnerNames: recipient.partnerNames })
+        : billing
+          ? BILLING_PUSH_BODY
+          : planner
+            ? plannerPushBody({
+                count: recipient.notification.count,
+                partnerNames: recipient.partnerNames,
+              })
+            : pushBody(recipient.notification),
       tag: recipient.notification.groupKey,
-      url: planner ? this.plannerUrl : this.url,
+      url: commission
+        ? this.commissionsUrl
+        : billing
+          ? this.billingUrl
+          : planner
+            ? this.plannerUrl
+            : this.url,
     });
     const sent: string[] = [];
     const gone: string[] = [];

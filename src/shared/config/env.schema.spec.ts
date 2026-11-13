@@ -27,6 +27,10 @@ const validConfig = {
   STORAGE_PRIVATE_BUCKET: 'kore-private',
   STORAGE_PUBLIC_BUCKET: 'kore-public',
   STORAGE_PUBLIC_URL: 'http://localhost:9000/kore-public',
+  PAYMENT_GATEWAY_PROVIDER: 'local',
+  PAYMENT_WEBHOOK_SECRET: 'local-webhook-secret-only-for-dev-and-tests-0001',
+  TAX_ID_HASH_KEY_ENCRYPTED:
+    'CltkHGWe/+yKMJl8JI1nIOa/jb2HMmHMZ8EJeYchSE+Mcv+nN82KPDW+1CyvIFV9twm0oj0U2+ij7fwI',
 };
 
 describe('validateEnv', () => {
@@ -45,7 +49,6 @@ describe('validateEnv', () => {
       STORAGE_REGION: 'auto',
       STORAGE_FORCE_PATH_STYLE: false,
       SIMULATOR_ENABLED: true,
-      COURTESY_PUBLICATION_ENABLED: false,
       PLANNER_SIGNUP_ENABLED: false,
       REFERRAL_LINK_URL: 'https://kore.com.br/i',
     });
@@ -79,6 +82,20 @@ describe('validateEnv', () => {
     expect(() => validateEnv({ config: { ...validConfig, APP_ENV: 'production' } })).toThrow(
       /KMS_PROVIDER/,
     );
+  });
+
+  it('dado QUEUE_PREFIX, quando valida, então só aceita em test e no formato kore:test:<id>', () => {
+    const local = { ...validConfig, APP_ENV: 'local', QUEUE_PREFIX: 'kore:test:abc123' };
+    expect(() => validateEnv({ config: local })).toThrow(
+      /QUEUE_PREFIX: só é aceito com APP_ENV test/,
+    );
+    expect(() =>
+      validateEnv({ config: { ...validConfig, APP_ENV: 'test', QUEUE_PREFIX: 'kore:local' } }),
+    ).toThrow(/QUEUE_PREFIX/);
+    expect(
+      validateEnv({ config: { ...validConfig, APP_ENV: 'test', QUEUE_PREFIX: 'kore:test:abc123' } })
+        .QUEUE_PREFIX,
+    ).toBe('kore:test:abc123');
   });
 
   it('dada a chave KMS local com tamanho errado, quando valida, então recusa', () => {
@@ -144,27 +161,11 @@ describe('validateEnv', () => {
     expect(simulatorEnabled({ appEnv: 'homolog', value: 'true' })).toBe(true);
   });
 
-  it('Publicação RN01 - a Cortesia vem desligada sem valor e liga em local e test', () => {
-    expect(validateEnv({ config: validConfig }).COURTESY_PUBLICATION_ENABLED).toBe(false);
-    expect(
-      validateEnv({ config: { ...validConfig, COURTESY_PUBLICATION_ENABLED: 'true' } })
-        .COURTESY_PUBLICATION_ENABLED,
-    ).toBe(true);
-  });
-
-  it('Publicação RN01 e decisão 217(11) - dado APP_ENV production ou homolog com a Cortesia ligada, a API não sobe', () => {
-    for (const appEnv of ['production', 'homolog'])
-      expect(() =>
-        validateEnv({
-          config: { ...validConfig, APP_ENV: appEnv, COURTESY_PUBLICATION_ENABLED: 'true' },
-        }),
-      ).toThrow(/COURTESY_PUBLICATION_ENABLED: a Cortesia só pode ser ligada/);
-    // Desligada, a variável não é motivo de recusa nesses ambientes.
-    expect(() =>
-      validateEnv({
-        config: { ...validConfig, APP_ENV: 'production', COURTESY_PUBLICATION_ENABLED: 'false' },
-      }),
-    ).not.toThrow(/COURTESY_PUBLICATION_ENABLED/);
+  it('Publicar e pagar RN17 - a chave da Cortesia saiu: a variável sobrando é ignorada', () => {
+    const env = validateEnv({
+      config: { ...validConfig, COURTESY_PUBLICATION_ENABLED: 'true' },
+    }) as Record<string, unknown>;
+    expect(env.COURTESY_PUBLICATION_ENABLED).toBeUndefined();
   });
 
   it.each([
@@ -196,5 +197,32 @@ describe('validateEnv', () => {
     expect(() =>
       validateEnv({ config: { ...validConfig, VAPID_SUBJECT: 'kore@kore.com.br' } }),
     ).toThrow(/VAPID_SUBJECT/);
+  });
+
+  it.each(['homolog', 'production'])(
+    'Publicar e pagar RN16 - dado APP_ENV %s e PAYMENT_GATEWAY_PROVIDER local, a validação falha e a API não sobe',
+    (appEnv) => {
+      expect(() => validateEnv({ config: { ...validConfig, APP_ENV: appEnv } })).toThrow(
+        /PAYMENT_GATEWAY_PROVIDER: o gateway local só é aceito com APP_ENV local ou test/,
+      );
+    },
+  );
+
+  it('Publicar e pagar RN14 - o gateway, o segredo do webhook e a chave do HMAC são obrigatórios', () => {
+    for (const key of [
+      'PAYMENT_GATEWAY_PROVIDER',
+      'PAYMENT_WEBHOOK_SECRET',
+      'TAX_ID_HASH_KEY_ENCRYPTED',
+    ] as const) {
+      const config: Record<string, unknown> = { ...validConfig };
+      delete config[key];
+      expect(() => validateEnv({ config })).toThrow(new RegExp(key));
+    }
+    expect(() =>
+      validateEnv({ config: { ...validConfig, PAYMENT_WEBHOOK_SECRET: 'curto' } }),
+    ).toThrow(/PAYMENT_WEBHOOK_SECRET/);
+    expect(() =>
+      validateEnv({ config: { ...validConfig, PAYMENT_GATEWAY_PROVIDER: 'asaas' } }),
+    ).toThrow(/PAYMENT_GATEWAY_PROVIDER/);
   });
 });

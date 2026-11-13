@@ -1,3 +1,4 @@
+import type { DeliveriesClosedReason } from './deliveries';
 import type { RsvpIssue } from './rsvp';
 
 /** Sem o cookie do grupo, ou ele não vale mais (401 PARTY_SESSION_INVALID; RSVP RN11). */
@@ -82,9 +83,9 @@ export class LinkPlaceholderMissingError extends Error {
 /** Os envios não valem agora (409 DELIVERIES_CLOSED; Envios RN01), com o motivo. */
 export class DeliveriesClosedError extends Error {
   override name = 'DeliveriesClosedError';
-  readonly reason: 'not_published' | 'deadline_passed' | 'post_event';
+  readonly reason: DeliveriesClosedReason;
 
-  constructor({ reason }: { reason: 'not_published' | 'deadline_passed' | 'post_event' }) {
+  constructor({ reason }: { reason: DeliveriesClosedReason }) {
     super();
     this.reason = reason;
   }
@@ -136,4 +137,16 @@ export class NoSongsToExportError extends Error {
 /** O cursor da lista de músicas não é válido (400 INVALID_CURSOR). */
 export class SongCursorInvalidError extends Error {
   override name = 'SongCursorInvalidError';
+}
+
+/**
+ * O site do grupo está fora do ar (Data de saída do ar RN07 e RN08): 409
+ * SITE_EXPIRED (expirado ou exclusão agendada) ou 423 SITE_UNAVAILABLE
+ * (bloqueado). As respostas já dadas ficam.
+ */
+export class RsvpSiteNotLiveError extends Error {
+  override name = 'RsvpSiteNotLiveError';
+  constructor(readonly state: 'expired' | 'unavailable') {
+    super();
+  }
 }

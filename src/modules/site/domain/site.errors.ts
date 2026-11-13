@@ -71,6 +71,15 @@ export class SiteSlugLockedError extends Error {
   override name = 'SiteSlugLockedError';
 }
 
+/**
+ * A data, a UF ou o endereço com uma publicação aguardando pagamento (409
+ * PAYMENT_PENDING; Publicar e pagar RN08, B2-9): o pagamento foi cotado com
+ * eles e, mudados, ele não teria destino.
+ */
+export class SitePaymentPendingError extends Error {
+  override name = 'SitePaymentPendingError';
+}
+
 /** Endereço em uso ou reservado (409 SLUG_UNAVAILABLE; Dados básicos RN06). */
 export class SiteSlugUnavailableError extends Error {
   override name = 'SiteSlugUnavailableError';
@@ -150,11 +159,6 @@ export class PreviewRequiredError extends Error {
   override name = 'PreviewRequiredError';
 }
 
-/** A chave da Cortesia está desligada (409 COURTESY_DISABLED; Publicação RN01). */
-export class CourtesyDisabledError extends Error {
-  override name = 'CourtesyDisabledError';
-}
-
 /** Só se publica de rascunho (409 NOT_DRAFT; Publicação RN03). */
 export class NotDraftError extends Error {
   override name = 'NotDraftError';
@@ -186,4 +190,14 @@ export class EndDateOutOfRangeError extends Error {
     this.endDateMin = endDateMin;
     this.endDateMax = endDateMax;
   }
+}
+
+/** Site expirado ou com exclusão agendada (410 SITE_EXPIRED; Data de saída do ar RN08). */
+export class SiteExpiredError extends Error {
+  override name = 'SiteExpiredError';
+}
+
+/** Site bloqueado (423 SITE_UNAVAILABLE; Casamento bloqueado RN05). */
+export class SiteUnavailableError extends Error {
+  override name = 'SiteUnavailableError';
 }

@@ -40,6 +40,9 @@ export const REDACTED_KEYS = [
   'pixKey',
   'cpf',
   'cnpj',
+  // Quem paga (Publicar e pagar RN02; B2-13): o CPF inteiro e o token do cartão.
+  'taxId',
+  'cardToken',
   'document',
   'token',
   'password',

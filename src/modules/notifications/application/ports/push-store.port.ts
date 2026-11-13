@@ -8,10 +8,24 @@ export interface StoredPushSubscription {
   sessionActive: boolean;
 }
 
+/** O tipo do aviso: a resposta, a cobrança (RN13) ou a comissão disponível (Comissões RN09). */
+export type PushType = 'rsvp' | 'billing' | 'commission';
+
 /** O que o push precisa, pela conexão do backoffice (o worker). */
 export interface PushStore {
   /** Vínculo ativo e a preferência push do tipo (sem linha, desligado). */
-  recipient({ userId, weddingId, now }: { userId: string; weddingId: string; now: Date }): Promise<{
+  recipient({
+    userId,
+    weddingId,
+    type,
+    now,
+  }: {
+    userId: string;
+    weddingId: string;
+    /** O tipo do aviso: a preferência e a notificação são as dele. */
+    type: PushType;
+    now: Date;
+  }): Promise<{
     member: boolean;
     /** O dono ou a cerimonialista com Planner, conferido agora (D18); nulo sem vínculo. */
     role: 'owner' | 'planner' | null;

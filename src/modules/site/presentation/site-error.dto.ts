@@ -61,6 +61,14 @@ export class SiteSlugLockedErrorBody {
   @ApiProperty() message: string;
 }
 
+/** Data, UF ou endereço com a publicação aguardando pagamento (Publicar e pagar RN08). */
+export class SitePaymentPendingErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['PAYMENT_PENDING'] }) error: 'PAYMENT_PENDING';
+  @ApiProperty() message: string;
+}
+
 /** Endereço em uso ou reservado, com a sugestão (Dados básicos RN06). */
 export class SiteSlugUnavailableErrorBody {
   static readonly status = 409;
@@ -84,6 +92,22 @@ export class ContrastTooLowErrorBody {
 }
 
 /** "Não encontramos este endereço." (Site público RN04). */
+/** Site expirado ou com exclusão agendada (Data de saída do ar RN08), com `Cache-Control: no-store`. */
+export class SiteExpiredErrorBody {
+  static readonly status = 410;
+  @ApiProperty({ enum: [410] }) statusCode: 410;
+  @ApiProperty({ enum: ['SITE_EXPIRED'] }) error: 'SITE_EXPIRED';
+  @ApiProperty() message: string;
+}
+
+/** Site bloqueado (Casamento bloqueado RN05), com `Cache-Control: no-store`. */
+export class SiteUnavailableErrorBody {
+  static readonly status = 423;
+  @ApiProperty({ enum: [423] }) statusCode: 423;
+  @ApiProperty({ enum: ['SITE_UNAVAILABLE'] }) error: 'SITE_UNAVAILABLE';
+  @ApiProperty() message: string;
+}
+
 export class SiteNotFoundErrorBody {
   static readonly status = 404;
   @ApiProperty({ enum: [404] }) statusCode: 404;
@@ -136,14 +160,6 @@ export class PreviewRequiredErrorBody {
   static readonly status = 401;
   @ApiProperty({ enum: [401] }) statusCode: 401;
   @ApiProperty({ enum: ['PREVIEW_REQUIRED'] }) error: 'PREVIEW_REQUIRED';
-  @ApiProperty() message: string;
-}
-
-/** A chave da Cortesia está desligada (Publicação RN01). */
-export class CourtesyDisabledErrorBody {
-  static readonly status = 409;
-  @ApiProperty({ enum: [409] }) statusCode: 409;
-  @ApiProperty({ enum: ['COURTESY_DISABLED'] }) error: 'COURTESY_DISABLED';
   @ApiProperty() message: string;
 }
 

@@ -42,9 +42,14 @@ function setup({ members, role }: { members: WeddingMember[]; role: 'owner' | 'c
   } as unknown as WeddingAuthorization;
   const mailer = { plannerLeft: jest.fn().mockResolvedValue(undefined), coupleAccepted: jest.fn() };
   const scheduled: (() => Promise<void>)[] = [];
-  const useCase = new RemoveMembership(authorization, store, log, mailer, {
-    schedule: (work) => void scheduled.push(work),
-  });
+  const useCase = new RemoveMembership(
+    authorization,
+    store,
+    log,
+    mailer,
+    { schedule: (work) => void scheduled.push(work) },
+    { blockOf: jest.fn().mockResolvedValue(null), blockOfInvitedWedding: jest.fn() },
+  );
   return { useCase, store, log, mailer, scheduled };
 }
 

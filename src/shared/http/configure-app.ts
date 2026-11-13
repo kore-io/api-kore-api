@@ -1,3 +1,6 @@
+import { addWeddingWriteErrors } from './wedding-write-errors';
+import { HttpAdapterHost } from '@nestjs/core';
+import { NoStoreGoneFilter } from './no-store-gone.filter';
 import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common';
 import type { CorsOptionsDelegate } from '@nestjs/common/interfaces/external/cors-options.interface';
 import type { NestExpressApplication } from '@nestjs/platform-express';
@@ -34,6 +37,9 @@ export function configureApp({
   if (trustProxyHops > 0) {
     (app as NestExpressApplication).set('trust proxy', trustProxyHops);
   }
+
+  // 410 e 423 do site fora do ar com Cache-Control: no-store (Data de saída do ar RN08).
+  app.useGlobalFilters(new NoStoreGoneFilter(app.get(HttpAdapterHost).httpAdapter));
 
   // Rotas de produto sob /v1; rotas de infraestrutura (ex.: /health) usam
   // VERSION_NEUTRAL e ficam fora do prefixo (decisão 97).
@@ -107,7 +113,8 @@ export function buildOpenApiDocument({ app }: { app: INestApplication }): OpenAP
     ...document.components,
     schemas: { ...document.components?.schemas, ...OPENAPI_CONSTANT_SCHEMAS },
   };
-  return document;
+  // Casamento bloqueado RN02: o 403 e o 409 do guard em toda escrita do casamento.
+  return addWeddingWriteErrors(document);
 }
 
 /** O provider, quando o módulo dele está no app (o teste do configureApp não tem). */

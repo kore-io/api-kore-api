@@ -3,7 +3,6 @@ import {
   OBJECT_STORAGE,
   type ObjectStorage,
 } from '../../../shared/storage/application/object-storage.port';
-import { AppConfigService } from '../../../shared/config/app-config.service';
 import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
 import { endDateRange } from '../domain/publication';
 import { DEFAULT_SONG_QUESTION } from '../domain/public-site';
@@ -56,7 +55,7 @@ export interface SiteEditorView extends Omit<
    * servidor e os limites da data de saída do ar, calculados aqui no fuso do
    * casamento; nulos sem data ou sem fuso. O app não repete a conta.
    */
-  publication: { courtesyEnabled: boolean; endDateMin: string | null; endDateMax: string | null };
+  publication: { endDateMin: string | null; endDateMax: string | null };
 }
 
 /**
@@ -70,7 +69,6 @@ export class SiteEditorViews {
     private readonly authorization: WeddingAuthorization,
     @Inject(SITE_READER) private readonly reader: SiteReader,
     @Inject(OBJECT_STORAGE) private readonly storage: ObjectStorage,
-    private readonly config: AppConfigService,
   ) {}
 
   async build({
@@ -139,7 +137,6 @@ export class SiteEditorViews {
         canChange: canChangeCredit,
       },
       publication: {
-        courtesyEnabled: this.config.get({ key: 'COURTESY_PUBLICATION_ENABLED' }),
         endDateMin: range?.min ?? null,
         endDateMax: range?.max ?? null,
       },

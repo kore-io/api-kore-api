@@ -27,6 +27,11 @@ export interface PlannerWeddingsReader {
   listCollaborations({ userId }: { userId: string }): Promise<CollaborationRow[]>;
   /** Grupos ativos e não enviados, só dos casamentos candidatos (RN06). */
   deliveryCounts({ weddingIds }: { weddingIds: string[] }): Promise<Map<string, DeliveryCounts>>;
+  /**
+   * Os casamentos com a publicação aguardando pagamento (Comissões RN08;
+   * Publicar e pagar RN06), pela `wedding_awaiting_payment`: só o booleano.
+   */
+  awaitingPayment({ weddingIds }: { weddingIds: string[] }): Promise<Set<string>>;
   collaboration({
     userId,
     weddingId,

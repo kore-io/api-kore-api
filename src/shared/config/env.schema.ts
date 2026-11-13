@@ -42,6 +42,13 @@ export const envSchema = z
     // (BYPASSRLS); todo acesso é registrado no log da aplicação (ADR de multi-tenant).
     DATABASE_BACKOFFICE_URL: postgresUrl,
     REDIS_URL: z.url({ protocol: /^rediss?$/ }),
+    // Prefixo das filas do BullMQ. Sem a variável, `kore:<APP_ENV>`. Só os e2e
+    // a definem: um prefixo por arquivo, para o worker de um arquivo não pegar
+    // os jobs de outro que roda junto (nem de outra rodada no mesmo Redis).
+    QUEUE_PREFIX: z
+      .string()
+      .regex(/^kore:test:[a-z0-9-]+$/)
+      .optional(),
     // Origens do app que podem chamar a API com o cookie de sessão (CORS e
     // proteção contra CSRF nas escritas).
     ALLOWED_ORIGINS: originList,
@@ -101,10 +108,6 @@ export const envSchema = z
     // Base do Link de indicação (Link de indicação RN01): o redirect /i/{código}
     // fica no Site Institucional (RN07), fora da API.
     REFERRAL_LINK_URL: z.url({ protocol: /^https?$/ }).default('https://kore.com.br/i'),
-    COURTESY_PUBLICATION_ENABLED: z
-      .enum(['true', 'false'])
-      .default('false')
-      .transform((value) => value === 'true'),
     // Push com VAPID (E-mail e push RN07; decisão 216, D25): as chaves ficam
     // fora de arquivo e são geradas no ambiente. Opcionais em local e test (sem
     // elas, o push aparece desligado); obrigatórias em homolog e production.
@@ -133,6 +136,17 @@ export const envSchema = z
     STORAGE_PUBLIC_BUCKET: z.string().min(3),
     // Base pública das versões servidas (o domínio do CDN; no local, o MinIO).
     STORAGE_PUBLIC_URL: z.url({ protocol: /^https?$/ }),
+    // Gateway de pagamento (Publicar e pagar RN14 e RN16; decisão 230, D11): só o
+    // adaptador local por enquanto, com o estado no Postgres; o Asaas entra com o
+    // card 65. O local é recusado em homolog e production, então a API não sobe
+    // lá até o card 65 (B2-18): nenhum site vai ao ar sem pagamento.
+    PAYMENT_GATEWAY_PROVIDER: z.enum(['local']),
+    // Segredo do webhook do gateway, comparado em tempo constante (RN09).
+    PAYMENT_WEBHOOK_SECRET: z.string().min(32),
+    // Chave do HMAC do CPF e do CNPJ (porta TaxIdHasher; Publicar e pagar RN02;
+    // revisão técnica B2-12): 32 bytes cifrados pelo KMS, em base64, decifrados
+    // na subida. Nunca a chave mestra.
+    TAX_ID_HASH_KEY_ENCRYPTED: z.base64().min(1),
     // Observabilidade: console no local; o OTLP do SigNoz entra com a infraestrutura.
     OTEL_EXPORTER: z.enum(OTEL_EXPORTERS).default('none'),
     LOG_LEVEL: z
@@ -149,6 +163,13 @@ export const envSchema = z
         message: 'não pode ter a origem do SITE_URL (a origem do site vale só nas rotas do site)',
       });
     }
+    if (env.QUEUE_PREFIX !== undefined && env.APP_ENV !== 'test') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['QUEUE_PREFIX'],
+        message: 'só é aceito com APP_ENV test (o prefixo por arquivo dos e2e)',
+      });
+    }
     if (env.PLANNER_SIGNUP_ENABLED && !LOCAL_KEY_ENVS.includes(env.APP_ENV)) {
       ctx.addIssue({
         code: 'custom',
@@ -157,11 +178,12 @@ export const envSchema = z
           'o cadastro de cerimonialista só pode ser ligado com APP_ENV local ou test (decisão 224(8))',
       });
     }
-    if (env.COURTESY_PUBLICATION_ENABLED && !LOCAL_KEY_ENVS.includes(env.APP_ENV)) {
+    if (env.PAYMENT_GATEWAY_PROVIDER === 'local' && !LOCAL_KEY_ENVS.includes(env.APP_ENV)) {
       ctx.addIssue({
         code: 'custom',
-        path: ['COURTESY_PUBLICATION_ENABLED'],
-        message: 'a Cortesia só pode ser ligada com APP_ENV local ou test (decisão 217(11))',
+        path: ['PAYMENT_GATEWAY_PROVIDER'],
+        message:
+          'o gateway local só é aceito com APP_ENV local ou test (Publicar e pagar RN16; decisão 230, D11)',
       });
     }
     if (!LOCAL_KEY_ENVS.includes(env.APP_ENV)) {

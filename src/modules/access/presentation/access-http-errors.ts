@@ -1,3 +1,4 @@
+import { ReauthRequiredError } from '../domain/recent-session';
 import { ContrastTooLowError } from '../../site/domain/site.errors';
 import {
   BadRequestException,
@@ -48,6 +49,8 @@ import {
   SessionExpiredError,
   UserBlockedError,
   WeddingActionForbiddenError,
+  WeddingBlockedError,
+  WeddingDeletionScheduledError,
   WeddingNotFoundError,
 } from '../domain/access.errors';
 import { validationError } from '../../../shared/http/validation-errors';
@@ -112,6 +115,20 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 404,
       error: 'WEDDING_NOT_FOUND',
       message: 'Wedding not found.',
+    });
+  }
+  if (error instanceof WeddingBlockedError) {
+    return new ForbiddenException({
+      statusCode: 403,
+      error: 'WEDDING_BLOCKED',
+      message: 'The wedding is blocked.',
+    });
+  }
+  if (error instanceof WeddingDeletionScheduledError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'WEDDING_DELETION_SCHEDULED',
+      message: 'The wedding deletion is scheduled.',
     });
   }
   if (error instanceof WeddingActionForbiddenError) {
@@ -324,6 +341,13 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 404,
       error: 'MEMBERSHIP_NOT_FOUND',
       message: 'Membership not found.',
+    });
+  }
+  if (error instanceof ReauthRequiredError) {
+    return new ForbiddenException({
+      statusCode: 403,
+      error: 'REAUTH_REQUIRED',
+      message: 'Sign in again to continue.',
     });
   }
   if (error instanceof ProfileNotOwnedError) {

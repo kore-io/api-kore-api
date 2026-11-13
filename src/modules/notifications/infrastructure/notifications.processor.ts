@@ -2,14 +2,17 @@ import { InjectQueue, OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullm
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { DelayedError, type Job, type Queue } from 'bullmq';
 import { upsertDailyScheduler } from '../../../shared/jobs/daily-scheduler';
+import { CommissionEmails } from '../application/commission-emails.use-case';
 import { PlannerDigest } from '../application/planner-digest.use-case';
 import { RsvpEmails } from '../application/rsvp-emails.use-cases';
 import { RsvpPush } from '../application/rsvp-push.use-case';
 import {
   NOTIFICATIONS_QUEUE,
   NOTIFICATIONS_SWEEP_SCHEDULER_ID,
+  type CommissionEmailJob,
   type EmailJob,
   type NotifiedJob,
+  type PushJob,
 } from './notifications-queue';
 
 const logger = new Logger('Notifications');
@@ -24,6 +27,7 @@ export class NotificationsProcessor extends WorkerHost {
     private readonly emails: RsvpEmails,
     private readonly push: RsvpPush,
     private readonly plannerDigest: PlannerDigest,
+    private readonly commissionEmails: CommissionEmails,
     @InjectQueue(NOTIFICATIONS_QUEUE) private readonly queue: Queue,
   ) {
     super();
@@ -33,8 +37,13 @@ export class NotificationsProcessor extends WorkerHost {
     const now = new Date();
     if (job.name === 'notified') return this.notified({ data: job.data as NotifiedJob, now });
     if (job.name === 'push') {
-      const { userId, weddingId } = job.data as EmailJob;
-      return this.push.send({ userId, weddingId, now });
+      const { userId, weddingId, type = 'rsvp' } = job.data as PushJob;
+      return this.push.send({ userId, weddingId, type, now });
+    }
+    // O "Na hora" da comissão, depois da rodada da liberação (decisão 242).
+    if (job.name === 'commission-email') {
+      const { userId } = job.data as CommissionEmailJob;
+      return this.commissionEmails.send({ userId, mode: 'immediate' });
     }
     if (job.name === 'email') {
       const { userId, weddingId } = job.data as EmailJob;
@@ -54,7 +63,13 @@ export class NotificationsProcessor extends WorkerHost {
     const digests = await this.plannerDigest.sweep({ now });
     if (digests.sent || digests.failed)
       logger.log(`Resumos agrupados: ${digests.sent} enviados, ${digests.failed} falhas.`);
-    return { ...result, plannerDigests: digests };
+    // O e-mail de comissão em Resumo diário (decisão 242), no mesmo horário.
+    const commissions = await this.commissionEmails.sweep({ now });
+    if (commissions.sent || commissions.failed)
+      logger.log(
+        `E-mails de comissão: ${commissions.sent} enviados, ${commissions.failed} falhas.`,
+      );
+    return { ...result, plannerDigests: digests, commissionEmails: commissions };
   }
 
   /**
@@ -93,9 +108,15 @@ export class NotificationsProcessor extends WorkerHost {
   @OnWorkerEvent('failed')
   async onFailed(job: Job | undefined, error: Error): Promise<void> {
     logger.warn(`Job de notificação falhou (${job?.name ?? '?'}): ${error.name}`);
-    if (!job || job.name !== 'email' || job.attemptsMade < (job.opts.attempts ?? 1)) return;
+    if (!job || job.attemptsMade < (job.opts.attempts ?? 1)) return;
+    if (job.name !== 'email' && job.name !== 'commission-email') return;
     try {
-      await this.emails.recordFailure(job.data as EmailJob);
+      if (job.name === 'commission-email')
+        await this.commissionEmails.recordFailure({
+          userId: (job.data as CommissionEmailJob).userId,
+          error,
+        });
+      else await this.emails.recordFailure(job.data as EmailJob);
     } catch (logError) {
       logger.warn(`Log da falha do e-mail não gravado: ${(logError as Error).name}`);
     }

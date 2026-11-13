@@ -114,8 +114,16 @@ export class DeliveriesClosedErrorBody {
   @ApiProperty({ enum: [409] }) statusCode: 409;
   @ApiProperty({ enum: ['DELIVERIES_CLOSED'] }) error: 'DELIVERIES_CLOSED';
   @ApiProperty() message: string;
-  @ApiProperty({ enum: ['not_published', 'deadline_passed', 'post_event'] }) reason:
-    'not_published' | 'deadline_passed' | 'post_event';
+  @ApiProperty({ enum: ['not_published', 'deadline_passed', 'post_event'] })
+  reason: 'not_published' | 'deadline_passed' | 'post_event';
+}
+
+/** O site expirou: os envios ficam fechados até renovar (Data de saída do ar RN07). */
+export class SiteExpiredConflictErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['SITE_EXPIRED'] }) error: 'SITE_EXPIRED';
+  @ApiProperty() message: string;
 }
 
 /** Um grupo pedido não existe neste casamento ou está na lixeira. */

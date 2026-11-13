@@ -26,6 +26,7 @@
     "db:users": "node scripts/db/create-local-users.mts",
     "db:setup": "pnpm db:migrate && pnpm db:users",
     "storage:setup": "node scripts/storage/setup-local-buckets.mts",
+    "crypto:new-data-key": "node scripts/crypto/new-data-key.mts",
     "db:seed": "nest build && node dist/seed",
     "start:worker": "nest start --entryFile worker",
     "start:worker:dev": "nest start --watch --entryFile worker",

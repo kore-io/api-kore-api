@@ -6,6 +6,10 @@ import { PrismaPlannerWeddingsReader } from './infrastructure/prisma-planner-wed
 import { MyWeddingsController } from './presentation/my-weddings.controller';
 import { REFERRED_WEDDINGS_READER } from './application/ports/referred-weddings-reader.port';
 import { ListReferredWeddings } from './application/referred-weddings.use-case';
+import { REFERRER_COMMISSIONS_READER } from './application/ports/referrer-commissions-reader.port';
+import { ListReferrerCommissions } from './application/referrer-commissions.use-case';
+import { PrismaReferrerCommissionsReader } from './infrastructure/prisma-referrer-commissions.reader';
+import { ReferrerCommissionsController } from './presentation/referrer-commissions.controller';
 import { PrismaReferredWeddingsReader } from './infrastructure/prisma-referred-weddings.reader';
 import { ReferredWeddingsController } from './presentation/referred-weddings.controller';
 import {
@@ -24,13 +28,20 @@ import { PlannerTemplatesController } from './presentation/planner-templates.con
  */
 @Module({
   imports: [AccessModule],
-  controllers: [MyWeddingsController, ReferredWeddingsController, PlannerTemplatesController],
+  controllers: [
+    MyWeddingsController,
+    ReferredWeddingsController,
+    PlannerTemplatesController,
+    ReferrerCommissionsController,
+  ],
   providers: [
     { provide: PLANNER_WEDDINGS_READER, useClass: PrismaPlannerWeddingsReader },
     ListMyWeddings,
     GetMyWedding,
     { provide: REFERRED_WEDDINGS_READER, useClass: PrismaReferredWeddingsReader },
     ListReferredWeddings,
+    { provide: REFERRER_COMMISSIONS_READER, useClass: PrismaReferrerCommissionsReader },
+    ListReferrerCommissions,
     { provide: PLANNER_TEMPLATE_STORE, useClass: PrismaPlannerTemplateStore },
     ListPlannerTemplates,
     CreatePlannerTemplate,

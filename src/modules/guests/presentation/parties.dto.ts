@@ -239,6 +239,16 @@ export class ListPartiesQuery {
   @IsIn(['sent', 'not_sent'])
   saveTheDate?: 'sent' | 'not_sent';
 
+  /**
+   * A ordem: alfabética (o padrão) ou "Respondido em", mais recentes primeiro
+   * e os sem resposta no fim (Central RN05; Dashboard RN04; decisão 246). O
+   * cursor vale só na ordem que o deu.
+   */
+  @ApiProperty({ required: false, enum: ['name', 'respondedAt'], default: 'name' })
+  @IsOptional()
+  @IsIn(['name', 'respondedAt'])
+  order?: 'name' | 'respondedAt';
+
   @IsOptional() @IsString() @MaxLength(500) cursor?: string;
 
   @ApiProperty({ required: false, minimum: 1, maximum: 100, default: 25 })

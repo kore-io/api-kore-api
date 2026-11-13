@@ -1,13 +1,18 @@
+import { localDate } from '../../src/shared/time/local-date';
 import { getQueueToken } from '@nestjs/bullmq';
 import type { TestingModule } from '@nestjs/testing';
-import type { Queue } from 'bullmq';
+import type { Job, Queue } from 'bullmq';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { RsvpEmails } from '../../src/modules/notifications/application/rsvp-emails.use-cases';
+import { NotificationsProcessor } from '../../src/modules/notifications/infrastructure/notifications.processor';
 import {
   NOTIFICATIONS_QUEUE,
   NOTIFICATIONS_SWEEP_SCHEDULER_ID,
 } from '../../src/modules/notifications/infrastructure/notifications-queue';
-import { NOTIFICATION_EMAIL_STORE } from '../../src/modules/notifications/application/ports/notification-email-store.port';
+import {
+  NOTIFICATION_EMAIL_STORE,
+  type NotificationEmailStore,
+} from '../../src/modules/notifications/application/ports/notification-email-store.port';
 import { APPLICATION_LOG_WRITER } from '../../src/modules/logs/application/ports/application-log-writer.port';
 import { AppConfigService } from '../../src/shared/config/app-config.service';
 import { BackofficePrismaService } from '../../src/shared/database/backoffice-prisma.service';
@@ -184,6 +189,72 @@ describe('E-mails das respostas (worker)', () => {
     expect(await textOf(second!.ID)).not.toContain('Família Moreira');
   });
 
+  it('RN03 - no máximo um e-mail a cada 15 minutos: os avisos no intervalo viram um só job, adiado, e um só e-mail', async () => {
+    const { email, userId, weddingId, moreira, duarte, entry, notify } = await scenario({
+      frequency: 'immediate',
+    });
+    const now = Date.now();
+    // O último e-mail saiu há 5 minutos, com a Família Moreira.
+    await notify([entry(moreira.id, 'Família Moreira', new Date(now - 6 * MINUTE))]);
+    const lastImmediateAt = new Date(now - 5 * MINUTE);
+    await db.notificationEmailState.create({
+      data: {
+        userId,
+        weddingId,
+        emailedThrough: new Date(now - 6 * MINUTE),
+        lastImmediateAt,
+      },
+    });
+    const processor = worker.get(NotificationsProcessor);
+    const queue = worker.get<Queue>(getQueueToken(NOTIFICATIONS_QUEUE));
+    const notified = () =>
+      processor.process({ name: 'notified', data: { weddingId, userIds: [userId] } } as Job);
+
+    // A Família Duarte responde; 5 minutos depois, mais um grupo.
+    await notify([
+      entry(moreira.id, 'Família Moreira', new Date(now - 6 * MINUTE)),
+      entry(duarte.id, 'Família Duarte', new Date(now - MINUTE)),
+    ]);
+    await notified();
+    const carla = await db.party.create({
+      data: {
+        weddingId,
+        name: 'Carla e Rafael',
+        linkToken: randomBytes(16).toString('base64url'),
+      },
+    });
+    await notify([
+      entry(moreira.id, 'Família Moreira', new Date(now - 6 * MINUTE)),
+      entry(duarte.id, 'Família Duarte', new Date(now - MINUTE)),
+      entry(carla.id, 'Carla e Rafael', new Date(now)),
+    ]);
+    await notified();
+
+    const jobs = (await queue.getDelayed()).filter(
+      (job) => job.name === 'email' && (job.data as { userId: string }).userId === userId,
+    );
+    try {
+      expect(jobs).toHaveLength(1);
+      // Adiado para 15 minutos depois do último e-mail.
+      const runAt = jobs[0].timestamp + (jobs[0].opts.delay ?? 0);
+      expect(Math.abs(runAt - (lastImmediateAt.getTime() + 15 * MINUTE))).toBeLessThan(5_000);
+
+      // Ao rodar, um só e-mail com os dois grupos novos.
+      expect(
+        await emails.send({
+          userId,
+          weddingId,
+          mode: 'immediate',
+          now: new Date(lastImmediateAt.getTime() + 15 * MINUTE + 1_000),
+        }),
+      ).toEqual({ kind: 'sent' });
+      const sent = await waitForInbox({ to: email });
+      expect(sent.map((message) => message.Subject)).toEqual(['2 grupos responderam o convite']);
+    } finally {
+      await Promise.all(jobs.map((job) => job.remove()));
+    }
+  });
+
   it('RN04 - o Resumo diário: antes das 20h no fuso, nada; depois, um só no dia, mesmo rodando de novo', async () => {
     const { email, userId, weddingId, timezone, moreira, duarte, entry, notify } = await scenario(
       {},
@@ -222,6 +293,31 @@ describe('E-mails das respostas (worker)', () => {
     expect(await inbox({ to: email })).toHaveLength(1);
   });
 
+  it('RN04 (decisão 246) - sem novidade, sem resumo: o dia fica fechado, e a resposta das 22h vai no resumo de amanhã', async () => {
+    const { email, userId, weddingId, timezone, moreira, entry, notify } = await scenario({});
+    await db.wedding.update({
+      where: { id: weddingId },
+      data: { status: 'published', publishedAt: new Date() },
+    });
+    const evening = todayAt({ timezone, hour: 20, minute: 10 });
+
+    await emails.sweep({ now: evening, weddingId });
+
+    expect(await inbox({ to: email })).toHaveLength(0);
+    expect((await state(userId, weddingId))?.lastDigestDate?.toISOString().slice(0, 10)).toBe(
+      localDate({ at: evening, timezone }),
+    );
+
+    const late = todayAt({ timezone, hour: 22, minute: 0 });
+    await notify([entry(moreira.id, 'Família Moreira', late)]);
+    await emails.sweep({ now: new Date(late.getTime() + 15 * MINUTE), weddingId });
+    expect(await inbox({ to: email })).toHaveLength(0);
+
+    await emails.sweep({ now: new Date(evening.getTime() + 24 * 60 * MINUTE), weddingId });
+    const [digest] = await waitForInbox({ to: email });
+    expect(digest.Subject).toBe('Resumo do dia: 1 grupo respondeu');
+  });
+
   it('RN05 e RN09 - e-mail desligado e quem perdeu o vínculo não recebem', async () => {
     const off = await scenario({ frequency: 'off' });
     await off.notify([off.entry(off.moreira.id, 'Família Moreira', new Date())]);
@@ -255,8 +351,19 @@ describe('E-mails das respostas (worker)', () => {
   it('RN06 - o envio recusado não avança o cursor e grava notification.email_failed; o próximo leva o que faltou', async () => {
     const { userId, weddingId, moreira, entry, notify } = await scenario({});
     await notify([entry(moreira.id, 'Família Moreira', new Date(Date.now() - 20 * MINUTE))]);
+    // O sweep recortado ao casamento deste teste: o kore_test é compartilhado e
+    // cresce, e varrer todos os candidatos estourava o tempo do caso.
+    const store = worker.get<NotificationEmailStore>(NOTIFICATION_EMAIL_STORE);
+    // A consulta real dos candidatos traz o par deste teste (o recorte não a esconde).
+    expect(await store.candidates()).toContainEqual({ userId, weddingId });
+    const scoped: NotificationEmailStore = Object.assign(
+      Object.create(store) as NotificationEmailStore,
+      {
+        candidates: () => Promise.resolve([{ userId, weddingId }]),
+      },
+    );
     const failing = new RsvpEmails(
-      worker.get(NOTIFICATION_EMAIL_STORE),
+      scoped,
       { send: () => Promise.reject(new Error('SMTP fora')) },
       worker.get(APPLICATION_LOG_WRITER),
       worker.get(AppConfigService),
@@ -265,7 +372,7 @@ describe('E-mails das respostas (worker)', () => {
       data: { userId, weddingId, type: 'rsvp', email: 'immediate' },
     });
 
-    const result = await failing.sweep({ now: new Date() });
+    const result = await failing.sweep({ now: new Date(), weddingId });
 
     expect(result.failed).toBeGreaterThanOrEqual(1);
     expect((await state(userId, weddingId))?.emailedThrough ?? null).toBeNull();

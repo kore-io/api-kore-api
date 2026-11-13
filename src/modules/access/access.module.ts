@@ -1,7 +1,11 @@
+import { ReferralModule } from '../referral/referral.module';
 import { Module } from '@nestjs/common';
 import { AppConfigService } from '../../shared/config/app-config.service';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthenticateSession } from './application/authenticate-session.use-case';
+import { WEDDING_WRITE_STATE } from './application/ports/wedding-write-state.port';
+import { PrismaWeddingWriteState } from './infrastructure/backoffice/prisma-wedding-write-state';
+import { WeddingWriteGuard } from './presentation/wedding-write.guard';
 import { CompleteGoogleLogin } from './application/complete-google-login.use-case';
 import { CompleteLogin } from './application/complete-login.use-case';
 import { GOOGLE_IDENTITY_PROVIDER } from './application/ports/google-identity-provider.port';
@@ -99,6 +103,8 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
 
 /** Contexto Acesso: sessão, login, papéis e convites de acesso. */
 @Module({
+  // Os dados para receber no GET /v1/me/referrer (Repasse, Contrato).
+  imports: [ReferralModule],
   controllers: [
     AuthController,
     LoginController,
@@ -116,6 +122,9 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     { provide: USER_REPOSITORY, useClass: PrismaUserRepository },
     { provide: SESSION_TOKENS, useClass: OpaqueSessionTokens },
     { provide: APP_GUARD, useClass: SessionGuard },
+    // Depois da sessão, antes da validação (Casamento bloqueado RN02).
+    { provide: APP_GUARD, useClass: WeddingWriteGuard },
+    { provide: WEDDING_WRITE_STATE, useClass: PrismaWeddingWriteState },
     { provide: APP_INTERCEPTOR, useClass: TenantTransactionInterceptor },
     { provide: MEMBERSHIP_READER, useClass: PrismaMembershipReader },
     WeddingAuthorization,

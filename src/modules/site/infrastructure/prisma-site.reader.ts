@@ -81,6 +81,12 @@ export class PrismaSiteReader implements SiteReader {
       : null;
   }
 
+  async awaitingPayment({ weddingId }: { weddingId: string }): Promise<boolean> {
+    const [row] = await this.tenant.client().$queryRaw<{ awaiting: boolean | null }[]>`
+      SELECT wedding_awaiting_payment(${weddingId}::uuid) AS awaiting`;
+    return row?.awaiting ?? false;
+  }
+
   async readyImages({
     weddingId,
     ids,

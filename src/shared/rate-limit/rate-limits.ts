@@ -31,6 +31,10 @@ export function isAuthRateLimited(context: ExecutionContext): boolean {
 export const GUEST_IMPORT_THROTTLER = 'guest_import';
 export const GUEST_IMPORT_PER_MINUTE = 20;
 
+/** O CPF ou CNPJ do indicador (Repasse RN02; decisão 244(3)): 5 por hora por usuário. */
+export const TAX_ID_THROTTLER = 'tax_id';
+export const TAX_ID_PER_HOUR = 5;
+
 /** Imagens do site (S4 RN07): 30 por minuto por usuário, autorização e confirmação somadas. */
 export const SITE_IMAGE_THROTTLER = 'site_image';
 export const SITE_IMAGE_PER_MINUTE = 30;
@@ -66,3 +70,11 @@ export const RSVP_WRITES_PER_MINUTE = 20;
  */
 export const PLANNER_WEDDING_THROTTLER = 'planner_wedding';
 export const PLANNER_WEDDINGS_PER_MINUTE = 10;
+
+/**
+ * Webhook do gateway de pagamento (Publicar e pagar RN09; B2-6): limite próprio
+ * por IP, fora do limite geral, para um lote de eventos do gateway não ser
+ * barrado junto com o tráfego do app (nem o contrário).
+ */
+export const PAYMENT_WEBHOOK_THROTTLER = 'payment_webhook';
+export const PAYMENT_WEBHOOK_PER_MINUTE = 600;

@@ -25,11 +25,16 @@ import {
 import { toHttpError as toAccessHttpError } from '../../access/presentation/access-http-errors';
 import { CurrentSession } from '../../access/presentation/current-session.decorator';
 import {
+  type CenterNotificationType,
+  EMAIL_PREFERENCE_TYPES,
   NOTIFICATION_TYPES,
+  PLANNER_NOTIFICATION_TYPES,
   type NotificationType,
   type PlannerNotificationType,
+  type PreferenceRow,
 } from '../application/ports/notification-store.port';
 import {
+  EmailPreferenceNotEditableError,
   NotificationCenter,
   NotificationCursorInvalidError,
   NotificationNotFoundError,
@@ -59,12 +64,18 @@ function scopeOf({
 }: {
   weddingId?: string;
   scope?: 'planner';
-  type?: PlannerNotificationType;
+  type?: CenterNotificationType;
 }): { planner: true } | { planner: false; weddingId: string } {
   if (scope === 'planner') {
     if (weddingId !== undefined)
       throw validationError({
         errors: [{ path: 'weddingId', code: 'NOT_ALLOWED', params: {} }],
+      });
+    if (type !== undefined && !(PLANNER_NOTIFICATION_TYPES as readonly string[]).includes(type))
+      throw validationError({
+        errors: [
+          { path: 'type', code: 'IS_IN', params: { values: [...PLANNER_NOTIFICATION_TYPES] } },
+        ],
       });
     return { planner: true };
   }
@@ -75,6 +86,11 @@ function scopeOf({
   return { planner: false, weddingId: weddingId ?? '' };
 }
 
+/** O e-mail fixo em "Sempre" não tem seletor (decisão 236). */
+function toPreference(row: PreferenceRow): PreferenceResponse {
+  return { ...row, emailEditable: row.email !== 'always' };
+}
+
 function toHttpError(error: unknown): unknown {
   if (error instanceof NotificationNotFoundError)
     return new NotFoundException({
@@ -82,6 +98,8 @@ function toHttpError(error: unknown): unknown {
       error: 'NOTIFICATION_NOT_FOUND',
       message: 'Notification not found.',
     });
+  if (error instanceof EmailPreferenceNotEditableError)
+    return validationError({ errors: [{ path: 'type', code: 'NOT_EDITABLE', params: {} }] });
   if (error instanceof NotificationCursorInvalidError)
     return validationError({ errors: [{ path: 'cursor', code: 'INVALID_CURSOR', params: {} }] });
   return toAccessHttpError(error);
@@ -115,7 +133,7 @@ export class NotificationsController {
       const page = target.planner
         ? await this.center.listPlanner({
             userId: session.userId,
-            type: query.type ?? null,
+            type: (query.type as PlannerNotificationType | undefined) ?? null,
             cursor: query.cursor,
           })
         : await this.center.list({
@@ -228,16 +246,18 @@ export class NotificationsController {
     @Query() query: PreferencesQuery,
   ): Promise<PreferencesResponse> {
     try {
-      return query.weddingId === undefined
-        ? await this.preferences.getGeneral({
-            userId: session.userId,
-            sessionId: session.sessionId,
-          })
-        : await this.preferences.get({
-            userId: session.userId,
-            sessionId: session.sessionId,
-            weddingId: query.weddingId,
-          });
+      const view =
+        query.weddingId === undefined
+          ? await this.preferences.getGeneral({
+              userId: session.userId,
+              sessionId: session.sessionId,
+            })
+          : await this.preferences.get({
+              userId: session.userId,
+              sessionId: session.sessionId,
+              weddingId: query.weddingId,
+            });
+      return { ...view, items: view.items.map((row) => toPreference(row)) };
     } catch (error) {
       throw toHttpError(error);
     }
@@ -256,24 +276,26 @@ export class NotificationsController {
   ): Promise<PreferenceResponse> {
     if (
       body.weddingId !== undefined &&
-      !(NOTIFICATION_TYPES as readonly string[]).includes(body.type)
+      !(EMAIL_PREFERENCE_TYPES as readonly string[]).includes(body.type)
     )
       throw validationError({
-        errors: [{ path: 'type', code: 'IS_IN', params: { values: [...NOTIFICATION_TYPES] } }],
+        errors: [{ path: 'type', code: 'IS_IN', params: { values: [...EMAIL_PREFERENCE_TYPES] } }],
       });
     try {
-      return body.weddingId === undefined
-        ? await this.preferences.saveGeneralEmail({
-            userId: session.userId,
-            type: body.type,
-            email: body.email,
-          })
-        : await this.preferences.saveEmail({
-            userId: session.userId,
-            weddingId: body.weddingId,
-            type: body.type as NotificationType,
-            email: body.email,
-          });
+      const row =
+        body.weddingId === undefined
+          ? await this.preferences.saveGeneralEmail({
+              userId: session.userId,
+              type: body.type,
+              email: body.email,
+            })
+          : await this.preferences.saveEmail({
+              userId: session.userId,
+              weddingId: body.weddingId,
+              type: body.type as NotificationType,
+              email: body.email,
+            });
+      return toPreference(row);
     } catch (error) {
       throw toHttpError(error);
     }

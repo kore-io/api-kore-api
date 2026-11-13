@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { WEDDING_WRITE_STATE, type WeddingWriteState } from './ports/wedding-write-state.port';
 import { AFTER_COMMIT, type AfterCommit } from '../../../shared/database/after-commit.port';
 import { uuidV7 } from '../../../shared/ids/uuid-v7';
 import {
@@ -16,6 +17,8 @@ import {
   SelfReferralError,
   SellerCannotBePlannerError,
   SessionExpiredError,
+  WeddingBlockedError,
+  WeddingDeletionScheduledError,
 } from '../domain/access.errors';
 import { firstName } from '../domain/access-invitation';
 import {
@@ -76,6 +79,7 @@ export class AcceptAccessInvitation {
     @Inject(AFTER_COMMIT) private readonly afterCommit: AfterCommit,
     @Inject(SESSION_REPOSITORY) private readonly sessions: SessionRepository,
     @Inject(COLLABORATION_NOTICE_MAILER) private readonly mailer: CollaborationNoticeMailer,
+    @Inject(WEDDING_WRITE_STATE) private readonly writeState: WeddingWriteState,
   ) {}
 
   async execute({
@@ -108,6 +112,10 @@ export class AcceptAccessInvitation {
     if (mismatch && !acceptance.confirmOtherAccount) throw new EmailMismatchError();
 
     const { weddingId, wedding } = invitation;
+    // Casamento bloqueado RN02: aceitar o convite é escrita do casamento.
+    const block = await this.writeState.blockOfInvitedWedding({ weddingId });
+    if (block === 'blocked') throw new WeddingBlockedError();
+    if (block === 'deletion_scheduled') throw new WeddingDeletionScheduledError();
     // Decisão 224(2): a regra vem antes do ALREADY_MEMBER, para não depender do vínculo.
     if (isSelfReferral({ invitation, userId })) throw new SelfReferralError();
     // Decisão 172(3) revista: quem já tem vínculo neste casamento, dono ou não.

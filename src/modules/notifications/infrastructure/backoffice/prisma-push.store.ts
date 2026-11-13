@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
-import type { PushStore, StoredPushSubscription } from '../../application/ports/push-store.port';
+import type {
+  PushStore,
+  PushType,
+  StoredPushSubscription,
+} from '../../application/ports/push-store.port';
 import { partnerNamesOf, preferenceWhere, recipientRole } from './notification-recipient';
 
 /** Pela conexão do backoffice (sem RLS): o worker atravessa as pessoas. */
@@ -11,17 +15,28 @@ export class PrismaPushStore implements PushStore {
   async recipient({
     userId,
     weddingId,
+    type,
     now,
   }: {
     userId: string;
     weddingId: string;
+    type: PushType;
     now: Date;
   }): ReturnType<PushStore['recipient']> {
-    const role = await recipientRole({ db: this.prisma, userId, weddingId });
+    // A comissão é da pessoa indicadora, com ou sem vínculo no casamento
+    // (Comissões do indicador RN09), e segue a preferência geral.
+    const found =
+      type === 'commission'
+        ? (await this.prisma.referrer.findUnique({ where: { userId }, select: { id: true } }))
+          ? ('planner' as const)
+          : null
+        : await recipientRole({ db: this.prisma, userId, weddingId });
+    // A cobrança é só das pessoas donas (Publicar e pagar RN13).
+    const role = type === 'billing' && found !== 'owner' ? null : found;
     const [preference, subscriptions, notification] = await Promise.all([
       role
         ? this.prisma.notificationPreference.findFirst({
-            where: preferenceWhere({ role, userId, weddingId, type: 'rsvp' }),
+            where: preferenceWhere({ role, userId, weddingId, type }),
             select: { push: true },
           })
         : null,
@@ -36,19 +51,23 @@ export class PrismaPushStore implements PushStore {
         },
       }),
       this.prisma.notification.findFirst({
-        where: { userId, weddingId, type: 'rsvp', readAt: null },
+        where: { userId, weddingId, type, readAt: null },
         orderBy: { updatedAt: 'desc' },
         select: { groupKey: true, count: true, payload: true },
       }),
     ]);
     const first = Array.isArray(notification?.payload)
-      ? (notification.payload as { name?: string }[])[0]
+      ? (notification.payload as { name?: string; partnerNames?: [string, string] }[])[0]
       : undefined;
     return {
       member: role !== null,
       role,
       partnerNames:
-        role === 'planner' ? await partnerNamesOf({ db: this.prisma, weddingId }) : ['', ''],
+        type === 'commission'
+          ? (first?.partnerNames ?? ['', ''])
+          : role === 'planner'
+            ? await partnerNamesOf({ db: this.prisma, weddingId })
+            : ['', ''],
       push: preference?.push ?? false,
       subscriptions: subscriptions.map(({ session, ...subscription }): StoredPushSubscription => ({
         ...subscription,

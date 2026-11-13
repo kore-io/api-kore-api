@@ -4,14 +4,13 @@ import {
   type ObjectStorage,
 } from '../../../shared/storage/application/object-storage.port';
 import { BACKGROUND_MODES, evaluateAppearance, type BackgroundMode } from '../domain/appearance';
-import { DRAFT_SITE_STATUSES, coupleNames } from '../domain/public-site';
+import { coupleNames, requireLiveSite } from '../domain/public-site';
 import {
   SITE_SECTION_TYPES,
   isSectionEmpty,
   sectionImageIds,
   type SectionContent,
 } from '../domain/site-sections';
-import { SiteDraftError, SiteNotFoundError } from '../domain/site.errors';
 import { PARTY_COOKIES, type PartyCookies } from './ports/party-cookies.port';
 import {
   SITE_READER,
@@ -170,8 +169,7 @@ export class GetPublicSite {
     }
 
     const site = await this.reader.bySlug({ slug });
-    if (site && !site.live && DRAFT_SITE_STATUSES.includes(site.status)) throw new SiteDraftError();
-    if (!site || !site.live) throw new SiteNotFoundError();
+    requireLiveSite(site);
 
     const cookieName = this.partyCookies.name({ weddingId: site.weddingId });
     const cookie = cookies[cookieName];

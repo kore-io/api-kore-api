@@ -414,6 +414,10 @@ describe('Cadastro e perfil do cerimonialista (banco real; decisões 223 e 224)'
         referralCode: created.body.referralCode,
         link: `https://kore.com.br/i/${created.body.referralCode}`,
         discountPercent: 10,
+        // Repasse, Contrato: sem dados para receber ainda.
+        taxIdMasked: null,
+        pixKeyMasked: null,
+        payoutDataComplete: false,
       });
     });
 

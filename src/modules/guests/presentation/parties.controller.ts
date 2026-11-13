@@ -139,6 +139,7 @@ export class PartiesController {
           tagId: query.tag,
           remind: query.remind === 'true',
           saveTheDate: query.saveTheDate,
+          order: query.order,
           cursor: query.cursor,
           limit: query.limit,
         }),

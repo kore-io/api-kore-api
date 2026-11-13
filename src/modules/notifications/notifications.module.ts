@@ -1,4 +1,4 @@
-import { BullModule } from '@nestjs/bullmq';
+import { producerQueue } from '../../shared/jobs/producer-queue';
 import { Module } from '@nestjs/common';
 import { NOTIFICATION_DISPATCHER } from './application/ports/notification-dispatcher.port';
 import { BullmqNotificationDispatcher } from './infrastructure/bullmq-notification-dispatcher';
@@ -15,7 +15,10 @@ import { PushSubscriptionsController } from './presentation/push-subscriptions.c
 
 /** Contexto Notificações (F5): a central e as preferências de cada pessoa. */
 @Module({
-  imports: [AccessModule, BullModule.registerQueue({ name: NOTIFICATIONS_QUEUE })],
+  // A fila produtora sem fila offline (Central RN02): com o Redis fora, o
+  // aviso depois do commit falha na hora e a resposta sai; a rotina de 15
+  // minutos manda o que ficou.
+  imports: [AccessModule, producerQueue(NOTIFICATIONS_QUEUE)],
   controllers: [NotificationsController, PushSubscriptionsController],
   providers: [
     { provide: NOTIFICATION_STORE, useClass: PrismaNotificationStore },

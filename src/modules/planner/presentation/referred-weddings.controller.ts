@@ -11,6 +11,11 @@ import { CurrentSession } from '../../access/presentation/current-session.decora
 import { ListReferredWeddings } from '../application/referred-weddings.use-case';
 import { MY_WEDDING_STATUSES, type MyWeddingStatus } from '../domain/my-weddings';
 
+class ReferredWeddingCommissionResponse {
+  @ApiProperty({ example: 6742 }) availableCents: number;
+  @ApiProperty({ example: 1740 }) pendingCents: number;
+}
+
 export class ReferredWeddingResponse {
   /** Nulo quando `clickable` é false (RN05). */
   @ApiProperty({ type: String, nullable: true }) weddingId: string | null;
@@ -18,6 +23,12 @@ export class ReferredWeddingResponse {
   @ApiProperty({ type: [String], example: ['Ana', 'Marcos'] }) partnerNames: [string, string];
   @ApiProperty({ enum: MY_WEDDING_STATUSES }) status: MyWeddingStatus;
   createdAt: string;
+  /**
+   * A coluna Comissão (Comissões do indicador RN08): "R$ 67,42 disponível ·
+   * R$ 17,40 aguardando"; nula sem pagamento ("—").
+   */
+  @ApiProperty({ type: ReferredWeddingCommissionResponse, nullable: true })
+  commission: ReferredWeddingCommissionResponse | null;
   /** Ela colabora no casamento: a linha abre o detalhe em Meus casamentos. */
   clickable: boolean;
 }

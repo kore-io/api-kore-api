@@ -1,6 +1,7 @@
 import {
   ConflictException,
   ForbiddenException,
+  GoneException,
   HttpException,
   HttpStatus,
   NotFoundException,
@@ -17,7 +18,9 @@ import {
   PartyLinkRateLimitedError,
   SiteLinkInvalidError,
   SiteDraftError,
+  SiteExpiredError,
   SiteNotFoundError,
+  SiteUnavailableError,
   ContrastTooLowError,
   SiteImageInvalidError,
   SiteImageLimitReachedError,
@@ -27,8 +30,8 @@ import {
   SiteFieldNotAllowedError,
   SiteFieldsInvalidError,
   SiteSlugLockedError,
+  SitePaymentPendingError,
   SiteSlugUnavailableError,
-  CourtesyDisabledError,
   NotDraftError,
   EventDateMissingError,
   EndDateOutOfRangeError,
@@ -39,13 +42,6 @@ import {
  * WEDDING_NOT_FOUND e 403 ACTION_NOT_ALLOWED) seguem o mapa do Acesso.
  */
 export function toHttpError(error: unknown): unknown {
-  if (error instanceof CourtesyDisabledError) {
-    return new ConflictException({
-      statusCode: 409,
-      error: 'COURTESY_DISABLED',
-      message: 'Publishing is not available yet.',
-    });
-  }
   if (error instanceof NotDraftError) {
     return new ConflictException({
       statusCode: 409,
@@ -110,6 +106,20 @@ export function toHttpError(error: unknown): unknown {
       HttpStatus.TOO_MANY_REQUESTS,
     );
   }
+  // Data de saída do ar RN08: sem dado do casal; o filtro global põe o no-store.
+  if (error instanceof SiteExpiredError) {
+    return new GoneException({
+      statusCode: 410,
+      error: 'SITE_EXPIRED',
+      message: 'This site is no longer available.',
+    });
+  }
+  if (error instanceof SiteUnavailableError) {
+    return new HttpException(
+      { statusCode: 423, error: 'SITE_UNAVAILABLE', message: 'This site is unavailable.' },
+      423,
+    );
+  }
   if (error instanceof SiteNotFoundError) {
     return new NotFoundException({
       statusCode: 404,
@@ -140,6 +150,13 @@ export function toHttpError(error: unknown): unknown {
       error: 'FIELD_NOT_ALLOWED',
       message: 'Only the couple can change these fields.',
       fields: error.fields,
+    });
+  }
+  if (error instanceof SitePaymentPendingError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'PAYMENT_PENDING',
+      message: 'A publication payment is awaiting confirmation.',
     });
   }
   if (error instanceof SiteSlugLockedError) {

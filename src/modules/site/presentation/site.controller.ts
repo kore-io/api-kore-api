@@ -23,6 +23,7 @@ import {
   SiteFieldNotAllowedErrorBody,
   SiteImageNotFoundErrorBody,
   SiteSlugLockedErrorBody,
+  SitePaymentPendingErrorBody,
   SiteSlugUnavailableErrorBody,
 } from './site-error.dto';
 import { toHttpError } from './site-http-errors';
@@ -164,6 +165,7 @@ export class SiteController {
     SiteFieldNotAllowedErrorBody,
     SiteImageNotFoundErrorBody,
     SiteSlugLockedErrorBody,
+    SitePaymentPendingErrorBody,
     SiteSlugUnavailableErrorBody,
     EndDateOutOfRangeErrorBody,
   )

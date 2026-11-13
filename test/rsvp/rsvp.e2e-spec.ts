@@ -431,6 +431,74 @@ describe('Confirmar presença (banco real)', () => {
     expect(byName(late.body.current.guests, 'Pedro Moreira').rsvpStatus).toBe('declined');
   });
 
+  it('Central RN04 - o mesmo grupo duas vezes conta uma, com o "at" da 2ª; depois de lida, a próxima é nova', async () => {
+    const { ana, weddingId, slug, moreira } = await scenario();
+    const { body } = await answer(slug, moreira);
+    await put(slug, moreira, body).expect(200);
+    // A Família Moreira altera antes da leitura: Pedro passa a ir.
+    const changed = {
+      ...body,
+      version: 2,
+      guests: [body.guests[0], body.guests[1], { ...body.guests[2], status: 'confirmed' }],
+    };
+    await put(slug, moreira, changed).expect(200);
+
+    const unread = () =>
+      db.notification.findMany({ where: { userId: ana.userId, weddingId, readAt: null } });
+    const latest = await db.rsvpSubmission.findFirstOrThrow({
+      where: { partyId: moreira.party.id },
+      orderBy: { createdAt: 'desc' },
+    });
+    const [grouped] = await unread();
+    expect(grouped).toMatchObject({ count: 1 });
+    expect(grouped.payload).toEqual([
+      {
+        partyId: moreira.party.id,
+        name: 'Família Moreira',
+        confirmed: 3,
+        declined: 0,
+        at: latest.createdAt.toISOString(),
+      },
+    ]);
+
+    await db.notification.update({ where: { id: grouped.id }, data: { readAt: new Date() } });
+    await put(slug, moreira, { ...body, version: 3 }).expect(200);
+    const next = await unread();
+    expect(next).toHaveLength(1);
+    expect(next[0].id).not.toBe(grouped.id);
+    expect(next[0]).toMatchObject({ count: 1 });
+    expect(await db.notification.count({ where: { userId: ana.userId, weddingId } })).toBe(2);
+  });
+
+  it('Central RN04 - duas respostas ao mesmo tempo somam numa só notificação não lida', async () => {
+    const { ana, weddingId, slug, moreira, createParty } = await scenario();
+    const duarte = await createParty({
+      name: 'Família Duarte',
+      guests: [{ name: 'Carla Duarte' }],
+    });
+    const { body } = await answer(slug, moreira);
+    const carla = (await form(slug, duarte.cookie)).guests[0];
+
+    const [first, second] = await Promise.all([
+      put(slug, moreira, body),
+      put(slug, duarte, {
+        version: 1,
+        signedByGuestId: carla.id,
+        guests: [{ id: carla.id, status: 'confirmed' }],
+      }),
+    ]);
+
+    expect([first.status, second.status]).toEqual([200, 200]);
+    const unread = await db.notification.findMany({
+      where: { userId: ana.userId, weddingId, readAt: null },
+    });
+    expect(unread).toHaveLength(1);
+    expect(unread[0].count).toBe(2);
+    expect(
+      (unread[0].payload as { partyId: string }[]).map(({ partyId }) => partyId).sort(),
+    ).toEqual([moreira.party.id, duarte.party.id].sort());
+  });
+
   it('RN07 e RN11 - o RSVP e o mover de grupo ao mesmo tempo terminam sem deadlock', async () => {
     const { ana, weddingId, slug, moreira, createParty } = await scenario();
     await createParty({ name: 'Família Duarte', guests: [{ name: 'Carla Duarte' }] });
@@ -491,6 +559,8 @@ describe('Confirmar presença (banco real)', () => {
   it('RN10 - teto por grupo: com 50 gravações hoje, a próxima com mudança recebe RSVP_LIMIT; sem mudança, passa', async () => {
     const { weddingId, slug, moreira } = await scenario();
     const { body } = await answer(slug, moreira);
+    await put(slug, moreira, body).expect(200);
+    await db.rsvpSubmission.deleteMany({ where: { partyId: moreira.party.id } });
     await db.rsvpSubmission.createMany({
       data: Array.from({ length: 50 }, () => ({
         id: uuidV7(),
@@ -502,16 +572,26 @@ describe('Confirmar presença (banco real)', () => {
       })),
     });
 
-    const response = await put(slug, moreira, body).expect(429);
+    // Pedro passa a ir: uma mudança, acima do teto.
+    const changed = {
+      ...body,
+      version: 2,
+      guests: [body.guests[0], body.guests[1], { ...body.guests[2], status: 'confirmed' }],
+    };
+    const response = await put(slug, moreira, changed).expect(429);
     expect(response.body.error).toBe('RSVP_LIMIT');
-    expect((await db.party.findUniqueOrThrow({ where: { id: moreira.party.id } })).version).toBe(1);
+    expect((await db.party.findUniqueOrThrow({ where: { id: moreira.party.id } })).version).toBe(2);
+
+    // Sem mudança (as mesmas respostas), passa com o teto cheio e nada é gravado.
+    await put(slug, moreira, { ...body, version: 2 }).expect(200);
+    expect(await db.rsvpSubmission.count({ where: { partyId: moreira.party.id } })).toBe(50);
 
     // Gravações de ontem não contam.
     await db.rsvpSubmission.updateMany({
       where: { partyId: moreira.party.id },
       data: { createdAt: new Date(Date.now() - 2 * DAY_MS) },
     });
-    await put(slug, moreira, body).expect(200);
+    await put(slug, moreira, changed).expect(200);
   });
 
   it('RN10 - 20 gravações por minuto por IP e grupo: acima, RSVP_RATE_LIMITED', async () => {
@@ -598,6 +678,24 @@ describe('Confirmar presença (banco real)', () => {
     const response = await put(slug, { cookie: preview, from: ip() }, body).expect(403);
     expect(response.body.error).toBe('PREVIEW_READ_ONLY');
     expect(await db.rsvpSubmission.count({ where: { partyId: moreira.party.id } })).toBe(0);
+  });
+
+  it('Música RN04 - música longa demais: 121 caracteres dão 400 TOO_LONG pelo caminho, e nada é gravado; 120 passam', async () => {
+    const { slug, moreira } = await scenario({ songQuestionEnabled: true });
+    const { body } = await answer(slug, moreira);
+    const withSong = (song: string) => ({
+      ...body,
+      guests: [{ ...body.guests[0], songSuggestion: song }, ...body.guests.slice(1)],
+    });
+
+    const tooLong = await put(slug, moreira, withSong('a'.repeat(121))).expect(400);
+    expect(tooLong.body.errors).toEqual([
+      { path: 'guests.0.songSuggestion', code: 'TOO_LONG', params: { max: 120 } },
+    ]);
+    expect((await db.party.findUniqueOrThrow({ where: { id: moreira.party.id } })).version).toBe(1);
+    expect(await db.rsvpSubmission.count({ where: { partyId: moreira.party.id } })).toBe(0);
+
+    await put(slug, moreira, withSong('a'.repeat(120))).expect(200);
   });
 
   it('Música RN04 - a sugestão só de quem confirma; Não vou apaga; desligada, o campo é ignorado e a guardada fica', async () => {
