@@ -13,6 +13,8 @@ const SELECT = {
   status: true,
   dueAt: true,
   createdAt: true,
+  refundRequestedAt: true,
+  refundFailedAt: true,
 } as const;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -62,6 +64,29 @@ export class PrismaPaymentReconciliationReader implements PaymentReconciliationR
       orderBy: { id: 'asc' },
       take: limit,
       select: SELECT,
+    });
+  }
+
+  refundsNeverAttempted({
+    requestedBefore,
+    weddingId,
+    limit,
+  }: {
+    requestedBefore: Date;
+    weddingId?: string;
+    limit: number;
+  }) {
+    return this.db.payment.findMany({
+      where: {
+        status: 'refund_requested',
+        refundAttempts: 0,
+        refundFailedAt: null,
+        refundRequestedAt: { lt: requestedBefore },
+        ...(weddingId ? { weddingId } : {}),
+      },
+      orderBy: { refundRequestedAt: 'asc' },
+      take: limit,
+      select: { id: true },
     });
   }
 

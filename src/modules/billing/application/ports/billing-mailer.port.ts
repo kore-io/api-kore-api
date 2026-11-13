@@ -13,9 +13,17 @@ export interface PixExpiredNotice {
   partnerNames: [string, string];
 }
 
+/** O e-mail do reembolso concluído (Pagamentos e arrependimento RN07), sem valor. */
+export interface RefundCompletedNotice {
+  to: string;
+  firstName: string;
+  partnerNames: [string, string];
+}
+
 export interface BillingMailer {
   paymentConfirmed({ notice }: { notice: PaymentConfirmedNotice }): Promise<void>;
   pixExpired({ notice }: { notice: PixExpiredNotice }): Promise<void>;
+  refundCompleted({ notice }: { notice: RefundCompletedNotice }): Promise<void>;
 }
 
 export const BILLING_MAILER = Symbol('BillingMailer');

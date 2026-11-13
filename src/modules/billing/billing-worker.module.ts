@@ -7,6 +7,9 @@ import { ProcessGatewayEvent } from './application/process-gateway-event.use-cas
 import { RequeueGatewayEvents } from './application/requeue-gateway-events.use-case';
 import { PAYMENT_RECONCILIATION_READER } from './application/ports/payment-reconciliation.reader.port';
 import { ReconcilePayments } from './application/reconcile-payments.use-case';
+import { ProcessRefund } from './application/process-refund.use-case';
+import { PaymentRefundsProcessor } from './infrastructure/payment-refunds.job';
+import { PAYMENT_REFUNDS_QUEUE } from './infrastructure/refunds.queue';
 import { PrismaPaymentReconciliationReader } from './infrastructure/backoffice/prisma-payment-reconciliation.reader';
 import {
   PAYMENT_RECONCILIATION_QUEUE,
@@ -44,6 +47,7 @@ import { WeddingPseudonymizer } from '../product-events/infrastructure/wedding-p
     BullModule.registerQueue({ name: PAYMENT_RECONCILIATION_QUEUE }),
     // O push da cobrança entra na fila das notificações (decisão 236).
     BullModule.registerQueue({ name: NOTIFICATIONS_QUEUE }),
+    BullModule.registerQueue({ name: PAYMENT_REFUNDS_QUEUE }),
     // O e-mail do pagamento confirmado entra na fila de e-mail, como na API.
     EmailQueuesModule,
   ],
@@ -70,6 +74,8 @@ import { WeddingPseudonymizer } from '../product-events/infrastructure/wedding-p
     ReconcilePayments,
     PaymentReconciliationProcessor,
     PaymentReconciliationScheduler,
+    ProcessRefund,
+    PaymentRefundsProcessor,
   ],
 })
 export class BillingWorkerModule {}

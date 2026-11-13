@@ -1,4 +1,9 @@
-import { formatDay, paymentConfirmedEmail, pixExpiredEmail } from './billing.email';
+import {
+  formatDay,
+  paymentConfirmedEmail,
+  pixExpiredEmail,
+  refundCompletedEmail,
+} from './billing.email';
 
 describe('E-mail de pagamento confirmado (Publicar e pagar RN13; textos da Pena)', () => {
   const email = paymentConfirmedEmail({
@@ -49,6 +54,25 @@ describe('E-mail do Pix vencido (Publicar e pagar RN11 e RN13; textos da Pena)',
       'O código Pix para publicar o site venceu antes do pagamento. Gerem um novo para publicar.',
     );
     expect(email.text).toContain('Gerar novo Pix: http://localhost:5173/app/cobranca');
+    expect(email.text).toContain('Dúvidas? Escreva para suporte@kore.com.br.');
+    expect(email.text).not.toMatch(/R\$/);
+  });
+});
+
+describe('E-mail do reembolso concluído (Pagamentos e arrependimento RN07; textos da Pena)', () => {
+  const email = refundCompletedEmail({
+    notice: { to: 'ana@kore.local', firstName: 'Ana', partnerNames: ['Ana', 'Marcos'] },
+    url: 'http://localhost:5173/app/cobranca',
+  });
+
+  it('RN07 - assunto, pré-cabeçalho, corpo e botão da Pena, sem valor', () => {
+    expect(email.subject).toBe('Reembolso concluído');
+    expect(email.html).toContain('O valor foi devolvido pela mesma forma de pagamento.');
+    expect(email.text).toContain('Olá, Ana!');
+    expect(email.text).toContain(
+      'O reembolso foi concluído. O valor foi devolvido pela mesma forma de pagamento: no cartão, ele aparece numa das próximas faturas.',
+    );
+    expect(email.text).toContain('Ver pagamentos: http://localhost:5173/app/cobranca');
     expect(email.text).toContain('Dúvidas? Escreva para suporte@kore.com.br.');
     expect(email.text).not.toMatch(/R\$/);
   });

@@ -33,6 +33,10 @@ import { PrismaPaymentRequestStore } from './infrastructure/prisma-payment-reque
 import { PrismaGatewayCustomers } from './infrastructure/backoffice/prisma-gateway-customers';
 import { PrismaBillingViewReader } from './infrastructure/prisma-billing-view.reader';
 import { PaymentsController } from './presentation/payments.controller';
+import { REFUND_REQUEST_STORE } from './application/ports/refund-request.store.port';
+import { RequestRefund } from './application/request-refund.use-case';
+import { PrismaRefundRequestStore } from './infrastructure/prisma-refund-request.store';
+import { PAYMENT_REFUNDS_QUEUE } from './infrastructure/refunds.queue';
 
 /**
  * Cobrança e publicação (F3), do lado da API: a porta do gateway, o webhook, o
@@ -43,6 +47,7 @@ import { PaymentsController } from './presentation/payments.controller';
     AccessModule,
     BullModule.registerQueue({ name: GATEWAY_EVENTS_QUEUE }),
     BullModule.registerQueue({ name: NOTIFICATIONS_QUEUE }),
+    BullModule.registerQueue({ name: PAYMENT_REFUNDS_QUEUE }),
   ],
   controllers: [
     PaymentWebhooksController,
@@ -66,6 +71,8 @@ import { PaymentsController } from './presentation/payments.controller';
     { provide: BILLING_VIEW_READER, useClass: PrismaBillingViewReader },
     CreatePayment,
     GetBilling,
+    { provide: REFUND_REQUEST_STORE, useClass: PrismaRefundRequestStore },
+    RequestRefund,
   ],
   exports: [PAYMENT_GATEWAY, LocalGatewayStore, ReceiveGatewayWebhook, ProcessGatewayEvent],
 })

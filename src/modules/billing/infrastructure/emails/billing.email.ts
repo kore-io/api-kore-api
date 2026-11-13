@@ -7,6 +7,7 @@ import {
 import type {
   PaymentConfirmedNotice,
   PixExpiredNotice,
+  RefundCompletedNotice,
 } from '../../application/ports/billing-mailer.port';
 
 /** "14 de fev. de 2027": a data é um dia, sem fuso. */
@@ -92,6 +93,31 @@ export function pixExpiredEmail({
         text: 'O código Pix para publicar o site venceu antes do pagamento. Gerem um novo para publicar.',
       },
       { kind: 'button', text: 'Gerar novo Pix', href: url },
+    ],
+    footer: `Você recebeu este e-mail porque o casamento de ${partner1} e ${partner2} é seu no Kore.`,
+  });
+}
+
+/** "Reembolso concluído" (Pagamentos e arrependimento RN07; textos da Pena). Sem valor. */
+export function refundCompletedEmail({
+  notice,
+  url,
+}: {
+  notice: RefundCompletedNotice;
+  url: string;
+}): EmailMessage {
+  const [partner1, partner2] = notice.partnerNames;
+  return message({
+    to: notice.to,
+    subject: 'Reembolso concluído',
+    preheader: 'O valor foi devolvido pela mesma forma de pagamento.',
+    blocks: [
+      { kind: 'paragraph', text: `Olá, ${notice.firstName}!` },
+      {
+        kind: 'paragraph',
+        text: 'O reembolso foi concluído. O valor foi devolvido pela mesma forma de pagamento: no cartão, ele aparece numa das próximas faturas.',
+      },
+      { kind: 'button', text: 'Ver pagamentos', href: url },
     ],
     footer: `Você recebeu este e-mail porque o casamento de ${partner1} e ${partner2} é seu no Kore.`,
   });

@@ -6,6 +6,7 @@ import {
   type PaymentGateway,
 } from './ports/payment-gateway.port';
 import { PAYMENT_LEDGER, type PaymentLedger } from './ports/payment-ledger.port';
+import { REFUND_QUEUE, type RefundQueue } from './ports/refund-queue.port';
 import {
   PAYMENT_RECONCILIATION_READER,
   type PaymentReconciliationReader,
@@ -22,6 +23,11 @@ const PIX_VALIDITY_MS = 24 * 60 * 60_000;
 /** A lista do gateway: as últimas 48 h, com folga sobre a rodada diária anterior. */
 export const GATEWAY_LIST_WINDOW_MS = 48 * 60 * 60_000;
 const BATCH = 200;
+/**
+ * O estorno que o gateway aceitou e não concluiu em 7 dias vira alerta (a
+ * sugestão do Crivo no PR 5a): sem ele, a diária só vê a cobrança confirmada.
+ */
+export const REFUND_STALE_AFTER_MS = 7 * 24 * 60 * 60_000;
 
 /** O que uma rodada fez, para o log do job. */
 export interface ReconciliationTally {
@@ -45,11 +51,13 @@ const UNRESOLVED: SyncResult[] = ['unchanged', 'not_handled', 'no_payment'];
  *   o pendente vira `canceled` (o pedido caiu entre os passos 1 e 2). O Pix
  *   vencido é consultado antes de cancelar: pago, aplica; senão, cancela no
  *   gateway e passa a `canceled`, com o e-mail "O código Pix venceu".
+ *   Também repõe na fila o estorno pedido que nunca tentou (RN04).
  * - `settled` e `gatewayList` (às 4h): os `paid`, `refund_requested` e
  *   `disputed`, e a lista das cobranças do gateway nas últimas 48 h, com
  *   `Alert` para a cobrança sem `Payment` e para a confirmação que chegou a um
  *   `Payment` cancelado ou recusado sem o webhook. A diferença que não se
- *   resolve vira o `Alert` `webhook_failure`.
+ *   resolve vira o `Alert` `webhook_failure`, como o estorno pedido há mais de
+ *   7 dias que o gateway ainda não fez.
  */
 @Injectable()
 export class ReconcilePayments {
@@ -59,6 +67,7 @@ export class ReconcilePayments {
     @Inject(PAYMENT_LEDGER) private readonly ledger: PaymentLedger,
     private readonly transaction: BackofficeTransaction,
     private readonly sync: SyncPaymentWithGateway,
+    @Inject(REFUND_QUEUE) private readonly refunds: RefundQueue,
   ) {}
 
   /** A rodada de 10 minutos. */
@@ -80,6 +89,20 @@ export class ReconcilePayments {
       await this.guarded(tally, payment.id, async () => {
         const result = await this.reconcilePending({ payment, now });
         if (result !== 'unchanged') tally.changed++;
+      });
+    }
+    // O estorno pedido que não entrou na fila (Pagamentos e arrependimento
+    // RN04): volta como a 1ª tentativa; o id fixo do job não duplica.
+    const refunds = await this.payments.refundsNeverAttempted({
+      requestedBefore: new Date(now.getTime() - PENDING_STALE_AFTER_MS),
+      weddingId,
+      limit: BATCH,
+    });
+    for (const refund of refunds) {
+      tally.checked++;
+      await this.guarded(tally, refund.id, async () => {
+        await this.refunds.enqueue({ paymentId: refund.id, attempt: 1, delayMs: 0 });
+        tally.changed++;
       });
     }
     return tally;
@@ -128,6 +151,15 @@ export class ReconcilePayments {
               gatewayStatus: charge.status,
             });
           } else if (result !== 'already_confirmed') tally.changed++;
+          else if (refundStuck({ payment, now })) {
+            // Pagamentos e arrependimento RN05: o estorno pedido e nunca concluído.
+            await this.alert(tally, payment, {
+              reason: 'refund_not_concluded',
+              paymentStatus: payment.status,
+              gatewayStatus: charge.status,
+              refundRequestedAt: payment.refundRequestedAt?.toISOString() ?? null,
+            });
+          }
         });
       }
       if (page.length < BATCH) break;
@@ -252,4 +284,14 @@ function pixExpired({ payment, now }: { payment: ReconcilingPayment; now: Date }
   if (payment.method !== 'pix') return false;
   const dueAt = payment.dueAt ?? new Date(payment.createdAt.getTime() + PIX_VALIDITY_MS);
   return dueAt.getTime() <= now.getTime();
+}
+
+/** O estorno pedido há mais de 7 dias, sem desistência registrada, que o gateway ainda não fez. */
+function refundStuck({ payment, now }: { payment: ReconcilingPayment; now: Date }): boolean {
+  return (
+    payment.status === 'refund_requested' &&
+    payment.refundFailedAt === null &&
+    payment.refundRequestedAt !== null &&
+    now.getTime() - payment.refundRequestedAt.getTime() > REFUND_STALE_AFTER_MS
+  );
 }

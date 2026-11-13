@@ -7,6 +7,8 @@ export interface ReconcilingPayment {
   status: 'pending' | 'paid' | 'failed' | 'canceled' | 'refund_requested' | 'refunded' | 'disputed';
   dueAt: Date | null;
   createdAt: Date;
+  refundRequestedAt: Date | null;
+  refundFailedAt: Date | null;
 }
 
 /**
@@ -27,6 +29,15 @@ export interface PaymentReconciliationReader {
     weddingId?: string;
     limit: number;
   }): Promise<ReconcilingPayment[]>;
+  /**
+   * Os estornos pedidos que nunca tentaram (Pagamentos e arrependimento RN04):
+   * o job não entrou na fila depois do commit (Redis fora).
+   */
+  refundsNeverAttempted(input: {
+    requestedBefore: Date;
+    weddingId?: string;
+    limit: number;
+  }): Promise<{ id: string }[]>;
   /** Os pagamentos dessas referências (a referência é o id do Payment). */
   byReferences({ references }: { references: string[] }): Promise<ReconcilingPayment[]>;
 }

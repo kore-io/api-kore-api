@@ -1,8 +1,10 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   HttpException,
   HttpStatus,
+  NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { toHttpError as toAccessHttpError } from '../../access/presentation/access-http-errors';
@@ -13,7 +15,14 @@ import {
   BillingSlugMissingError,
   IdempotencyKeyReusedError,
   NotPublishedError,
+  BillingWeddingBlockedError,
   PaymentAlreadyPaidError,
+  PaymentDisputedError,
+  PaymentNotFoundError,
+  PaymentNotPaidError,
+  RefundAlreadyRequestedError,
+  RefundNotLastExtensionError,
+  RefundWindowClosedError,
   PaymentGatewayUnavailableError,
   PaymentPendingError,
   PriceChangedError,
@@ -71,6 +80,49 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 409,
       error: 'PAYMENT_PENDING',
       message: 'There is already a payment awaiting confirmation.',
+    });
+  if (error instanceof PaymentNotFoundError)
+    return new NotFoundException({
+      statusCode: 404,
+      error: 'PAYMENT_NOT_FOUND',
+      message: 'Payment not found.',
+    });
+  if (error instanceof BillingWeddingBlockedError)
+    return new ForbiddenException({
+      statusCode: 403,
+      error: 'WEDDING_BLOCKED',
+      message: 'The wedding is blocked.',
+    });
+  if (error instanceof PaymentNotPaidError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'PAYMENT_NOT_PAID',
+      message: 'Only a paid and applied payment can be refunded.',
+    });
+  if (error instanceof PaymentDisputedError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'PAYMENT_DISPUTED',
+      message: 'The payment is disputed.',
+    });
+  if (error instanceof RefundAlreadyRequestedError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'REFUND_ALREADY_REQUESTED',
+      message: 'The refund of this payment was already requested.',
+    });
+  if (error instanceof RefundNotLastExtensionError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'REFUND_NOT_LAST_EXTENSION',
+      message: 'There is a more recent extension.',
+    });
+  if (error instanceof RefundWindowClosedError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'REFUND_WINDOW_CLOSED',
+      message: 'The 7-day refund window is over.',
+      refundableUntil: error.refundableUntil?.toISOString() ?? null,
     });
   if (error instanceof PaymentAlreadyPaidError)
     return new ConflictException({

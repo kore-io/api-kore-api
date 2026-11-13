@@ -22,6 +22,14 @@ export interface LedgerPayment extends ConfirmingPayment {
   /** O vencimento do Pix (RN11); nulo no cartão e antes do passo 3 da RN03. */
   dueAt: Date | null;
   createdAt: Date;
+  cardLast4: string | null;
+  /** O estorno (Pagamentos e arrependimento RN04 e RN05). */
+  refundOrigin: 'couple' | 'admin' | 'automatic' | 'chargeback' | 'manual' | null;
+  refundRequestedAt: Date | null;
+  refundAttempts: number;
+  /** O erro da tentativa em curso; nulo enquanto ela não falhou (RN05). */
+  refundLastError: string | null;
+  refundFailedAt: Date | null;
 }
 
 /** Quem recebe o aviso da cobrança (RN13): as pessoas donas, com o nome do e-mail. */
@@ -77,12 +85,32 @@ export interface PaymentLedger {
   notifyBilling(input: {
     weddingId: string;
     paymentId: string;
+    /** Um aviso por pagamento e fato: a confirmação e o reembolso concluído (RN13; RN07). */
+    event: 'payment_confirmed' | 'refund_completed';
     userIds: string[];
     payload: Record<string, unknown>;
     now: Date;
   }): Promise<void>;
   /** O `wedding_published` da primeira publicação ao indicador (G5). */
   notifyWeddingPublished(input: { weddingId: string; now: Date }): Promise<void>;
+  /** O pago sem destino vira estorno automático (Publicar e pagar RN08). */
+  requestAutomaticRefund(input: { paymentId: string; now: Date }): Promise<void>;
+  /** Uma chamada de estorno à porta (RN05): conta a tentativa e limpa o erro. */
+  countRefundAttempt(input: { paymentId: string }): Promise<number>;
+  /** A tentativa falhou; `gaveUp` grava o refundFailedAt (RN05). */
+  recordRefundFailure(input: {
+    paymentId: string;
+    error: string;
+    gaveUp: boolean;
+    now: Date;
+  }): Promise<void>;
+  /** O gateway estornou (RN03): refunded, com a hora. */
+  markRefunded(input: { paymentId: string; now: Date }): Promise<void>;
+  /** Os pagamentos do mesmo pedido (mesmo casamento e mesma hora): o alerta os cita (B3-3). */
+  sameRefundRequest(input: {
+    weddingId: string;
+    refundRequestedAt: Date;
+  }): Promise<{ id: string; shortCode: number }[]>;
   /** Um alerta aberto por tipo e entidade (B9-7): o repetido não abre outro. */
   openAlert(input: {
     type: AlertType;
