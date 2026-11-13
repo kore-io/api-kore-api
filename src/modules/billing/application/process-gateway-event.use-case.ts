@@ -2,6 +2,9 @@ import { Inject, Injectable } from '@nestjs/common';
 import { GATEWAY_EVENT_STORE, type GatewayEventStore } from './ports/gateway-event.store.port';
 import { PAYMENT_GATEWAY, type PaymentGateway } from './ports/payment-gateway.port';
 import { SyncPaymentWithGateway } from './sync-payment.use-case';
+import { BackofficeTransaction } from '../../../shared/database/backoffice-transaction';
+import { SyncPayout } from './payouts/payout-transfers.use-cases';
+import { PAYOUT_LEDGER, type PayoutLedger } from './ports/payout-ledger.port';
 
 export type GatewayEventProcessing =
   | { kind: 'not_found' }
@@ -27,12 +30,33 @@ export class ProcessGatewayEvent {
     @Inject(GATEWAY_EVENT_STORE) private readonly events: GatewayEventStore,
     @Inject(PAYMENT_GATEWAY) private readonly gateway: PaymentGateway,
     private readonly sync: SyncPaymentWithGateway,
+    @Inject(PAYOUT_LEDGER) private readonly payouts: PayoutLedger,
+    private readonly transaction: BackofficeTransaction,
+    private readonly syncPayout: SyncPayout,
   ) {}
 
   async execute({ eventId, now }: { eventId: string; now: Date }): Promise<GatewayEventProcessing> {
     const stored = await this.events.byId({ id: eventId });
     if (!stored) return { kind: 'not_found' };
     if (stored.processedAt) return { kind: 'already_processed' };
+    // O Pix de saída do repasse (Repasse RN05): pela consulta da transferência.
+    if (stored.event.type.startsWith('transfer.')) {
+      const reference = stored.event.externalReference;
+      const payoutId = reference
+        ? await this.transaction.run(() =>
+            this.payouts.payoutIdByReference({ externalRef: reference }),
+          )
+        : null;
+      let result = 'no_payout';
+      if (payoutId && reference) {
+        const transfer = await this.gateway.getPixTransfer({ externalReference: reference });
+        result = transfer
+          ? `payout_${await this.syncPayout.execute({ payoutId, transfer, now })}`
+          : 'transfer_not_found';
+      }
+      await this.events.markProcessed({ id: stored.id, paymentId: null, result, now });
+      return { kind: 'processed', paymentId: null, result };
+    }
     const paymentId = await this.events.paymentIdFor({
       externalReference: stored.event.externalReference,
       gatewayPaymentId: stored.event.gatewayPaymentId,
