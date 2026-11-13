@@ -30,6 +30,8 @@ export interface LedgerPayment extends ConfirmingPayment {
   /** O erro da tentativa em curso; nulo enquanto ela não falhou (RN05). */
   refundLastError: string | null;
   refundFailedAt: Date | null;
+  /** A contestação (Pagamentos e arrependimento RN06). */
+  disputedAt: Date | null;
 }
 
 /** Quem recebe o aviso da cobrança (RN13): as pessoas donas, com o nome do e-mail. */
@@ -111,6 +113,23 @@ export interface PaymentLedger {
     weddingId: string;
     refundRequestedAt: Date;
   }): Promise<{ id: string; shortCode: number }[]>;
+  /**
+   * A contestação aberta (RN06): `paid → disputed`; com o pagamento em
+   * `refund_requested`, grava só a data e o prazo e mantém o estado (RN10).
+   */
+  markDisputed(input: {
+    paymentId: string;
+    now: Date;
+    deadline: string | null;
+    keepStatus: boolean;
+  }): Promise<void>;
+  /** Contestação ganha (RN06): `disputed → paid`. */
+  markDisputeWon(input: { paymentId: string; now: Date }): Promise<void>;
+  /**
+   * Contestação perdida (RN06; B3-4): `refunded` com origem `chargeback`, sem
+   * cascata; o `refund_requested` vai a `refunded` com a origem do pedido.
+   */
+  markDisputeLost(input: { paymentId: string; now: Date }): Promise<void>;
   /** Um alerta aberto por tipo e entidade (B9-7): o repetido não abre outro. */
   openAlert(input: {
     type: AlertType;

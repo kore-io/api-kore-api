@@ -230,6 +230,7 @@ export class LocalPaymentGateway implements PaymentGateway {
       netCents: row.net_cents,
       cardLast4: row.card_last4,
       failureReason: row.failure_reason,
+      disputeDeadline: row.dispute_deadline?.toISOString().slice(0, 10) ?? null,
     };
   }
 

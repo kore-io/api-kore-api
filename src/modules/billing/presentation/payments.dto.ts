@@ -176,6 +176,9 @@ export class BillingPaymentDto {
    */
   @ApiProperty({ type: String, format: 'date-time', nullable: true })
   refundableUntil: string | null;
+  /** O prazo da defesa, só em contestação (Pagamentos e arrependimento RN06). */
+  @ApiProperty({ type: String, nullable: true, example: '2026-09-10' })
+  disputeDeadline: string | null;
 }
 
 export class PayerDto {
@@ -227,6 +230,7 @@ export class BillingResponse {
         ...payment,
         paidAt: payment.paidAt?.toISOString() ?? null,
         refundableUntil: payment.refundableUntil?.toISOString() ?? null,
+        disputeDeadline: payment.disputeDeadline,
       })),
       payer: lastPayer,
     };

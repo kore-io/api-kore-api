@@ -37,6 +37,8 @@ export interface BillingPaymentRow {
    * do casamento; só no pago e dentro do prazo.
    */
   refundableUntil: Date | null;
+  /** O prazo da defesa na contestação (RN06), AAAA-MM-DD; só no `disputed`. */
+  disputeDeadline: string | null;
 }
 
 /** Só o dono (RLS de payments): o pendente, os pagamentos aplicados e o último pagador. */

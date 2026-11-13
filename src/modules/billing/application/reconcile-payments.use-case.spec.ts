@@ -40,6 +40,7 @@ function charge(id: string, status: GatewayCharge['status']): GatewayCharge {
     netCents: null,
     cardLast4: null,
     failureReason: null,
+    disputeDeadline: null,
   };
 }
 

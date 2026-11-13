@@ -30,6 +30,10 @@ export type SyncResult =
   | 'refunded'
   | 'refund_failed'
   | 'refund_given_up'
+  | 'disputed'
+  | 'dispute_open'
+  | 'dispute_won'
+  | 'dispute_lost'
   | 'not_handled';
 
 /**
@@ -54,7 +58,12 @@ export type CancelReason =
  * - estorno recusado (RN05): a tentativa falha; de novo em 1 h, 6 h e 24 h, e
  *   depois da 4ª o pagamento fica em refund_requested com o alerta;
  * - o pago sem destino vira estorno automático (Publicar e pagar RN08);
- * - disputa: o PR da contestação.
+ * - contestação (RN06; RN10 de Publicar e pagar): `paid → disputed` com o
+ *   prazo e o alerta `payment_disputed`; com o estorno já pedido, só a data e o
+ *   alerta; depois do estorno, só o alerta. Ganha, volta a `paid`; perdida,
+ *   `refunded` com origem `chargeback` e o alerta `dispute_lost`, **sem
+ *   cascata**: as extensões e o casamento não mudam (B3-4). O casamento
+ *   apagado (lápide) não muda em nenhum caso (B3-8).
  *
  * Aplicar a publicação: o Payment pago com appliedAt; o casamento publicado
  * até a data paga (paidThrough = endDate, origem payment); os logs; a
@@ -129,7 +138,12 @@ export class SyncPaymentWithGateway {
             error: charge.failureReason ?? 'refund_failed',
             now,
           });
+        case 'disputed':
+          return this.disputed({ wedding, payment, charge, now });
+        case 'dispute_lost':
+          return this.disputeLost({ wedding, payment, now });
         case 'confirmed':
+          if (payment.status === 'disputed') return this.disputeWon({ wedding, payment, now });
           break;
         default:
           return 'not_handled';
@@ -236,6 +250,115 @@ export class SyncPaymentWithGateway {
       if (payment.status !== 'refund_requested' || payment.refundFailedAt) return 'unchanged';
       return this.refundFailure({ wedding, payment, error, now });
     });
+  }
+
+  /** A contestação aberta (RN06; Publicar e pagar RN10). */
+  private async disputed({
+    wedding,
+    payment,
+    charge,
+    now,
+  }: {
+    wedding: LedgerWedding;
+    payment: LedgerPayment;
+    charge: GatewayCharge;
+    now: Date;
+  }): Promise<SyncResult> {
+    const alert = {
+      type: 'payment_disputed' as const,
+      weddingId: wedding.id,
+      entityType: 'payment',
+      entityId: payment.id,
+      data: {
+        shortCode: payment.shortCode,
+        disputeDeadline: charge.disputeDeadline,
+        paymentStatus: payment.status,
+      },
+    };
+    if (payment.status === 'refunded') {
+      // Depois do estorno, só o alerta: o dinheiro já voltou.
+      await this.ledger.openAlert(alert);
+      return 'disputed';
+    }
+    // O mesmo fato de novo não faz nada (a contestação continua aberta).
+    if (payment.status === 'disputed' || payment.disputedAt) return 'dispute_open';
+    if (payment.status !== 'paid' && payment.status !== 'refund_requested') return 'unchanged';
+    await this.ledger.markDisputed({
+      paymentId: payment.id,
+      now,
+      deadline: charge.disputeDeadline,
+      keepStatus: payment.status === 'refund_requested',
+    });
+    await this.ledger.log({
+      entry: {
+        action: 'payment.disputed',
+        weddingId: wedding.id,
+        entityType: 'payment',
+        entityId: payment.id,
+        data: { amountCents: payment.amountCents, disputeDeadline: charge.disputeDeadline },
+      },
+    });
+    // A comissão do pagamento fica retida no PR das comissões.
+    await this.ledger.openAlert(alert);
+    return 'disputed';
+  }
+
+  /** Contestação ganha (RN06): volta a `paid`; a comissão volta a seguir o prazo (PR 8). */
+  private async disputeWon({
+    wedding,
+    payment,
+    now,
+  }: {
+    wedding: LedgerWedding;
+    payment: LedgerPayment;
+    now: Date;
+  }): Promise<SyncResult> {
+    await this.ledger.markDisputeWon({ paymentId: payment.id, now });
+    await this.ledger.log({
+      entry: {
+        action: 'payment.dispute_won',
+        weddingId: wedding.id,
+        entityType: 'payment',
+        entityId: payment.id,
+        data: { amountCents: payment.amountCents },
+      },
+    });
+    return 'dispute_won';
+  }
+
+  /**
+   * Contestação perdida (RN06; B3-4): só o pagamento contestado vira
+   * `refunded`; as extensões por cima continuam pagas e o casamento segue no
+   * ar até a endDate. O alerta `dispute_lost` deixa o Admin decidir.
+   */
+  private async disputeLost({
+    wedding,
+    payment,
+    now,
+  }: {
+    wedding: LedgerWedding;
+    payment: LedgerPayment;
+    now: Date;
+  }): Promise<SyncResult> {
+    if (payment.status !== 'disputed' && payment.status !== 'refund_requested') return 'unchanged';
+    await this.ledger.markDisputeLost({ paymentId: payment.id, now });
+    await this.ledger.log({
+      entry: {
+        action: 'payment.dispute_lost',
+        weddingId: wedding.id,
+        entityType: 'payment',
+        entityId: payment.id,
+        data: { amountCents: payment.amountCents, previousStatus: payment.status },
+      },
+    });
+    await this.ledger.openAlert({
+      type: 'dispute_lost',
+      weddingId: wedding.id,
+      entityType: 'payment',
+      entityId: payment.id,
+      data: { shortCode: payment.shortCode, kind: payment.kind, weddingStatus: wedding.status },
+    });
+    return 'dispute_lost';
   }
 
   /** O gateway estornou (RN03 e RN07): refunded, o log e o "Reembolso concluído". */

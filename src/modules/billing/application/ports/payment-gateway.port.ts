@@ -35,6 +35,8 @@ export interface GatewayCharge {
   cardLast4: string | null;
   /** Por que o cartão foi recusado ou o estorno falhou, sem dado pessoal. */
   failureReason: string | null;
+  /** O prazo da defesa na contestação, AAAA-MM-DD (Pagamentos e arrependimento RN06). */
+  disputeDeadline: string | null;
 }
 
 /** O que o cartão pede depois da cobrança (B2-16): nada, ou o checkout hospedado. */

@@ -144,13 +144,17 @@ export class ReconcilePayments {
             return;
           }
           const result = await this.sync.execute({ paymentId: payment.id, charge, now });
-          if (UNRESOLVED.includes(result)) {
+          // O estorno recusado segue o fluxo do estorno (RN05), que já alerta.
+          const refundFlow =
+            payment.status === 'refund_requested' && charge.status === 'refund_failed';
+          if (UNRESOLVED.includes(result) && !refundFlow) {
             await this.alert(tally, payment, {
               reason: 'state_mismatch',
               paymentStatus: payment.status,
               gatewayStatus: charge.status,
             });
-          } else if (result !== 'already_confirmed') tally.changed++;
+          } else if (result !== 'already_confirmed' && result !== 'dispute_open' && !refundFlow)
+            tally.changed++;
           else if (refundStuck({ payment, now })) {
             // Pagamentos e arrependimento RN05: o estorno pedido e nunca concluído.
             await this.alert(tally, payment, {
