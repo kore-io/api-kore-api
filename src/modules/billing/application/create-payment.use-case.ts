@@ -216,6 +216,11 @@ export class CreatePayment {
     )
       throw new PriceChangedError();
 
+    // RN07: só o anterior deste casamento e do mesmo tipo (a FK não amarra o
+    // casamento); o id de outro casamento, ou que não existe, não é gravado.
+    const replaced = input.replacesPaymentId
+      ? await this.payments.byId({ weddingId, paymentId: input.replacesPaymentId })
+      : null;
     const id = uuidV7({ now: input.now.getTime() });
     await this.payments.insertPending({
       payment: {
@@ -245,7 +250,7 @@ export class CreatePayment {
         createdByUserId: userId,
         previousEndDate: input.kind === 'extension' ? wedding.endDate : null,
         previousPaidThrough: input.kind === 'extension' ? wedding.paidThrough : null,
-        replacesPaymentId: input.replacesPaymentId,
+        replacesPaymentId: replaced && replaced.kind === input.kind ? replaced.id : null,
       },
     });
     await this.log.record({

@@ -265,6 +265,41 @@ describe('Reconciliação e troca do pendente (Publicar e pagar RN07 e RN11; ban
       expect(await db.payment.count({ where: { weddingId } })).toBe(2);
     });
 
+    it('RN07 - o pendente de outro casamento não é trocado nem gravado como anterior', async () => {
+      const other = await scenario();
+      const foreign = expectStatus(
+        await pay({ cookie: other.ana.cookie, weddingId: other.weddingId, method: 'pix' }),
+        201,
+      );
+      const foreignId = foreign.body.paymentId as string;
+      const { ana, weddingId } = await scenario();
+
+      const created = expectStatus(
+        await pay({ cookie: ana.cookie, weddingId, method: 'pix', replacesPaymentId: foreignId }),
+        201,
+      );
+      expect(await payment(created.body.paymentId as string)).toMatchObject({
+        status: 'pending',
+        replacesPaymentId: null,
+      });
+      expect(await payment(foreignId)).toMatchObject({ status: 'pending' });
+      expect(await gateway.chargeByReference({ externalReference: foreignId })).toMatchObject({
+        status: 'pending',
+      });
+    });
+
+    it('RN07 - o anterior que não existe: cria o novo sem vínculo (não 500)', async () => {
+      const { ana, weddingId } = await scenario();
+      const created = expectStatus(
+        await pay({ cookie: ana.cookie, weddingId, replacesPaymentId: randomUUID() }),
+        201,
+      );
+      expect(await payment(created.body.paymentId as string)).toMatchObject({
+        status: 'pending',
+        replacesPaymentId: null,
+      });
+    });
+
     it('RN07 - replacesPaymentId fora do formato UUID: 400', async () => {
       const { ana, weddingId } = await scenario();
       const response = expectStatus(
