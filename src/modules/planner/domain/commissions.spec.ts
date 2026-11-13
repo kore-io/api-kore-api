@@ -59,4 +59,13 @@ describe('Os saldos e a soma por casamento (Comissões do indicador RN02, RN07 e
     ]);
     expect(second).toMatchObject({ weddingId: 'w2', availableCents: 500, pendingCents: 0 });
   });
+
+  it('RN02 (B6-2) - o Disponível soma os ajustes sem repasse; o do repasse vai em "em repasse"', () => {
+    expect(
+      commissionBalances(rows, [
+        { amountCents: -1_000, payoutId: null },
+        { amountCents: -500, payoutId: 'p1' },
+      ]),
+    ).toMatchObject({ availableCents: 6_242, inPayoutCents: 2_500 });
+  });
 });

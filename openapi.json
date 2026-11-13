@@ -2553,6 +2553,193 @@
         ]
       }
     },
+    "/v1/me/referrer/payouts": {
+      "get": {
+        "operationId": "PayoutsController_list_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayoutsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "referral"
+        ]
+      },
+      "post": {
+        "operationId": "PayoutsController_request_v1",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "UUID (B2-10).",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestPayoutBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayoutResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ValidationErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/IdempotencyKeyRequiredErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PayoutsDisabledErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PayoutDataMissingErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PixKeyChangePendingErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PayoutOpenErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PayoutTooSoonErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PayoutBelowMinimumErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PayoutAmountChangedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdempotencyKeyReusedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "RN04: pedir o repasse de todo o saldo disponível.",
+        "tags": [
+          "referral"
+        ]
+      }
+    },
     "/v1/weddings/{weddingId}/parties/trash": {
       "post": {
         "operationId": "PartiesController_trashMany_v1",
@@ -12656,6 +12843,358 @@
           "activeFrom"
         ]
       },
+      "PayoutResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amountCents": {
+            "type": "number",
+            "example": 15804
+          },
+          "status": {
+            "description": "Solicitado · Retido · Em processamento · Pago · Recusado (RN09).",
+            "enum": [
+              "requested",
+              "held",
+              "processing",
+              "paid",
+              "rejected"
+            ],
+            "type": "string"
+          },
+          "holdReason": {
+            "nullable": true,
+            "description": "Por que está retido (RN06), para a legenda.",
+            "enum": [
+              "refund",
+              "pix_key_change",
+              "referrer_blocked",
+              "dispute",
+              "commission_blocked"
+            ],
+            "type": "string"
+          },
+          "pixKeyMasked": {
+            "type": "string",
+            "description": "A chave do pedido, mascarada (decisão 25).",
+            "example": "jul***@pradoassessoria.com.br"
+          },
+          "requestedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paidAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "rejectReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "O motivo da recusa do Admin (RN07)."
+          },
+          "receiptUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "\"Ver comprovante\": nulo até o Pix de saída (PR 9c)."
+          }
+        },
+        "required": [
+          "id",
+          "amountCents",
+          "status",
+          "holdReason",
+          "pixKeyMasked",
+          "requestedAt",
+          "paidAt",
+          "rejectReason",
+          "receiptUrl"
+        ]
+      },
+      "PayoutsResponse": {
+        "type": "object",
+        "properties": {
+          "nextRequestAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "\"Você pode pedir de novo a partir de 26 de out.\" (00h de São Paulo); nulo quando já pode.",
+            "format": "date-time"
+          },
+          "pixKeyActiveFrom": {
+            "type": "string",
+            "nullable": true,
+            "description": "A troca da chave que ainda não vale; nula sem troca.",
+            "format": "date-time"
+          },
+          "minimumCents": {
+            "type": "number",
+            "description": "\"Você pode pedir o repasse a partir de R$ 50.\"",
+            "example": 5000
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PayoutResponse"
+            }
+          },
+          "payoutsEnabled": {
+            "type": "boolean",
+            "description": "Desligados: \"Os repasses ainda não estão abertos. Suas comissões continuam guardadas.\" (RN01)."
+          }
+        },
+        "required": [
+          "nextRequestAt",
+          "pixKeyActiveFrom",
+          "minimumCents",
+          "items",
+          "payoutsEnabled"
+        ]
+      },
+      "IdempotencyKeyRequiredErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              400
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "IDEMPOTENCY_KEY_REQUIRED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "IdempotencyKeyReusedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "IDEMPOTENCY_KEY_REUSED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PayoutsDisabledErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PAYOUTS_DISABLED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PayoutDataMissingErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PAYOUT_DATA_MISSING"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PayoutOpenErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PAYOUT_OPEN"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "payoutId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "payoutId"
+        ]
+      },
+      "PayoutTooSoonErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PAYOUT_TOO_SOON"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "nextRequestAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "nextRequestAt"
+        ]
+      },
+      "PayoutBelowMinimumErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PAYOUT_BELOW_MINIMUM"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "balanceCents": {
+            "type": "number",
+            "description": "\"Faltam R$ 12,40.\" = minimumCents − balanceCents.",
+            "example": 3760
+          },
+          "minimumCents": {
+            "type": "number",
+            "example": 5000
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "balanceCents",
+          "minimumCents"
+        ]
+      },
+      "PayoutAmountChangedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PAYOUT_AMOUNT_CHANGED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "amountCents": {
+            "type": "number",
+            "description": "O saldo atual, para o Dialog de novo.",
+            "example": 15804
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "amountCents"
+        ]
+      },
+      "RequestPayoutBody": {
+        "type": "object",
+        "properties": {
+          "expectedAmountCents": {
+            "type": "number",
+            "description": "O valor do Dialog \"Pedir o repasse de R$ 158,04?\" (decisão 247(1)).",
+            "minimum": 1,
+            "maximum": 100000000,
+            "example": 15804
+          }
+        },
+        "required": [
+          "expectedAmountCents"
+        ]
+      },
       "TrashPartiesBody": {
         "type": "object",
         "properties": {
@@ -19645,31 +20184,6 @@
           "refundsPaymentIds"
         ]
       },
-      "IdempotencyKeyRequiredErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              400
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "IDEMPOTENCY_KEY_REQUIRED"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
-        ]
-      },
       "PaymentPendingErrorBody": {
         "type": "object",
         "properties": {
@@ -19758,31 +20272,6 @@
             "type": "string",
             "enum": [
               "PRICE_CHANGED"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
-        ]
-      },
-      "IdempotencyKeyReusedErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              422
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "IDEMPOTENCY_KEY_REUSED"
             ]
           },
           "message": {

@@ -134,7 +134,10 @@ export class ListMyWeddings {
     const awaiting = await this.reader.awaitingPayment({
       weddingIds: rows.map(({ weddingId }) => weddingId),
     });
-    const { availableCents } = commissionBalances(await this.commissions.list());
+    const { availableCents } = commissionBalances(
+      await this.commissions.list(),
+      await this.commissions.adjustments(),
+    );
     return {
       summary: {
         ...summaryOf({ rows }),

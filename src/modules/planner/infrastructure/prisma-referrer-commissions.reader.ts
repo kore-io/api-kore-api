@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { TenantTransaction } from '../../../shared/database/tenant-transaction';
 import type { ReferrerCommissionsReader } from '../application/ports/referrer-commissions-reader.port';
-import type { CommissionRow } from '../domain/commissions';
+import type { AdjustmentRow, CommissionRow } from '../domain/commissions';
 
 @Injectable()
 export class PrismaReferrerCommissionsReader implements ReferrerCommissionsReader {
@@ -43,5 +43,11 @@ export class PrismaReferrerCommissionsReader implements ReferrerCommissionsReade
       createdAt: row.created_at,
       payoutId: row.payout_id,
     }));
+  }
+
+  async adjustments(): Promise<AdjustmentRow[]> {
+    return this.tenant.client().commissionAdjustment.findMany({
+      select: { amountCents: true, payoutId: true },
+    });
   }
 }

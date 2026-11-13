@@ -41,7 +41,7 @@ export class ListReferrerCommissions {
     await requirePlannerProfile({ profiles: this.profiles, userId });
     const rows = await this.reader.list();
     return {
-      balances: commissionBalances(rows),
+      balances: commissionBalances(rows, await this.reader.adjustments()),
       items: rows,
       byWedding: commissionsByWedding(rows),
     };

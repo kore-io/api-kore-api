@@ -535,16 +535,45 @@ export class PrismaPaymentLedger implements PaymentLedger {
       WHERE payment_id = ${paymentId}::uuid AND status = 'held'`;
   }
 
-  async reverseCommission({ paymentId, now }: { paymentId: string; now: Date }): Promise<void> {
-    // Fora de repasse (RN05). Dentro de um repasse pedido ou pago: o PR do repasse.
-    await this.db().commission.updateMany({
+  async reverseCommission({
+    paymentId,
+    now,
+    reason,
+  }: {
+    paymentId: string;
+    now: Date;
+    reason: 'refund' | 'chargeback';
+  }): Promise<void> {
+    // Fora de repasse ou num repasse pedido ou retido (RN05): reversed; o
+    // trigger payout_follows_commission retém o repasse (Repasse RN06 (a)).
+    await this.db().$executeRaw`
+      UPDATE commissions c
+      SET status = 'reversed', reversed_at = ${now}, updated_at = ${now}
+      WHERE c.payment_id = ${paymentId}::uuid
+        AND c.status IN ('pending', 'available', 'blocked', 'held')
+        AND (c.payout_id IS NULL OR EXISTS (
+          SELECT 1 FROM payouts p WHERE p.id = c.payout_id AND p.status IN ('requested', 'held')))`;
+    // Já paga (RN05): um ajuste negativo do mesmo valor, que abate o próximo
+    // repasse; nunca dois para a mesma comissão.
+    const paid = await this.db().commission.findMany({
       where: {
         paymentId,
-        payoutId: null,
-        status: { in: ['pending', 'available', 'blocked', 'held'] },
+        status: 'paid',
+        adjustments: { none: { reason: { in: ['refund', 'chargeback'] } } },
       },
-      data: { status: 'reversed', reversedAt: now },
+      select: { id: true, referrerId: true, amountCents: true },
     });
+    if (paid.length > 0)
+      await this.db().commissionAdjustment.createMany({
+        data: paid.map((commission, index) => ({
+          id: uuidV7({ now: now.getTime() + index }),
+          createdAt: now,
+          referrerId: commission.referrerId,
+          commissionId: commission.id,
+          amountCents: -commission.amountCents,
+          reason,
+        })),
+      });
   }
 
   async openAlert({

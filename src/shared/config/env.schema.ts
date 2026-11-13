@@ -105,6 +105,12 @@ export const envSchema = z
       .enum(['true', 'false'])
       .default('false')
       .transform((value) => value === 'true'),
+    // O pedido de repasse (Repasse RN01; decisão 230, D12): sem valor, desligado;
+    // só liga em local e test até o contador (nenhum Pix de saída real antes).
+    PAYOUTS_ENABLED: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
     // Base do Link de indicação (Link de indicação RN01): o redirect /i/{código}
     // fica no Site Institucional (RN07), fora da API.
     REFERRAL_LINK_URL: z.url({ protocol: /^https?$/ }).default('https://kore.com.br/i'),
@@ -168,6 +174,14 @@ export const envSchema = z
         code: 'custom',
         path: ['QUEUE_PREFIX'],
         message: 'só é aceito com APP_ENV test (o prefixo por arquivo dos e2e)',
+      });
+    }
+    if (env.PAYOUTS_ENABLED && !LOCAL_KEY_ENVS.includes(env.APP_ENV)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['PAYOUTS_ENABLED'],
+        message:
+          'os repasses só podem ser ligados com APP_ENV local ou test (Repasse RN01; decisão 230, D12)',
       });
     }
     if (env.PLANNER_SIGNUP_ENABLED && !LOCAL_KEY_ENVS.includes(env.APP_ENV)) {

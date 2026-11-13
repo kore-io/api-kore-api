@@ -27,15 +27,34 @@ export interface CommissionBalances {
   inPayoutCents: number;
 }
 
-/** Os saldos (RN02 e RN07): `blocked`, `held` e `reversed` ficam fora. */
-export function commissionBalances(rows: readonly CommissionRow[]): CommissionBalances {
+/** Um ajuste da comissão (o negativo do estorno da já paga, ou o manual do Admin). */
+export interface AdjustmentRow {
+  amountCents: number;
+  payoutId: string | null;
+}
+
+/**
+ * Os saldos (RN02 e RN07): `blocked`, `held` e `reversed` ficam fora. O
+ * Disponível soma os ajustes sem repasse (invariante 7; B6-2), e o "em
+ * repasse", os que estão num repasse.
+ */
+export function commissionBalances(
+  rows: readonly CommissionRow[],
+  adjustments: readonly AdjustmentRow[] = [],
+): CommissionBalances {
   const sum = (filter: (row: CommissionRow) => boolean) =>
     rows.filter(filter).reduce((total, row) => total + row.amountCents, 0);
+  const adjusted = (inPayout: boolean) =>
+    adjustments
+      .filter((adjustment) => (adjustment.payoutId !== null) === inPayout)
+      .reduce((total, adjustment) => total + adjustment.amountCents, 0);
   return {
-    availableCents: sum((row) => row.status === 'available' && row.payoutId === null),
+    availableCents:
+      sum((row) => row.status === 'available' && row.payoutId === null) + adjusted(false),
     pendingCents: sum((row) => row.status === 'pending'),
     receivedCents: sum((row) => row.status === 'paid'),
-    inPayoutCents: sum((row) => row.status === 'available' && row.payoutId !== null),
+    inPayoutCents:
+      sum((row) => row.status === 'available' && row.payoutId !== null) + adjusted(true),
   };
 }
 
