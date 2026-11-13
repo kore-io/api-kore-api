@@ -1,3 +1,5 @@
+import { COMMISSION_NOTICES } from './application/ports/commission-notices.port';
+import { BullmqCommissionNotices } from './infrastructure/bullmq-commission-notices';
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { BlockWedding } from './application/block-wedding.use-case';
@@ -96,6 +98,7 @@ import { WeddingPseudonymizer } from '../product-events/infrastructure/wedding-p
     { provide: WEDDING_LIFECYCLE_STORE, useClass: PrismaWeddingLifecycleStore },
     AdvanceWeddingLifecycle,
     { provide: COMMISSION_RELEASE, useClass: PrismaCommissionRelease },
+    { provide: COMMISSION_NOTICES, useClass: BullmqCommissionNotices },
     ReleaseCommissions,
     WeddingLifecycleProcessor,
     WeddingLifecycleScheduler,

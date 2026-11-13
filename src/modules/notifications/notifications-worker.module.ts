@@ -23,6 +23,9 @@ import {
   NotificationRetentionScheduler,
 } from './infrastructure/notification-retention.job';
 import { PlannerDigest } from './application/planner-digest.use-case';
+import { CommissionEmails } from './application/commission-emails.use-case';
+import { COMMISSION_EMAIL_STORE } from './application/ports/commission-email-store.port';
+import { PrismaCommissionEmailStore } from './infrastructure/backoffice/prisma-commission-email.store';
 import { PLANNER_DIGEST_STORE } from './application/ports/planner-digest-store.port';
 import { PrismaPlannerDigestStore } from './infrastructure/backoffice/prisma-planner-digest.store';
 
@@ -41,6 +44,8 @@ import { PrismaPlannerDigestStore } from './infrastructure/backoffice/prisma-pla
     RsvpPush,
     { provide: PLANNER_DIGEST_STORE, useClass: PrismaPlannerDigestStore },
     PlannerDigest,
+    { provide: COMMISSION_EMAIL_STORE, useClass: PrismaCommissionEmailStore },
+    CommissionEmails,
     NotificationsProcessor,
     NotificationsSweepScheduler,
     { provide: NOTIFICATION_RETENTION, useClass: PrismaNotificationRetention },

@@ -1222,9 +1222,11 @@ model NotificationPreference {
 // RN07; revisão C8-7): a data do último envio, em America/Sao_Paulo. Escrita
 // só pelo worker.
 model NotificationDigestState {
-  userId         String    @id @map("user_id") @db.Uuid
-  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
-  lastDigestDate DateTime? @map("last_digest_date") @db.Date
+  userId                   String    @id @map("user_id") @db.Uuid
+  updatedAt                DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  lastDigestDate           DateTime? @map("last_digest_date") @db.Date
+  /// Até onde as notificações `commission` já foram avisadas por e-mail (decisão 242).
+  commissionEmailedThrough DateTime? @map("commission_emailed_through") @db.Timestamptz(3)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

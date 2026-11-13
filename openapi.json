@@ -7388,6 +7388,7 @@
                 "rsvp",
                 "wedding_published",
                 "membership_removed",
+                "commission",
                 "billing"
               ]
             }
@@ -17025,6 +17026,7 @@
               "rsvp",
               "wedding_published",
               "membership_removed",
+              "commission",
               "billing"
             ],
             "type": "string"
@@ -17150,6 +17152,7 @@
               "rsvp",
               "wedding_published",
               "membership_removed",
+              "commission",
               "billing"
             ],
             "type": "string"
@@ -17233,7 +17236,8 @@
             "enum": [
               "rsvp",
               "wedding_published",
-              "membership_removed"
+              "membership_removed",
+              "commission"
             ],
             "type": "string"
           },

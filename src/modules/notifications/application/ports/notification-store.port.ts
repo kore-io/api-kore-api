@@ -13,12 +13,14 @@ export const EMAIL_PREFERENCE_TYPES = ['rsvp'] as const;
 
 /**
  * Os tipos da cerimonialista (Notificações da cerimonialista RN01): Novas
- * respostas, Casamento publicado e Colaboração encerrada.
+ * respostas, Casamento publicado, Colaboração encerrada e, desde a F3,
+ * Comissão (Comissões do indicador RN09).
  */
 export const PLANNER_NOTIFICATION_TYPES = [
   'rsvp',
   'wedding_published',
   'membership_removed',
+  'commission',
 ] as const;
 export type PlannerNotificationType = (typeof PLANNER_NOTIFICATION_TYPES)[number];
 
@@ -39,8 +41,9 @@ export interface NotificationRow {
   count: number;
   /**
    * rsvp: por grupo { partyId, name, confirmed, declined, at }; billing: [{ kind,
-   * paymentId, endDate, amountCents, method, installments, cardLast4, at }]; os
-   * outros: [{ partnerNames }].
+   * paymentId, endDate, amountCents, method, installments, cardLast4, at }];
+   * commission: [{ commissionId, amountCents, partnerNames, at }]; os outros:
+   * [{ partnerNames }].
    */
   payload: unknown;
   readAt: Date | null;

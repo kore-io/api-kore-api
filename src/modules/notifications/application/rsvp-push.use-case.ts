@@ -1,8 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AppConfigService } from '../../../shared/config/app-config.service';
 import { isAllowedPushEndpoint } from '../domain/push-endpoint';
+import { PLANNER_COMMISSIONS_PATH } from './rsvp-emails.use-cases';
 import { PUSH_SENDER, type PushSender } from './ports/push-sender.port';
-import { PUSH_STORE, type PushStore } from './ports/push-store.port';
+import { PUSH_STORE, type PushStore, type PushType } from './ports/push-store.port';
 
 /** O serviço de push pediu nova tentativa (429 ou 5xx): o job tenta de novo com espera. */
 export class PushRetryError extends Error {
@@ -23,6 +24,16 @@ export function plannerPushBody({
 }): string {
   const couple = partnerNames.filter((name) => name.length > 0).join(' e ');
   return count > 1 ? `${count} grupos responderam em ${couple}` : `Novas respostas em ${couple}`;
+}
+
+/** O push da comissão disponível, sem valor (Comissões do indicador RN09; Pena). */
+export function commissionPushBody({
+  partnerNames,
+}: {
+  partnerNames: readonly [string, string];
+}): string {
+  const couple = partnerNames.filter((name) => name.length > 0).join(' e ');
+  return `Comissão de ${couple} disponível para repasse`;
 }
 
 /** O push da cobrança, sem valor (Publicar e pagar RN13; Pena). */
@@ -53,6 +64,7 @@ export class RsvpPush {
   private readonly url: string;
   private readonly plannerUrl: string;
   private readonly billingUrl: string;
+  private readonly commissionsUrl: string;
 
   constructor(
     @Inject(PUSH_STORE) private readonly store: PushStore,
@@ -65,6 +77,8 @@ export class RsvpPush {
     this.plannerUrl = `${appUrl}/cerimonialista/notificacoes`;
     // Cobrança e publicação, aonde o item da central leva (RN13).
     this.billingUrl = `${appUrl}/app/cobranca`;
+    // A notificação abre Comissões (Comissões do indicador RN09).
+    this.commissionsUrl = `${appUrl}${PLANNER_COMMISSIONS_PATH}`;
   }
 
   async send({
@@ -75,7 +89,7 @@ export class RsvpPush {
   }: {
     userId: string;
     weddingId: string;
-    type?: 'rsvp' | 'billing';
+    type?: PushType;
     now: Date;
   }): Promise<{ sent: number }> {
     if (!this.sender.enabled()) return { sent: 0 };
@@ -89,18 +103,27 @@ export class RsvpPush {
     await this.store.remove({ ids: stale.map((subscription) => subscription.id) });
     const planner = recipient.role === 'planner';
     const billing = type === 'billing';
+    const commission = type === 'commission';
     const payload = JSON.stringify({
       title: 'Kore',
-      body: billing
-        ? BILLING_PUSH_BODY
-        : planner
-          ? plannerPushBody({
-              count: recipient.notification.count,
-              partnerNames: recipient.partnerNames,
-            })
-          : pushBody(recipient.notification),
+      body: commission
+        ? commissionPushBody({ partnerNames: recipient.partnerNames })
+        : billing
+          ? BILLING_PUSH_BODY
+          : planner
+            ? plannerPushBody({
+                count: recipient.notification.count,
+                partnerNames: recipient.partnerNames,
+              })
+            : pushBody(recipient.notification),
       tag: recipient.notification.groupKey,
-      url: billing ? this.billingUrl : planner ? this.plannerUrl : this.url,
+      url: commission
+        ? this.commissionsUrl
+        : billing
+          ? this.billingUrl
+          : planner
+            ? this.plannerUrl
+            : this.url,
     });
     const sent: string[] = [];
     const gone: string[] = [];
