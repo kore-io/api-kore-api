@@ -1,3 +1,6 @@
+import type { BackofficeTransaction } from '../../../shared/database/backoffice-transaction';
+import type { SyncPayout } from './payouts/payout-transfers.use-cases';
+import type { PayoutLedger } from './ports/payout-ledger.port';
 import type { GatewayEventQueue } from './ports/gateway-event.queue.port';
 import type { GatewayEventStore, StoredGatewayEvent } from './ports/gateway-event.store.port';
 import type {
@@ -37,6 +40,14 @@ function storeMock(overrides: Partial<GatewayEventStore> = {}): jest.Mocked<Gate
 }
 
 const input = { gateway: 'local', headers: {}, rawBody: Buffer.from('{}'), now };
+
+/** O repasse (Repasse RN05) não entra nos eventos de cobrança destes casos. */
+const payoutDeps = () =>
+  [
+    { payoutIdByReference: jest.fn() } as unknown as PayoutLedger,
+    { run: (work: () => Promise<unknown>) => work() } as unknown as BackofficeTransaction,
+    { execute: jest.fn() } as unknown as SyncPayout,
+  ] as const;
 
 describe('ReceiveGatewayWebhook (Publicar e pagar RN09)', () => {
   it('RN09 - assinatura inválida: nada é gravado nem vai à fila', async () => {
@@ -171,7 +182,12 @@ describe('ProcessGatewayEvent (Publicar e pagar RN09)', () => {
     return {
       gateway,
       sync,
-      process: new ProcessGatewayEvent(store, gateway, sync as unknown as SyncPaymentWithGateway),
+      process: new ProcessGatewayEvent(
+        store,
+        gateway,
+        sync as unknown as SyncPaymentWithGateway,
+        ...payoutDeps(),
+      ),
     };
   };
 
@@ -226,9 +242,12 @@ describe('ProcessGatewayEvent (Publicar e pagar RN09)', () => {
     const gateway = {
       getCharge: jest.fn().mockRejectedValue(new Error('timeout')),
     } as unknown as PaymentGateway;
-    const process = new ProcessGatewayEvent(store, gateway, {
-      execute: jest.fn(),
-    } as unknown as SyncPaymentWithGateway);
+    const process = new ProcessGatewayEvent(
+      store,
+      gateway,
+      { execute: jest.fn() } as unknown as SyncPaymentWithGateway,
+      ...payoutDeps(),
+    );
     await expect(process.execute({ eventId: 'e1', now })).rejects.toThrow('timeout');
     expect(store.markProcessed).not.toHaveBeenCalled();
   });

@@ -2,6 +2,7 @@ import { InjectQueue, OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullm
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import type { Job, Queue } from 'bullmq';
 import { upsertDailyScheduler } from '../../../shared/jobs/daily-scheduler';
+import { ReconcilePayouts } from '../application/payouts/payout-transfers.use-cases';
 import { ReconcilePayments } from '../application/reconcile-payments.use-case';
 
 const logger = new Logger('PaymentReconciliation');
@@ -18,7 +19,10 @@ const AT_4AM = '0 4 * * *';
 /** As duas rotinas; o nome do job é o id do agendamento. */
 @Processor(PAYMENT_RECONCILIATION_QUEUE)
 export class PaymentReconciliationProcessor extends WorkerHost {
-  constructor(private readonly reconcile: ReconcilePayments) {
+  constructor(
+    private readonly reconcile: ReconcilePayments,
+    private readonly payouts: ReconcilePayouts,
+  ) {
     super();
   }
 
@@ -28,6 +32,15 @@ export class PaymentReconciliationProcessor extends WorkerHost {
     const tally = daily
       ? await this.reconcile.daily({ now })
       : await this.reconcile.pending({ now });
+    // Os repasses em processamento, na rodada diária (decisão 230, risco 5).
+    if (daily) {
+      const payouts = await this.payouts.execute({ now });
+      if (payouts.paid || payouts.failed || payouts.pending)
+        logger.log(
+          `Repasses em processamento: ${payouts.paid} pagos, ${payouts.failed} falhos, ` +
+            `${payouts.pending} sem resposta.`,
+        );
+    }
     if (tally.changed || tally.alerts || tally.errors)
       logger.log(
         `Reconciliação ${daily ? 'diária' : 'dos pendentes'}: ${tally.checked} conferidos, ` +

@@ -1,3 +1,5 @@
+import { PAYOUT_TRANSFERS_QUEUE } from './infrastructure/payout-transfers.queue';
+import { PayoutTransfersProcessor } from './infrastructure/payout-transfers.job';
 import { COMMISSION_NOTICES } from './application/ports/commission-notices.port';
 import { BullmqCommissionNotices } from './infrastructure/bullmq-commission-notices';
 import { BullModule } from '@nestjs/bullmq';
@@ -64,6 +66,7 @@ import { WeddingPseudonymizer } from '../product-events/infrastructure/wedding-p
     // O push da cobrança entra na fila das notificações (decisão 236).
     BullModule.registerQueue({ name: NOTIFICATIONS_QUEUE }),
     BullModule.registerQueue({ name: PAYMENT_REFUNDS_QUEUE }),
+    BullModule.registerQueue({ name: PAYOUT_TRANSFERS_QUEUE }),
     BullModule.registerQueue({ name: WEDDING_LIFECYCLE_QUEUE }),
     // O e-mail do pagamento confirmado entra na fila de e-mail, como na API.
     EmailQueuesModule,
@@ -101,6 +104,7 @@ import { WeddingPseudonymizer } from '../product-events/infrastructure/wedding-p
     { provide: COMMISSION_NOTICES, useClass: BullmqCommissionNotices },
     ReleaseCommissions,
     WeddingLifecycleProcessor,
+    PayoutTransfersProcessor,
     WeddingLifecycleScheduler,
   ],
 })

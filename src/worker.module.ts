@@ -11,6 +11,7 @@ import { AppConfigModule } from './shared/config/app-config.module';
 import { DatabaseModule } from './shared/database/database.module';
 import { EmailWorkerModule } from './shared/email/email-worker.module';
 import { JobsModule } from './shared/jobs/jobs.module';
+import { CryptoModule } from './shared/crypto/crypto.module';
 import { StorageModule } from './shared/storage/storage.module';
 import { ObservabilityModule } from './shared/observability/observability.module';
 
@@ -23,6 +24,8 @@ import { ObservabilityModule } from './shared/observability/observability.module
     JobsModule,
     EmailWorkerModule,
     StorageModule,
+    // A chave Pix do repasse é decifrada no job do Pix de saída (Repasse RN05).
+    CryptoModule,
     LogsWorkerModule,
     ProductEventsWorkerModule,
     AccessWorkerModule,

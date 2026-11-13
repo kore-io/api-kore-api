@@ -1,3 +1,4 @@
+import { PAYOUT_TRANSFERS_QUEUE } from './infrastructure/payout-transfers.queue';
 import { producerQueue } from '../../shared/jobs/producer-queue';
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
@@ -54,6 +55,7 @@ import { PAYMENT_REFUNDS_QUEUE } from './infrastructure/refunds.queue';
     // O push da cobrança: a mesma fila produtora, sem fila offline (Central RN02).
     producerQueue(NOTIFICATIONS_QUEUE),
     BullModule.registerQueue({ name: PAYMENT_REFUNDS_QUEUE }),
+    BullModule.registerQueue({ name: PAYOUT_TRANSFERS_QUEUE }),
   ],
   controllers: [
     PaymentWebhooksController,

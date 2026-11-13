@@ -104,7 +104,8 @@ export class PayoutsUseCases {
       id,
       idempotencyKey,
       expectedCents: expectedAmountCents,
-      externalRef: `kore-payout-${id}`,
+      // A referência externa única do Pix de saída (RN05): o próprio id do repasse.
+      externalRef: id,
       now,
     });
     switch (result.result) {
