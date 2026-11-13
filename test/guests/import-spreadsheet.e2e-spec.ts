@@ -1,3 +1,4 @@
+import { WeddingPseudonymizer } from '../../src/modules/product-events/infrastructure/wedding-pseudonymizer';
 import { INestApplication } from '@nestjs/common';
 import ExcelJS from 'exceljs';
 import { randomBytes } from 'node:crypto';
@@ -276,8 +277,12 @@ describe('Importação: planilha (banco real)', () => {
         pending: 3,
         partiesPending: 1,
       });
+      // O evento deste casamento: outra suíte que roda junto grava o dela.
       const event = await db.productEvent.findFirst({
-        where: { name: 'importacao' },
+        where: {
+          name: 'importacao',
+          weddingRef: app.get(WeddingPseudonymizer).weddingRef({ weddingId }),
+        },
         orderBy: { createdAt: 'desc' },
       });
       expect(event?.props).toEqual({ metodo: 'planilha', linhas_erro: 3 });

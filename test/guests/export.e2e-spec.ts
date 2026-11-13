@@ -1,3 +1,4 @@
+import { WeddingPseudonymizer } from '../../src/modules/product-events/infrastructure/wedding-pseudonymizer';
 import { INestApplication } from '@nestjs/common';
 import ExcelJS from 'exceljs';
 import request from 'supertest';
@@ -23,6 +24,9 @@ describe('Exportação de convidados (banco real)', () => {
     await app?.close();
   });
 
+  // O evento deste casamento: outra suíte ou rodada no mesmo kore_test grava o dela.
+  const weddingRefOf = (weddingId: string) =>
+    app.get(WeddingPseudonymizer).weddingRef({ weddingId });
   const exportGuests = (cookie: string, weddingId: string, query: Record<string, string>) =>
     request(app.getHttpServer())
       .get(`/v1/weddings/${weddingId}/guests/export`)
@@ -229,7 +233,7 @@ describe('Exportação de convidados (banco real)', () => {
     expect(JSON.stringify(log)).not.toMatch(/Moreira|glúten/);
     const latestEvent = () =>
       db.productEvent.findFirst({
-        where: { name: 'exportacao_buffet' },
+        where: { name: 'exportacao_buffet', weddingRef: weddingRefOf(weddingId) },
         orderBy: { createdAt: 'desc' },
       });
     expect((await latestEvent())?.props).toEqual({
@@ -276,7 +280,7 @@ describe('Exportação de convidados (banco real)', () => {
     expect(raw.startsWith('%PDF-')).toBe(true);
     expect(raw).toMatch(/NunitoSans/);
     const latestEvent = await db.productEvent.findFirst({
-      where: { name: 'exportacao_buffet' },
+      where: { name: 'exportacao_buffet', weddingRef: weddingRefOf(weddingId) },
       orderBy: { createdAt: 'desc' },
     });
     expect(latestEvent?.props).toEqual({ formato: 'pdf', quem: 'owner', filtro: 'tag' });
