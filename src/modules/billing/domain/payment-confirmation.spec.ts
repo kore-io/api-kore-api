@@ -52,3 +52,64 @@ describe('decideConfirmation (Publicar e pagar RN05, RN08 e RN09)', () => {
     });
   });
 });
+
+describe('decideConfirmation da extensão (Data de saída do ar RN04; B2-9 e B4-8)', () => {
+  const extension = {
+    kind: 'extension' as const,
+    status: 'pending' as const,
+    amountCents: 8_700,
+    periodStart: '2027-02-14',
+  };
+  const wedding = (overrides: Partial<ConfirmingWedding> = {}): ConfirmingWedding => ({
+    status: 'post_event',
+    blockedAt: null,
+    deletionScheduledFor: null,
+    endDate: '2027-02-14',
+    paidThrough: '2027-02-14',
+    ...overrides,
+  });
+  const decideExtension = (w: ConfirmingWedding, periodStart = extension.periodStart) =>
+    decideConfirmation({
+      payment: { ...extension, periodStart },
+      wedding: w,
+      chargedCents: 8_700,
+      otherPublicationApplied: false,
+    });
+
+  it('RN04 - cotada com a base atual: aplica, também na carência', () => {
+    expect(decideExtension(wedding())).toEqual({ kind: 'apply', overcharged: false });
+    expect(decideExtension(wedding({ status: 'grace' }))).toEqual({
+      kind: 'apply',
+      overcharged: false,
+    });
+  });
+
+  it('RN05 (B4-1) - com a data antecipada, a base é o paidThrough', () => {
+    expect(decideExtension(wedding({ endDate: '2027-01-10', paidThrough: '2027-02-14' }))).toEqual({
+      kind: 'apply',
+      overcharged: false,
+    });
+  });
+
+  it('B4-8 - expirado: vale a cotada na carência e a cotada no expirado (de hoje)', () => {
+    expect(decideExtension(wedding({ status: 'expired' }))).toEqual({
+      kind: 'apply',
+      overcharged: false,
+    });
+    expect(decideExtension(wedding({ status: 'expired' }), '2027-03-01')).toEqual({
+      kind: 'apply',
+      overcharged: false,
+    });
+  });
+
+  it('B2-9 - a base mudou (outra extensão entrou depois da cotação): sem destino', () => {
+    expect(decideExtension(wedding({ endDate: '2027-05-14', paidThrough: '2027-05-14' }))).toEqual({
+      kind: 'orphan',
+      reason: 'extension_stale',
+    });
+    expect(decideExtension(wedding({ status: 'draft' }))).toEqual({
+      kind: 'orphan',
+      reason: 'wedding_not_published',
+    });
+  });
+});

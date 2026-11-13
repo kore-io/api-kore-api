@@ -1,5 +1,8 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
+import { BlockWedding } from './application/block-wedding.use-case';
+import { WEDDING_BLOCKS } from './application/ports/wedding-blocks.port';
+import { PrismaWeddingBlocks } from './infrastructure/backoffice/prisma-wedding-blocks';
 import { NOTIFICATIONS_QUEUE } from '../notifications/infrastructure/notifications-queue';
 import { PaymentWebhookRateLimitGuard } from '../../shared/rate-limit/payment-webhook-rate-limit.guard';
 import { GATEWAY_EVENT_QUEUE } from './application/ports/gateway-event.queue.port';
@@ -35,6 +38,7 @@ import { PrismaBillingViewReader } from './infrastructure/prisma-billing-view.re
 import { PaymentsController } from './presentation/payments.controller';
 import { REFUND_REQUEST_STORE } from './application/ports/refund-request.store.port';
 import { RequestRefund } from './application/request-refund.use-case';
+import { ChangeEndDate } from './application/change-end-date.use-case';
 import { PrismaRefundRequestStore } from './infrastructure/prisma-refund-request.store';
 import { PAYMENT_REFUNDS_QUEUE } from './infrastructure/refunds.queue';
 
@@ -73,7 +77,16 @@ import { PAYMENT_REFUNDS_QUEUE } from './infrastructure/refunds.queue';
     GetBilling,
     { provide: REFUND_REQUEST_STORE, useClass: PrismaRefundRequestStore },
     RequestRefund,
+    ChangeEndDate,
+    { provide: WEDDING_BLOCKS, useClass: PrismaWeddingBlocks },
+    BlockWedding,
   ],
-  exports: [PAYMENT_GATEWAY, LocalGatewayStore, ReceiveGatewayWebhook, ProcessGatewayEvent],
+  exports: [
+    BlockWedding,
+    PAYMENT_GATEWAY,
+    LocalGatewayStore,
+    ReceiveGatewayWebhook,
+    ProcessGatewayEvent,
+  ],
 })
 export class BillingModule {}

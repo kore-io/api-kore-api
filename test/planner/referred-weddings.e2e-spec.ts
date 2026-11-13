@@ -96,6 +96,8 @@ describe('Link de indicação: os casais do link (banco real; RN03 a RN05)', () 
         status: 'draft',
         createdAt: '2026-11-01T00:00:00.000Z',
         clickable: true,
+        // Comissões RN08: sem pagamento, "—".
+        commission: null,
       },
       {
         weddingId: null,
@@ -103,6 +105,7 @@ describe('Link de indicação: os casais do link (banco real; RN03 a RN05)', () 
         status: 'draft',
         createdAt: '2026-10-01T00:00:00.000Z',
         clickable: false,
+        commission: null,
       },
     ]);
     // Nada além de nomes e status sai: sem endereço, data, cidade nem contato.

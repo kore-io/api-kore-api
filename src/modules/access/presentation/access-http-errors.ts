@@ -48,6 +48,8 @@ import {
   SessionExpiredError,
   UserBlockedError,
   WeddingActionForbiddenError,
+  WeddingBlockedError,
+  WeddingDeletionScheduledError,
   WeddingNotFoundError,
 } from '../domain/access.errors';
 import { validationError } from '../../../shared/http/validation-errors';
@@ -112,6 +114,20 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 404,
       error: 'WEDDING_NOT_FOUND',
       message: 'Wedding not found.',
+    });
+  }
+  if (error instanceof WeddingBlockedError) {
+    return new ForbiddenException({
+      statusCode: 403,
+      error: 'WEDDING_BLOCKED',
+      message: 'The wedding is blocked.',
+    });
+  }
+  if (error instanceof WeddingDeletionScheduledError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'WEDDING_DELETION_SCHEDULED',
+      message: 'The wedding deletion is scheduled.',
     });
   }
   if (error instanceof WeddingActionForbiddenError) {

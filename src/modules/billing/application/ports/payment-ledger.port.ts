@@ -4,6 +4,8 @@ import type { ConfirmingPayment, ConfirmingWedding } from '../../domain/payment-
 export interface LedgerWedding extends ConfirmingWedding {
   id: string;
   publishedAt: Date | null;
+  endDate: string | null;
+  paidThrough: string | null;
   timezone: string | null;
   eventDate: string | null;
 }
@@ -75,6 +77,19 @@ export interface PaymentLedger {
   markApplied(input: { paymentId: string; now: Date }): Promise<void>;
   markFailed(input: { paymentId: string; reason: string; gatewayPaymentId: string }): Promise<void>;
   markCanceled(input: { paymentId: string; now: Date }): Promise<void>;
+  /**
+   * A extensão paga (Data de saída do ar RN04): endDate e paidThrough na nova
+   * data; a carência volta a published (casamento ainda por vir) ou
+   * post_event; o expirado volta a post_event, sem expiredAt, purgeAt nem
+   * purgeNoticeSentAt (B4-3). Grava no Payment a data e o paidThrough de
+   * antes, para a desistência voltar (Pagamentos e arrependimento RN03).
+   */
+  extend(input: {
+    weddingId: string;
+    paymentId: string;
+    endDate: string;
+    now: Date;
+  }): Promise<void>;
   /** A publicação paga (RN05): status, datas, paidThrough, origem e quem publicou. */
   publish(input: {
     weddingId: string;
@@ -90,6 +105,18 @@ export interface PaymentLedger {
     paymentId: string;
     /** Um aviso por pagamento e fato: a confirmação e o reembolso concluído (RN13; RN07). */
     event: 'payment_confirmed' | 'refund_completed';
+    userIds: string[];
+    payload: Record<string, unknown>;
+    now: Date;
+  }): Promise<void>;
+  /**
+   * O aviso de saída do ar na central (Data de saída do ar RN03): a notificação
+   * `billing` às pessoas donas, uma por aviso e endDate.
+   */
+  notifyEndDateNotice(input: {
+    weddingId: string;
+    notice: 'end_date_in_7_days' | 'grace_day_1' | 'grace_day_5' | 'expired';
+    endDate: string;
     userIds: string[];
     payload: Record<string, unknown>;
     now: Date;
@@ -132,6 +159,28 @@ export interface PaymentLedger {
    * `refund_requested` vai a `refunded` com a origem do pedido.
    */
   markDisputeLost(input: { paymentId: string; now: Date }): Promise<void>;
+  /**
+   * Grava o aviso de saída do ar (Data de saída do ar RN03): um por casamento,
+   * tipo e endDate (o único do BillingNoticeLog); false quando já foi enviado.
+   */
+  recordBillingNotice(input: {
+    weddingId: string;
+    notice: 'end_date_in_7_days' | 'grace_day_1' | 'grace_day_5' | 'expired';
+    endDate: string;
+    now: Date;
+  }): Promise<boolean>;
+  /**
+   * A comissão do pagamento aplicado (Comissões RN01, RN03 e RN04), na mesma
+   * transação, com o indicador travado depois do Payment (RN18). Sem
+   * indicador, ou com o resultado zero, não nasce; a repetida não nasce de novo.
+   */
+  createCommission(input: { weddingId: string; paymentId: string; now: Date }): Promise<void>;
+  /** No pedido do reembolso e na contestação (RN05 e RN06): pending · available → held. */
+  holdCommission(input: { paymentId: string; now: Date }): Promise<void>;
+  /** Contestação ganha (RN06): held → available ou pending, pelo availableAt. */
+  releaseCommission(input: { paymentId: string; now: Date }): Promise<void>;
+  /** Reembolso confirmado ou contestação perdida (RN05): fora de repasse → reversed. */
+  reverseCommission(input: { paymentId: string; now: Date }): Promise<void>;
   /** Um alerta aberto por tipo e entidade (B9-7): o repetido não abre outro. */
   openAlert(input: {
     type: AlertType;

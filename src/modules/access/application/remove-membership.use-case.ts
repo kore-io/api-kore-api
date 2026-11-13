@@ -11,6 +11,8 @@ import {
   MembershipNotFoundError,
   WeddingActionForbiddenError,
   WeddingHasNoOwnerError,
+  WeddingBlockedError,
+  WeddingDeletionScheduledError,
 } from '../domain/access.errors';
 import { removalRefusal } from '../domain/membership-removal';
 import {
@@ -21,6 +23,7 @@ import {
   WEDDING_MEMBERS_STORE,
   type WeddingMembersStore,
 } from './ports/wedding-members-store.port';
+import { WEDDING_WRITE_STATE, type WeddingWriteState } from './ports/wedding-write-state.port';
 import { WeddingAuthorization } from './wedding-authorization.service';
 
 /**
@@ -38,6 +41,7 @@ export class RemoveMembership {
     @Inject(APPLICATION_LOG_WRITER) private readonly log: ApplicationLogWriter,
     @Inject(COLLABORATION_NOTICE_MAILER) private readonly mailer: CollaborationNoticeMailer,
     @Inject(AFTER_COMMIT) private readonly afterCommit: AfterCommit,
+    @Inject(WEDDING_WRITE_STATE) private readonly writeState: WeddingWriteState,
   ) {}
 
   async execute({
@@ -71,6 +75,13 @@ export class RemoveMembership {
     if (refusal) throw new WeddingActionForbiddenError();
 
     const leaving = target.userId === userId;
+    // Casamento bloqueado RN03: a colaboradora pode sair; o resto é escrita
+    // (a rota passa pelo guard só por causa da saída).
+    if (!(leaving && target.role === 'collaborator')) {
+      const block = await this.writeState.blockOf({ userId, weddingId });
+      if (block === 'blocked') throw new WeddingBlockedError();
+      if (block === 'deletion_scheduled') throw new WeddingDeletionScheduledError();
+    }
     // Lido antes da remoção: depois, a RLS já não mostra o casamento a ela.
     // Só a cerimonialista com Planner; o vendedor não sai por conta própria.
     const notices =

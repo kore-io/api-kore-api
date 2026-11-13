@@ -8,6 +8,9 @@ export interface QuoteTarget {
   endDate: string | null;
   paidThrough: string | null;
   publishedAt: Date | null;
+  /** Bloqueado (403 WEDDING_BLOCKED) e exclusão agendada (409; Data de saída do ar RN10). */
+  blockedAt?: Date | null;
+  deletionScheduledFor?: Date | null;
   /** O indicador, quando o casamento tem um (RN01, passo 4). */
   referrer: {
     kind: 'planner' | 'seller';

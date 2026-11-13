@@ -16,6 +16,8 @@ class MeLifecycleResponse {
     enum: ['awaiting_couple', 'draft', 'published', 'post_event', 'grace', 'expired'],
   })
   status: string;
+  /** Bloqueado pelo suporte (Casamento bloqueado RN07): a faixa substitui as outras. */
+  blocked: boolean;
   /** A data de saída do ar (último dia pago). */
   @ApiProperty({ type: String, nullable: true, example: '2027-02-14' }) endDate: string | null;
   /** O último dia no ar na carência; o selo "Vence em N dias" conta até o expiredAt. */

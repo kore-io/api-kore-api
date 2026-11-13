@@ -51,6 +51,7 @@ function setup({
       listCollaborations: jest.fn(),
       deliveryCounts: jest.fn(),
       collaboration: jest.fn().mockResolvedValue(found),
+      awaitingPayment: jest.fn().mockResolvedValue(new Set()),
     } satisfies PlannerWeddingsReader,
     { encrypt: jest.fn(), decrypt } satisfies FieldCipher,
   );

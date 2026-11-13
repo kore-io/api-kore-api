@@ -11,6 +11,10 @@ export interface RefundJob {
   attempt: number;
 }
 
+export interface CancelPendingJob {
+  paymentId: string;
+}
+
 @Injectable()
 export class BullmqRefundQueue implements RefundQueue {
   constructor(@InjectQueue(PAYMENT_REFUNDS_QUEUE) private readonly queue: Queue) {}
@@ -30,6 +34,17 @@ export class BullmqRefundQueue implements RefundQueue {
     await this.queue.add('refund', data, {
       jobId: `refund-${paymentId}-${attempt}`,
       delay: delayMs,
+      removeOnComplete: true,
+      removeOnFail: 100,
+    });
+  }
+
+  async enqueueCancel({ paymentId }: { paymentId: string }): Promise<void> {
+    const data: CancelPendingJob = { paymentId };
+    await this.queue.add('cancel-pending', data, {
+      jobId: `cancel-${paymentId}`,
+      attempts: 5,
+      backoff: { type: 'exponential', delay: 30_000 },
       removeOnComplete: true,
       removeOnFail: 100,
     });

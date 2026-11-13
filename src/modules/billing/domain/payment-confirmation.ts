@@ -3,10 +3,15 @@ export interface ConfirmingWedding {
   status: string;
   blockedAt: Date | null;
   deletionScheduledFor: string | null;
+  /** A extensão confere a base dela (B2-9): AAAA-MM-DD. */
+  endDate?: string | null;
+  paidThrough?: string | null;
 }
 
 export interface ConfirmingPayment {
   kind: 'publication' | 'extension';
+  /** O início dos meses cobertos, AAAA-MM-DD (a extensão confere com o casamento). */
+  periodStart?: string;
   status: 'pending' | 'paid' | 'failed' | 'canceled' | 'refund_requested' | 'refunded' | 'disputed';
   amountCents: number;
 }
@@ -17,7 +22,9 @@ export type OrphanReason =
   | 'wedding_deletion_scheduled'
   | 'already_published'
   | 'payment_canceled'
-  | 'payment_failed';
+  | 'payment_failed'
+  | 'extension_stale'
+  | 'wedding_not_published';
 
 export type ConfirmationDecision =
   /** O mesmo fato de novo (confirmado e recebido): nada (RN09). */
@@ -31,7 +38,8 @@ export type ConfirmationDecision =
 
 /**
  * A confirmação de uma cobrança (Publicar e pagar RN05, RN08, RN09 e RN10;
- * decisão 231, B2-2 e B2-7). Compara o total cobrado, nunca a parcela.
+ * decisão 231, B2-2 e B2-7). Compara o total cobrado, nunca a parcela. A
+ * extensão só se aplica com a base em que foi cotada (B2-9 e B4-8).
  */
 export function decideConfirmation({
   payment,
@@ -55,6 +63,19 @@ export function decideConfirmation({
   if (payment.kind === 'publication') {
     if (otherPublicationApplied) return { kind: 'orphan', reason: 'already_published' };
     if (wedding.status !== 'draft') return { kind: 'orphan', reason: 'wedding_not_draft' };
+  }
+  if (payment.kind === 'extension') {
+    if (!['published', 'post_event', 'grace', 'expired'].includes(wedding.status))
+      return { kind: 'orphan', reason: 'wedding_not_published' };
+    // A base da extensão é a do casamento agora (B2-9; Data de saída do ar
+    // RN04): o maior entre a endDate e o paidThrough. No expirado, vale também
+    // a cotada no expirado (a partir de hoje, depois da base) e a cotada na
+    // carência e paga já no expirado (B4-8).
+    const end = wedding.endDate ?? '';
+    const base = wedding.paidThrough && wedding.paidThrough > end ? wedding.paidThrough : end;
+    const start = payment.periodStart ?? '';
+    const fits = wedding.status === 'expired' ? start >= base : start === base;
+    if (!fits) return { kind: 'orphan', reason: 'extension_stale' };
   }
   if (chargedCents < payment.amountCents) return { kind: 'undercharged' };
   return { kind: 'apply', overcharged: chargedCents > payment.amountCents };

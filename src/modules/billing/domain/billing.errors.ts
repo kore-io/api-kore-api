@@ -105,3 +105,16 @@ export class RefundWindowClosedError extends Error {
 export class BillingWeddingBlockedError extends Error {
   override name = 'BillingWeddingBlockedError';
 }
+
+/** Exclusão agendada: nada de pagar nem mudar a data (409 WEDDING_DELETION_SCHEDULED; RN10). */
+export class WeddingDeletionScheduledError extends Error {
+  override name = 'WeddingDeletionScheduledError';
+}
+
+/** A data nova passa do paidThrough: para isso, paga-se a extensão (422 END_DATE_BEYOND_PAID; RN05). */
+export class EndDateBeyondPaidError extends Error {
+  override name = 'EndDateBeyondPaidError';
+  constructor(readonly paidThrough: string) {
+    super();
+  }
+}

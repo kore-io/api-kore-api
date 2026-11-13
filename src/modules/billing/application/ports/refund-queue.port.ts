@@ -5,6 +5,11 @@
  */
 export interface RefundQueue {
   enqueue(input: { paymentId: string; attempt: number; delayMs: number }): Promise<void>;
+  /**
+   * O cancelamento do pendente pela porta, depois do commit do bloqueio
+   * (Casamento bloqueado RN06; G1 e B8-5), com o id fixo por pagamento.
+   */
+  enqueueCancel(input: { paymentId: string }): Promise<void>;
 }
 
 export const REFUND_QUEUE = Symbol('RefundQueue');

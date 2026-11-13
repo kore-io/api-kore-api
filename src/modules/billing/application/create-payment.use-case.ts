@@ -13,7 +13,9 @@ import {
   type ApplicationLogWriter,
 } from '../../logs/application/ports/application-log-writer.port';
 import {
+  BillingWeddingBlockedError,
   IdempotencyKeyReusedError,
+  WeddingDeletionScheduledError,
   PaymentAlreadyPaidError,
   PaymentGatewayUnavailableError,
   PaymentPendingError,
@@ -176,6 +178,9 @@ export class CreatePayment {
     await this.authorization.require({ userId, weddingId, action: 'manage_billing' });
     const wedding = await this.payments.lockWedding({ weddingId });
     if (!wedding) throw new WeddingNotFoundError();
+    // Bloqueado e exclusão agendada não pagam (Publicar e pagar RN01; Data de saída do ar RN10).
+    if (wedding.blockedAt) throw new BillingWeddingBlockedError();
+    if (wedding.deletionScheduledFor) throw new WeddingDeletionScheduledError();
 
     const existing = await this.payments.byIdempotencyKey({
       weddingId,

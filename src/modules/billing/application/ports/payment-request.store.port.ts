@@ -74,6 +74,18 @@ export interface PaymentRequestStore {
     cardLast4: string | null;
     failureReason: string | null;
   }): Promise<boolean>;
+  /**
+   * Antecipar ou voltar a data (Data de saída do ar RN05), pela função
+   * SECURITY DEFINER set_wedding_end_date; devolve o status novo, ou nulo.
+   */
+  setEndDate(input: {
+    weddingId: string;
+    endDate: string;
+    today: string;
+    now: Date;
+  }): Promise<string | null>;
+  /** O Pix de extensão pendente, que mudar a data cancela (RN05). */
+  pendingExtensionId({ weddingId }: { weddingId: string }): Promise<string | null>;
 }
 
 export const PAYMENT_REQUEST_STORE = Symbol('PaymentRequestStore');

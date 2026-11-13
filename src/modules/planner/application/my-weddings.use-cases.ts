@@ -29,6 +29,11 @@ import {
   type PlannerWeddingsReader,
 } from './ports/planner-weddings-reader.port';
 import { requirePlannerProfile } from './planner-gate';
+import { commissionBalances } from '../domain/commissions';
+import {
+  REFERRER_COMMISSIONS_READER,
+  type ReferrerCommissionsReader,
+} from './ports/referrer-commissions-reader.port';
 
 export interface MyWeddingItem {
   weddingId: string;
@@ -41,10 +46,19 @@ export interface MyWeddingItem {
   guestsTotal: number;
   origin: WeddingOrigin;
   createdByMe: boolean;
+  /** Rascunho com a publicação aguardando pagamento (Comissões RN08): o filtro e o selo. */
+  awaitingPayment: boolean;
 }
 
 export interface MyWeddingsView {
-  summary: { active: number; awaitingCouple: number };
+  summary: {
+    active: number;
+    awaitingCouple: number;
+    /** Aguardando pagamento (Comissões RN08). */
+    awaitingPayment: number;
+    /** Comissão disponível, em centavos (Comissões RN08; decisão 36). */
+    commissionAvailableCents: number;
+  };
   alerts: {
     pendingResponses: { weddingId: string; partnerNames: [string, string]; rsvpDeadline: string }[];
     invitationsNotSent: { weddingId: string; partnerNames: [string, string]; eventDate: string }[];
@@ -72,7 +86,15 @@ export interface MyWeddingDetail extends MyWeddingItem {
   coupleInvitations: CoupleInvitationView[];
 }
 
-function itemOf({ row, userId }: { row: CollaborationRow; userId: string }): MyWeddingItem {
+function itemOf({
+  row,
+  userId,
+  awaitingPayment = false,
+}: {
+  row: CollaborationRow;
+  userId: string;
+  awaitingPayment?: boolean;
+}): MyWeddingItem {
   return {
     weddingId: row.weddingId,
     partnerNames: row.partnerNames,
@@ -84,6 +106,7 @@ function itemOf({ row, userId }: { row: CollaborationRow; userId: string }): MyW
     guestsTotal: row.stats.guestsTotal,
     origin: originOf({ row, userId }),
     createdByMe: row.createdByUserId === userId,
+    awaitingPayment,
   };
 }
 
@@ -97,6 +120,7 @@ export class ListMyWeddings {
   constructor(
     @Inject(PLANNER_PROFILES) private readonly profiles: PlannerProfiles,
     @Inject(PLANNER_WEDDINGS_READER) private readonly reader: PlannerWeddingsReader,
+    @Inject(REFERRER_COMMISSIONS_READER) private readonly commissions: ReferrerCommissionsReader,
   ) {}
 
   async execute({ userId, now }: { userId: string; now: Date }): Promise<MyWeddingsView> {
@@ -107,8 +131,16 @@ export class ListMyWeddings {
     const counts = await this.reader.deliveryCounts({
       weddingIds: candidates.map(({ weddingId }) => weddingId),
     });
+    const awaiting = await this.reader.awaitingPayment({
+      weddingIds: rows.map(({ weddingId }) => weddingId),
+    });
+    const { availableCents } = commissionBalances(await this.commissions.list());
     return {
-      summary: summaryOf({ rows }),
+      summary: {
+        ...summaryOf({ rows }),
+        awaitingPayment: awaiting.size,
+        commissionAvailableCents: availableCents,
+      },
       alerts: {
         // RN07: o prazo ou a data mais próxima primeiro.
         pendingResponses: rows
@@ -130,7 +162,9 @@ export class ListMyWeddings {
             eventDate: row.eventDate ?? '',
           })),
       },
-      weddings: rows.map((row) => itemOf({ row, userId })),
+      weddings: rows.map((row) =>
+        itemOf({ row, userId, awaitingPayment: awaiting.has(row.weddingId) }),
+      ),
     };
   }
 }
@@ -164,7 +198,8 @@ export class GetMyWedding {
     // Sem vínculo de colaboradora (outra assessoria, quem saiu, o casamento de
     // que ela é dona): 404, sem revelar que o casamento existe (RN01).
     if (!detail) throw new WeddingNotFoundError();
-    const item = itemOf({ row: detail, userId });
+    const awaiting = await this.reader.awaitingPayment({ weddingIds: [detail.weddingId] });
+    const item = itemOf({ row: detail, userId, awaitingPayment: awaiting.has(detail.weddingId) });
     const coupleInvitations = item.createdByMe
       ? await Promise.all(
           detail.pendingCoupleInvitations.map((invitation) =>

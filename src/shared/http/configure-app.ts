@@ -1,3 +1,4 @@
+import { addWeddingWriteErrors } from './wedding-write-errors';
 import { HttpAdapterHost } from '@nestjs/core';
 import { NoStoreGoneFilter } from './no-store-gone.filter';
 import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common';
@@ -112,7 +113,8 @@ export function buildOpenApiDocument({ app }: { app: INestApplication }): OpenAP
     ...document.components,
     schemas: { ...document.components?.schemas, ...OPENAPI_CONSTANT_SCHEMAS },
   };
-  return document;
+  // Casamento bloqueado RN02: o 403 e o 409 do guard em toda escrita do casamento.
+  return addWeddingWriteErrors(document);
 }
 
 /** O provider, quando o módulo dele está no app (o teste do configureApp não tem). */

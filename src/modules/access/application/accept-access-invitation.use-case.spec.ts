@@ -118,6 +118,7 @@ function setup({
     { schedule: (work) => void scheduled.push(work) },
     sessions,
     mailer,
+    { blockOf: jest.fn(), blockOfInvitedWedding: jest.fn().mockResolvedValue(null) },
   );
   return {
     useCase,

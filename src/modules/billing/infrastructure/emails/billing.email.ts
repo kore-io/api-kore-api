@@ -8,7 +8,26 @@ import type {
   PaymentConfirmedNotice,
   PixExpiredNotice,
   RefundCompletedNotice,
+  EndDateSoonNotice,
+  GraceNotice,
+  SiteExpiredNotice,
 } from '../../application/ports/billing-mailer.port';
+
+/** "14 de fev.": o dia sem o ano (os avisos de saída do ar, Pena). */
+export function formatShortDay(day: string): string {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  }).format(new Date(`${day}T00:00:00Z`));
+}
+
+/** "R$ 29" ou "R$ 29,90": o preço da regra, sem centavos quando redondo. */
+export function formatPrice(cents: number): string {
+  const reais = Math.floor(cents / 100);
+  const rest = cents % 100;
+  return rest === 0 ? `R$ ${reais}` : `R$ ${reais},${String(rest).padStart(2, '0')}`;
+}
 
 /** "14 de fev. de 2027": a data é um dia, sem fuso. */
 export function formatDay(day: string): string {
@@ -120,5 +139,81 @@ export function refundCompletedEmail({
       { kind: 'button', text: 'Ver pagamentos', href: url },
     ],
     footer: `Você recebeu este e-mail porque o casamento de ${partner1} e ${partner2} é seu no Kore.`,
+  });
+}
+
+const OWNER_FOOTER = (partnerNames: [string, string]) =>
+  `Você recebeu este e-mail porque o casamento de ${partnerNames[0]} e ${partnerNames[1]} é seu no Kore.`;
+
+/** Antes da data de saída do ar (Data de saída do ar RN03; textos da Pena). */
+export function endDateSoonEmail({
+  notice,
+  url,
+}: {
+  notice: EndDateSoonNotice;
+  url: string;
+}): EmailMessage {
+  const until = formatShortDay(notice.endDate);
+  return message({
+    to: notice.to,
+    subject: `O site fica no ar até ${until}`,
+    preheader: 'Adiem a data para mantê-lo no ar.',
+    blocks: [
+      { kind: 'paragraph', text: `Olá, ${notice.firstName}!` },
+      {
+        kind: 'paragraph',
+        text: `O site de vocês fica no ar até ${until} Depois dessa data, ele fica mais 7 dias no ar e então sai do ar.`,
+      },
+      {
+        kind: 'paragraph',
+        text: `Para manter o site, adiem a data. Cada mês a mais custa ${formatPrice(notice.monthlyCents)}.`,
+      },
+      { kind: 'button', text: 'Adiar a data', href: url },
+    ],
+    footer: OWNER_FOOTER(notice.partnerNames),
+  });
+}
+
+/** No 1º e no 5º dia depois da data de saída do ar (RN03; textos da Pena). */
+export function graceEmail({ notice, url }: { notice: GraceNotice; url: string }): EmailMessage {
+  const until = formatShortDay(notice.graceUntil);
+  return message({
+    to: notice.to,
+    subject: `O site sai do ar depois de ${until}`,
+    preheader: 'A data de saída do ar passou.',
+    blocks: [
+      {
+        kind: 'paragraph',
+        text: `A data de saída do ar passou, e o site fica no ar só até ${until} Depois, os convidados não conseguem mais abrir o site.`,
+      },
+      { kind: 'button', text: 'Adiar a data', href: url },
+    ],
+    footer: OWNER_FOOTER(notice.partnerNames),
+  });
+}
+
+/** Quando o site expira (RN03; textos da Pena). */
+export function siteExpiredEmail({
+  notice,
+  url,
+}: {
+  notice: SiteExpiredNotice;
+  url: string;
+}): EmailMessage {
+  const renew = notice.renewUntil
+    ? `, e vocês podem renovar até ${formatDay(notice.renewUntil)}`
+    : '';
+  return message({
+    to: notice.to,
+    subject: 'O site saiu do ar',
+    preheader: 'Renovem para os convidados voltarem a vê-lo.',
+    blocks: [
+      {
+        kind: 'paragraph',
+        text: `O site de vocês saiu do ar em ${formatShortDay(notice.expiredAt)} Os dados continuam guardados${renew}.`,
+      },
+      { kind: 'button', text: 'Renovar', href: url },
+    ],
+    footer: OWNER_FOOTER(notice.partnerNames),
   });
 }

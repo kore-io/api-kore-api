@@ -1240,6 +1240,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -1261,7 +1264,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WeddingHasOwnerErrorBody"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WeddingHasOwnerErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                    }
+                  ]
                 }
               }
             },
@@ -1532,6 +1542,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -1562,6 +1575,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/CoupleInvitationsFullErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
                     }
                   ]
                 }
@@ -1641,6 +1657,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -1669,7 +1688,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NotPendingErrorBody"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/NotPendingErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                    }
+                  ]
                 }
               }
             },
@@ -2049,6 +2075,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -2086,6 +2115,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/WeddingHasNoOwnerErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
                     }
                   ]
                 }
@@ -2174,6 +2206,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -2190,6 +2225,16 @@
               }
             },
             "description": ""
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                }
+              }
+            }
           },
           "429": {
             "content": {
@@ -2263,6 +2308,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/AlreadyRespondedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -2286,6 +2334,16 @@
               }
             },
             "description": ""
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                }
+              }
+            }
           },
           "429": {
             "content": {
@@ -2448,6 +2506,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -2476,7 +2537,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlusOnesInUseErrorBody"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PlusOnesInUseErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                    }
+                  ]
                 }
               }
             },
@@ -2724,6 +2792,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -2740,6 +2811,16 @@
               }
             },
             "description": ""
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                }
+              }
+            }
           },
           "429": {
             "content": {
@@ -2810,6 +2891,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -2833,6 +2917,16 @@
               }
             },
             "description": ""
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                }
+              }
+            }
           },
           "429": {
             "content": {
@@ -2906,6 +3000,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/AlreadyRespondedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -2940,6 +3037,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/EmptyPlusOneErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
                     }
                   ]
                 }
@@ -3036,6 +3136,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -3070,6 +3173,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/EmptyPlusOneErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
                     }
                   ]
                 }
@@ -3146,6 +3252,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -3169,6 +3278,16 @@
               }
             },
             "description": ""
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                }
+              }
+            }
           },
           "429": {
             "content": {
@@ -3257,6 +3376,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -3285,7 +3407,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TagNameTakenErrorBody"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/TagNameTakenErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                    }
+                  ]
                 }
               }
             },
@@ -3431,6 +3560,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -3458,6 +3590,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/TagNameTakenErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
                     }
                   ]
                 }
@@ -3554,6 +3689,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -3577,6 +3715,16 @@
               }
             },
             "description": ""
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                }
+              }
+            }
           },
           "429": {
             "content": {
@@ -3720,6 +3868,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -3754,6 +3905,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/TagNameTakenErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
                     }
                   ]
                 }
@@ -3842,6 +3996,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -3858,6 +4015,16 @@
               }
             },
             "description": ""
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                }
+              }
+            }
           },
           "413": {
             "content": {
@@ -3960,6 +4127,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -3981,7 +4151,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NothingToImportErrorBody"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/NothingToImportErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                    }
+                  ]
                 }
               }
             },
@@ -4088,6 +4265,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -4104,6 +4284,16 @@
               }
             },
             "description": ""
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -4196,6 +4386,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -4212,6 +4405,16 @@
               }
             },
             "description": ""
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -4456,6 +4659,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -4490,6 +4696,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/SiteImageUploadMissingErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
                     }
                   ]
                 }
@@ -4588,6 +4797,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -4609,7 +4821,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SiteImageLimitErrorBody"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/SiteImageLimitErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                    }
+                  ]
                 }
               }
             },
@@ -4696,6 +4915,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -4712,6 +4934,16 @@
               }
             },
             "description": ""
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                }
+              }
+            }
           },
           "429": {
             "content": {
@@ -4810,6 +5042,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -4833,6 +5068,16 @@
               }
             },
             "description": ""
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                }
+              }
+            }
           },
           "429": {
             "content": {
@@ -4915,6 +5160,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -4931,6 +5179,16 @@
               }
             },
             "description": ""
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -5095,6 +5353,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/SiteFieldNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -5132,6 +5393,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/SiteSlugUnavailableErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
                     }
                   ]
                 }
@@ -6044,6 +6308,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -6060,6 +6327,16 @@
               }
             },
             "description": ""
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -6167,6 +6444,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -6195,7 +6475,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GuestResponseChangedErrorBody"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/GuestResponseChangedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                    }
+                  ]
                 }
               }
             },
@@ -6366,6 +6653,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -6382,6 +6672,16 @@
               }
             },
             "description": ""
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -6596,6 +6896,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -6630,6 +6933,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/SiteExpiredConflictErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
                     }
                   ]
                 }
@@ -6735,6 +7041,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -6769,6 +7078,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/SiteExpiredConflictErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
                     }
                   ]
                 }
@@ -8210,6 +8522,58 @@
         ]
       }
     },
+    "/v1/me/referrer/commissions": {
+      "get": {
+        "operationId": "ReferrerCommissionsController_list_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferrerCommissionsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "A tela Comissões (Comissões do indicador RN02, RN07 e RN10).",
+        "tags": [
+          "planner"
+        ]
+      }
+    },
     "/v1/webhooks/payments/{gateway}": {
       "post": {
         "operationId": "PaymentWebhooksController_receiveEvent_v1",
@@ -8476,6 +8840,141 @@
         ]
       }
     },
+    "/v1/weddings/{weddingId}/end-date": {
+      "patch": {
+        "operationId": "PaymentsController_endDate_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeEndDateBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndDateChangedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/NotPublishedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/EndDateOutOfRangeErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/EndDateBeyondPaidErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Antecipar ou voltar a data de saída do ar (Data de saída do ar RN05):\nsem cobrança nem reembolso, até o paidThrough; depois dele, a extensão.",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
     "/v1/weddings/{weddingId}/payments/{paymentId}/refund-request": {
       "post": {
         "operationId": "PaymentsController_refund_v1",
@@ -8594,6 +9093,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/PaymentNotPaidErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
                     }
                   ]
                 }
@@ -8701,6 +9203,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
                 }
@@ -8743,6 +9248,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/PriceChangedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/NotPublishedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
                     }
                   ]
                 }
@@ -9352,6 +9863,10 @@
           "deletionScheduledFor": {
             "type": "string",
             "nullable": true
+          },
+          "blocked": {
+            "type": "boolean",
+            "description": "Bloqueado pelo suporte (Casamento bloqueado RN07): a faixa substitui as outras."
           }
         },
         "required": [
@@ -9359,7 +9874,8 @@
           "endDate",
           "graceUntil",
           "expiredAt",
-          "deletionScheduledFor"
+          "deletionScheduledFor",
+          "blocked"
         ]
       },
       "MeMembershipResponse": {
@@ -16429,13 +16945,44 @@
             "description": "O pagamento confirmado (Publicar e pagar RN13) ou o reembolso concluído (Pagamentos e arrependimento RN07).",
             "enum": [
               "payment_confirmed",
-              "refund_completed"
+              "refund_completed",
+              "end_date_soon",
+              "grace",
+              "expired"
             ],
             "type": "string"
           },
           "paymentId": {
             "type": "string",
+            "description": "Só nos avisos de pagamento.",
             "format": "uuid"
+          },
+          "daysLeft": {
+            "type": "number",
+            "description": "Os avisos de saída do ar (Data de saída do ar RN03): os dias até a endDate.",
+            "example": 7
+          },
+          "day": {
+            "description": "Carência: o 1º ou o 5º dia, e o último dia no ar.",
+            "enum": [
+              1,
+              5
+            ],
+            "type": "number"
+          },
+          "graceUntil": {
+            "type": "string",
+            "example": "2027-02-21"
+          },
+          "expiredAt": {
+            "type": "string",
+            "description": "Expirado: desde quando e até quando dá para renovar.",
+            "example": "2027-02-22"
+          },
+          "renewUntil": {
+            "type": "string",
+            "nullable": true,
+            "example": "2027-11-14"
           },
           "endDate": {
             "type": "string",
@@ -16452,6 +16999,9 @@
             ],
             "type": "string"
           },
+          "installments": {
+            "type": "number"
+          },
           "cardLast4": {
             "type": "string",
             "nullable": true,
@@ -16460,19 +17010,11 @@
           "at": {
             "type": "string",
             "format": "date-time"
-          },
-          "installments": {
-            "type": "number"
           }
         },
         "required": [
           "kind",
-          "paymentId",
-          "amountCents",
-          "method",
-          "cardLast4",
-          "at",
-          "installments"
+          "at"
         ]
       },
       "NotificationResponse": {
@@ -16782,17 +17324,28 @@
       "MyWeddingsSummaryResponse": {
         "type": "object",
         "properties": {
+          "commissionAvailableCents": {
+            "type": "number",
+            "description": "Comissão disponível, em centavos (Comissões do indicador RN08; decisão 36).",
+            "example": 6742
+          },
           "active": {
             "type": "number",
             "description": "Todos menos pós-evento e expirado (RN03)."
           },
           "awaitingCouple": {
             "type": "number"
+          },
+          "awaitingPayment": {
+            "type": "number",
+            "description": "Aguardando pagamento: rascunho com o Pix pendente (Comissões do indicador RN08)."
           }
         },
         "required": [
+          "commissionAvailableCents",
           "active",
-          "awaitingCouple"
+          "awaitingCouple",
+          "awaitingPayment"
         ]
       },
       "PendingResponsesAlertResponse": {
@@ -16927,6 +17480,10 @@
           },
           "createdByMe": {
             "type": "boolean"
+          },
+          "awaitingPayment": {
+            "type": "boolean",
+            "description": "\"Aguardando pagamento\" (filtro e status derivado; Comissões RN08): só o booleano."
           }
         },
         "required": [
@@ -16939,7 +17496,8 @@
           "city",
           "state",
           "guestsTotal",
-          "createdByMe"
+          "createdByMe",
+          "awaitingPayment"
         ]
       },
       "MyWeddingsResponse": {
@@ -17108,6 +17666,10 @@
           },
           "createdByMe": {
             "type": "boolean"
+          },
+          "awaitingPayment": {
+            "type": "boolean",
+            "description": "\"Aguardando pagamento\" (filtro e status derivado; Comissões RN08): só o booleano."
           }
         },
         "required": [
@@ -17125,7 +17687,25 @@
           "city",
           "state",
           "guestsTotal",
-          "createdByMe"
+          "createdByMe",
+          "awaitingPayment"
+        ]
+      },
+      "ReferredWeddingCommissionResponse": {
+        "type": "object",
+        "properties": {
+          "availableCents": {
+            "type": "number",
+            "example": 6742
+          },
+          "pendingCents": {
+            "type": "number",
+            "example": 1740
+          }
+        },
+        "required": [
+          "availableCents",
+          "pendingCents"
         ]
       },
       "ReferredWeddingResponse": {
@@ -17155,12 +17735,22 @@
               "grace",
               "expired"
             ]
+          },
+          "commission": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReferredWeddingCommissionResponse"
+              }
+            ]
           }
         },
         "required": [
           "weddingId",
           "partnerNames",
-          "status"
+          "status",
+          "commission"
         ]
       },
       "PlannerTemplateResponse": {
@@ -17318,6 +17908,180 @@
             "description": "Por tipo: section_content → { text }; faq → { questions: [{ question, answer }] }; appearance → { fontPairKey, starterPaletteKey?, primaryColor, accentColor, backgroundMode }."
           }
         }
+      },
+      "CommissionBalancesResponse": {
+        "type": "object",
+        "properties": {
+          "availableCents": {
+            "type": "number",
+            "example": 6742
+          },
+          "pendingCents": {
+            "type": "number",
+            "example": 1740
+          },
+          "receivedCents": {
+            "type": "number",
+            "example": 0
+          },
+          "inPayoutCents": {
+            "type": "number",
+            "example": 0
+          }
+        },
+        "required": [
+          "availableCents",
+          "pendingCents",
+          "receivedCents",
+          "inPayoutCents"
+        ]
+      },
+      "CommissionItemResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "weddingId": {
+            "type": "string",
+            "nullable": true
+          },
+          "partnerNames": {
+            "nullable": true,
+            "example": [
+              "Ana",
+              "Marcos"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "paymentKind": {
+            "type": "string",
+            "enum": [
+              "publication",
+              "extension"
+            ]
+          },
+          "baseAmountCents": {
+            "type": "number",
+            "example": 33710
+          },
+          "amountCents": {
+            "type": "number",
+            "example": 6742
+          },
+          "ratePercent": {
+            "type": "number",
+            "example": 20
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "available",
+              "paid",
+              "reversed",
+              "blocked",
+              "held"
+            ]
+          },
+          "availableAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paidAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "weddingId",
+          "partnerNames",
+          "paymentKind",
+          "baseAmountCents",
+          "amountCents",
+          "ratePercent",
+          "status",
+          "availableAt",
+          "paidAt",
+          "createdAt"
+        ]
+      },
+      "WeddingCommissionsResponse": {
+        "type": "object",
+        "properties": {
+          "weddingId": {
+            "type": "string",
+            "nullable": true
+          },
+          "partnerNames": {
+            "nullable": true,
+            "example": [
+              "Ana",
+              "Marcos"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "availableCents": {
+            "type": "number",
+            "example": 6742
+          },
+          "pendingCents": {
+            "type": "number",
+            "example": 1740
+          },
+          "releaseDates": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "required": [
+          "weddingId",
+          "partnerNames",
+          "availableCents",
+          "pendingCents",
+          "releaseDates"
+        ]
+      },
+      "ReferrerCommissionsResponse": {
+        "type": "object",
+        "properties": {
+          "balances": {
+            "$ref": "#/components/schemas/CommissionBalancesResponse"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommissionItemResponse"
+            }
+          },
+          "byWedding": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeddingCommissionsResponse"
+            }
+          }
+        },
+        "required": [
+          "balances",
+          "items",
+          "byWedding"
+        ]
       },
       "MalformedWebhookErrorBody": {
         "type": "object",
@@ -17769,6 +18533,102 @@
           "message"
         ]
       },
+      "WeddingDeletionScheduledErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "WEDDING_DELETION_SCHEDULED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "EndDateBeyondPaidErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "END_DATE_BEYOND_PAID"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "paidThrough": {
+            "type": "string",
+            "example": "2027-02-14"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "paidThrough"
+        ]
+      },
+      "ChangeEndDateBody": {
+        "type": "object",
+        "properties": {
+          "endDate": {
+            "type": "string",
+            "description": "`AAAA-MM-DD`: de amanhã (e depois do casamento) até o paidThrough.",
+            "example": "2027-01-10"
+          }
+        },
+        "required": [
+          "endDate"
+        ]
+      },
+      "EndDateChangedResponse": {
+        "type": "object",
+        "properties": {
+          "endDate": {
+            "type": "string",
+            "example": "2027-01-10"
+          },
+          "paidThrough": {
+            "type": "string",
+            "nullable": true,
+            "description": "Não muda: voltar a data vai até ele, de graça (B4-1).",
+            "example": "2027-02-14"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "published",
+              "post_event",
+              "grace"
+            ]
+          }
+        },
+        "required": [
+          "endDate",
+          "paidThrough",
+          "status"
+        ]
+      },
       "PaymentNotFoundErrorBody": {
         "type": "object",
         "properties": {
@@ -18164,11 +19024,12 @@
         "type": "object",
         "properties": {
           "kind": {
-            "type": "string",
-            "description": "Por ora só a publicação; a extensão entra no PR da data de saída do ar.",
+            "description": "A publicação ou a extensão (Data de saída do ar RN04: adiar e renovar).",
             "enum": [
-              "publication"
-            ]
+              "publication",
+              "extension"
+            ],
+            "type": "string"
           },
           "endDate": {
             "type": "string",

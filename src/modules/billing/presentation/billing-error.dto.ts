@@ -127,3 +127,20 @@ export class RefundWindowClosedErrorBody {
   @ApiProperty({ type: String, format: 'date-time', nullable: true }) refundableUntil:
     string | null;
 }
+
+/** Exclusão agendada (Data de saída do ar RN10; Retenção e expurgo). */
+export class WeddingDeletionScheduledErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['WEDDING_DELETION_SCHEDULED'] }) error: 'WEDDING_DELETION_SCHEDULED';
+  @ApiProperty() message: string;
+}
+
+/** A data nova passa do paidThrough (Data de saída do ar RN05). */
+export class EndDateBeyondPaidErrorBody {
+  static readonly status = 422;
+  @ApiProperty({ enum: [422] }) statusCode: 422;
+  @ApiProperty({ enum: ['END_DATE_BEYOND_PAID'] }) error: 'END_DATE_BEYOND_PAID';
+  @ApiProperty() message: string;
+  @ApiProperty({ example: '2027-02-14' }) paidThrough: string;
+}

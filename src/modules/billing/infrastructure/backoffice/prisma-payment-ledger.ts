@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { AlertType, Prisma } from '../../../../generated/prisma/client';
 import { BackofficeTransaction } from '../../../../shared/database/backoffice-transaction';
 import { uuidV7 } from '../../../../shared/ids/uuid-v7';
+import { newCommission } from '../../domain/commission';
 import type {
   BillingRecipient,
   LedgerLogEntry,
@@ -42,9 +43,12 @@ export class PrismaPaymentLedger implements PaymentLedger {
         publishedAt: Date | null;
         timezone: string | null;
         eventDate: Date | null;
+        endDate: Date | null;
+        paidThrough: Date | null;
       }[]
     >`
       SELECT id, status::text AS status, blocked_at AS "blockedAt",
+             end_date AS "endDate", paid_through AS "paidThrough",
              deletion_scheduled_for AS "deletionScheduledFor", published_at AS "publishedAt",
              timezone, event_date AS "eventDate"
       FROM weddings WHERE id = ${target.weddingId}::uuid FOR UPDATE`;
@@ -81,6 +85,8 @@ export class PrismaPaymentLedger implements PaymentLedger {
       ...wedding,
       deletionScheduledFor: day(wedding.deletionScheduledFor),
       eventDate: day(wedding.eventDate),
+      endDate: day(wedding.endDate),
+      paidThrough: day(wedding.paidThrough),
     };
     const ledgerPayment: LedgerPayment = {
       ...payment,
@@ -181,6 +187,37 @@ export class PrismaPaymentLedger implements PaymentLedger {
       WHERE id = ${weddingId}::uuid AND status = 'draft'`;
   }
 
+  async extend({
+    weddingId,
+    paymentId,
+    endDate,
+    now,
+  }: {
+    weddingId: string;
+    paymentId: string;
+    endDate: string;
+    now: Date;
+  }): Promise<void> {
+    const end = new Date(`${endDate}T00:00:00Z`);
+    // As datas de antes, na confirmação (Pagamentos e arrependimento RN03; B3-5).
+    await this.db().$executeRaw`
+      UPDATE payments p
+      SET previous_end_date = w.end_date, previous_paid_through = w.paid_through
+      FROM weddings w
+      WHERE p.id = ${paymentId}::uuid AND w.id = p.wedding_id`;
+    await this.db().$executeRaw`
+      UPDATE weddings
+      SET end_date = ${end}, paid_through = ${end},
+          status = CASE
+            WHEN status = 'grace' AND event_date >= (${now}::timestamptz AT TIME ZONE
+                   coalesce(timezone, 'America/Sao_Paulo'))::date THEN 'published'::wedding_status
+            WHEN status IN ('grace', 'expired') THEN 'post_event'::wedding_status
+            ELSE status END,
+          grace_until = NULL, expired_at = NULL, purge_at = NULL, purge_notice_sent_at = NULL,
+          updated_at = ${now}
+      WHERE id = ${weddingId}::uuid`;
+  }
+
   async billingRecipients({ weddingId }: { weddingId: string }): Promise<BillingRecipient[]> {
     const owners = await this.db().membership.findMany({
       where: { weddingId, role: 'owner', removedAt: null, user: { status: 'active' } },
@@ -236,6 +273,37 @@ export class PrismaPaymentLedger implements PaymentLedger {
         type: 'billing' as const,
         groupKey:
           event === 'payment_confirmed' ? `billing:${paymentId}` : `billing:${paymentId}:refund`,
+        payload: [payload] as Prisma.InputJsonValue,
+        createdAt: now,
+        updatedAt: now,
+      })),
+      skipDuplicates: true,
+    });
+  }
+
+  async notifyEndDateNotice({
+    weddingId,
+    notice,
+    endDate,
+    userIds,
+    payload,
+    now,
+  }: {
+    weddingId: string;
+    notice: 'end_date_in_7_days' | 'grace_day_1' | 'grace_day_5' | 'expired';
+    endDate: string;
+    userIds: string[];
+    payload: Record<string, unknown>;
+    now: Date;
+  }): Promise<void> {
+    if (userIds.length === 0) return;
+    await this.db().notification.createMany({
+      data: userIds.map((userId) => ({
+        id: uuidV7({ now: now.getTime() }),
+        userId,
+        weddingId,
+        type: 'billing' as const,
+        groupKey: `billing:${notice}:${endDate}`,
         payload: [payload] as Prisma.InputJsonValue,
         createdAt: now,
         updatedAt: now,
@@ -355,6 +423,127 @@ export class PrismaPaymentLedger implements PaymentLedger {
     await this.db().payment.updateMany({
       where: { id: paymentId, status: 'refund_requested' },
       data: { status: 'refunded', refundedAt: now, disputeResolvedAt: now },
+    });
+  }
+
+  async recordBillingNotice({
+    weddingId,
+    notice,
+    endDate,
+    now,
+  }: {
+    weddingId: string;
+    notice: 'end_date_in_7_days' | 'grace_day_1' | 'grace_day_5' | 'expired';
+    endDate: string;
+    now: Date;
+  }): Promise<boolean> {
+    const rows = await this.db().$queryRaw<{ id: string }[]>`
+      INSERT INTO billing_notice_logs (id, wedding_id, notice, end_date, sent_at)
+      VALUES (${uuidV7({ now: now.getTime() })}::uuid, ${weddingId}::uuid,
+              ${notice}::billing_notice, ${endDate}::date, ${now})
+      ON CONFLICT (wedding_id, notice, end_date) DO NOTHING
+      RETURNING id::text AS id`;
+    return rows.length > 0;
+  }
+
+  async createCommission({
+    weddingId,
+    paymentId,
+    now,
+  }: {
+    weddingId: string;
+    paymentId: string;
+    now: Date;
+  }): Promise<void> {
+    // A ordem única (RN18): o Wedding e o Payment já estão travados; agora o Referrer.
+    const [row] = await this.db().$queryRaw<
+      {
+        referrerId: string;
+        referrerStatus: 'active' | 'blocked' | 'inactive';
+        ratePercent: number;
+        referrerTaxIdHash: string | null;
+      }[]
+    >`
+      SELECT r.id::text AS "referrerId", r.status::text AS "referrerStatus",
+             r.rate_percent AS "ratePercent", r.tax_id_hash AS "referrerTaxIdHash"
+      FROM weddings w JOIN referrers r ON r.id = w.referrer_id
+      WHERE w.id = ${weddingId}::uuid
+      FOR UPDATE OF r`;
+    if (!row) return;
+    const payment = await this.db().payment.findUniqueOrThrow({
+      where: { id: paymentId },
+      select: {
+        amountCents: true,
+        installmentInterestCents: true,
+        payerTaxIdHash: true,
+        paidAt: true,
+      },
+    });
+    const commission = newCommission({
+      amountCents: payment.amountCents,
+      installmentInterestCents: payment.installmentInterestCents,
+      ratePercent: row.ratePercent,
+      referrerStatus: row.referrerStatus,
+      referrerTaxIdHash: row.referrerTaxIdHash,
+      payerTaxIdHash: payment.payerTaxIdHash,
+    });
+    if (commission.kind === 'none') return;
+    const settings = await this.db().referralSettings.findFirst({
+      orderBy: { createdAt: 'desc' },
+      select: { commissionHoldDays: true },
+    });
+    const paidAt = payment.paidAt ?? now;
+    const availableAt = new Date(
+      paidAt.getTime() + (settings?.commissionHoldDays ?? 30) * 24 * 60 * 60_000,
+    );
+    await this.db().commission.createMany({
+      data: [
+        {
+          id: uuidV7({ now: now.getTime() }),
+          referrerId: row.referrerId,
+          weddingId,
+          paymentId,
+          baseAmountCents: commission.baseAmountCents,
+          ratePercent: row.ratePercent,
+          amountCents: commission.amountCents,
+          status: commission.status,
+          blockReason: commission.blockReason,
+          availableAt,
+        },
+      ],
+      skipDuplicates: true,
+    });
+  }
+
+  async holdCommission({ paymentId }: { paymentId: string; now: Date }): Promise<void> {
+    await this.db().commission.updateMany({
+      where: { paymentId, status: { in: ['pending', 'available'] } },
+      data: { status: 'held' },
+    });
+  }
+
+  async releaseCommission({ paymentId, now }: { paymentId: string; now: Date }): Promise<void> {
+    // Volta pelo availableAt (RN06): a data no fuso de São Paulo, como a liberação.
+    await this.db().$executeRaw`
+      UPDATE commissions
+      SET status = CASE
+            WHEN (available_at AT TIME ZONE 'America/Sao_Paulo')::date
+                 <= (${now}::timestamptz AT TIME ZONE 'America/Sao_Paulo')::date
+              THEN 'available'::commission_status
+            ELSE 'pending'::commission_status END,
+          updated_at = ${now}
+      WHERE payment_id = ${paymentId}::uuid AND status = 'held'`;
+  }
+
+  async reverseCommission({ paymentId, now }: { paymentId: string; now: Date }): Promise<void> {
+    // Fora de repasse (RN05). Dentro de um repasse pedido ou pago: o PR do repasse.
+    await this.db().commission.updateMany({
+      where: {
+        paymentId,
+        payoutId: null,
+        status: { in: ['pending', 'available', 'blocked', 'held'] },
+      },
+      data: { status: 'reversed', reversedAt: now },
     });
   }
 

@@ -8,6 +8,7 @@ import {
   HttpStatus,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Req,
 } from '@nestjs/common';
@@ -38,6 +39,7 @@ import {
   SiteSlugMissingErrorBody,
 } from '../../site/presentation/site-error.dto';
 import { CreatePayment } from '../application/create-payment.use-case';
+import { ChangeEndDate } from '../application/change-end-date.use-case';
 import { GetBilling } from '../application/get-billing.use-case';
 import { RequestRefund } from '../application/request-refund.use-case';
 import {
@@ -56,11 +58,16 @@ import {
   RefundNotLastExtensionErrorBody,
   RefundWindowClosedErrorBody,
   WeddingBlockedErrorBody,
+  NotPublishedErrorBody,
+  WeddingDeletionScheduledErrorBody,
+  EndDateBeyondPaidErrorBody,
 } from './billing-error.dto';
 import { toHttpError } from './billing-http-errors';
 import {
   BillingResponse,
+  ChangeEndDateBody,
   CreatePaymentBody,
+  EndDateChangedResponse,
   PaymentCreatedResponse,
   RefundRequestBody,
   RefundRequestedResponse,
@@ -76,7 +83,44 @@ export class PaymentsController {
     private readonly createPayment: CreatePayment,
     private readonly getBilling: GetBilling,
     private readonly requestRefund: RequestRefund,
+    private readonly changeEndDate: ChangeEndDate,
   ) {}
+
+  /**
+   * Antecipar ou voltar a data de saída do ar (Data de saída do ar RN05):
+   * sem cobrança nem reembolso, até o paidThrough; depois dele, a extensão.
+   */
+  @Patch('end-date')
+  @OwnTransactions()
+  @ApiOkResponse({ type: EndDateChangedResponse })
+  @ApiErrorResponses(
+    ...commonErrors({ validated: true, session: true, write: true }),
+    ActionNotAllowedErrorBody,
+    WeddingBlockedErrorBody,
+    WeddingNotFoundErrorBody,
+    NotPublishedErrorBody,
+    WeddingDeletionScheduledErrorBody,
+    EndDateOutOfRangeErrorBody,
+    EndDateBeyondPaidErrorBody,
+  )
+  async endDate(
+    @CurrentSession() session: AuthenticatedSession,
+    @Param('weddingId') weddingId: string,
+    @Body() body: ChangeEndDateBody,
+    @Req() request: Request,
+  ): Promise<EndDateChangedResponse> {
+    try {
+      return await this.changeEndDate.execute({
+        userId: session.userId,
+        weddingId,
+        endDate: body.endDate,
+        ip: request.ip ?? null,
+        now: new Date(),
+      });
+    } catch (error) {
+      throw toHttpError(error);
+    }
+  }
 
   /**
    * Desistir e pedir reembolso (Pagamentos e arrependimento RN02 a RN04): o
@@ -152,6 +196,9 @@ export class PaymentsController {
     EndDateOutOfRangeErrorBody,
     IdempotencyKeyReusedErrorBody,
     GatewayUnavailableErrorBody,
+    NotPublishedErrorBody,
+    WeddingBlockedErrorBody,
+    WeddingDeletionScheduledErrorBody,
   )
   async pay(
     @CurrentSession() session: AuthenticatedSession,

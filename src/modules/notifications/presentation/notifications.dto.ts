@@ -70,15 +70,28 @@ class NotificationEntryResponse {
 /** O item da cobrança (Publicar e pagar RN13): o app monta o título e o detalhe. */
 export class BillingEntryResponse {
   /** O pagamento confirmado (Publicar e pagar RN13) ou o reembolso concluído (Pagamentos e arrependimento RN07). */
-  @ApiProperty({ enum: ['payment_confirmed', 'refund_completed'] })
-  kind: 'payment_confirmed' | 'refund_completed';
-  @ApiProperty({ format: 'uuid' }) paymentId: string;
+  @ApiProperty({
+    enum: ['payment_confirmed', 'refund_completed', 'end_date_soon', 'grace', 'expired'],
+  })
+  kind: 'payment_confirmed' | 'refund_completed' | 'end_date_soon' | 'grace' | 'expired';
+  /** Só nos avisos de pagamento. */
+  @ApiProperty({ format: 'uuid', required: false }) paymentId?: string;
+  /** Os avisos de saída do ar (Data de saída do ar RN03): os dias até a endDate. */
+  @ApiProperty({ required: false, example: 7 }) daysLeft?: number;
+  /** Carência: o 1º ou o 5º dia, e o último dia no ar. */
+  @ApiProperty({ required: false, enum: [1, 5] }) day?: 1 | 5;
+  @ApiProperty({ required: false, example: '2027-02-21' }) graceUntil?: string;
+  /** Expirado: desde quando e até quando dá para renovar. */
+  @ApiProperty({ required: false, example: '2027-02-22' }) expiredAt?: string;
+  @ApiProperty({ required: false, nullable: true, example: '2027-11-14' }) renewUntil?:
+    string | null;
   /** A data de saída do ar paga, AAAA-MM-DD (só no payment_confirmed). */
   @ApiProperty({ required: false }) endDate?: string;
-  @ApiProperty({ example: 33710 }) amountCents: number;
-  @ApiProperty({ enum: ['pix', 'card'] }) method: 'pix' | 'card';
-  installments: number;
-  @ApiProperty({ type: String, nullable: true, example: '4821' }) cardLast4: string | null;
+  @ApiProperty({ required: false, example: 33710 }) amountCents?: number;
+  @ApiProperty({ required: false, enum: ['pix', 'card'] }) method?: 'pix' | 'card';
+  @ApiProperty({ required: false }) installments?: number;
+  @ApiProperty({ type: String, nullable: true, required: false, example: '4821' })
+  cardLast4?: string | null;
   @ApiProperty({ format: 'date-time' }) at: string;
 }
 
