@@ -237,8 +237,11 @@ export class NotificationPreferences {
     const saved = new Map(
       (await this.store.preferences({ userId, weddingId })).map((row) => [row.type, row]),
     );
+    // Cobrança e pagamentos é só das pessoas donas (Publicar e pagar RN13; G6).
+    const owner = await this.authorization.can({ userId, weddingId, action: 'manage_billing' });
+    const types = NOTIFICATION_TYPES.filter((type) => type !== 'billing' || owner);
     return {
-      items: NOTIFICATION_TYPES.map((type) => {
+      items: types.map((type) => {
         const row = saved.get(type) ?? { type, ...DEFAULT_PREFERENCE };
         // Cobrança e pagamentos: o e-mail sempre sai, sem seletor (decisão 236).
         return type === 'billing' ? { ...row, email: 'always' as const } : row;
