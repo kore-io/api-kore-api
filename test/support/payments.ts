@@ -248,3 +248,19 @@ export function randomCpf(): string {
   }
   return digits.join('');
 }
+
+/** Um CNPJ numérico válido e novo a cada chamada (o kore_test é compartilhado). */
+export function randomCnpj(): string {
+  const digits = [...Array.from({ length: 8 }, () => Math.floor(Math.random() * 10)), 0, 0, 0, 1];
+  for (const length of [12, 13]) {
+    let weight = 2;
+    let sum = 0;
+    for (let index = length - 1; index >= 0; index--) {
+      sum += digits[index] * weight;
+      weight = weight === 9 ? 2 : weight + 1;
+    }
+    const rest = sum % 11;
+    digits.push(rest < 2 ? 0 : 11 - rest);
+  }
+  return digits.join('');
+}

@@ -2142,6 +2142,417 @@
         ]
       }
     },
+    "/v1/me/referrer/tax-id": {
+      "put": {
+        "operationId": "PayoutDataController_setTaxId_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetTaxIdBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxIdResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/TaxIdLockedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/TaxIdInUseErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "RN02: o CPF ou CNPJ, uma vez só; depois, só o Admin corrige.",
+        "tags": [
+          "referral"
+        ]
+      }
+    },
+    "/v1/me/referrer/pix-keys": {
+      "get": {
+        "operationId": "PayoutDataController_listPixKeys_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PixKeysResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "RN03 e RN09: a chave vigente, a troca em espera e o histórico, mascarados.",
+        "tags": [
+          "referral"
+        ]
+      },
+      "post": {
+        "operationId": "PayoutDataController_requestPixKey_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestPixKeyBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PixKeyRequestedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ReauthRequiredErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PixKeyChangePendingErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "RN03: cadastrar a primeira chave ou pedir a troca; o link vai por e-mail.",
+        "tags": [
+          "referral"
+        ]
+      }
+    },
+    "/v1/me/referrer/pix-keys/confirm": {
+      "post": {
+        "operationId": "PayoutDataController_confirmPixKey_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmPixKeyBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PixKeyConfirmedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PixKeyNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PixKeyLinkExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "RN03: a confirmação pelo token do e-mail; a primeira vale na hora, a troca em 48 h.",
+        "tags": [
+          "referral"
+        ]
+      }
+    },
+    "/v1/me/referrer/pix-keys/{id}": {
+      "delete": {
+        "operationId": "PayoutDataController_cancelPixKey_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ReauthRequiredErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PixKeyNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "RN03: Cancelar troca enquanto ela não vale (ou o cadastro que esperava a confirmação).",
+        "tags": [
+          "referral"
+        ]
+      }
+    },
     "/v1/weddings/{weddingId}/parties/trash": {
       "post": {
         "operationId": "PartiesController_trashMany_v1",
@@ -10717,12 +11128,31 @@
             "nullable": true,
             "description": "Nulo com o desconto de indicação desligado. Sem o percentual da comissão (D4).",
             "example": 10
+          },
+          "taxIdMasked": {
+            "type": "string",
+            "nullable": true,
+            "description": "\"***.982.247-**\"; nulo antes do primeiro recebimento (Repasse RN02).",
+            "example": "***.982.247-**"
+          },
+          "pixKeyMasked": {
+            "type": "string",
+            "nullable": true,
+            "description": "A chave ativa mascarada; nula sem chave confirmada (Repasse RN03).",
+            "example": "jul***@pradoassessoria.com.br"
+          },
+          "payoutDataComplete": {
+            "type": "boolean",
+            "description": "CPF ou CNPJ e chave ativa: pode receber (\"Cadastre seu CPF ou CNPJ e sua chave Pix…\")."
           }
         },
         "required": [
           "referralCode",
           "link",
-          "discountPercent"
+          "discountPercent",
+          "taxIdMasked",
+          "pixKeyMasked",
+          "payoutDataComplete"
         ]
       },
       "ReferralNotFoundErrorBody": {
@@ -11845,6 +12275,385 @@
           "statusCode",
           "error",
           "message"
+        ]
+      },
+      "TaxIdLockedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "TAX_ID_LOCKED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "TaxIdInUseErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "TAX_ID_IN_USE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SetTaxIdBody": {
+        "type": "object",
+        "properties": {
+          "taxIdType": {
+            "enum": [
+              "cpf",
+              "cnpj"
+            ],
+            "type": "string"
+          },
+          "taxId": {
+            "type": "string",
+            "maxLength": 20,
+            "example": "529.982.247-25"
+          }
+        },
+        "required": [
+          "taxIdType",
+          "taxId"
+        ]
+      },
+      "TaxIdResponse": {
+        "type": "object",
+        "properties": {
+          "taxIdType": {
+            "enum": [
+              "cpf",
+              "cnpj"
+            ],
+            "type": "string"
+          },
+          "taxIdMasked": {
+            "type": "string",
+            "description": "\"***.982.247-**\" · \"**.222.333/0001-**\" (decisão 244(2)).",
+            "example": "***.982.247-**"
+          }
+        },
+        "required": [
+          "taxIdType",
+          "taxIdMasked"
+        ]
+      },
+      "PixKeyResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "keyType": {
+            "enum": [
+              "cpf",
+              "cnpj",
+              "email",
+              "phone",
+              "random"
+            ],
+            "type": "string"
+          },
+          "keyMasked": {
+            "type": "string",
+            "description": "Só a máscara: a chave nunca sai inteira.",
+            "example": "jul***@pradoassessoria.com.br"
+          },
+          "status": {
+            "description": "Histórico: Ativa · Substituída · Cancelada; e a troca em espera.",
+            "enum": [
+              "pending_confirmation",
+              "pending_activation",
+              "active",
+              "replaced",
+              "canceled"
+            ],
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "confirmExpiresAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "confirmedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "activeFrom": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "replacedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "canceledAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "keyType",
+          "keyMasked",
+          "status",
+          "createdAt",
+          "confirmExpiresAt",
+          "confirmedAt",
+          "activeFrom",
+          "replacedAt",
+          "canceledAt"
+        ]
+      },
+      "PixKeysResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Da mais nova para a mais antiga.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PixKeyResponse"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "ReauthRequiredErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              403
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "REAUTH_REQUIRED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PixKeyChangePendingErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PIX_KEY_CHANGE_PENDING"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "activeFrom": {
+            "type": "string",
+            "description": "Quando a troca vale (\"em 28 de set. às 14h\").",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "activeFrom"
+        ]
+      },
+      "RequestPixKeyBody": {
+        "type": "object",
+        "properties": {
+          "keyType": {
+            "enum": [
+              "cpf",
+              "cnpj",
+              "email",
+              "phone",
+              "random"
+            ],
+            "type": "string"
+          },
+          "key": {
+            "type": "string",
+            "maxLength": 100,
+            "example": "juliana@pradoassessoria.com.br"
+          }
+        },
+        "required": [
+          "keyType",
+          "key"
+        ]
+      },
+      "PixKeyRequestedResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "emailMasked": {
+            "type": "string",
+            "description": "\"Enviamos um link para jul***@pradoassessoria.com.br. Ele vale por 30 minutos.\"",
+            "example": "jul***@pradoassessoria.com.br"
+          },
+          "confirmExpiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "firstKey": {
+            "type": "boolean",
+            "description": "A primeira chave vale na confirmação; a troca, 48 h depois."
+          }
+        },
+        "required": [
+          "id",
+          "emailMasked",
+          "confirmExpiresAt",
+          "firstKey"
+        ]
+      },
+      "PixKeyNotFoundErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PIX_KEY_NOT_FOUND"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PixKeyLinkExpiredErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              410
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PIX_KEY_LINK_EXPIRED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "ConfirmPixKeyBody": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "PixKeyConfirmedResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "enum": [
+              "active",
+              "pending_activation"
+            ],
+            "type": "string"
+          },
+          "activeFrom": {
+            "type": "string",
+            "description": "A primeira, agora; a troca, 48 h depois (\"vale às 14h de 28/09\").",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "activeFrom"
         ]
       },
       "TrashPartiesBody": {
