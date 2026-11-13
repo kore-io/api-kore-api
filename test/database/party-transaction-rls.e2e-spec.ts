@@ -100,9 +100,15 @@ describe('Transação do grupo (banco real, usuário kore_api sem sessão)', () 
       expect(await context(1)).toBeNull();
     });
     await db.party.update({ where: { id: duarte }, data: { deletedAt: null } });
+    // Fora do ar (Data de saída do ar RN08): só o estado, sem dado do casamento;
+    // a transação recusa (rascunho como grupo revogado, expirado com 409).
     await db.wedding.update({ where: { id: weddingId }, data: { status: 'draft' } });
     await asParty({}, async () => {
-      expect(await context(moreira.linkVersion)).toBeNull();
+      expect(await context(moreira.linkVersion)).toEqual({ siteState: 'not_found' });
+    });
+    await db.wedding.update({ where: { id: weddingId }, data: { status: 'expired' } });
+    await asParty({}, async () => {
+      expect(await context(moreira.linkVersion)).toEqual({ siteState: 'expired' });
     });
     await db.wedding.update({ where: { id: weddingId }, data: { status: 'published' } });
   });

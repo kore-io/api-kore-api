@@ -79,8 +79,8 @@ describe('Função site_public_by_slug (banco real, usuário kore_api sem sessã
     );
   });
 
-  it('RN04 - rascunho: só o status, nenhum dado do casal; endereço inexistente: nulo', async () => {
-    expect(await read(await wedding('draft'))).toEqual({ status: 'draft' });
+  it('RN04 - rascunho: só o status e o estado (Data de saída do ar RN08), nenhum dado do casal; endereço inexistente: nulo', async () => {
+    expect(await read(await wedding('draft'))).toEqual({ status: 'draft', siteState: 'not_found' });
     expect(await read(`nao-existe-${randomUUID().slice(0, 8)}`)).toBeNull();
   });
 

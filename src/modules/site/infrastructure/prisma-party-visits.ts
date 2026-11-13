@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  PartySiteNotLiveError,
   PartyTransactionRevokedError,
   TenantTransaction,
 } from '../../../shared/database/tenant-transaction';
@@ -39,7 +40,8 @@ export class PrismaPartyVisits implements PartyVisits {
       });
     } catch (error) {
       // O grupo deixou de valer depois da leitura do token: nada a gravar.
-      if (error instanceof PartyTransactionRevokedError) return;
+      if (error instanceof PartyTransactionRevokedError || error instanceof PartySiteNotLiveError)
+        return;
       throw error;
     }
   }

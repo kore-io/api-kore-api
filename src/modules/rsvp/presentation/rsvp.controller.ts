@@ -7,7 +7,13 @@ import {
 } from '../../../shared/http/api-error-responses.decorator';
 import { Public } from '../../../shared/http/public.decorator';
 import { SiteRoute } from '../../../shared/http/site-route.decorator';
-import { SiteDraftErrorBody, SiteNotFoundErrorBody } from '../../site/presentation/site-error.dto';
+import {
+  SiteDraftErrorBody,
+  SiteExpiredErrorBody,
+  SiteNotFoundErrorBody,
+  SiteUnavailableErrorBody,
+} from '../../site/presentation/site-error.dto';
+import { SiteExpiredConflictErrorBody } from './deliveries.dto';
 import { GetRsvp, SubmitRsvp } from '../application/rsvp.use-cases';
 import { toHttpError } from './rsvp-http-errors';
 import {
@@ -49,7 +55,9 @@ export class RsvpController {
   @ApiErrorResponses(
     ...commonErrors({}),
     PartySessionInvalidErrorBody,
+    SiteExpiredErrorBody,
     SiteNotFoundErrorBody,
+    SiteUnavailableErrorBody,
     SiteDraftErrorBody,
   )
   async get(
@@ -79,6 +87,9 @@ export class RsvpController {
     RsvpClosedErrorBody,
     RsvpRateLimitedErrorBody,
     SiteNotFoundErrorBody,
+    SiteExpiredErrorBody,
+    SiteExpiredConflictErrorBody,
+    SiteUnavailableErrorBody,
     SiteDraftErrorBody,
   )
   async put(

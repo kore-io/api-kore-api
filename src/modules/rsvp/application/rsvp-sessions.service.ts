@@ -1,11 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
+  PartySiteNotLiveError,
   PartyTransactionRevokedError,
   TenantTransaction,
   type PartyTransactionContext,
 } from '../../../shared/database/tenant-transaction';
-import { DRAFT_SITE_STATUSES } from '../../site/domain/public-site';
-import { SiteDraftError, SiteNotFoundError } from '../../site/domain/site.errors';
+import { requireLiveSite } from '../../site/domain/public-site';
+import { SiteExpiredError, SiteUnavailableError } from '../../site/domain/site.errors';
 import { PARTY_COOKIES, type PartyCookies } from '../../site/application/ports/party-cookies.port';
 import {
   PUBLIC_SITE_READER,
@@ -15,7 +16,7 @@ import {
   PreviewSessions,
   type PreviewContext,
 } from '../../site/application/preview-sessions.service';
-import { PartySessionInvalidError } from '../domain/rsvp.errors';
+import { PartySessionInvalidError, RsvpSiteNotLiveError } from '../domain/rsvp.errors';
 
 export interface RsvpPartySession {
   weddingId: string;
@@ -38,12 +39,25 @@ export class RsvpSessions {
     private readonly tenant: TenantTransaction,
   ) {}
 
-  /** O casamento no ar do endereço; rascunho e endereço que não existe saem como no site. */
+  /** O casamento no ar do endereço; rascunho, expirado, bloqueado e inexistente saem como no site. */
   async liveWedding({ slug }: { slug: string }): Promise<string> {
     const site = await this.sites.bySlug({ slug });
-    if (site && !site.live && DRAFT_SITE_STATUSES.includes(site.status)) throw new SiteDraftError();
-    if (!site || !site.live) throw new SiteNotFoundError();
+    requireLiveSite(site);
     return site.weddingId;
+  }
+
+  /**
+   * O mesmo, para gravar a resposta (Data de saída do ar RN07): no site
+   * expirado ou bloqueado, a recusa do RSVP (409 SITE_EXPIRED · 423).
+   */
+  async liveWeddingToAnswer({ slug }: { slug: string }): Promise<string> {
+    try {
+      return await this.liveWedding({ slug });
+    } catch (error) {
+      if (error instanceof SiteExpiredError) throw new RsvpSiteNotLiveError('expired');
+      if (error instanceof SiteUnavailableError) throw new RsvpSiteNotLiveError('unavailable');
+      throw error;
+    }
   }
 
   /** A prévia como grupo (Pré-visualização RN07): o trabalho roda na transação do vínculo. */
@@ -87,6 +101,8 @@ export class RsvpSessions {
       return await this.tenant.runAsParty({ ...session, work });
     } catch (error) {
       if (error instanceof PartyTransactionRevokedError) throw new PartySessionInvalidError();
+      // Data de saída do ar RN07 e RN08: o RSVP fecha no site fora do ar.
+      if (error instanceof PartySiteNotLiveError) throw new RsvpSiteNotLiveError(error.state);
       throw error;
     }
   }

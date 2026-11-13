@@ -34,7 +34,9 @@ import {
   PreviewRequiredErrorBody,
   SiteDraftErrorBody,
   SiteLinkInvalidErrorBody,
+  SiteExpiredErrorBody,
   SiteNotFoundErrorBody,
+  SiteUnavailableErrorBody,
   SitePartyNotFoundErrorBody,
 } from './site-error.dto';
 import { toHttpError } from './site-http-errors';
@@ -197,6 +199,8 @@ export class PublicSiteController {
     SiteLinkInvalidErrorBody,
     SiteDraftErrorBody,
     SiteNotFoundErrorBody,
+    SiteExpiredErrorBody,
+    SiteUnavailableErrorBody,
   )
   async partySession(
     @Param('slug') slug: string,

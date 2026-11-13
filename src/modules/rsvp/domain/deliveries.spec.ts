@@ -29,6 +29,11 @@ describe('Envios (Envios RN01, RN06 e RN07)', () => {
     expect(deliveriesClosedReason({ ...base, kind: 'save_the_date', status: 'post_event' })).toBe(
       'post_event',
     );
+    // Data de saída do ar RN07: na carência, só leitura; expirado, motivo próprio.
+    expect(deliveriesClosedReason({ ...base, kind: 'invite', status: 'grace' })).toBe('post_event');
+    expect(deliveriesClosedReason({ ...base, kind: 'invite', status: 'expired' })).toBe(
+      'site_expired',
+    );
   });
 
   it('RN06 (R4-4) - marcadores numa passada só: o grupo chamado "{link}" não vira o link', () => {

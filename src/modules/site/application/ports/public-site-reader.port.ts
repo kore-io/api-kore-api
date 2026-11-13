@@ -1,3 +1,4 @@
+import type { SiteState } from '../../domain/public-site';
 import type { SectionContent, SiteSectionType } from '../../domain/site-sections';
 
 export interface PublicSiteImage {
@@ -15,7 +16,7 @@ export interface PublicSiteImage {
  * visitante é feito no banco).
  */
 export type PublicSiteRow =
-  | { status: string; live: false }
+  | { status: string; live: false; siteState: SiteState }
   | {
       status: string;
       live: true;
@@ -41,6 +42,8 @@ export interface PartyByToken {
   weddingId: string;
   slug: string | null;
   status: string;
+  /** Pela wedding_site_state (Data de saída do ar RN08). */
+  siteState: SiteState;
   partyId: string;
   partyName: string;
   linkVersion: number;

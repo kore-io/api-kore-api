@@ -24,6 +24,7 @@ import { CurrentSession } from '../../access/presentation/current-session.decora
 import { DownloadQrCodes } from '../application/qr-codes.use-case';
 import {
   DeliveriesClosedErrorBody,
+  SiteExpiredConflictErrorBody,
   DeliveryPartyNotFoundErrorBody,
   QrCodesBody,
 } from './deliveries.dto';
@@ -56,6 +57,7 @@ export class QrCodesController {
     ActionNotAllowedErrorBody,
     WeddingNotFoundErrorBody,
     DeliveriesClosedErrorBody,
+    SiteExpiredConflictErrorBody,
     DeliveryPartyNotFoundErrorBody,
   )
   async create(

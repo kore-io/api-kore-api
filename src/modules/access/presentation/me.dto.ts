@@ -11,6 +11,19 @@ class MeUserResponse {
   @ApiProperty({ enum: ['none', 'admin', 'support'] }) platformRole: PlatformRole;
 }
 
+class MeLifecycleResponse {
+  @ApiProperty({
+    enum: ['awaiting_couple', 'draft', 'published', 'post_event', 'grace', 'expired'],
+  })
+  status: string;
+  /** A data de saída do ar (último dia pago). */
+  @ApiProperty({ type: String, nullable: true, example: '2027-02-14' }) endDate: string | null;
+  /** O último dia no ar na carência; o selo "Vence em N dias" conta até o expiredAt. */
+  @ApiProperty({ type: String, nullable: true, example: '2027-02-21' }) graceUntil: string | null;
+  @ApiProperty({ type: String, nullable: true, example: '2027-02-22' }) expiredAt: string | null;
+  @ApiProperty({ type: String, nullable: true }) deletionScheduledFor: string | null;
+}
+
 class MeMembershipResponse {
   weddingId: string;
   @ApiProperty({ enum: ['owner', 'collaborator'] }) role: 'owner' | 'collaborator';
@@ -19,6 +32,8 @@ class MeMembershipResponse {
   @ApiProperty({ type: String, nullable: true, example: '2027-03-20' }) eventDate: string | null;
   city: string;
   state: string;
+  /** As faixas e o selo da Topbar (Data de saída do ar RN06; decisão 231). */
+  @ApiProperty({ type: MeLifecycleResponse }) lifecycle: MeLifecycleResponse;
 }
 
 class MePlannerResponse {

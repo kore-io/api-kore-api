@@ -27,6 +27,7 @@ import {
   RsvpInvalidError,
   RsvpLimitError,
   RsvpRateLimitedError,
+  RsvpSiteNotLiveError,
 } from '../domain/rsvp.errors';
 
 /** Erros do RSVP para HTTP; os do endereço (SITE_NOT_FOUND, SITE_DRAFT) seguem o mapa do Site. */
@@ -45,6 +46,13 @@ export function toHttpError(error: unknown): unknown {
     });
   if (error instanceof SongCursorInvalidError)
     return validationError({ errors: [{ path: 'cursor', code: 'INVALID_CURSOR', params: {} }] });
+  // Data de saída do ar RN07: o expirado tem código próprio, com o texto da tela.
+  if (error instanceof DeliveriesClosedError && error.reason === 'site_expired')
+    return new ConflictException({
+      statusCode: 409,
+      error: 'SITE_EXPIRED',
+      message: 'The site is expired. Renew it to send.',
+    });
   if (error instanceof DeliveriesClosedError)
     return new ConflictException({
       statusCode: 409,
@@ -91,6 +99,18 @@ export function toHttpError(error: unknown): unknown {
       error: 'GUEST_NOT_FOUND',
       message: 'Guest not found.',
     });
+  // Data de saída do ar RN07 e RN08: o RSVP fecha no site fora do ar; nada é gravado.
+  if (error instanceof RsvpSiteNotLiveError)
+    return error.state === 'expired'
+      ? new ConflictException({
+          statusCode: 409,
+          error: 'SITE_EXPIRED',
+          message: 'The site is expired. Answers are closed.',
+        })
+      : new HttpException(
+          { statusCode: 423, error: 'SITE_UNAVAILABLE', message: 'This site is unavailable.' },
+          423,
+        );
   if (error instanceof PartySessionInvalidError)
     return new UnauthorizedException({
       statusCode: 401,

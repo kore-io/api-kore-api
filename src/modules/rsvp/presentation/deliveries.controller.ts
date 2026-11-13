@@ -24,6 +24,7 @@ import { CurrentSession } from '../../access/presentation/current-session.decora
 import { GetDeliveryQueue, MarkDeliveries } from '../application/deliveries.use-cases';
 import {
   DeliveriesClosedErrorBody,
+  SiteExpiredConflictErrorBody,
   DeliveryNotAllowedErrorBody,
   DeliveryPartyNotFoundErrorBody,
   DeliveryQueueQuery,
@@ -49,6 +50,7 @@ export class DeliveriesController {
     ActionNotAllowedErrorBody,
     WeddingNotFoundErrorBody,
     DeliveriesClosedErrorBody,
+    SiteExpiredConflictErrorBody,
   )
   async getQueue(
     @CurrentSession() session: AuthenticatedSession,
@@ -80,6 +82,7 @@ export class DeliveriesController {
     ActionNotAllowedErrorBody,
     WeddingNotFoundErrorBody,
     DeliveriesClosedErrorBody,
+    SiteExpiredConflictErrorBody,
     DeliveryPartyNotFoundErrorBody,
     DeliveryNotAllowedErrorBody,
   )

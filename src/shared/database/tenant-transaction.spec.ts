@@ -1,5 +1,9 @@
 import type { PrismaService } from './prisma.service';
-import { PartyTransactionRevokedError, TenantTransaction } from './tenant-transaction';
+import {
+  PartySiteNotLiveError,
+  PartyTransactionRevokedError,
+  TenantTransaction,
+} from './tenant-transaction';
 
 function tenantWith({ commits }: { commits: boolean }) {
   const tx = { $queryRaw: jest.fn().mockResolvedValue([]) };
@@ -94,8 +98,9 @@ describe('TenantTransaction (decisões 153 e 170)', () => {
     }
 
     it('define o casamento e o grupo, sem pessoa, entra no papel do grupo e reconfere o grupo antes do trabalho', async () => {
-      const context = { status: 'published' };
-      const { tenant, calls } = partyTenant({ context });
+      const { tenant, calls } = partyTenant({
+        context: { siteState: 'live', status: 'published' },
+      });
       const task = jest.fn().mockResolvedValue(undefined);
 
       const result = await tenant.runAsParty({
@@ -108,7 +113,8 @@ describe('TenantTransaction (decisões 153 e 170)', () => {
         },
       });
 
-      expect(result).toBe(context);
+      // O estado do site não vai ao trabalho: só o contexto do casamento.
+      expect(result).toEqual({ status: 'published' });
       expect(calls.map((call) => call.slice(1))).toEqual([
         ['app.wedding_id', 'w1'],
         ['app.party_id', 'p1'],
@@ -118,6 +124,18 @@ describe('TenantTransaction (decisões 153 e 170)', () => {
       expect(calls[2][0]).toBe('SET LOCAL ROLE kore_party');
       expect(task).toHaveBeenCalled();
     });
+
+    it.each(['expired', 'unavailable'] as const)(
+      'Data de saída do ar RN07 e RN08 - site %s: nada roda e o erro diz o estado',
+      async (siteState) => {
+        const { tenant } = partyTenant({ context: { siteState } });
+        const work = jest.fn();
+        await expect(
+          tenant.runAsParty({ weddingId: 'w1', partyId: 'p1', linkVersion: 1, work }),
+        ).rejects.toEqual(new PartySiteNotLiveError(siteState));
+        expect(work).not.toHaveBeenCalled();
+      },
+    );
 
     it('RN11 - grupo que não vale mais: nada roda', async () => {
       const { tenant } = partyTenant({ context: null });

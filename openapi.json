@@ -5539,6 +5539,26 @@
             },
             "description": ""
           },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteUnavailableErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
           "429": {
             "content": {
               "application/json": {
@@ -5773,6 +5793,26 @@
             },
             "description": ""
           },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteUnavailableErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
           "429": {
             "content": {
               "application/json": {
@@ -5886,8 +5926,31 @@
                     },
                     {
                       "$ref": "#/components/schemas/RsvpClosedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteExpiredConflictErrorBody"
                     }
                   ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteUnavailableErrorBody"
                 }
               }
             },
@@ -6439,7 +6502,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeliveriesClosedErrorBody"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/DeliveriesClosedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteExpiredConflictErrorBody"
+                    }
+                  ]
                 }
               }
             },
@@ -6554,7 +6624,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeliveriesClosedErrorBody"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/DeliveriesClosedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteExpiredConflictErrorBody"
+                    }
+                  ]
                 }
               }
             },
@@ -6686,7 +6763,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeliveriesClosedErrorBody"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/DeliveriesClosedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SiteExpiredConflictErrorBody"
+                    }
+                  ]
                 }
               }
             },
@@ -9234,6 +9318,50 @@
           "next"
         ]
       },
+      "MeLifecycleResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "awaiting_couple",
+              "draft",
+              "published",
+              "post_event",
+              "grace",
+              "expired"
+            ]
+          },
+          "endDate": {
+            "type": "string",
+            "nullable": true,
+            "description": "A data de saída do ar (último dia pago).",
+            "example": "2027-02-14"
+          },
+          "graceUntil": {
+            "type": "string",
+            "nullable": true,
+            "description": "O último dia no ar na carência; o selo \"Vence em N dias\" conta até o expiredAt.",
+            "example": "2027-02-21"
+          },
+          "expiredAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2027-02-22"
+          },
+          "deletionScheduledFor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "status",
+          "endDate",
+          "graceUntil",
+          "expiredAt",
+          "deletionScheduledFor"
+        ]
+      },
       "MeMembershipResponse": {
         "type": "object",
         "properties": {
@@ -9248,6 +9376,14 @@
             "type": "string",
             "nullable": true,
             "example": "2027-03-20"
+          },
+          "lifecycle": {
+            "description": "As faixas e o selo da Topbar (Data de saída do ar RN06; decisão 231).",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MeLifecycleResponse"
+              }
+            ]
           },
           "weddingId": {
             "type": "string"
@@ -9266,6 +9402,7 @@
         "required": [
           "role",
           "eventDate",
+          "lifecycle",
           "weddingId",
           "weddingName",
           "city",
@@ -14695,6 +14832,56 @@
           "message"
         ]
       },
+      "SiteExpiredErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              410
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SITE_EXPIRED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SiteUnavailableErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              423
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SITE_UNAVAILABLE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
       "PartySessionBody": {
         "type": "object",
         "properties": {
@@ -15098,6 +15285,31 @@
               "RSVP_LIMIT"
             ],
             "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SiteExpiredConflictErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SITE_EXPIRED"
+            ]
           },
           "message": {
             "type": "string"

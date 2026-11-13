@@ -140,7 +140,7 @@ export class SubmitRsvp {
     ip: string;
     now: Date;
   }): Promise<RsvpView> {
-    const weddingId = await this.sessions.liveWedding({ slug });
+    const weddingId = await this.sessions.liveWeddingToAnswer({ slug });
     const preview = await this.sessions.preview({
       slug,
       cookies,
