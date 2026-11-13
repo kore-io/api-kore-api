@@ -7,8 +7,15 @@ export interface PaymentConfirmedNotice {
   partnerNames: [string, string];
 }
 
+/** O e-mail do Pix vencido (Publicar e pagar RN11 e RN13), sem valor. */
+export interface PixExpiredNotice {
+  to: string;
+  partnerNames: [string, string];
+}
+
 export interface BillingMailer {
   paymentConfirmed({ notice }: { notice: PaymentConfirmedNotice }): Promise<void>;
+  pixExpired({ notice }: { notice: PixExpiredNotice }): Promise<void>;
 }
 
 export const BILLING_MAILER = Symbol('BillingMailer');

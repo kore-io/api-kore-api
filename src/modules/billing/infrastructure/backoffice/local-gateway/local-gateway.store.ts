@@ -77,6 +77,10 @@ CREATE TABLE IF NOT EXISTS ${LOCAL_GATEWAY_SCHEMA}.controls (
   value integer NOT NULL
 )`;
 
+function failureControl(scope?: string): string {
+  return scope ? `fail_next_calls:${scope}` : 'fail_next_calls';
+}
+
 /**
  * O estado do gateway local no Postgres, e não em memória: a API cria a
  * cobrança e o worker a consulta, em processos diferentes (B2-14). O esquema é
@@ -104,24 +108,33 @@ export class LocalGatewayStore {
     return this.ready;
   }
 
-  /** "O gateway não responde nas próximas N chamadas" (RN15; B2-15). */
-  async failNextCalls({ count }: { count: number }): Promise<void> {
+  /**
+   * "O gateway não responde nas próximas N chamadas" (RN15; B2-15). Sem
+   * escopo, vale para qualquer chamada (a rota dev e o Bruno); com escopo, só
+   * para as chamadas daquele cliente (pelo nome), referência ou cobrança.
+   */
+  async failNextCalls({ count, scope }: { count: number; scope?: string }): Promise<void> {
     await this.ensureTables();
     await this.db.$executeRawUnsafe(
-      `INSERT INTO ${LOCAL_GATEWAY_SCHEMA}.controls (name, value) VALUES ('fail_next_calls', $1)
+      `INSERT INTO ${LOCAL_GATEWAY_SCHEMA}.controls (name, value) VALUES ($1, $2)
        ON CONFLICT (name) DO UPDATE SET value = EXCLUDED.value`,
+      failureControl(scope),
       count,
     );
   }
 
-  /** Consome uma falha programada; true quando esta chamada deve falhar. */
-  async consumeFailure(): Promise<boolean> {
+  /** Consome uma falha programada (a do escopo, depois a global); true quando esta chamada deve falhar. */
+  async consumeFailure({ scope }: { scope?: string } = {}): Promise<boolean> {
     await this.ensureTables();
-    const rows = await this.db.$queryRawUnsafe<{ value: number }[]>(
-      `UPDATE ${LOCAL_GATEWAY_SCHEMA}.controls SET value = value - 1
-       WHERE name = 'fail_next_calls' AND value > 0 RETURNING value`,
-    );
-    return rows.length > 0;
+    for (const name of scope ? [failureControl(scope), failureControl()] : [failureControl()]) {
+      const rows = await this.db.$queryRawUnsafe<{ value: number }[]>(
+        `UPDATE ${LOCAL_GATEWAY_SCHEMA}.controls SET value = value - 1
+         WHERE name = $1 AND value > 0 RETURNING value`,
+        name,
+      );
+      if (rows.length > 0) return true;
+    }
+    return false;
   }
 
   async createCustomer({

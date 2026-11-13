@@ -14,6 +14,7 @@ import {
 } from '../../logs/application/ports/application-log-writer.port';
 import {
   IdempotencyKeyReusedError,
+  PaymentAlreadyPaidError,
   PaymentGatewayUnavailableError,
   PaymentPendingError,
   PriceChangedError,
@@ -36,6 +37,7 @@ import {
   type PaymentGateway,
 } from './ports/payment-gateway.port';
 import { QUOTE_TARGET_READER, type QuoteTargetReader } from './ports/quote-target.reader.port';
+import { SyncPaymentWithGateway } from './sync-payment.use-case';
 
 /** O Pix vale 24 horas (decisão 41). */
 const PIX_VALIDITY_MS = 24 * 60 * 60 * 1000;
@@ -50,6 +52,8 @@ export interface CreatePaymentInput {
   installments: number;
   payer: { name: string; taxId: string };
   cardToken: string | null;
+  /** O pendente que este pedido troca (RN07; B2-4). */
+  replacesPaymentId: string | null;
   priceVersion: string;
   expectedTotalCents: number;
   ip: string | null;
@@ -77,6 +81,11 @@ export interface PaymentCreated {
  * O site só vai ao ar na confirmação (RN04), no worker. A mesma
  * Idempotency-Key com o mesmo corpo devolve o mesmo Payment (e retoma o
  * passo 2 se ele não terminou); com outro corpo, 422.
+ *
+ * Trocar o pendente (RN07; B2-4: Gerar novo Pix, trocar o Pix pelo cartão):
+ * antes do passo 1, cancela o anterior no gateway, fora de transação, e
+ * aplica o estado que a consulta devolve. Se o gateway diz que já foi pago, o
+ * pagamento é aplicado e o pedido recebe 409 PAYMENT_ALREADY_PAID.
  */
 @Injectable()
 export class CreatePayment {
@@ -89,11 +98,14 @@ export class CreatePayment {
     @Inject(PAYMENT_GATEWAY) private readonly gateway: PaymentGateway,
     @Inject(TAX_ID_HASHER) private readonly taxIds: TaxIdHasher,
     @Inject(APPLICATION_LOG_WRITER) private readonly log: ApplicationLogWriter,
+    private readonly sync: SyncPaymentWithGateway,
   ) {}
 
   async execute(input: CreatePaymentInput): Promise<PaymentCreated> {
     const digest = this.taxIds.digest({ taxId: input.payer.taxId });
     const requestHash = requestHashOf({ input, payerTaxIdHash: digest.hash });
+    if (input.replacesPaymentId)
+      await this.replacePending({ input, replacesPaymentId: input.replacesPaymentId });
 
     // Transação 1 (RN03, passo 1).
     const payment = await this.scope.run({
@@ -204,6 +216,11 @@ export class CreatePayment {
     )
       throw new PriceChangedError();
 
+    // RN07: só o anterior deste casamento e do mesmo tipo (a FK não amarra o
+    // casamento); o id de outro casamento, ou que não existe, não é gravado.
+    const replaced = input.replacesPaymentId
+      ? await this.payments.byId({ weddingId, paymentId: input.replacesPaymentId })
+      : null;
     const id = uuidV7({ now: input.now.getTime() });
     await this.payments.insertPending({
       payment: {
@@ -233,6 +250,7 @@ export class CreatePayment {
         createdByUserId: userId,
         previousEndDate: input.kind === 'extension' ? wedding.endDate : null,
         previousPaidThrough: input.kind === 'extension' ? wedding.paidThrough : null,
+        replacesPaymentId: replaced && replaced.kind === input.kind ? replaced.id : null,
       },
     });
     await this.log.record({
@@ -256,6 +274,66 @@ export class CreatePayment {
     const payment = await this.payments.byId({ weddingId, paymentId: id });
     if (!payment) throw new WeddingNotFoundError();
     return payment;
+  }
+
+  /**
+   * Cancela o pendente trocado (RN07; B2-4). O pedido repetido com a mesma
+   * chave já criou o novo: segue o caminho da idempotência. O trocado que não
+   * é deste casamento, ou que já não está pendente, não muda nada; o pago
+   * recebe 409; o de outro tipo também não muda. A consulta pela referência vale mesmo sem o id do gateway.
+   */
+  private async replacePending({
+    input,
+    replacesPaymentId,
+  }: {
+    input: CreatePaymentInput;
+    replacesPaymentId: string;
+  }): Promise<void> {
+    const { userId, weddingId } = input;
+    const replaced = await this.scope.run({
+      userId,
+      weddingId,
+      work: async () => {
+        await this.authorization.require({ userId, weddingId, action: 'manage_billing' });
+        const existing = await this.payments.byIdempotencyKey({
+          weddingId,
+          idempotencyKey: input.idempotencyKey,
+        });
+        if (existing) return null;
+        return this.payments.byId({ weddingId, paymentId: replacesPaymentId });
+      },
+    });
+    // Só troca o pendente do mesmo tipo (a publicação não cancela a extensão).
+    if (!replaced || replaced.kind !== input.kind) return;
+    if (['paid', 'refund_requested', 'refunded', 'disputed'].includes(replaced.status))
+      throw new PaymentAlreadyPaidError();
+    if (replaced.status !== 'pending') return;
+
+    // Fora de transação (RN19).
+    try {
+      let charge = await this.gateway.getCharge({ externalReference: replaced.id });
+      if (!charge) {
+        await this.sync.cancelWithoutCharge({ paymentId: replaced.id, now: input.now });
+        return;
+      }
+      if (charge.status === 'pending' || charge.status === 'overdue') {
+        await this.gateway.cancelCharge({ gatewayPaymentId: charge.gatewayPaymentId });
+        // O estado depois do cancelamento: cancelado, ou pago no meio do caminho.
+        charge = await this.gateway.getCharge({ externalReference: replaced.id });
+        if (!charge) return;
+      }
+      await this.sync.execute({
+        paymentId: replaced.id,
+        charge,
+        now: input.now,
+        cancelReason: 'replaced',
+      });
+      if (charge.status === 'confirmed') throw new PaymentAlreadyPaidError();
+    } catch (error) {
+      if (error instanceof GatewayUnavailableError)
+        throw new PaymentGatewayUnavailableError(replaced.id);
+      throw error;
+    }
   }
 
   /** Passo 2: o cliente do pagador (B2-11) e a cobrança, com a referência do Kore. */
@@ -346,6 +424,8 @@ export function requestHashOf({
     payerTaxIdHash,
     input.priceVersion,
     input.expectedTotalCents,
+    // Só quando troca: o hash dos pedidos sem troca continua o mesmo.
+    ...(input.replacesPaymentId ? [input.replacesPaymentId] : []),
   ]);
   return createHash('sha256').update(canonical).digest('base64url');
 }

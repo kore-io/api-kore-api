@@ -24,6 +24,14 @@ export class PaymentPendingErrorBody {
   @ApiProperty() message: string;
 }
 
+/** O pendente trocado já estava pago; o Kore o aplicou (RN07; B2-4). */
+export class PaymentAlreadyPaidErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['PAYMENT_ALREADY_PAID'] }) error: 'PAYMENT_ALREADY_PAID';
+  @ApiProperty() message: string;
+}
+
 export class RefundInProgressErrorBody {
   static readonly status = 409;
   @ApiProperty({ enum: [409] }) statusCode: 409;

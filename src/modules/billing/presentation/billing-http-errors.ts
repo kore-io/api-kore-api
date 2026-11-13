@@ -13,6 +13,7 @@ import {
   BillingSlugMissingError,
   IdempotencyKeyReusedError,
   NotPublishedError,
+  PaymentAlreadyPaidError,
   PaymentGatewayUnavailableError,
   PaymentPendingError,
   PriceChangedError,
@@ -70,6 +71,12 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 409,
       error: 'PAYMENT_PENDING',
       message: 'There is already a payment awaiting confirmation.',
+    });
+  if (error instanceof PaymentAlreadyPaidError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'PAYMENT_ALREADY_PAID',
+      message: 'The payment being replaced was already paid.',
     });
   if (error instanceof RefundInProgressError)
     return new ConflictException({

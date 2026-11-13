@@ -39,6 +39,14 @@ export class RefundInProgressError extends Error {
   override name = 'RefundInProgressError';
 }
 
+/**
+ * O pendente que o pedido ia trocar já foi pago (Publicar e pagar RN07;
+ * B2-4): o Kore aplica o pagamento e não cria outro.
+ */
+export class PaymentAlreadyPaidError extends Error {
+  override name = 'PaymentAlreadyPaidError';
+}
+
 /** O total ou a versão do preço mudaram desde a cotação (Preço e cotação RN05). */
 export class PriceChangedError extends Error {
   override name = 'PriceChangedError';

@@ -4,6 +4,14 @@ import { GATEWAY_EVENT_QUEUE } from './application/ports/gateway-event.queue.por
 import { GATEWAY_EVENT_STORE } from './application/ports/gateway-event.store.port';
 import { ProcessGatewayEvent } from './application/process-gateway-event.use-case';
 import { RequeueGatewayEvents } from './application/requeue-gateway-events.use-case';
+import { PAYMENT_RECONCILIATION_READER } from './application/ports/payment-reconciliation.reader.port';
+import { ReconcilePayments } from './application/reconcile-payments.use-case';
+import { PrismaPaymentReconciliationReader } from './infrastructure/backoffice/prisma-payment-reconciliation.reader';
+import {
+  PAYMENT_RECONCILIATION_QUEUE,
+  PaymentReconciliationProcessor,
+  PaymentReconciliationScheduler,
+} from './infrastructure/payment-reconciliation.job';
 import { PrismaGatewayEventStore } from './infrastructure/backoffice/prisma-gateway-event.store';
 import {
   GatewayEventsProcessor,
@@ -25,10 +33,14 @@ import { PRODUCT_EVENT_RECORDER } from '../product-events/application/ports/prod
 import { PrismaProductEventRecorder } from '../product-events/infrastructure/prisma-product-event-recorder';
 import { WeddingPseudonymizer } from '../product-events/infrastructure/wedding-pseudonymizer';
 
-/** Cobrança e publicação (F3), do lado do worker: o processamento dos eventos do gateway. */
+/**
+ * Cobrança e publicação (F3), do lado do worker: o processamento dos eventos
+ * do gateway e a reconciliação (RN11).
+ */
 @Module({
   imports: [
     BullModule.registerQueue({ name: GATEWAY_EVENTS_QUEUE }),
+    BullModule.registerQueue({ name: PAYMENT_RECONCILIATION_QUEUE }),
     // O e-mail do pagamento confirmado entra na fila de e-mail, como na API.
     EmailQueuesModule,
   ],
@@ -51,6 +63,10 @@ import { WeddingPseudonymizer } from '../product-events/infrastructure/wedding-p
     RequeueGatewayEvents,
     GatewayEventsProcessor,
     GatewayEventsRequeueScheduler,
+    { provide: PAYMENT_RECONCILIATION_READER, useClass: PrismaPaymentReconciliationReader },
+    ReconcilePayments,
+    PaymentReconciliationProcessor,
+    PaymentReconciliationScheduler,
   ],
 })
 export class BillingWorkerModule {}

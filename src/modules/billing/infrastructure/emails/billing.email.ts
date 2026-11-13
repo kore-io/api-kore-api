@@ -4,7 +4,10 @@ import {
   SUPPORT_LINE,
   type EmailBlock,
 } from '../../../access/infrastructure/emails/email-layout';
-import type { PaymentConfirmedNotice } from '../../application/ports/billing-mailer.port';
+import type {
+  PaymentConfirmedNotice,
+  PixExpiredNotice,
+} from '../../application/ports/billing-mailer.port';
 
 /** "14 de fev. de 2027": a data é um dia, sem fuso. */
 export function formatDay(day: string): string {
@@ -65,6 +68,30 @@ export function paymentConfirmedEmail({
         kind: 'paragraph',
         text: 'Vocês podem desistir em até 7 dias depois de pagar, em Pagamentos.',
       },
+    ],
+    footer: `Você recebeu este e-mail porque o casamento de ${partner1} e ${partner2} é seu no Kore.`,
+  });
+}
+
+/** "O código Pix venceu" (Publicar e pagar RN11 e RN13; textos da Pena). Sem valor. */
+export function pixExpiredEmail({
+  notice,
+  url,
+}: {
+  notice: PixExpiredNotice;
+  url: string;
+}): EmailMessage {
+  const [partner1, partner2] = notice.partnerNames;
+  return message({
+    to: notice.to,
+    subject: 'O código Pix venceu',
+    preheader: 'O site continua em rascunho.',
+    blocks: [
+      {
+        kind: 'paragraph',
+        text: 'O código Pix para publicar o site venceu antes do pagamento. Gerem um novo para publicar.',
+      },
+      { kind: 'button', text: 'Gerar novo Pix', href: url },
     ],
     footer: `Você recebeu este e-mail porque o casamento de ${partner1} e ${partner2} é seu no Kore.`,
   });

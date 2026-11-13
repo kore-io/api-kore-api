@@ -19,6 +19,9 @@ export interface LedgerPayment extends ConfirmingPayment {
   createdByUserId: string | null;
   gatewayPaymentId: string | null;
   shortCode: number;
+  /** O vencimento do Pix (RN11); nulo no cartão e antes do passo 3 da RN03. */
+  dueAt: Date | null;
+  createdAt: Date;
 }
 
 /** Quem recebe o aviso da cobrança (RN13): as pessoas donas, com o nome do e-mail. */

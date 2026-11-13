@@ -65,6 +65,8 @@ export class PrismaPaymentLedger implements PaymentLedger {
         createdByUserId: true,
         gatewayPaymentId: true,
         shortCode: true,
+        dueAt: true,
+        createdAt: true,
       },
     });
     const ledgerWedding: LedgerWedding = {

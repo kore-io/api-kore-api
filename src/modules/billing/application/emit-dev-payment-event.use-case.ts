@@ -19,7 +19,9 @@ export type DevEventResult =
  * GatewayEvent e vai à fila). `repeat` reenvia o mesmo evento (mesmo id). Em
  * seguida processa em linha e só então responde, para o teste e o Bruno
  * verem o efeito sem esperar a fila; o job da fila acha o evento processado.
- * `failNextGatewayCall`: a próxima chamada à porta não responde (B2-15).
+ * `failNextGatewayCall`: a próxima chamada à porta sobre este pagamento (ou
+ * repasse) não responde (B2-15); com o escopo, o teste e o Bruno não atingem
+ * as chamadas de outro pagamento.
  */
 @Injectable()
 export class EmitDevPaymentEvent {
@@ -63,7 +65,7 @@ export class EmitDevPaymentEvent {
       eventIds.add(receipt.eventId);
       for (const eventId of eventIds) await this.processEvent.execute({ eventId, now });
     }
-    if (failNextGatewayCall) await this.store.failNextCalls({ count: 1 });
+    if (failNextGatewayCall) await this.store.failNextCalls({ count: 1, scope: id });
     return { kind: 'emitted', gatewayEventId: body.id, deliveries: repeat };
   }
 
