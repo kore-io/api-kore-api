@@ -7,6 +7,8 @@ export interface ReconcilingPayment {
   status: 'pending' | 'paid' | 'failed' | 'canceled' | 'refund_requested' | 'refunded' | 'disputed';
   dueAt: Date | null;
   createdAt: Date;
+  refundRequestedAt: Date | null;
+  refundFailedAt: Date | null;
 }
 
 /**

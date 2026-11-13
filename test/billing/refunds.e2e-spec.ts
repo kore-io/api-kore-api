@@ -451,6 +451,16 @@ describe('Pagamentos e arrependimento (RN02 a RN08; banco real)', () => {
     expect((await wedding(weddingId)).status).toBe('published');
   });
 
+  it('RN02 a RN04 (isolamento) - o pagamento de outro casamento da mesma dona, pela URL de um rascunho: 404, e o outro fica intocado', async () => {
+    const { ana, weddingId: weddingA, paymentId } = await published();
+    const { weddingId: weddingB } = await seedWedding({ db, ownerId: ana.userId });
+
+    const response = expectStatus(await refund(ana.cookie, weddingB, paymentId), 404);
+    expect(response.body).toMatchObject({ error: 'PAYMENT_NOT_FOUND' });
+    expect(await wedding(weddingA)).toMatchObject({ status: 'published' });
+    expect(await payment(paymentId)).toMatchObject({ status: 'paid', refundOrigin: null });
+  });
+
   it('RN02 - recusas: colaboradora, pendente, contestado, bloqueado e pagamento de outro casamento', async () => {
     const { ana, juliana, weddingId, paymentId } = await published();
     const other = await published();

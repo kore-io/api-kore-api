@@ -13,6 +13,8 @@ const SELECT = {
   status: true,
   dueAt: true,
   createdAt: true,
+  refundRequestedAt: true,
+  refundFailedAt: true,
 } as const;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

@@ -23,11 +23,13 @@ GRANT SELECT ("type", "entity_type", "entity_id", "status") ON "alerts" TO kore_
 --     casamento volta a rascunho, sem endDate, paidThrough nem origem (RN03 e RN07);
 --   * a extensão volta a data a min(atual, anterior) e o paidThrough ao anterior;
 --   * o 2º reembolso de publicação do casamento abre o alerta repeated_refund.
+-- O requested_at vem do app (o relógio injetado, RN10): só o caso de uso da
+-- requisição a chama, com a hora do pedido.
 -- Devolve o resultado, os pagamentos que passaram a refund_requested e o último
 -- instante do prazo (refundableUntil, para o Toast do 409). O id do
 -- alerta vem do app (UUID v7).
-CREATE FUNCTION request_payment_refund(payment uuid, reason text, requested_at timestamptz,
-                                       alert_id uuid)
+CREATE FUNCTION request_payment_refund(wedding uuid, payment uuid, reason text,
+                                       requested_at timestamptz, alert_id uuid)
   RETURNS TABLE (result text, payment_ids uuid[], refundable_until timestamptz)
   LANGUAGE plpgsql
   VOLATILE
@@ -40,9 +42,11 @@ CREATE FUNCTION request_payment_refund(payment uuid, reason text, requested_at t
     ids uuid[];
     window_end timestamptz;
   BEGIN
+    -- Só o pagamento do casamento do pedido (o da URL), e só se a pessoa é dona dele.
     SELECT p.* INTO target FROM public.payments p
     WHERE p.id = request_payment_refund.payment
-      AND p.wedding_id IN (SELECT public.owned_wedding_ids());
+      AND p.wedding_id = request_payment_refund.wedding
+      AND request_payment_refund.wedding IN (SELECT public.owned_wedding_ids());
     IF NOT FOUND THEN
       RETURN QUERY SELECT 'not_found'::text, ARRAY[]::uuid[], NULL::timestamptz;
       RETURN;
@@ -136,6 +140,6 @@ CREATE FUNCTION request_payment_refund(payment uuid, reason text, requested_at t
     RETURN QUERY SELECT 'requested'::text, ids, window_end - interval '1 millisecond';
   END
   $$;
-ALTER FUNCTION request_payment_refund(uuid, text, timestamptz, uuid) OWNER TO kore_rls;
-REVOKE ALL ON FUNCTION request_payment_refund(uuid, text, timestamptz, uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION request_payment_refund(uuid, text, timestamptz, uuid) TO kore_app;
+ALTER FUNCTION request_payment_refund(uuid, uuid, text, timestamptz, uuid) OWNER TO kore_rls;
+REVOKE ALL ON FUNCTION request_payment_refund(uuid, uuid, text, timestamptz, uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION request_payment_refund(uuid, uuid, text, timestamptz, uuid) TO kore_app;

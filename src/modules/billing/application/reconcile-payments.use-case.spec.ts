@@ -24,6 +24,8 @@ function pending(id: string, overrides: Partial<ReconcilingPayment> = {}): Recon
     // Vencido: criado há mais de 24 h, vencimento ontem.
     dueAt: new Date('2026-08-11T18:20:00Z'),
     createdAt: new Date('2026-08-10T18:20:00Z'),
+    refundRequestedAt: null,
+    refundFailedAt: null,
     ...overrides,
   };
 }
@@ -155,5 +157,36 @@ describe('ReconcilePayments (Publicar e pagar RN11)', () => {
     });
     await useCase.pending({ now });
     expect(sync.cancelWithoutCharge).toHaveBeenCalledWith({ paymentId: 'p1', now });
+  });
+
+  it('RN05 (sugestão do Crivo) - o estorno pedido há mais de 7 dias que o gateway não fez: alerta', async () => {
+    const stuck = pending('p1', {
+      status: 'refund_requested',
+      refundRequestedAt: new Date('2026-08-01T12:00:00Z'),
+    });
+    const fresh = pending('p2', {
+      status: 'refund_requested',
+      refundRequestedAt: new Date('2026-08-10T12:00:00Z'),
+    });
+    const { useCase, sync, ledger } = build({
+      payments: { settled: jest.fn().mockResolvedValue([stuck, fresh]) },
+      gateway: {
+        getCharge: jest
+          .fn()
+          .mockImplementation(({ externalReference }: { externalReference: string }) =>
+            Promise.resolve(charge(externalReference, 'confirmed')),
+          ),
+      },
+    });
+    sync.execute.mockResolvedValue('already_confirmed');
+    const tally = await useCase.settled({ now });
+    expect(tally).toMatchObject({ checked: 2, alerts: 1 });
+    expect(ledger.openAlert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'webhook_failure',
+        entityId: 'p1',
+        data: expect.objectContaining({ reason: 'refund_not_concluded' }),
+      }),
+    );
   });
 });

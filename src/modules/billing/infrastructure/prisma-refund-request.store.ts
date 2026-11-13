@@ -11,11 +11,13 @@ export class PrismaRefundRequestStore implements RefundRequestStore {
   constructor(private readonly tenant: TenantTransaction) {}
 
   async request({
+    weddingId,
     paymentId,
     reason,
     now,
     alertId,
   }: {
+    weddingId: string;
     paymentId: string;
     reason: string | null;
     now: Date;
@@ -25,7 +27,8 @@ export class PrismaRefundRequestStore implements RefundRequestStore {
       { result: RefundRequestResult; payment_ids: string[]; refundable_until: Date | null }[]
     >`
       SELECT result, payment_ids, refundable_until
-      FROM request_payment_refund(${paymentId}::uuid, ${reason}, ${now}::timestamptz,
+      FROM request_payment_refund(${weddingId}::uuid, ${paymentId}::uuid, ${reason},
+                                  ${now}::timestamptz,
                                   ${alertId}::uuid)`;
     return {
       result: row?.result ?? 'not_found',

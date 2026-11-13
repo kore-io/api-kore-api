@@ -73,6 +73,7 @@ export class RequestRefund {
       work: async () => {
         await this.authorization.require({ userId, weddingId, action: 'manage_billing' });
         const requested = await this.store.request({
+          weddingId,
           paymentId,
           reason,
           now,

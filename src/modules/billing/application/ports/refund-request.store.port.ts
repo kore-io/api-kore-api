@@ -22,6 +22,8 @@ export interface RefundedPaymentRow {
  */
 export interface RefundRequestStore {
   request(input: {
+    /** O casamento do pedido: o pagamento de outro casamento é not_found. */
+    weddingId: string;
     paymentId: string;
     reason: string | null;
     now: Date;
