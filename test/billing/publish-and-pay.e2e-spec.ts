@@ -39,8 +39,6 @@ describe('Publicar e pagar (Publicar e pagar RN01 a RN12; banco real)', () => {
     // O e-mail sai pela fila: o worker entrega no Mailpit.
     worker = await createTestWorker();
     db = app.get(BackofficePrismaService);
-    // A falha programada do gateway local é global: nenhuma sobra de outra rodada.
-    await app.get(LocalGatewayStore).failNextCalls({ count: 0 });
   });
 
   afterAll(async () => {
@@ -390,9 +388,16 @@ describe('Publicar e pagar (Publicar e pagar RN01 a RN12; banco real)', () => {
 
   it('RN03 (B2-1) - o gateway não responde: 503, o Payment fica pendente sem id do gateway; o webhook depois acha pela referência', async () => {
     const { ana, weddingId } = await scenario();
-    await app.get(LocalGatewayStore).failNextCalls({ count: 1 });
+    // A falha com escopo no pagador: as suítes em paralelo não a consomem.
+    const payerName = `Ana Sem Resposta ${randomUUID()}`;
+    await app.get(LocalGatewayStore).failNextCalls({ count: 1, scope: payerName });
     const key = randomUUID();
-    const failed = await pay({ cookie: ana.cookie, weddingId, key }).expect(503);
+    const failed = await pay({
+      cookie: ana.cookie,
+      weddingId,
+      key,
+      overrides: { payer: { name: payerName, taxId: CPF } },
+    }).expect(503);
     expect(failed.body).toMatchObject({ error: 'GATEWAY_UNAVAILABLE' });
     const paymentId = failed.body.paymentId as string;
     expect(await db.payment.findUniqueOrThrow({ where: { id: paymentId } })).toMatchObject({

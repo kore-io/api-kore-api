@@ -42,6 +42,7 @@ export interface NewPendingPayment {
   createdByUserId: string;
   previousEndDate: string | null;
   previousPaidThrough: string | null;
+  replacesPaymentId: string | null;
 }
 
 /**

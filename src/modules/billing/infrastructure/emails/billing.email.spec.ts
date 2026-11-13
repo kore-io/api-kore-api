@@ -1,4 +1,4 @@
-import { formatDay, paymentConfirmedEmail } from './billing.email';
+import { formatDay, paymentConfirmedEmail, pixExpiredEmail } from './billing.email';
 
 describe('E-mail de pagamento confirmado (Publicar e pagar RN13; textos da Pena)', () => {
   const email = paymentConfirmedEmail({
@@ -33,5 +33,23 @@ describe('E-mail de pagamento confirmado (Publicar e pagar RN13; textos da Pena)
 
   it('formatDay - o dia, sem o fuso mudar a data', () => {
     expect(formatDay('2027-02-14')).toBe('14 de fev. de 2027');
+  });
+});
+
+describe('E-mail do Pix vencido (Publicar e pagar RN11 e RN13; textos da Pena)', () => {
+  const email = pixExpiredEmail({
+    notice: { to: 'ana@kore.local', partnerNames: ['Ana', 'Marcos'] },
+    url: 'http://localhost:5173/app/cobranca',
+  });
+
+  it('RN13 - assunto, pré-cabeçalho, corpo e botão da Pena, sem valor', () => {
+    expect(email.subject).toBe('O código Pix venceu');
+    expect(email.html).toContain('O site continua em rascunho.');
+    expect(email.text).toContain(
+      'O código Pix para publicar o site venceu antes do pagamento. Gerem um novo para publicar.',
+    );
+    expect(email.text).toContain('Gerar novo Pix: http://localhost:5173/app/cobranca');
+    expect(email.text).toContain('Dúvidas? Escreva para suporte@kore.com.br.');
+    expect(email.text).not.toMatch(/R\$/);
   });
 });

@@ -8637,6 +8637,9 @@
                       "$ref": "#/components/schemas/PaymentPendingErrorBody"
                     },
                     {
+                      "$ref": "#/components/schemas/PaymentAlreadyPaidErrorBody"
+                    },
+                    {
                       "$ref": "#/components/schemas/RefundInProgressErrorBody"
                     },
                     {
@@ -17544,6 +17547,31 @@
           "message"
         ]
       },
+      "PaymentAlreadyPaidErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PAYMENT_ALREADY_PAID"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
       "RefundInProgressErrorBody": {
         "type": "object",
         "properties": {
@@ -17706,6 +17734,11 @@
             "description": "O token do cartão, quando o gateway tokeniza (B2-16); nunca o número.",
             "minLength": 1,
             "maxLength": 200
+          },
+          "replacesPaymentId": {
+            "type": "string",
+            "description": "O pendente que este pedido troca (RN07; B2-4): **Gerar novo Pix** e\ntrocar o Pix pelo cartão. O Kore cancela o anterior antes de criar este.",
+            "format": "uuid"
           },
           "priceVersion": {
             "type": "string",

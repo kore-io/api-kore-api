@@ -7,8 +7,9 @@ import {
 import type {
   BillingMailer,
   PaymentConfirmedNotice,
+  PixExpiredNotice,
 } from '../application/ports/billing-mailer.port';
-import { paymentConfirmedEmail } from './emails/billing.email';
+import { paymentConfirmedEmail, pixExpiredEmail } from './emails/billing.email';
 
 /** Cobrança e publicação, na Área do Casal (página 21). */
 const BILLING_PATH = '/app/cobranca';
@@ -30,5 +31,10 @@ export class OutboxBillingMailer implements BillingMailer {
       message: paymentConfirmedEmail({ notice, url }),
       priority: 'default',
     });
+  }
+
+  async pixExpired({ notice }: { notice: PixExpiredNotice }): Promise<void> {
+    const url = new URL(BILLING_PATH, this.appUrl).toString();
+    await this.outbox.enqueue({ message: pixExpiredEmail({ notice, url }), priority: 'default' });
   }
 }

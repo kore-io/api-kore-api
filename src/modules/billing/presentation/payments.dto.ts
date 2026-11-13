@@ -5,6 +5,7 @@ import {
   IsInt,
   IsISO8601,
   IsString,
+  IsUUID,
   Matches,
   Max,
   MaxLength,
@@ -81,6 +82,15 @@ export class CreatePaymentBody {
   @MinLength(1)
   @MaxLength(200)
   cardToken?: string;
+
+  /**
+   * O pendente que este pedido troca (RN07; B2-4): **Gerar novo Pix** e
+   * trocar o Pix pelo cartão. O Kore cancela o anterior antes de criar este.
+   */
+  @ApiProperty({ required: false, format: 'uuid' })
+  @OptionalNotNull()
+  @IsUUID()
+  replacesPaymentId?: string;
 
   @ApiProperty({ example: '2026-11' })
   @IsString()

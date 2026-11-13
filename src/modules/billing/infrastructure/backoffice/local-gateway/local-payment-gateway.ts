@@ -49,7 +49,7 @@ export class LocalPaymentGateway implements PaymentGateway {
   }
 
   async createCustomer({ name, taxId }: { name: string; taxId: string }) {
-    await this.call();
+    await this.call(name);
     const customerId = await this.store.createCustomer({
       name,
       taxIdLast4: taxId.replace(/\D/g, '').slice(-4),
@@ -63,7 +63,7 @@ export class LocalPaymentGateway implements PaymentGateway {
     amountCents: number;
     dueAt: Date;
   }): Promise<ChargeResult> {
-    await this.call();
+    await this.call(input.externalReference);
     const charge = await this.store.createCharge({
       externalReference: input.externalReference,
       customerId: input.customerId,
@@ -86,7 +86,7 @@ export class LocalPaymentGateway implements PaymentGateway {
     installments: number;
     cardToken: string | null;
   }): Promise<ChargeResult> {
-    await this.call();
+    await this.call(input.externalReference);
     const token = input.cardToken ?? '';
     const refused = token.endsWith(REFUSED_CARD_SUFFIX);
     const charge = await this.store.createCharge({
@@ -105,8 +105,8 @@ export class LocalPaymentGateway implements PaymentGateway {
   }
 
   async cancelCharge({ gatewayPaymentId }: { gatewayPaymentId: string }) {
-    await this.call();
     const charge = await this.store.chargeById({ id: gatewayPaymentId });
+    await this.call(charge?.external_reference);
     if (!charge) throw new Error('Gateway local: cobrança não encontrada.');
     if (charge.status === 'confirmed') return { result: 'already_paid' as const };
     if (charge.status === 'pending' || charge.status === 'overdue') {
@@ -117,15 +117,15 @@ export class LocalPaymentGateway implements PaymentGateway {
 
   /** O estorno local fica pedido; a rota dev confirma (refund) ou falha (refund-failed). */
   async refundCharge({ gatewayPaymentId }: { gatewayPaymentId: string }) {
-    await this.call();
     const charge = await this.store.chargeById({ id: gatewayPaymentId });
+    await this.call(charge?.external_reference);
     if (!charge) throw new Error('Gateway local: cobrança não encontrada.');
     if (charge.status === 'refunded') return { result: 'refunded' as const };
     return { result: 'requested' as const };
   }
 
   async getCharge({ externalReference }: { externalReference: string }) {
-    await this.call();
+    await this.call(externalReference);
     const charge = await this.store.chargeByReference({ externalReference });
     return charge ? this.toCharge(charge) : null;
   }
@@ -139,12 +139,12 @@ export class LocalPaymentGateway implements PaymentGateway {
     externalReference: string;
     amountCents: number;
   }): Promise<GatewayTransfer> {
-    await this.call();
+    await this.call(input.externalReference);
     return this.toTransfer(await this.store.createTransfer(input));
   }
 
   async getPixTransfer({ externalReference }: { externalReference: string }) {
-    await this.call();
+    await this.call(externalReference);
     const transfer = await this.store.transferByReference({ externalReference });
     return transfer ? this.toTransfer(transfer) : null;
   }
@@ -193,9 +193,14 @@ export class LocalPaymentGateway implements PaymentGateway {
     return { ok: true };
   }
 
-  /** A falha programada pela rota dev vale antes de qualquer efeito (RN15). */
-  private async call(): Promise<void> {
-    if (await this.store.consumeFailure()) throw new GatewayUnavailableError();
+  /**
+   * A falha programada vale antes de qualquer efeito (RN15): a global ou a
+   * do escopo: o nome do cliente ou a referência da cobrança (a rota dev
+   * programa a do pagamento; os testes, a sua, sem atingir as suítes em
+   * paralelo).
+   */
+  private async call(scope?: string): Promise<void> {
+    if (await this.store.consumeFailure({ scope })) throw new GatewayUnavailableError();
   }
 
   private chargeResult(charge: LocalChargeRow): ChargeResult {

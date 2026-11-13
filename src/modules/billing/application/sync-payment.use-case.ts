@@ -27,6 +27,12 @@ export type SyncResult =
   | 'not_handled';
 
 /**
+ * Por que o pendente foi cancelado (RN07 e RN11). Sem motivo (o gateway
+ * cancelou sozinho), o Pix com o vencimento passado conta como vencido.
+ */
+export type CancelReason = 'pix_expired' | 'replaced' | 'no_gateway_charge';
+
+/**
  * Aplica ao Payment o estado que o gateway devolveu na consulta (Publicar e
  * pagar RN09: o webhook é gatilho, a consulta é a fonte), pela máquina de
  * estados da RN10, numa transação do backoffice com o Wedding travado antes do
@@ -34,7 +40,8 @@ export type SyncResult =
  *
  * - confirmado: decide entre aplicar (RN05), recebido a menos (RN09) e sem
  *   destino (RN08); o mesmo fato de novo não faz nada;
- * - recusado e cancelado: pendente → failed · canceled;
+ * - recusado e cancelado: pendente → failed · canceled; o Pix vencido manda o
+ *   e-mail "O código Pix venceu" às pessoas donas, depois do commit (RN11);
  * - estorno e disputa: o PR de Pagamentos e arrependimento.
  *
  * Aplicar a publicação: o Payment pago com appliedAt; o casamento publicado
@@ -56,10 +63,12 @@ export class SyncPaymentWithGateway {
     paymentId,
     charge,
     now,
+    cancelReason,
   }: {
     paymentId: string;
     charge: GatewayCharge;
     now: Date;
+    cancelReason?: CancelReason;
   }): Promise<SyncResult> {
     return this.transaction.run(async () => {
       const locked = await this.ledger.lock({ paymentId });
@@ -89,15 +98,7 @@ export class SyncPaymentWithGateway {
           return 'failed';
         case 'canceled':
           if (payment.status !== 'pending') return 'unchanged';
-          await this.ledger.markCanceled({ paymentId, now });
-          await this.ledger.log({
-            entry: {
-              action: 'payment.canceled',
-              weddingId: wedding.id,
-              entityType: 'payment',
-              entityId: paymentId,
-            },
-          });
+          await this.cancel({ wedding, payment, now, reason: cancelReason ?? null });
           return 'canceled';
         case 'confirmed':
           break;
@@ -171,6 +172,60 @@ export class SyncPaymentWithGateway {
       await this.apply({ wedding, payment, now });
       return 'applied';
     });
+  }
+
+  /**
+   * O pendente sem cobrança no gateway (RN11; casos de borda): o pedido caiu
+   * entre o passo 1 e o passo 2 da RN03, e a consulta pela referência não acha
+   * nada. Só o pendente sem o id do gateway; o resto não muda.
+   */
+  cancelWithoutCharge({ paymentId, now }: { paymentId: string; now: Date }): Promise<SyncResult> {
+    return this.transaction.run(async () => {
+      const locked = await this.ledger.lock({ paymentId });
+      if (!locked) return 'no_payment';
+      const { wedding, payment } = locked;
+      if (payment.status !== 'pending' || payment.gatewayPaymentId) return 'unchanged';
+      await this.cancel({ wedding, payment, now, reason: 'no_gateway_charge' });
+      return 'canceled';
+    });
+  }
+
+  private async cancel({
+    wedding,
+    payment,
+    now,
+    reason,
+  }: {
+    wedding: LedgerWedding;
+    payment: LedgerPayment;
+    now: Date;
+    reason: CancelReason | null;
+  }): Promise<void> {
+    const expired =
+      reason === 'pix_expired' ||
+      (reason === null &&
+        payment.method === 'pix' &&
+        payment.dueAt !== null &&
+        payment.dueAt.getTime() <= now.getTime());
+    await this.ledger.markCanceled({ paymentId: payment.id, now });
+    await this.ledger.log({
+      entry: {
+        action: 'payment.canceled',
+        weddingId: wedding.id,
+        entityType: 'payment',
+        entityId: payment.id,
+        data: { reason: expired ? 'pix_expired' : (reason ?? 'gateway') },
+      },
+    });
+    // O e-mail fala da publicação; o Pix vencido da extensão entra com a extensão.
+    if (!expired || payment.kind !== 'publication') return;
+    const recipients = await this.ledger.billingRecipients({ weddingId: wedding.id });
+    const partnerNames = await this.ledger.partnerNames({ weddingId: wedding.id });
+    for (const recipient of recipients) {
+      this.transaction.schedule(() =>
+        this.mailer.pixExpired({ notice: { to: recipient.email, partnerNames } }),
+      );
+    }
   }
 
   private async apply({
