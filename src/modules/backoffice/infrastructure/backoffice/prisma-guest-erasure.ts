@@ -17,12 +17,14 @@ export class PrismaGuestErasure implements GuestErasure {
     guestId,
     byUserId,
     requestChannel,
+    ipHash,
     now,
   }: {
     weddingId: string;
     guestId: string;
     byUserId: string;
     requestChannel: RequestChannel;
+    ipHash: string | null;
     now: Date;
   }): Promise<'erased' | 'not_found'> {
     return this.db.$transaction(async (tx) => {
@@ -36,8 +38,9 @@ export class PrismaGuestErasure implements GuestErasure {
       const [party] = await tx.$queryRaw<{ name: string; deletedAt: Date | null }[]>`
         SELECT name, deleted_at AS "deletedAt" FROM parties
         WHERE id = ${guest.partyId}::uuid FOR UPDATE`;
+      // Outra PESSOA do grupo: a vaga de acompanhante sem nome não conta (Crivo, 11d).
       const others = await tx.guest.count({
-        where: { partyId: guest.partyId, id: { not: guestId } },
+        where: { partyId: guest.partyId, id: { not: guestId }, name: { not: null } },
       });
 
       // O contato do grupo passa a nenhum; a vaga (acompanhante) sai da conta do grupo.
@@ -93,6 +96,7 @@ export class PrismaGuestErasure implements GuestErasure {
             partyRenamed: singlePersonParty,
             note: 'E-mails e pushes entregues, exportações baixadas e backups até o prazo deles não são alcançados.',
           },
+          ipHash,
         },
       });
       return 'erased';

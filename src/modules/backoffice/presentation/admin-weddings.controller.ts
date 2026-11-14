@@ -191,6 +191,7 @@ export class AdminWeddingsController {
     @CurrentStaff() staff: StaffMember,
     @Param('id', weddingIdPipe) weddingId: string,
     @Body() body: ReassignReferrerBody,
+    @Req() request: Request,
   ): Promise<ReassignReferrerResponse> {
     try {
       const status = await this.reassignReferrer.execute({
@@ -198,6 +199,7 @@ export class AdminWeddingsController {
         weddingId,
         referrerId: body.referrerId,
         reason: body.reason,
+        ip: request.ip ?? null,
         now: new Date(),
       });
       return { status };
@@ -228,6 +230,7 @@ export class AdminWeddingsController {
     )
     guestId: string,
     @Body() body: EraseGuestBody,
+    @Req() request: Request,
   ): Promise<GuestErasedResponse> {
     try {
       await this.eraseGuest.execute({
@@ -235,6 +238,7 @@ export class AdminWeddingsController {
         weddingId,
         guestId,
         requestChannel: body.requestChannel,
+        ip: request.ip ?? null,
         now: new Date(),
       });
       return { status: 'erased' };

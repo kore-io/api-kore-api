@@ -14,6 +14,7 @@ export interface GuestErasure {
     guestId: string;
     byUserId: string;
     requestChannel: RequestChannel;
+    ipHash: string | null;
     now: Date;
   }): Promise<'erased' | 'not_found'>;
 }

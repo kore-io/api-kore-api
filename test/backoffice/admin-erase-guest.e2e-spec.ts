@@ -30,17 +30,24 @@ describe('Backoffice: remover a pedido do titular (Backoffice - acesso RN10; ban
       .set('Origin', ORIGIN)
       .send({ requestChannel: 'E-mail do titular ao suporte.' });
 
-  async function weddingWithParty(guests: string[], partyName: string) {
+  async function weddingWithParty(guests: string[], partyName: string, plusOneSlots = 0) {
     const ana = await signedInUser({ app });
     const { weddingId } = await seedWedding({ db, ownerId: ana.userId });
     const created = await http()
       .post(`/v1/weddings/${weddingId}/parties`)
       .set('Cookie', ana.cookie)
       .set('Origin', ORIGIN)
-      .send({ name: partyName, guests: guests.map((name) => ({ name, ageGroup: 'adult' })) })
+      .send({
+        name: partyName,
+        guests: guests.map((name) => ({ name, ageGroup: 'adult' })),
+        ...(plusOneSlots > 0 ? { plusOneSlots } : {}),
+      })
       .expect(201);
     const partyId = created.body.id as string;
-    const rows = await db.guest.findMany({ where: { partyId }, orderBy: { createdAt: 'asc' } });
+    const rows = await db.guest.findMany({
+      where: { partyId, name: { not: null } },
+      orderBy: { createdAt: 'asc' },
+    });
     // O aviso de RSVP da central guarda o nome do grupo (Central RN04).
     await db.notification.create({
       data: {
@@ -78,7 +85,11 @@ describe('Backoffice: remover a pedido do titular (Backoffice - acesso RN10; ban
     const log = await db.applicationLog.findFirstOrThrow({
       where: { weddingId, action: 'guest.erased_on_request', entityId: pedro },
     });
-    expect(log).toMatchObject({ actorUserId: support.userId, actorKind: 'admin' });
+    expect(log).toMatchObject({
+      actorUserId: support.userId,
+      actorKind: 'admin',
+      ipHash: expect.any(String),
+    });
     expect(JSON.stringify(log.data)).not.toContain('Pedro');
     // O aviso de RSVP guarda o nome do grupo, que fica.
     const [notice] = await db.notification.findMany({ where: { weddingId, type: 'rsvp' } });
@@ -115,5 +126,24 @@ describe('Backoffice: remover a pedido do titular (Backoffice - acesso RN10; ban
     await erase(support.cookie, first.weddingId, second.guestIds[0]).expect(404);
     expect(await db.guest.count({ where: { id: second.guestIds[0] } })).toBe(1);
     await erase(first.ana.cookie, first.weddingId, first.guestIds[0]).expect(403);
+  });
+
+  it('RN10 (decisão 253(3)) - a vaga de acompanhante sem nome não é outra pessoa: Pedro + vaga vira "Grupo removido"', async () => {
+    const support = await staffUser({ app, role: 'support' });
+    const { weddingId, partyId, guestIds } = await weddingWithParty(
+      ['Pedro Moreira'],
+      'Pedro Moreira',
+      1,
+    );
+    expect(await db.guest.count({ where: { partyId, isPlusOne: true, name: null } })).toBe(1);
+
+    await erase(support.cookie, weddingId, guestIds[0]).expect(200);
+    expect((await db.party.findUniqueOrThrow({ where: { id: partyId } })).name).toBe(
+      'Grupo removido',
+    );
+    const [notice] = await db.notification.findMany({ where: { weddingId, type: 'rsvp' } });
+    expect(notice.payload).toEqual([expect.objectContaining({ partyId, name: null })]);
+    // A vaga continua, sem nome.
+    expect(await db.guest.count({ where: { partyId } })).toBe(1);
   });
 });

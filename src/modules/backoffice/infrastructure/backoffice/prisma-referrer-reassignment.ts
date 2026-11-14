@@ -19,12 +19,14 @@ export class PrismaReferrerReassignment implements ReferrerReassignment {
     referrerId,
     byUserId,
     reason,
+    ipHash,
     now,
   }: {
     weddingId: string;
     referrerId: string | null;
     byUserId: string;
     reason: string;
+    ipHash: string | null;
     now: Date;
   }): Promise<ReassignResult> {
     return this.db.$transaction(async (tx): Promise<ReassignResult> => {
@@ -78,6 +80,7 @@ export class PrismaReferrerReassignment implements ReferrerReassignment {
           entityType: 'wedding',
           entityId: weddingId,
           data: { fromReferrerId: wedding.referrerId, toReferrerId: referrerId, reason },
+          ipHash,
         },
       });
       const partners = await tx.partner.findMany({

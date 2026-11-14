@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { IpHasher } from '../../logs/infrastructure/ip-hasher';
 import {
   AdminWeddingNotFoundError,
   AlreadyPaidError,
@@ -14,19 +15,24 @@ import {
 /** Reatribuir o indicador (Backoffice - acesso RN07): só o Admin (a rota recorta o papel). */
 @Injectable()
 export class ReassignReferrer {
-  constructor(@Inject(REFERRER_REASSIGNMENT) private readonly store: ReferrerReassignment) {}
+  constructor(
+    @Inject(REFERRER_REASSIGNMENT) private readonly store: ReferrerReassignment,
+    private readonly ipHasher: IpHasher,
+  ) {}
 
   async execute({
     staff,
     weddingId,
     referrerId,
     reason,
+    ip,
     now,
   }: {
     staff: StaffMember;
     weddingId: string;
     referrerId: string | null;
     reason: string;
+    ip: string | null;
     now: Date;
   }): Promise<'reassigned' | 'unchanged'> {
     const outcome = await this.store.reassign({
@@ -34,6 +40,7 @@ export class ReassignReferrer {
       referrerId,
       byUserId: staff.userId,
       reason,
+      ipHash: ip ? this.ipHasher.hash({ ip }) : null,
       now,
     });
     switch (outcome.result) {

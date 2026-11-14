@@ -16,6 +16,7 @@ export interface ReferrerReassignment {
     referrerId: string | null;
     byUserId: string;
     reason: string;
+    ipHash: string | null;
     now: Date;
   }): Promise<ReassignResult>;
 }

@@ -78,6 +78,7 @@ describe('Backoffice: reatribuir o indicador (Backoffice - acesso RN07; banco re
       where: { weddingId, action: 'wedding.referrer_reassigned' },
     });
     expect(log).toMatchObject({
+      ipHash: expect.any(String),
       actorUserId: admin.userId,
       data: { fromReferrerId: juliana.referrerId, toReferrerId: fabiana.referrerId, reason },
     });
