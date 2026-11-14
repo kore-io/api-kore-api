@@ -36,3 +36,19 @@ export class PayoutAmountMismatchError extends Error {
     super();
   }
 }
+
+/** Liberar: abaixo do repasse mínimo depois de tirar as estornadas (409 PAYOUT_BELOW_MINIMUM; RN09). */
+export class PayoutBelowMinimumError extends Error {
+  override name = 'PayoutBelowMinimumError';
+  constructor(
+    readonly amountCents: number,
+    readonly minimumCents: number,
+  ) {
+    super();
+  }
+}
+
+/** Liberar: uma comissão ainda em estorno ou em contestação (409 PAYOUT_STILL_HELD). */
+export class PayoutStillHeldError extends Error {
+  override name = 'PayoutStillHeldError';
+}

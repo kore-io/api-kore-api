@@ -10215,6 +10215,417 @@
         ]
       }
     },
+    "/v1/admin/payouts": {
+      "get": {
+        "operationId": "AdminPayoutsController_list_v1",
+        "parameters": [
+          {
+            "name": "tab",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "requested",
+              "type": "string",
+              "enum": [
+                "requested",
+                "held",
+                "history"
+              ]
+            }
+          },
+          {
+            "name": "referrerId",
+            "required": false,
+            "in": "query",
+            "description": "Os repasses de um indicador (a aba Repasses do detalhe da cerimonialista).",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPayoutsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/payouts/{id}/pay": {
+      "post": {
+        "operationId": "AdminPayoutsController_payPayout_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayoutActionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ReauthRequiredErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Pagar (RN09; Repasse RN05): confere tudo na transação e manda o Pix por job.",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/payouts/{id}/retry": {
+      "post": {
+        "operationId": "AdminPayoutsController_retryPayout_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayoutActionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Tentar o Pix de novo (RN09): consulta o gateway antes; não achou, manda de novo.",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/payouts/{id}/reject": {
+      "post": {
+        "operationId": "AdminPayoutsController_rejectPayout_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminReasonBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayoutActionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Recusar (RN09), com motivo.",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/payouts/{id}/release": {
+      "post": {
+        "operationId": "AdminPayoutsController_releasePayout_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayoutActionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Liberar o retido (RN09).",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/v1/admin/weddings": {
       "get": {
         "operationId": "AdminWeddingsController_list_v1",
@@ -22762,6 +23173,220 @@
           "message"
         ]
       },
+      "AdminPayoutReferrerResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "enum": [
+              "planner",
+              "seller"
+            ],
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name"
+        ]
+      },
+      "AdminHeldCommissionResponse": {
+        "type": "object",
+        "properties": {
+          "coupleNames": {
+            "type": "string",
+            "nullable": true,
+            "description": "\"Comissão estornada: Ana e Marcos, R$ 67,42\"; nulo com o casamento apagado."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "held",
+              "reversed",
+              "blocked"
+            ]
+          },
+          "amountCents": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "coupleNames",
+          "status",
+          "amountCents"
+        ]
+      },
+      "AdminPayoutResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "requested",
+              "held",
+              "processing",
+              "paid",
+              "rejected"
+            ]
+          },
+          "referrer": {
+            "$ref": "#/components/schemas/AdminPayoutReferrerResponse"
+          },
+          "requestedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "holdReason": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "refund",
+              "pix_key_change",
+              "referrer_blocked",
+              "dispute",
+              "commission_blocked"
+            ]
+          },
+          "heldCommissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminHeldCommissionResponse"
+            }
+          },
+          "pixKeyActiveFrom": {
+            "type": "string",
+            "nullable": true,
+            "description": "\"Troca de chave Pix em andamento, vale em 28/09 às 14h\".",
+            "format": "date-time"
+          },
+          "releaseAmountCents": {
+            "type": "number",
+            "nullable": true,
+            "description": "O valor do Liberar (só no retido): sem as estornadas e as bloqueadas."
+          },
+          "processingAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "lastError": {
+            "type": "string",
+            "nullable": true
+          },
+          "paidAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "rejectedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "rejectReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "amountCents": {
+            "type": "number"
+          },
+          "pixKeyMasked": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "referrer",
+          "requestedAt",
+          "holdReason",
+          "heldCommissions",
+          "pixKeyActiveFrom",
+          "releaseAmountCents",
+          "processingAt",
+          "lastError",
+          "paidAt",
+          "rejectedAt",
+          "rejectReason",
+          "amountCents",
+          "pixKeyMasked"
+        ]
+      },
+      "AdminPayoutsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminPayoutResponse"
+            }
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageSize": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "total"
+        ]
+      },
+      "PayoutActionResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "processing",
+              "paid",
+              "failed",
+              "pending",
+              "unchanged",
+              "rejected",
+              "requested"
+            ]
+          },
+          "amountCents": {
+            "type": "number",
+            "description": "O valor depois do Liberar."
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "AdminReasonBody": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 500,
+            "example": "Denúncia de conteúdo impróprio."
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
       "AdminReferrerResponse": {
         "type": "object",
         "properties": {
@@ -23365,20 +23990,6 @@
           "statusCode",
           "error",
           "message"
-        ]
-      },
-      "AdminReasonBody": {
-        "type": "object",
-        "properties": {
-          "reason": {
-            "type": "string",
-            "minLength": 10,
-            "maxLength": 500,
-            "example": "Denúncia de conteúdo impróprio."
-          }
-        },
-        "required": [
-          "reason"
         ]
       },
       "AdminBlockStateResponse": {

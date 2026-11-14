@@ -30,6 +30,18 @@ import {
   NotBlockedError,
 } from '../domain/backoffice.errors';
 
+import {
+  PayoutAmountMismatchError,
+  PayoutBelowMinimumError,
+  PayoutNotFoundError,
+  PayoutPaymentsDisabledError,
+  PayoutPixKeyChangePendingError,
+  PayoutReferrerBlockedError,
+  PayoutStatusConflictError,
+  PayoutStillHeldError,
+} from '../../billing/domain/payout.errors';
+import { toHttpError as toAccessHttpError } from '../../access/presentation/access-http-errors';
+
 /** Erros do Backoffice para HTTP. */
 export function toHttpError(error: unknown): unknown {
   if (error instanceof AdminWeddingNotFoundError)
@@ -162,5 +174,58 @@ export function toHttpError(error: unknown): unknown {
       error: 'SUPPORT_SESSION_NOT_FOUND',
       message: 'Support session not found.',
     });
-  return error;
+  if (error instanceof PayoutNotFoundError)
+    return new NotFoundException({
+      statusCode: 404,
+      error: 'PAYOUT_NOT_FOUND',
+      message: 'Payout not found.',
+    });
+  if (error instanceof PayoutStatusConflictError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'PAYOUT_STATUS_CONFLICT',
+      message: 'The payout is not in a state that allows this action.',
+      status: error.status,
+    });
+  if (error instanceof PayoutPaymentsDisabledError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'PAYOUTS_DISABLED',
+      message: 'Payouts are disabled in this environment.',
+    });
+  if (error instanceof PayoutReferrerBlockedError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'REFERRER_BLOCKED',
+      message: 'The referrer is blocked.',
+    });
+  if (error instanceof PayoutPixKeyChangePendingError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'PIX_KEY_CHANGE_PENDING',
+      message: 'A Pix key change is pending.',
+    });
+  if (error instanceof PayoutAmountMismatchError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'PAYOUT_AMOUNT_MISMATCH',
+      message: 'The payout amount does not match its commissions and adjustments.',
+      amountCents: error.amountCents,
+      itemsCents: error.itemsCents,
+    });
+  if (error instanceof PayoutBelowMinimumError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'PAYOUT_BELOW_MINIMUM',
+      message: 'Below the payout minimum after removing the reversed commissions. Reject it.',
+      amountCents: error.amountCents,
+      minimumCents: error.minimumCents,
+    });
+  if (error instanceof PayoutStillHeldError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'PAYOUT_STILL_HELD',
+      message: 'A commission of this payout is still being refunded or disputed.',
+    });
+  return toAccessHttpError(error);
 }
