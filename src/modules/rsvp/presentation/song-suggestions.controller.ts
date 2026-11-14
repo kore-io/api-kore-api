@@ -1,3 +1,4 @@
+import { NotInSupportSession } from '../../access/presentation/not-in-support-session.decorator';
 import { Controller, Get, Header, Param, Query, Res, StreamableFile } from '@nestjs/common';
 import { ApiProduces, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
@@ -64,6 +65,8 @@ export class SongSuggestionsController {
 
   /** Exportar para o DJ: o .xlsx na hora, sem cache (Música RN06). */
   @Get('export')
+  // Ver como o casal: o arquivo leva os dados para fora (Backoffice - acesso RN08).
+  @NotInSupportSession()
   @Header('Cache-Control', 'no-store')
   @ApiProduces(XLSX)
   @ApiResponse({

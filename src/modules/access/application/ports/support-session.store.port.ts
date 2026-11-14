@@ -32,6 +32,8 @@ export interface SupportSessionStore {
     route: string;
     now: Date;
   }): Promise<void>;
+  /** O papel do staff, relido a cada requisição da sessão de suporte (RN01; conta ativa). */
+  staffRoleOf(input: { userId: string }): Promise<'admin' | 'support' | null>;
   /** "Ana & Marcos" para a faixa (o GET /v1/me). */
   coupleNames(input: { weddingId: string }): Promise<string>;
 }

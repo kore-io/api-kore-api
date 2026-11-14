@@ -133,6 +133,15 @@ export class PrismaSupportSessionStore implements SupportSessionStore {
     ]);
   }
 
+  async staffRoleOf({ userId }: { userId: string }): Promise<'admin' | 'support' | null> {
+    const user = await this.db.user.findUnique({
+      where: { id: userId },
+      select: { platformRole: true, status: true },
+    });
+    if (!user || user.status !== 'active' || user.platformRole === 'none') return null;
+    return user.platformRole;
+  }
+
   async coupleNames({ weddingId }: { weddingId: string }): Promise<string> {
     const partners = await this.db.partner.findMany({
       where: { weddingId },

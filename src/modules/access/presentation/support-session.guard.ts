@@ -6,6 +6,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { AppConfigService } from '../../../shared/config/app-config.service';
 import {
   SUPPORT_SESSION_STORE,
   type SupportSessionStore,
@@ -47,6 +48,7 @@ export class SupportSessionGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     @Inject(SUPPORT_SESSION_STORE) private readonly store: SupportSessionStore,
+    private readonly config: AppConfigService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -57,6 +59,21 @@ export class SupportSessionGuard implements CanActivate {
     const now = new Date();
     const session = await this.store.find({ id: supportSessionId });
     if (!session || session.endedAt) return true;
+    // O papel relido a cada requisição, como no Backoffice (RN01): sem o Google
+    // do domínio ou sem papel, a sessão de suporte acaba e a resposta é a do staff.
+    const auth = request.auth;
+    const staff =
+      auth.authMethod === 'google' &&
+      auth.staffDomain === this.config.staffDomain &&
+      (await this.store.staffRoleOf({ userId: auth.userId })) !== null;
+    if (!staff) {
+      await this.store.end({ id: session.id, reason: 'exit', now });
+      throw new ForbiddenException({
+        statusCode: 403,
+        error: 'STAFF_ONLY',
+        message: 'Only the Kore team can access this area.',
+      });
+    }
     const expired = supportSessionExpiry({ session, now });
     if (expired) {
       await this.store.end({ id: session.id, reason: expired, now });

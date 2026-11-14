@@ -103,6 +103,11 @@ describe('Backoffice: Ver como o casal (Backoffice - acesso RN08; banco real)', 
     const document = JSON.parse(readFileSync(resolve('openapi.json'), 'utf8')) as {
       paths: Record<string, Record<string, unknown>>;
     };
+    // O GET que devolve arquivo (o 200 com um corpo binário) leva os dados para fora.
+    const returnsFile = (operation: unknown) =>
+      JSON.stringify(
+        (operation as { responses?: Record<string, unknown> }).responses?.['200'] ?? {},
+      ).includes('"binary"');
     const routes = Object.entries(document.paths).flatMap(([path, item]) =>
       (['get', 'post', 'put', 'patch', 'delete'] as const)
         .filter((method) => path.includes('{weddingId}') && item[method])
@@ -116,7 +121,7 @@ describe('Backoffice: Ver como o casal (Backoffice - acesso RN08; banco real)', 
         .set('Cookie', support.cookie)
         .set('Origin', ORIGIN);
       const error = response.body?.error as string | undefined;
-      if (method !== 'get') {
+      if (method !== 'get' || returnsFile(document.paths[path][method])) {
         if (response.status !== 403 || error !== 'SUPPORT_READ_ONLY')
           broken.push(`${method} ${path} → ${response.status} ${error ?? ''}`);
       } else if (response.status >= 500 || error === 'WEDDING_NOT_FOUND') {
@@ -124,6 +129,11 @@ describe('Backoffice: Ver como o casal (Backoffice - acesso RN08; banco real)', 
       }
     }
     expect(broken).toEqual([]);
+    expect(
+      routes.filter(
+        ({ method, path }) => method === 'get' && returnsFile(document.paths[path][method]),
+      ).length,
+    ).toBeGreaterThanOrEqual(2);
     // O Exportar leva os dados para fora.
     const exported = await http()
       .get(`/v1/weddings/${weddingId}/guests/export`)
@@ -257,5 +267,20 @@ describe('Backoffice: Ver como o casal (Backoffice - acesso RN08; banco real)', 
     });
     const fresh = await staffUser({ app, role: 'support' });
     expect((await start(fresh.cookie, ownerless).expect(409)).body.error).toBe('NO_OWNER');
+  });
+
+  it('RN01 e RN08 - o papel do staff é relido a cada requisição: sem papel, a sessão de suporte acaba com 403 STAFF_ONLY', async () => {
+    const { support, weddingId, supportSessionId } = await viewing();
+    await db.user.update({ where: { id: support.userId }, data: { platformRole: 'none' } });
+    const refused = await http()
+      .get(`/v1/weddings/${weddingId}/parties`)
+      .set('Cookie', support.cookie)
+      .expect(403);
+    expect(refused.body.error).toBe('STAFF_ONLY');
+    expect(
+      (await db.supportSession.findUniqueOrThrow({ where: { id: supportSessionId } })).endedAt,
+    ).toEqual(expect.any(Date));
+    // A sessão de suporte acabou: o casamento não é dela (sem vínculo, 404).
+    await http().get(`/v1/weddings/${weddingId}/parties`).set('Cookie', support.cookie).expect(404);
   });
 });
