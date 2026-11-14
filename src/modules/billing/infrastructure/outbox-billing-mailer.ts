@@ -12,6 +12,7 @@ import type {
   EndDateSoonNotice,
   GraceNotice,
   SiteExpiredNotice,
+  PurgeSoonNotice,
 } from '../application/ports/billing-mailer.port';
 import {
   endDateSoonEmail,
@@ -20,10 +21,15 @@ import {
   pixExpiredEmail,
   refundCompletedEmail,
   siteExpiredEmail,
+  purgeSoonEmail,
 } from './emails/billing.email';
 
 /** Cobrança e publicação, na Área do Casal (página 21). */
 const BILLING_PATH = '/app/cobranca';
+/** Exportar os convidados, na Área do Casal. */
+const EXPORT_PATH = '/app/convidados/exportar';
+/** Etiqueta do aviso de expurgo, para a desistência do worker desfazer a marca (decisão 180(8)). */
+export const PURGE_SOON_EMAIL_TAG = 'retention_purge_notice';
 
 @Injectable()
 export class OutboxBillingMailer implements BillingMailer {
@@ -75,6 +81,21 @@ export class OutboxBillingMailer implements BillingMailer {
     await this.outbox.enqueue({
       message: siteExpiredEmail({ notice, url: this.billingUrl() }),
       priority: 'default',
+    });
+  }
+
+  async purgeSoon({ notice }: { notice: PurgeSoonNotice }): Promise<void> {
+    await this.outbox.enqueue({
+      message: purgeSoonEmail({
+        notice,
+        renewUrl: this.billingUrl(),
+        exportUrl: new URL(EXPORT_PATH, this.appUrl).toString(),
+      }),
+      priority: 'default',
+      tag: {
+        kind: PURGE_SOON_EMAIL_TAG,
+        data: { weddingId: notice.weddingId, noticeSentAt: notice.noticeSentAt.toISOString() },
+      },
     });
   }
 

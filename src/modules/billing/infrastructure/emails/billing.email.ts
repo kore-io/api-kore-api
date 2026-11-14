@@ -11,6 +11,7 @@ import type {
   EndDateSoonNotice,
   GraceNotice,
   SiteExpiredNotice,
+  PurgeSoonNotice,
 } from '../../application/ports/billing-mailer.port';
 
 /** "14 de fev.": o dia sem o ano (os avisos de saída do ar, Pena). */
@@ -213,6 +214,38 @@ export function siteExpiredEmail({
         text: `O site de vocês saiu do ar em ${formatShortDay(notice.expiredAt)} Os dados continuam guardados${renew}.`,
       },
       { kind: 'button', text: 'Renovar', href: url },
+    ],
+    footer: OWNER_FOOTER(notice.partnerNames),
+  });
+}
+
+/** 30 dias antes do expurgo (Retenção e expurgo RN02; textos da Pena). */
+export function purgeSoonEmail({
+  notice,
+  renewUrl,
+  exportUrl,
+}: {
+  notice: PurgeSoonNotice;
+  renewUrl: string;
+  exportUrl: string;
+}): EmailMessage {
+  const purgeDay = formatShortDay(notice.purgeAt);
+  return message({
+    to: notice.to,
+    subject: 'Os dados do casamento serão apagados em 30 dias',
+    preheader: `Renovem o site ou exportem os convidados antes de ${purgeDay}`,
+    blocks: [
+      { kind: 'paragraph', text: `Olá, ${notice.firstName}!` },
+      {
+        kind: 'paragraph',
+        text: `O site de vocês está fora do ar desde ${formatShortDay(notice.expiredAt)} Em ${purgeDay}, os convidados, as respostas e o site serão apagados.`,
+      },
+      {
+        kind: 'paragraph',
+        text: 'Para manter tudo, renovem o site. Para guardar a lista, exportem os convidados.',
+      },
+      { kind: 'button', text: 'Renovar', href: renewUrl },
+      { kind: 'button', text: 'Exportar os convidados', href: exportUrl },
     ],
     footer: OWNER_FOOTER(notice.partnerNames),
   });

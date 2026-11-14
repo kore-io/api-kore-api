@@ -3,6 +3,10 @@ import { PayoutTransfersProcessor } from './infrastructure/payout-transfers.job'
 import { COMMISSION_NOTICES } from './application/ports/commission-notices.port';
 import { BullmqCommissionNotices } from './infrastructure/bullmq-commission-notices';
 import { BullModule } from '@nestjs/bullmq';
+import { WEDDING_RETENTION_STORE } from './application/ports/wedding-retention.port';
+import { PurgeRetainedWeddings } from './application/purge-retained-weddings.use-case';
+import { PrismaWeddingRetentionStore } from './infrastructure/backoffice/prisma-wedding-retention.store';
+import { PurgeSoonGiveUpHandler } from './infrastructure/purge-soon-give-up.handler';
 import { Module } from '@nestjs/common';
 import { BlockWedding } from './application/block-wedding.use-case';
 import { WEDDING_BLOCKS } from './application/ports/wedding-blocks.port';
@@ -103,6 +107,9 @@ import { WeddingPseudonymizer } from '../product-events/infrastructure/wedding-p
     { provide: COMMISSION_RELEASE, useClass: PrismaCommissionRelease },
     { provide: COMMISSION_NOTICES, useClass: BullmqCommissionNotices },
     ReleaseCommissions,
+    { provide: WEDDING_RETENTION_STORE, useClass: PrismaWeddingRetentionStore },
+    PurgeRetainedWeddings,
+    PurgeSoonGiveUpHandler,
     WeddingLifecycleProcessor,
     PayoutTransfersProcessor,
     WeddingLifecycleScheduler,
