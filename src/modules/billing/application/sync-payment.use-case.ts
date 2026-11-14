@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { Prisma } from '../../../generated/prisma/client';
 import { BackofficeTransaction } from '../../../shared/database/backoffice-transaction';
 import { daysBetween, localDate } from '../../../shared/time/local-date';
 import {
@@ -18,6 +17,7 @@ import {
   PAYMENT_LEDGER,
   type PaymentLedger,
 } from './ports/payment-ledger.port';
+import { ADMIN_BILLING_STORE, type AdminBillingStore } from './ports/admin-billing.store.port';
 
 export type SyncResult =
   | 'no_payment'
@@ -92,6 +92,7 @@ export class SyncPaymentWithGateway {
     @Inject(BILLING_PUSH) private readonly push: BillingPush,
     @Inject(REFUND_QUEUE) private readonly refunds: RefundQueue,
     @Inject(PRODUCT_EVENT_RECORDER) private readonly productEvents: ProductEventRecorder,
+    @Inject(ADMIN_BILLING_STORE) private readonly adminStore: AdminBillingStore,
   ) {}
 
   execute({
@@ -264,15 +265,8 @@ export class SyncPaymentWithGateway {
       const { wedding, payment } = locked;
       if (payment.status !== 'paid' || payment.appliedAt) return 'not_applicable';
       // Só com o gateway_amount_mismatch aberto (Contrato de API; 409 PAYMENT_NOT_MISMATCHED).
-      const open = await this.transaction.client().alert.count({
-        where: {
-          entityType: 'payment',
-          entityId: paymentId,
-          type: 'gateway_amount_mismatch',
-          status: 'open',
-        },
-      });
-      if (open === 0) return 'not_applicable';
+      if (!(await this.adminStore.hasOpenAlert({ paymentId, type: 'gateway_amount_mismatch' })))
+        return 'not_applicable';
       const decision = decideConfirmation({
         payment: { ...payment, status: 'pending' },
         wedding,
@@ -282,12 +276,9 @@ export class SyncPaymentWithGateway {
           (await this.ledger.otherPublicationApplied({ weddingId: wedding.id, paymentId })),
       });
       if (decision.kind !== 'apply') return 'not_applicable';
-      await this.transaction.client().payment.update({
-        where: { id: paymentId },
-        data: { appliedByAdminAt: now },
-      });
+      await this.adminStore.markAppliedByAdmin({ paymentId, now });
       await this.apply({ wedding, payment, now, cardLast4: payment.cardLast4 });
-      await this.adminLog({
+      await this.adminStore.log({
         action: 'payment.applied_by_admin',
         weddingId: wedding.id,
         paymentId,
@@ -295,7 +286,12 @@ export class SyncPaymentWithGateway {
         data: { reason, amountCents: payment.amountCents },
         now,
       });
-      await this.resolveAlerts({ paymentId, types: ['gateway_amount_mismatch'], adminUserId, now });
+      await this.adminStore.resolveAlerts({
+        paymentId,
+        types: ['gateway_amount_mismatch'],
+        adminUserId,
+        now,
+      });
       return 'applied';
     });
   }
@@ -325,12 +321,9 @@ export class SyncPaymentWithGateway {
       if (!locked) return 'no_payment';
       const { wedding, payment } = locked;
       if (payment.status !== 'refund_requested') return 'not_applicable';
-      await this.transaction.client().payment.update({
-        where: { id: paymentId },
-        data: { refundOrigin: 'manual', refundedOutsideGateway: true, refundReceiptKey: receipt },
-      });
+      await this.adminStore.markRefundedOutside({ paymentId, receiptKey: receipt });
       await this.refunded({ wedding, payment: { ...payment, refundOrigin: 'manual' }, now });
-      await this.adminLog({
+      await this.adminStore.log({
         action: 'payment.refund_recorded_manually',
         weddingId: wedding.id,
         paymentId,
@@ -338,54 +331,13 @@ export class SyncPaymentWithGateway {
         data: { reason, receipt, amountCents: payment.amountCents },
         now,
       });
-      await this.resolveAlerts({ paymentId, types: ['refund_failed'], adminUserId, now });
+      await this.adminStore.resolveAlerts({
+        paymentId,
+        types: ['refund_failed'],
+        adminUserId,
+        now,
+      });
       return 'refunded';
-    });
-  }
-
-  private async adminLog({
-    action,
-    weddingId,
-    paymentId,
-    adminUserId,
-    data,
-    now,
-  }: {
-    action: string;
-    weddingId: string;
-    paymentId: string;
-    adminUserId: string;
-    data: Record<string, unknown>;
-    now: Date;
-  }): Promise<void> {
-    await this.transaction.client().applicationLog.create({
-      data: {
-        createdAt: now,
-        action,
-        actorKind: 'admin',
-        actorUserId: adminUserId,
-        weddingId,
-        entityType: 'payment',
-        entityId: paymentId,
-        data: data as Prisma.InputJsonValue,
-      },
-    });
-  }
-
-  private async resolveAlerts({
-    paymentId,
-    types,
-    adminUserId,
-    now,
-  }: {
-    paymentId: string;
-    types: ('gateway_amount_mismatch' | 'refund_failed')[];
-    adminUserId: string;
-    now: Date;
-  }): Promise<void> {
-    await this.transaction.client().alert.updateMany({
-      where: { entityType: 'payment', entityId: paymentId, type: { in: types }, status: 'open' },
-      data: { status: 'resolved', resolvedAt: now, resolvedByUserId: adminUserId },
     });
   }
 

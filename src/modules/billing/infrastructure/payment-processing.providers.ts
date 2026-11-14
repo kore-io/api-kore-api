@@ -1,3 +1,5 @@
+import { ADMIN_BILLING_STORE } from '../application/ports/admin-billing.store.port';
+import { PrismaAdminBillingStore } from './backoffice/prisma-admin-billing.store';
 import type { Provider } from '@nestjs/common';
 import { PAYMENT_LEDGER } from '../application/ports/payment-ledger.port';
 import { BILLING_MAILER } from '../application/ports/billing-mailer.port';
@@ -29,6 +31,7 @@ import { BullmqPayoutTransferQueue } from './payout-transfers.queue';
  */
 export const PAYMENT_PROCESSING_PROVIDERS: Provider[] = [
   { provide: PAYMENT_LEDGER, useClass: PrismaPaymentLedger },
+  { provide: ADMIN_BILLING_STORE, useClass: PrismaAdminBillingStore },
   { provide: BILLING_MAILER, useClass: OutboxBillingMailer },
   { provide: BILLING_PUSH, useClass: BullmqBillingPush },
   { provide: REFUND_QUEUE, useClass: BullmqRefundQueue },

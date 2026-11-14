@@ -1,13 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { BackofficeTransaction } from '../../../shared/database/backoffice-transaction';
-import { uuidV7 } from '../../../shared/ids/uuid-v7';
 import { localDate } from '../../../shared/time/local-date';
-import { endDateRange } from '../../site/domain/publication';
 import { WeddingNotFoundError } from '../../access/domain/access.errors';
+import { endDateRange } from '../../site/domain/publication';
 import { BillingEndDateOutOfRangeError, NotPublishedError } from '../domain/billing.errors';
 import { addMonths } from '../domain/pricing';
+import { ADMIN_BILLING_STORE, type AdminBillingStore } from './ports/admin-billing.store.port';
 import { REFUND_QUEUE, type RefundQueue } from './ports/refund-queue.port';
-import type { Prisma } from '../../../generated/prisma/client';
 
 const EXTENDABLE = ['published', 'post_event', 'grace', 'expired'];
 const day = (value: Date | null) => (value ? value.toISOString().slice(0, 10) : null);
@@ -26,6 +25,7 @@ const day = (value: Date | null) => (value ? value.toISOString().slice(0, 10) : 
 export class ExtendAsCourtesy {
   constructor(
     private readonly transaction: BackofficeTransaction,
+    @Inject(ADMIN_BILLING_STORE) private readonly store: AdminBillingStore,
     @Inject(REFUND_QUEUE) private readonly queue: RefundQueue,
   ) {}
 
@@ -42,100 +42,37 @@ export class ExtendAsCourtesy {
     reason: string;
     now: Date;
   }): Promise<{ previousEndDate: string; newEndDate: string; canceledPaymentId: string | null }> {
-    return this.transaction.run(async (tx) => {
-      const [wedding] = await tx.$queryRaw<
-        {
-          status: string;
-          endDate: Date | null;
-          paidThrough: Date | null;
-          eventDate: Date | null;
-          timezone: string | null;
-        }[]
-      >`
-        SELECT status::text AS status, end_date AS "endDate", paid_through AS "paidThrough",
-               event_date AS "eventDate", timezone
-        FROM weddings WHERE id = ${weddingId}::uuid AND status <> 'purged' FOR UPDATE`;
+    return this.transaction.run(async () => {
+      const wedding = await this.store.lockWeddingForCourtesy({ weddingId });
       if (!wedding) throw new WeddingNotFoundError();
-      if (!EXTENDABLE.includes(wedding.status) || !wedding.endDate) throw new NotPublishedError();
+      const previousEndDate = day(wedding.endDate);
+      if (!EXTENDABLE.includes(wedding.status) || !previousEndDate) throw new NotPublishedError();
       const today = localDate({ at: now, timezone: wedding.timezone });
-      const from = wedding.status === 'expired' ? today : (day(wedding.endDate) as string);
+      const from = wedding.status === 'expired' ? today : previousEndDate;
       const newEndDate = addMonths({ day: from, months });
       const range = endDateRange({ eventDate: day(wedding.eventDate), timezone: wedding.timezone });
       if (!range || newEndDate > range.max)
         throw new BillingEndDateOutOfRangeError(range?.min ?? null, range?.max ?? null);
-      const end = new Date(`${newEndDate}T00:00:00Z`);
-      await tx.courtesyExtension.create({
-        data: {
-          id: uuidV7({ now: now.getTime() }),
-          weddingId,
-          adminUserId,
-          months,
-          reason,
-          previousEndDate: wedding.endDate,
-          previousPaidThrough: wedding.paidThrough,
-          newEndDate: end,
-          periodStart: new Date(`${from}T00:00:00Z`),
-          periodEnd: end,
-        },
+      const { pendingExtensionIds } = await this.store.recordCourtesy({
+        weddingId,
+        adminUserId,
+        months,
+        reason,
+        previous: wedding,
+        previousEndDate,
+        periodStart: from,
+        newEndDate,
+        now,
       });
-      // As mesmas transições da extensão paga (Data de saída do ar RN04).
-      await tx.$executeRaw`
-        UPDATE weddings
-        SET end_date = ${end}, paid_through = ${end},
-            status = CASE
-              WHEN status = 'grace' AND event_date >= (${now}::timestamptz AT TIME ZONE
-                     coalesce(timezone, 'America/Sao_Paulo'))::date THEN 'published'::wedding_status
-              WHEN status IN ('grace', 'expired') THEN 'post_event'::wedding_status
-              ELSE status END,
-            grace_until = NULL, expired_at = NULL, purge_at = NULL, purge_notice_sent_at = NULL,
-            updated_at = ${now}
-        WHERE id = ${weddingId}::uuid`;
-      await tx.applicationLog.create({
-        data: {
-          createdAt: now,
-          action: 'wedding.courtesy_extended',
-          actorKind: 'admin',
-          actorUserId: adminUserId,
-          weddingId,
-          entityType: 'wedding',
-          entityId: weddingId,
-          data: { months, reason, previousEndDate: day(wedding.endDate), newEndDate },
-        },
-      });
-      // "O Kore estendeu o site sem custo. Ele fica no ar até 14 de mai. de 2027."
-      const owners = await tx.membership.findMany({
-        where: { weddingId, role: 'owner', removedAt: null },
-        select: { userId: true },
-      });
-      if (owners.length > 0)
-        await tx.notification.createMany({
-          data: owners.map(({ userId }) => ({
-            id: uuidV7({ now: now.getTime() }),
-            userId,
-            weddingId,
-            type: 'billing' as const,
-            groupKey: `billing:courtesy:${newEndDate}`,
-            payload: [
-              { kind: 'courtesy', endDate: newEndDate, at: now.toISOString() },
-            ] as Prisma.InputJsonValue,
-            createdAt: now,
-            updatedAt: now,
-          })),
-          skipDuplicates: true,
-        });
-      const pending = await tx.payment.findMany({
-        where: { weddingId, kind: 'extension', status: 'pending' },
-        select: { id: true },
-      });
-      for (const { id } of pending)
+      for (const id of pendingExtensionIds)
         this.transaction.schedule(() =>
           this.queue.enqueueCancel({ paymentId: id, reason: 'courtesy_extended' }),
         );
       return {
-        previousEndDate: wedding.endDate.toISOString().slice(0, 10),
+        previousEndDate,
         newEndDate,
         // O Pix de extensão pendente cancelado depois do commit (B10-5).
-        canceledPaymentId: pending[0]?.id ?? null,
+        canceledPaymentId: pendingExtensionIds[0] ?? null,
       };
     });
   }

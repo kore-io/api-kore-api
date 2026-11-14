@@ -1,6 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { BackofficeTransaction } from '../../../shared/database/backoffice-transaction';
-import { uuidV7 } from '../../../shared/ids/uuid-v7';
 import {
   PaymentDisputedError,
   PaymentNotFoundError,
@@ -10,6 +9,7 @@ import {
 } from '../domain/billing.errors';
 import { pastGatewayWindow } from '../domain/refund-receipt';
 import { CancelPendingPayment } from './cancel-pending-payment';
+import { ADMIN_BILLING_STORE, type AdminBillingStore } from './ports/admin-billing.store.port';
 import { REFUND_QUEUE, type RefundQueue } from './ports/refund-queue.port';
 
 const logger = new Logger('AdminRefund');
@@ -28,6 +28,7 @@ const logger = new Logger('AdminRefund');
 export class AdminRefund {
   constructor(
     private readonly transaction: BackofficeTransaction,
+    @Inject(ADMIN_BILLING_STORE) private readonly store: AdminBillingStore,
     @Inject(REFUND_QUEUE) private readonly refunds: RefundQueue,
     private readonly cancelPending: CancelPendingPayment,
   ) {}
@@ -43,67 +44,27 @@ export class AdminRefund {
     reason: string | null;
     now: Date;
   }): Promise<{ refundsPaymentIds: string[]; pastGatewayWindow: boolean }> {
-    const { ids, pendingExtensionId, pastWindow } = await this.transaction.run(async (tx) => {
-      const payment = await tx.payment.findUnique({
-        where: { id: paymentId },
-        select: { weddingId: true, kind: true, method: true, paidAt: true },
-      });
-      if (!payment) throw new PaymentNotFoundError();
-      const [row] = await tx.$queryRaw<{ result: string; payment_ids: string[] }[]>`
-        SELECT result, payment_ids::text[] AS payment_ids FROM apply_payment_refund(
-          ${payment.weddingId}::uuid, ${paymentId}::uuid, NULL, ${now}::timestamptz,
-          ${uuidV7({ now: now.getTime() })}::uuid, 'admin'::refund_origin,
-          ${adminUserId}::uuid, false)`;
-      switch (row?.result) {
-        case 'requested':
-          break;
-        case 'already_requested':
-          throw new RefundAlreadyRequestedError();
-        case 'disputed':
-          throw new PaymentDisputedError();
-        case 'not_paid':
-          throw new PaymentNotPaidError();
-        case 'not_last_extension':
-          throw new RefundNotLastExtensionError();
-        default:
-          throw new PaymentNotFoundError();
-      }
-      const rows = await tx.payment.findMany({
-        where: { id: { in: row.payment_ids } },
-        select: { id: true, kind: true, amountCents: true },
-      });
-      await tx.applicationLog.createMany({
-        data: rows.map((item) => ({
-          createdAt: now,
-          action: 'payment.refund_requested',
-          actorKind: 'admin' as const,
-          actorUserId: adminUserId,
-          weddingId: payment.weddingId,
-          entityType: 'payment',
-          entityId: item.id,
-          data: {
-            refundOrigin: 'admin',
-            kind: item.kind,
-            amountCents: item.amountCents,
-            requestedPaymentId: paymentId,
-            ...(reason ? { reason } : {}),
-          },
-        })),
-      });
-      const pending =
-        payment.kind === 'publication'
-          ? await tx.payment.findFirst({
-              where: { weddingId: payment.weddingId, kind: 'extension', status: 'pending' },
-              select: { id: true },
-            })
-          : null;
-      return {
-        ids: row.payment_ids,
-        pendingExtensionId: pending?.id ?? null,
-        // O aviso do Dialog (B3-6; decisão 259(2)): o estorno vai falhar no gateway.
-        pastWindow: pastGatewayWindow({ method: payment.method, paidAt: payment.paidAt, now }),
-      };
-    });
+    const outcome = await this.transaction.run(() =>
+      this.store.requestRefund({ paymentId, adminUserId, reason, now }),
+    );
+    switch (outcome.result) {
+      case 'requested':
+        break;
+      case 'already_requested':
+        throw new RefundAlreadyRequestedError();
+      case 'disputed':
+        throw new PaymentDisputedError();
+      case 'not_paid':
+        throw new PaymentNotPaidError();
+      case 'not_last_extension':
+        throw new RefundNotLastExtensionError();
+      default:
+        throw new PaymentNotFoundError();
+    }
+    const ids = outcome.paymentIds;
+    const pendingExtensionId = outcome.pendingExtensionId;
+    // O aviso do Dialog (B3-6; decisão 259(2)): o estorno vai falhar no gateway.
+    const pastWindow = pastGatewayWindow({ method: outcome.method, paidAt: outcome.paidAt, now });
 
     // Depois do commit (G1). Sem a fila, a reconciliação repõe o estorno.
     for (const id of ids) {

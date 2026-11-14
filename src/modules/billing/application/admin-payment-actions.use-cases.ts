@@ -22,6 +22,7 @@ import {
   refundReceiptKey,
   type RefundReceiptContentType,
 } from '../domain/refund-receipt';
+import { ADMIN_BILLING_STORE, type AdminBillingStore } from './ports/admin-billing.store.port';
 import { PAYMENT_LEDGER, type PaymentLedger } from './ports/payment-ledger.port';
 import { REFUND_QUEUE, type RefundQueue } from './ports/refund-queue.port';
 import { SyncPaymentWithGateway } from './sync-payment.use-case';
@@ -36,6 +37,7 @@ export class AdminPaymentActions {
     private readonly transaction: BackofficeTransaction,
     @Inject(PAYMENT_LEDGER) private readonly ledger: PaymentLedger,
     @Inject(REFUND_QUEUE) private readonly refunds: RefundQueue,
+    @Inject(ADMIN_BILLING_STORE) private readonly store: AdminBillingStore,
     @Inject(OBJECT_STORAGE) private readonly storage: ObjectStorage,
     private readonly sync: SyncPaymentWithGateway,
   ) {}
@@ -68,27 +70,19 @@ export class AdminPaymentActions {
     reason: string;
     now: Date;
   }): Promise<void> {
-    return this.transaction.run(async (tx) => {
+    return this.transaction.run(async () => {
       const locked = await this.ledger.lock({ paymentId });
       if (!locked) throw new PaymentNotFoundError();
       const { payment, wedding } = locked;
       if (payment.status !== 'refund_requested' || !payment.refundFailedAt)
         throw new RefundNotFailedError();
-      await tx.payment.update({
-        where: { id: paymentId },
-        data: { refundFailedAt: null, refundLastError: null },
-      });
-      await tx.applicationLog.create({
-        data: {
-          createdAt: now,
-          action: 'payment.refund_retried',
-          actorKind: 'admin',
-          actorUserId: adminUserId,
-          weddingId: wedding.id,
-          entityType: 'payment',
-          entityId: paymentId,
-          data: { reason, attempt: payment.refundAttempts + 1 },
-        },
+      await this.store.clearRefundFailure({
+        paymentId,
+        weddingId: wedding.id,
+        adminUserId,
+        reason,
+        attempt: payment.refundAttempts + 1,
+        now,
       });
       this.transaction.schedule(() =>
         this.refunds.enqueue({ paymentId, attempt: payment.refundAttempts + 1, delayMs: 0 }),
@@ -111,13 +105,7 @@ export class AdminPaymentActions {
     sizeBytes: number;
     now: Date;
   }): Promise<{ receiptKey: string; upload: PresignedPut }> {
-    const status = await this.transaction.run(async (tx) => {
-      const payment = await tx.payment.findUnique({
-        where: { id: paymentId },
-        select: { status: true },
-      });
-      return payment?.status ?? null;
-    });
+    const status = await this.transaction.run(() => this.store.paymentStatus({ paymentId }));
     if (!status) throw new PaymentNotFoundError();
     if (status !== 'refund_requested') throw new RefundNotRequestedError();
     const receiptKey = refundReceiptKey({
@@ -162,14 +150,8 @@ export class AdminPaymentActions {
   }: {
     paymentId: string;
   }): Promise<{ body: Buffer; contentType: RefundReceiptContentType }> {
-    const key = await this.transaction.run(async (tx) => {
-      const payment = await tx.payment.findUnique({
-        where: { id: paymentId },
-        select: { refundReceiptKey: true },
-      });
-      if (!payment) throw new PaymentNotFoundError();
-      return payment.refundReceiptKey;
-    });
+    const key = await this.transaction.run(() => this.store.receiptKeyOf({ paymentId }));
+    if (key === undefined) throw new PaymentNotFoundError();
     if (!key) throw new RefundReceiptNotFoundError();
     const head = await this.storage.head({ bucket: 'private', key });
     if (!head) throw new RefundReceiptNotFoundError();
