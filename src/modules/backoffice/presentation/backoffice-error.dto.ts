@@ -213,3 +213,27 @@ export class PayoutBelowMinimumAdminErrorBody {
   amountCents: number;
   minimumCents: number;
 }
+
+/** As ações na cerimonialista (Backoffice - cobrança RN08). */
+export class ReferrerNotFoundErrorBody {
+  static readonly status = 404;
+  @ApiProperty({ enum: [404] }) statusCode: 404;
+  @ApiProperty({ enum: ['REFERRER_NOT_FOUND'] }) error: 'REFERRER_NOT_FOUND';
+  @ApiProperty() message: string;
+}
+
+export class CommissionNotFoundErrorBody {
+  static readonly status = 404;
+  @ApiProperty({ enum: [404] }) statusCode: 404;
+  @ApiProperty({ enum: ['COMMISSION_NOT_FOUND'] }) error: 'COMMISSION_NOT_FOUND';
+  @ApiProperty() message: string;
+}
+
+export class CommissionNotBlockableErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['COMMISSION_NOT_BLOCKABLE'] }) error: 'COMMISSION_NOT_BLOCKABLE';
+  @ApiProperty() message: string;
+  /** O estado atual da comissão. */
+  @ApiProperty() status: string;
+}

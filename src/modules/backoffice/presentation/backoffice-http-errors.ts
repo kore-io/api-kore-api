@@ -1,3 +1,13 @@
+import { validationError } from '../../../shared/http/validation-errors';
+import {
+  CommissionNotBlockableError,
+  CommissionNotFoundError,
+  InvalidReferrerTaxIdError,
+  ReferrerAlreadyBlockedError,
+  ReferrerNotBlockedError,
+  ReferrerNotFoundError,
+  ReferrerTaxIdInUseError,
+} from '../domain/referrer-admin';
 import {
   ConflictException,
   ForbiddenException,
@@ -241,5 +251,44 @@ export function toHttpError(error: unknown): unknown {
       error: 'PAYOUT_HELD',
       message: 'A commission of this payout is still being refunded or disputed.',
     });
+  if (error instanceof ReferrerNotFoundError)
+    return new NotFoundException({
+      statusCode: 404,
+      error: 'REFERRER_NOT_FOUND',
+      message: 'Referrer not found.',
+    });
+  if (error instanceof CommissionNotFoundError)
+    return new NotFoundException({
+      statusCode: 404,
+      error: 'COMMISSION_NOT_FOUND',
+      message: 'Commission not found.',
+    });
+  if (error instanceof CommissionNotBlockableError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'COMMISSION_NOT_BLOCKABLE',
+      message: 'This commission cannot be blocked or unblocked in its current status.',
+      status: error.status,
+    });
+  if (error instanceof ReferrerTaxIdInUseError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'TAX_ID_IN_USE',
+      message: 'This CPF or CNPJ already belongs to another referrer.',
+    });
+  if (error instanceof ReferrerAlreadyBlockedError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'ALREADY_BLOCKED',
+      message: 'The referrer is already blocked.',
+    });
+  if (error instanceof ReferrerNotBlockedError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'NOT_BLOCKED',
+      message: 'The referrer is not blocked.',
+    });
+  if (error instanceof InvalidReferrerTaxIdError)
+    return validationError({ errors: [{ path: 'taxId', code: 'IS_TAX_ID', params: {} }] });
   return toBillingHttpError(error);
 }
