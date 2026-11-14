@@ -11,6 +11,7 @@ import {
   Min,
   MinLength,
   MaxLength,
+  ValidateIf,
 } from 'class-validator';
 import { DATE_ONLY } from '../../access/presentation/weddings.dto';
 import {
@@ -26,6 +27,7 @@ import {
   type Page,
   type RsvpFilter,
 } from '../application/ports/admin-weddings.reader.port';
+import { REQUEST_CHANNELS, type RequestChannel } from '../application/ports/guest-erasure.port';
 import {
   ADMIN_WEDDING_TABS,
   type AdminWeddingDetail,
@@ -141,6 +143,8 @@ class AdminPersonResponse {
 
 class AdminPendingPaymentResponse {
   @ApiProperty({ format: 'uuid' }) paymentId: string;
+  /** "Pix de R$ 308,10 gerado em 25/09…" ou o cartão em análise. */
+  @ApiProperty({ enum: ['pix', 'card'] }) method: 'pix' | 'card';
   amountCents: number;
   @ApiProperty({ format: 'date-time' }) createdAt: string;
 }
@@ -325,4 +329,28 @@ export class AdminWeddingDetailResponse {
 
 export class AdminBlockStateResponse {
   blocked: boolean;
+}
+
+/** Reatribuir o indicador (RN07): outro indicador ativo, ou `null` (Sem indicador), e o motivo. */
+export class ReassignReferrerBody extends AdminReasonBody {
+  @ApiProperty({ type: String, format: 'uuid', nullable: true })
+  @ValidateIf((_body: unknown, value: unknown) => value !== null)
+  @IsUUID()
+  referrerId: string | null;
+}
+
+export class ReassignReferrerResponse {
+  /** `unchanged` quando o indicador escolhido já é o do casamento. */
+  @ApiProperty({ enum: ['reassigned', 'unchanged'] }) status: 'reassigned' | 'unchanged';
+}
+
+/** Remover os dados a pedido do titular (RN10): "Como o pedido chegou" (decisão 256(2)). */
+export class EraseGuestBody {
+  @ApiProperty({ enum: REQUEST_CHANNELS })
+  @IsIn(REQUEST_CHANNELS)
+  requestChannel: RequestChannel;
+}
+
+export class GuestErasedResponse {
+  @ApiProperty({ enum: ['erased'] }) status: 'erased';
 }

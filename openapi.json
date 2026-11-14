@@ -8001,6 +8001,7 @@
                 "wedding_published",
                 "membership_removed",
                 "commission",
+                "referrer_reassigned",
                 "billing"
               ]
             }
@@ -10671,6 +10672,236 @@
           }
         },
         "summary": "Desbloquear (RN05): o mesmo Dialog, com o motivo.",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/weddings/{id}/referrer": {
+      "put": {
+        "operationId": "AdminWeddingsController_referrer_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReassignReferrerBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReassignReferrerResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/AlreadyPaidErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ReassignPaymentPendingErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ReferrerNotActiveErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SelfReferralErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Reatribuir o indicador (RN07): só o Admin, antes da publicação paga e sem pendente.",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/weddings/{id}/guests/{guestId}/erase": {
+      "post": {
+        "operationId": "AdminWeddingsController_erase_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "guestId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EraseGuestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuestErasedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuestNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Remover os dados de um convidado a pedido do titular (RN10): Admin e suporte.",
         "tags": [
           "admin"
         ]
@@ -19541,6 +19772,7 @@
               "wedding_published",
               "membership_removed",
               "commission",
+              "referrer_reassigned",
               "billing"
             ],
             "type": "string"
@@ -19558,7 +19790,7 @@
           },
           "payload": {
             "type": "array",
-            "description": "rsvp: por grupo, sem restrição, música nem nome de convidado (Central RN04).\nwedding_published e membership_removed: [{ partnerNames }] (revisão C8-3).\nbilling: um item por pagamento, com o valor só no detalhe (RN13).",
+            "description": "rsvp: por grupo, sem restrição, música nem nome de convidado (Central RN04).\nwedding_published e membership_removed: [{ partnerNames }] (revisão C8-3).\nreferrer_reassigned: [{ partnerNames, direction }], `lost` ao indicador\nantigo e `gained` ao novo, sem o nome do outro (Backoffice - acesso RN07).\nbilling: um item por pagamento, com o valor só no detalhe (RN13).",
             "items": {
               "oneOf": [
                 {
@@ -19667,6 +19899,7 @@
               "wedding_published",
               "membership_removed",
               "commission",
+              "referrer_reassigned",
               "billing"
             ],
             "type": "string"
@@ -22223,6 +22456,14 @@
             "type": "string",
             "format": "uuid"
           },
+          "method": {
+            "description": "\"Pix de R$ 308,10 gerado em 25/09…\" ou o cartão em análise.",
+            "enum": [
+              "pix",
+              "card"
+            ],
+            "type": "string"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -22233,6 +22474,7 @@
         },
         "required": [
           "paymentId",
+          "method",
           "createdAt",
           "amountCents"
         ]
@@ -22684,6 +22926,155 @@
           "statusCode",
           "error",
           "message"
+        ]
+      },
+      "AlreadyPaidErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "ALREADY_PAID"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "paidAt": {
+            "type": "string",
+            "description": "Quando a publicação foi paga (\"Indisponível: a publicação foi paga em 10/08.\").",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "paidAt"
+        ]
+      },
+      "ReassignPaymentPendingErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PAYMENT_PENDING"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "ReferrerNotActiveErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "REFERRER_NOT_ACTIVE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "ReassignReferrerBody": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 500,
+            "example": "Denúncia de conteúdo impróprio."
+          },
+          "referrerId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "reason",
+          "referrerId"
+        ]
+      },
+      "ReassignReferrerResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "description": "`unchanged` quando o indicador escolhido já é o do casamento.",
+            "enum": [
+              "reassigned",
+              "unchanged"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "EraseGuestBody": {
+        "type": "object",
+        "properties": {
+          "requestChannel": {
+            "enum": [
+              "email",
+              "whatsapp",
+              "phone",
+              "couple",
+              "other"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestChannel"
+        ]
+      },
+      "GuestErasedResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "erased"
+            ]
+          }
+        },
+        "required": [
+          "status"
         ]
       },
       "MonthPointResponse": {

@@ -24,8 +24,15 @@ export const PLANNER_NOTIFICATION_TYPES = [
 ] as const;
 export type PlannerNotificationType = (typeof PLANNER_NOTIFICATION_TYPES)[number];
 
+/**
+ * A central do indicador: os tipos da cerimonialista e a reatribuição feita
+ * pelo Admin (Backoffice - acesso RN07; decisão 80), que não tem preferência
+ * de e-mail (só a central).
+ */
+export const PLANNER_CENTER_TYPES = [...PLANNER_NOTIFICATION_TYPES, 'referrer_reassigned'] as const;
+
 /** Todo tipo que alguma central mostra (a do casal e a da cerimonialista). */
-export const CENTER_NOTIFICATION_TYPES = [...PLANNER_NOTIFICATION_TYPES, 'billing'] as const;
+export const CENTER_NOTIFICATION_TYPES = [...PLANNER_CENTER_TYPES, 'billing'] as const;
 export type CenterNotificationType = (typeof CENTER_NOTIFICATION_TYPES)[number];
 
 export type EmailFrequency = 'off' | 'immediate' | 'daily';

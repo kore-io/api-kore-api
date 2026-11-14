@@ -172,7 +172,7 @@ export class PrismaAdminWeddingsReader implements AdminWeddingsReader {
         ? await this.db.payment.findFirst({
             where: { weddingId, status: 'pending' },
             orderBy: { createdAt: 'desc' },
-            select: { id: true, amountCents: true, createdAt: true },
+            select: { id: true, method: true, amountCents: true, createdAt: true },
           })
         : null;
     let block: AdminWeddingGeneral['block'] = null;
@@ -211,7 +211,12 @@ export class PrismaAdminWeddingsReader implements AdminWeddingsReader {
       purgeAt: day(wedding.purgeAt),
       deletionScheduledFor: day(wedding.deletionScheduledFor),
       pendingPayment: pending
-        ? { paymentId: pending.id, amountCents: pending.amountCents, createdAt: pending.createdAt }
+        ? {
+            paymentId: pending.id,
+            method: pending.method,
+            amountCents: pending.amountCents,
+            createdAt: pending.createdAt,
+          }
         : null,
       block,
     };

@@ -28,7 +28,7 @@ import {
   type CenterNotificationType,
   EMAIL_PREFERENCE_TYPES,
   NOTIFICATION_TYPES,
-  PLANNER_NOTIFICATION_TYPES,
+  PLANNER_CENTER_TYPES,
   type NotificationType,
   type PlannerNotificationType,
   type PreferenceRow,
@@ -71,11 +71,9 @@ function scopeOf({
       throw validationError({
         errors: [{ path: 'weddingId', code: 'NOT_ALLOWED', params: {} }],
       });
-    if (type !== undefined && !(PLANNER_NOTIFICATION_TYPES as readonly string[]).includes(type))
+    if (type !== undefined && !(PLANNER_CENTER_TYPES as readonly string[]).includes(type))
       throw validationError({
-        errors: [
-          { path: 'type', code: 'IS_IN', params: { values: [...PLANNER_NOTIFICATION_TYPES] } },
-        ],
+        errors: [{ path: 'type', code: 'IS_IN', params: { values: [...PLANNER_CENTER_TYPES] } }],
       });
     return { planner: true };
   }

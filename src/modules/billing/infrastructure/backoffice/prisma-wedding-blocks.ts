@@ -24,12 +24,14 @@ export class PrismaWeddingBlocks implements WeddingBlocks {
     weddingId,
     byUserId,
     reason,
+    ipHash,
     now,
   }: {
     action: string;
     weddingId: string;
     byUserId: string;
     reason: string | null;
+    ipHash: string | null;
     now: Date;
   }) {
     await this.db().applicationLog.createMany({
@@ -37,13 +39,15 @@ export class PrismaWeddingBlocks implements WeddingBlocks {
         {
           createdAt: now,
           action,
-          actorKind: 'user',
+          // Só o staff bloqueia (a rota do Backoffice; decisão 68).
+          actorKind: 'admin',
           actorUserId: byUserId,
           weddingId,
           entityType: 'wedding',
           entityId: weddingId,
           // O motivo fica no log, não no casamento (decisão 82: o casal não o vê).
           data: reason ? { reason } : undefined,
+          ipHash,
         },
       ],
     });
@@ -53,11 +57,13 @@ export class PrismaWeddingBlocks implements WeddingBlocks {
     weddingId,
     byUserId,
     reason,
+    ipHash = null,
     now,
   }: {
     weddingId: string;
     byUserId: string;
     reason: string;
+    ipHash?: string | null;
     now: Date;
   }) {
     const current = await this.lock(weddingId);
@@ -67,7 +73,7 @@ export class PrismaWeddingBlocks implements WeddingBlocks {
       where: { id: weddingId },
       data: { blockedAt: now, blockedByUserId: byUserId },
     });
-    await this.log({ action: 'wedding.blocked', weddingId, byUserId, reason, now });
+    await this.log({ action: 'wedding.blocked', weddingId, byUserId, reason, ipHash, now });
     return 'blocked' as const;
   }
 
@@ -75,11 +81,13 @@ export class PrismaWeddingBlocks implements WeddingBlocks {
     weddingId,
     byUserId,
     reason,
+    ipHash = null,
     now,
   }: {
     weddingId: string;
     byUserId: string;
     reason: string | null;
+    ipHash?: string | null;
     now: Date;
   }) {
     const current = await this.lock(weddingId);
@@ -89,7 +97,7 @@ export class PrismaWeddingBlocks implements WeddingBlocks {
       where: { id: weddingId },
       data: { blockedAt: null, blockedByUserId: null },
     });
-    await this.log({ action: 'wedding.unblocked', weddingId, byUserId, reason, now });
+    await this.log({ action: 'wedding.unblocked', weddingId, byUserId, reason, ipHash, now });
     return 'unblocked' as const;
   }
 

@@ -27,15 +27,17 @@ export class BlockWedding {
     weddingId,
     byUserId,
     reason,
+    ipHash = null,
     now,
   }: {
     weddingId: string;
     byUserId: string;
     reason: string;
+    ipHash?: string | null;
     now: Date;
   }): Promise<'blocked' | 'already_blocked' | 'not_found'> {
     return this.transaction.run(async () => {
-      const result = await this.blocks.block({ weddingId, byUserId, reason, now });
+      const result = await this.blocks.block({ weddingId, byUserId, reason, ipHash, now });
       if (result !== 'blocked') return result;
       for (const paymentId of await this.blocks.pendingPaymentIds({ weddingId }))
         this.transaction.schedule(() => this.queue.enqueueCancel({ paymentId }));
@@ -47,13 +49,17 @@ export class BlockWedding {
     weddingId,
     byUserId,
     reason,
+    ipHash = null,
     now,
   }: {
     weddingId: string;
     byUserId: string;
     reason: string | null;
+    ipHash?: string | null;
     now: Date;
   }): Promise<'unblocked' | 'not_blocked' | 'not_found'> {
-    return this.transaction.run(() => this.blocks.unblock({ weddingId, byUserId, reason, now }));
+    return this.transaction.run(() =>
+      this.blocks.unblock({ weddingId, byUserId, reason, ipHash, now }),
+    );
   }
 }

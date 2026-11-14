@@ -204,7 +204,7 @@ describe('Backoffice: acesso e casamentos (Backoffice - acesso RN01, RN02, RN05 
       // O Pix pendente tem valor: só o Admin o vê (antes do bloqueio, que o cancela pelo worker).
       const pendingAsAdmin = await get(admin.cookie, `/weddings/${weddingId}`).expect(200);
       expect(pendingAsAdmin.body.general.pendingPayment).toEqual(
-        expect.objectContaining({ amountCents: expect.any(Number) }),
+        expect.objectContaining({ amountCents: expect.any(Number), method: 'pix' }),
       );
       const pendingAsSupport = await get(support.cookie, `/weddings/${weddingId}`).expect(200);
       expect(pendingAsSupport.body.general.pendingPayment).toBeNull();
@@ -274,6 +274,14 @@ describe('Backoffice: acesso e casamentos (Backoffice - acesso RN01, RN02, RN05 
         body.log.items.some((item) => JSON.stringify(item.data ?? {}).includes('Cents'));
       expect(withCents(adminLog.body)).toBe(true);
       expect(withCents(supportLog.body)).toBe(false);
+      // As outras abas também deixam linha (B9-4), com a aba.
+      const tabs = await db.applicationLog.findMany({
+        where: { weddingId, action: 'admin.wedding_viewed', actorUserId: admin.userId },
+      });
+      expect(tabs.map((row) => (row.data as { tab: string }).tab).sort()).toEqual([
+        'log',
+        'numbers',
+      ]);
     });
 
     it('RN06 - a lápide do casamento expurgado; o casamento que não existe é 404', async () => {
@@ -337,7 +345,7 @@ describe('Backoffice: acesso e casamentos (Backoffice - acesso RN01, RN02, RN05 
         status: 'published',
         blockedByUserId: support.userId,
       });
-      await db.applicationLog.findFirstOrThrow({
+      const blockedLog = await db.applicationLog.findFirstOrThrow({
         where: {
           weddingId,
           action: 'wedding.blocked',
@@ -345,6 +353,8 @@ describe('Backoffice: acesso e casamentos (Backoffice - acesso RN01, RN02, RN05 
           data: { equals: { reason } },
         },
       });
+      // A rota é só do staff: o ator é admin, com o hash do IP.
+      expect(blockedLog).toMatchObject({ actorKind: 'admin', ipHash: expect.any(String) });
 
       await post(support.cookie, `/weddings/${weddingId}/unblock`, {
         reason: 'Conteúdo removido pelo casal.',
