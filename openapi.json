@@ -22544,6 +22544,11 @@
             "description": "O vínculo ativo de quem lê (decisão 261(1)).",
             "format": "uuid"
           },
+          "timezone": {
+            "type": "string",
+            "description": "O fuso IANA do casamento, para o \"Enviado em\" (decisão 263).",
+            "example": "America/Sao_Paulo"
+          },
           "coupleInvitations": {
             "description": "Só quando ela criou o casamento.",
             "type": "array",
@@ -22587,6 +22592,7 @@
           "slug",
           "stats",
           "myMembershipId",
+          "timezone",
           "coupleInvitations",
           "hasOwner",
           "canEditIdentity",

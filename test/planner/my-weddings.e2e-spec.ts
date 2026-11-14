@@ -316,6 +316,7 @@ describe('Meus casamentos e alertas (banco real; decisões 223 e 224)', () => {
     it('RN08 - no casamento do casal (não criado por ela), sem convites e sem a identidade', async () => {
       const planner = await juliana();
       const { weddingId } = await coupleWedding({ plannerId: planner.userId });
+      await db.wedding.update({ where: { id: weddingId }, data: { timezone: 'America/Manaus' } });
 
       const { body } = await detail(planner.cookie, weddingId).expect(200);
 
@@ -330,6 +331,8 @@ describe('Meus casamentos e alertas (banco real; decisões 223 e 224)', () => {
         where: { weddingId, userId: planner.userId, removedAt: null },
       });
       expect(body.myMembershipId).toBe(mine.id);
+      // Decisão 263: o fuso do casamento, para o "Enviado em".
+      expect(body.timezone).toBe('America/Manaus');
     });
 
     it('RN01 - sem vínculo de colaboradora (outra assessoria, o casamento próprio, quem saiu): 404', async () => {

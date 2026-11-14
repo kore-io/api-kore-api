@@ -84,6 +84,8 @@ export interface MyWeddingDetail extends MyWeddingItem {
   canEditIdentity: boolean;
   /** O vínculo ativo de quem lê, para o "Sair do casamento" (decisão 261(1)). */
   myMembershipId: string;
+  /** O fuso do casamento, para as datas do detalhe ("Enviado em"; decisão 263). */
+  timezone: string;
   /** Só quando ela criou o casamento (revisão C2-8): o convite do parceiro não é dela. */
   coupleInvitations: CoupleInvitationView[];
 }
@@ -223,6 +225,7 @@ export class GetMyWedding {
       },
       hasOwner: detail.hasOwner,
       myMembershipId: detail.myMembershipId,
+      timezone: detail.timezone,
       canEditIdentity: await this.authorization.canManageSiteIdentity({ userId, weddingId }),
       coupleInvitations,
     };
