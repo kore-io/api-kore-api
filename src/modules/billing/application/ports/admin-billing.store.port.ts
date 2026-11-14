@@ -48,7 +48,9 @@ export interface AdminBillingStore {
     now: Date;
   }): Promise<void>;
 
-  paymentStatus(input: { paymentId: string }): Promise<string | null>;
+  refundState(input: {
+    paymentId: string;
+  }): Promise<{ status: string; refundFailed: boolean } | null>;
   /** `undefined`: o pagamento não existe; `null`: sem comprovante. */
   receiptKeyOf(input: { paymentId: string }): Promise<string | null | undefined>;
 

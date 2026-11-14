@@ -243,6 +243,7 @@ export class AdminPaymentsController {
     ActionNotAllowedErrorBody,
     PaymentNotFoundErrorBody,
     RefundNotRequestedErrorBody,
+    RefundNotFailedErrorBody,
     RefundReceiptMissingErrorBody,
   )
   async manualRefund(
@@ -275,6 +276,7 @@ export class AdminPaymentsController {
     ActionNotAllowedErrorBody,
     PaymentNotFoundErrorBody,
     RefundNotRequestedErrorBody,
+    RefundNotFailedErrorBody,
   )
   async authorizeReceiptUpload(
     @Param('id', paymentIdPipe) paymentId: string,

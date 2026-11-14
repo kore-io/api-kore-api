@@ -121,12 +121,18 @@ export class PrismaAdminBillingStore implements AdminBillingStore {
     });
   }
 
-  async paymentStatus({ paymentId }: { paymentId: string }): Promise<string | null> {
+  async refundState({
+    paymentId,
+  }: {
+    paymentId: string;
+  }): Promise<{ status: string; refundFailed: boolean } | null> {
     const payment = await this.db().payment.findUnique({
       where: { id: paymentId },
-      select: { status: true },
+      select: { status: true, refundFailedAt: true },
     });
-    return payment?.status ?? null;
+    return payment
+      ? { status: payment.status, refundFailed: payment.refundFailedAt !== null }
+      : null;
   }
 
   async receiptKeyOf({ paymentId }: { paymentId: string }): Promise<string | null | undefined> {

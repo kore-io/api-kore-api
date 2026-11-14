@@ -105,9 +105,11 @@ export class AdminPaymentActions {
     sizeBytes: number;
     now: Date;
   }): Promise<{ receiptKey: string; upload: PresignedPut }> {
-    const status = await this.transaction.run(() => this.store.paymentStatus({ paymentId }));
-    if (!status) throw new PaymentNotFoundError();
-    if (status !== 'refund_requested') throw new RefundNotRequestedError();
+    const state = await this.transaction.run(() => this.store.refundState({ paymentId }));
+    if (!state) throw new PaymentNotFoundError();
+    if (state.status !== 'refund_requested') throw new RefundNotRequestedError();
+    // Decisão 262: o comprovante só depois de o estorno do gateway falhar.
+    if (!state.refundFailed) throw new RefundNotFailedError();
     const receiptKey = refundReceiptKey({
       paymentId,
       token: randomBytes(16).toString('hex'),
@@ -135,6 +137,13 @@ export class AdminPaymentActions {
     receiptKey: string;
     now: Date;
   }): Promise<void> {
+    // O estado antes do arquivo (a transação do sync confere de novo, travada).
+    const state = await this.transaction.run(() =>
+      this.store.refundState({ paymentId: input.paymentId }),
+    );
+    if (!state) throw new PaymentNotFoundError();
+    if (state.status !== 'refund_requested') throw new RefundNotRequestedError();
+    if (!state.refundFailed) throw new RefundNotFailedError();
     if (!isRefundReceiptKeyOf({ key: input.receiptKey, paymentId: input.paymentId }))
       throw new RefundReceiptMissingError();
     const head = await this.storage.head({ bucket: 'private', key: input.receiptKey });
@@ -142,6 +151,7 @@ export class AdminPaymentActions {
     const result = await this.sync.recordManualRefund({ ...input, receipt: input.receiptKey });
     if (result === 'no_payment') throw new PaymentNotFoundError();
     if (result === 'not_applicable') throw new RefundNotRequestedError();
+    if (result === 'not_failed') throw new RefundNotFailedError();
   }
 
   /** O comprovante, só para o Admin (decisão 259(1)). */

@@ -10963,7 +10963,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RefundNotRequestedErrorBody"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RefundNotRequestedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RefundNotFailedErrorBody"
+                    }
+                  ]
                 }
               }
             },
@@ -11084,7 +11091,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RefundNotRequestedErrorBody"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RefundNotRequestedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RefundNotFailedErrorBody"
+                    }
+                  ]
                 }
               }
             },

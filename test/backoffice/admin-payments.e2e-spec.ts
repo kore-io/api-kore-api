@@ -7,13 +7,31 @@ import { BackofficePrismaService } from '../../src/shared/database/backoffice-pr
 import { localDate } from '../../src/shared/time/local-date';
 import { createTestApp } from '../support/create-test-app';
 import { createTestWorker } from '../support/create-test-worker';
-import { devPaymentEvent, expectStatus, publishByPayment } from '../support/payments';
+import {
+  devPaymentEvent,
+  expectStatus,
+  payForExtension,
+  payForPublication,
+  publishByPayment,
+} from '../support/payments';
 import { signedInUser, staffUser } from '../support/sessions';
 import { seedWedding } from '../support/weddings';
 
 const ORIGIN = process.env.ALLOWED_ORIGINS?.split(',')[0] ?? 'http://localhost:5173';
 const DAY_MS = 86_400_000;
 const day = (value: string) => new Date(`${value}T00:00:00Z`);
+const plus = (value: string, days: number) =>
+  new Date(day(value).getTime() + days * DAY_MS).toISOString().slice(0, 10);
+
+async function until<T>(read: () => Promise<T>, done: (value: T) => boolean): Promise<T> {
+  const deadline = Date.now() + 10_000;
+  for (;;) {
+    const value = await read();
+    if (done(value)) return value;
+    if (Date.now() > deadline) throw new Error('A condição não chegou a tempo.');
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+}
 
 /**
  * A Cobrança do Backoffice (Backoffice - cobrança RN01 a RN07 e RN11): lista,
@@ -166,6 +184,82 @@ describe('Backoffice: Cobrança (Backoffice - cobrança RN02 a RN07 e RN11; banc
     await get(support.cookie, `/weddings/${weddingId}`, { tab: 'billing' }).expect(403);
   });
 
+  for (const state of ['grace', 'expired'] as const)
+    it(`RN05 - o Reembolsar da publicação em ${state === 'grace' ? 'carência' : 'expirado'} volta a rascunho sem o ciclo, e o casal publica de novo`, async () => {
+      const admin = await staffUser({ app, role: 'admin' });
+      const { ana, weddingId, paymentId } = await paid({ paidDaysAgo: 90 });
+      const event = plus(today, -60);
+      const end = state === 'grace' ? plus(today, -2) : plus(today, -30);
+      await db.wedding.update({
+        where: { id: weddingId },
+        data: {
+          status: state,
+          eventDate: day(event),
+          endDate: day(end),
+          paidThrough: day(end),
+          graceUntil: day(plus(end, 7)),
+          ...(state === 'expired'
+            ? {
+                expiredAt: day(plus(end, 8)),
+                purgeAt: day(addMonths({ day: plus(end, 8), months: 6 })),
+              }
+            : {}),
+        },
+      });
+      await post(admin.cookie, `/payments/${paymentId}/refund`, {
+        reason: 'Casal pediu depois do prazo.',
+      }).expect(202);
+      expect(await db.wedding.findUniqueOrThrow({ where: { id: weddingId } })).toMatchObject({
+        status: 'draft',
+        endDate: null,
+        graceUntil: null,
+        expiredAt: null,
+        purgeAt: null,
+        purgeNoticeSentAt: null,
+      });
+      expectStatus(await devPaymentEvent({ app, paymentId, event: 'refund' }), 200);
+      const again = await payForPublication({
+        app,
+        cookie: ana.cookie,
+        weddingId,
+        endDate: addMonths({ day: today, months: 3 }),
+      });
+      expectStatus(again, 201);
+      expectStatus(
+        await devPaymentEvent({ app, paymentId: again.body.paymentId as string, event: 'confirm' }),
+        200,
+      );
+      expect((await db.wedding.findUniqueOrThrow({ where: { id: weddingId } })).status).toBe(
+        'published',
+      );
+    });
+
+  it('RN06 (B10-5) - a cortesia cancela o Pix de extensão aberto', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const { ana, weddingId } = await paid();
+    const pix = await payForExtension({
+      app,
+      cookie: ana.cookie,
+      weddingId,
+      endDate: addMonths({ day: endDate, months: 3 }),
+      method: 'pix',
+    });
+    expectStatus(pix, 201);
+    const pendingId = pix.body.paymentId as string;
+    expect((await db.payment.findUniqueOrThrow({ where: { id: pendingId } })).status).toBe(
+      'pending',
+    );
+    const response = await post(admin.cookie, `/weddings/${weddingId}/courtesy`, {
+      months: 1,
+      reason: 'Compensação do bloqueio.',
+    }).expect(200);
+    expect(response.body.canceledPaymentId).toBe(pendingId);
+    await until(
+      () => db.payment.findUniqueOrThrow({ where: { id: pendingId } }),
+      (payment) => payment.status === 'canceled',
+    );
+  });
+
   it('RN07 - o CSV do período: o pagamento, o código e o log da exportação', async () => {
     const admin = await staffUser({ app, role: 'admin' });
     const { paymentId } = await paid({ paidDaysAgo: 1 });
@@ -270,6 +364,27 @@ describe('Backoffice: Cobrança (Backoffice - cobrança RN02 a RN07 e RN11; banc
         refundFailedAt: new Date(),
       },
     });
+    // Decisão 262: com o estorno do gateway ainda correndo, 409 REFUND_NOT_FAILED.
+    const running = await paid();
+    await db.payment.update({
+      where: { id: running.paymentId },
+      data: { status: 'refund_requested', refundOrigin: 'couple', refundRequestedAt: new Date() },
+    });
+    const early = [
+      [
+        'refund/manual',
+        {
+          reason: 'Pix devolvido pelo banco.',
+          receipt: `refund-receipts/${running.paymentId}/${'a'.repeat(32)}.pdf`,
+        },
+      ],
+      ['refund/receipt-upload', { contentType: 'application/pdf', sizeBytes: 100 }],
+    ] as const;
+    for (const [path, body] of early)
+      expect(
+        (await post(admin.cookie, `/payments/${running.paymentId}/${path}`, body).expect(409)).body
+          .error,
+      ).toBe('REFUND_NOT_FAILED');
     // O comprovante sobe pela URL pré-assinada (decisão 259(1)); sem ele, 422.
     expect(
       (

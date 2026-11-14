@@ -315,12 +315,14 @@ export class SyncPaymentWithGateway {
     /** A chave do comprovante no bucket privado (decisão 259(1)), já conferida. */
     receipt: string;
     now: Date;
-  }): Promise<'refunded' | 'no_payment' | 'not_applicable'> {
+  }): Promise<'refunded' | 'no_payment' | 'not_applicable' | 'not_failed'> {
     return this.transaction.run(async () => {
       const locked = await this.ledger.lock({ paymentId });
       if (!locked) return 'no_payment';
       const { wedding, payment } = locked;
       if (payment.status !== 'refund_requested') return 'not_applicable';
+      // Decisão 262: só com o estorno do gateway já falhado (nunca em dobro).
+      if (!payment.refundFailedAt) return 'not_failed';
       await this.adminStore.markRefundedOutside({ paymentId, receiptKey: receipt });
       await this.refunded({ wedding, payment: { ...payment, refundOrigin: 'manual' }, now });
       await this.adminStore.log({
