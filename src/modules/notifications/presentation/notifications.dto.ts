@@ -78,10 +78,17 @@ export class BillingEntryResponse {
       'grace',
       'expired',
       'purge_soon',
+      'courtesy',
     ],
   })
   kind:
-    'payment_confirmed' | 'refund_completed' | 'end_date_soon' | 'grace' | 'expired' | 'purge_soon';
+    | 'payment_confirmed'
+    | 'refund_completed'
+    | 'end_date_soon'
+    | 'grace'
+    | 'expired'
+    | 'purge_soon'
+    | 'courtesy';
   /** Só nos avisos de pagamento. */
   @ApiProperty({ format: 'uuid', required: false }) paymentId?: string;
   /** Os avisos de saída do ar (Data de saída do ar RN03): os dias até a endDate. */

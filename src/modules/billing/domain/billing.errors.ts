@@ -139,3 +139,8 @@ export class RefundWindowOpenError extends Error {
 export class NoDeletionScheduledError extends Error {
   override name = 'NoDeletionScheduledError';
 }
+
+/** A ação do Admin não vale no estado do pagamento (409 PAYMENT_STATE_CONFLICT; Backoffice - cobrança RN11). */
+export class PaymentStateConflictError extends Error {
+  override name = 'PaymentStateConflictError';
+}

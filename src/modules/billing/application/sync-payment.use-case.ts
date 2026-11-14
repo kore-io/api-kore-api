@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import type { Prisma } from '../../../generated/prisma/client';
 import { BackofficeTransaction } from '../../../shared/database/backoffice-transaction';
 import { daysBetween, localDate } from '../../../shared/time/local-date';
 import {
@@ -47,7 +48,8 @@ export type CancelReason =
   | 'publication_refunded'
   | 'end_date_changed'
   | 'wedding_blocked'
-  | 'wedding_deletion';
+  | 'wedding_deletion'
+  | 'courtesy_extended';
 
 /**
  * Aplica ao Payment o estado que o gateway devolveu na consulta (Publicar e
@@ -236,6 +238,143 @@ export class SyncPaymentWithGateway {
 
       await this.apply({ wedding, payment, now, cardLast4: charge.cardLast4 });
       return 'applied';
+    });
+  }
+
+  /**
+   * Aplicar mesmo assim (Backoffice - cobrança RN11; B10-3): o pagamento pago
+   * com valor menor (o `gateway_amount_mismatch`, sem appliedAt) é aplicado
+   * como se o total batesse, se o casamento ainda o aceita; grava o
+   * appliedByAdminAt, o log `payment.applied_by_admin` com o motivo e fecha o alerta.
+   */
+  applyByAdmin({
+    paymentId,
+    adminUserId,
+    reason,
+    now,
+  }: {
+    paymentId: string;
+    adminUserId: string;
+    reason: string;
+    now: Date;
+  }): Promise<'applied' | 'no_payment' | 'not_applicable'> {
+    return this.transaction.run(async () => {
+      const locked = await this.ledger.lock({ paymentId });
+      if (!locked) return 'no_payment';
+      const { wedding, payment } = locked;
+      if (payment.status !== 'paid' || payment.appliedAt) return 'not_applicable';
+      const decision = decideConfirmation({
+        payment: { ...payment, status: 'pending' },
+        wedding,
+        chargedCents: payment.amountCents,
+        otherPublicationApplied:
+          payment.kind === 'publication' &&
+          (await this.ledger.otherPublicationApplied({ weddingId: wedding.id, paymentId })),
+      });
+      if (decision.kind !== 'apply') return 'not_applicable';
+      await this.transaction.client().payment.update({
+        where: { id: paymentId },
+        data: { appliedByAdminAt: now },
+      });
+      await this.apply({ wedding, payment, now, cardLast4: payment.cardLast4 });
+      await this.adminLog({
+        action: 'payment.applied_by_admin',
+        weddingId: wedding.id,
+        paymentId,
+        adminUserId,
+        data: { reason, amountCents: payment.amountCents },
+        now,
+      });
+      await this.resolveAlerts({ paymentId, types: ['gateway_amount_mismatch'], adminUserId, now });
+      return 'applied';
+    });
+  }
+
+  /**
+   * Registrar reembolso feito por fora (RN11; B3-1): o pagamento em
+   * refund_requested vai a refunded com a origem manual, sem chamar o gateway,
+   * com o comprovante; os efeitos do reembolso concluído (a comissão estornada,
+   * o aviso ao casal), o log `payment.refund_recorded_manually` e o alerta fechado.
+   */
+  recordManualRefund({
+    paymentId,
+    adminUserId,
+    reason,
+    receipt,
+    now,
+  }: {
+    paymentId: string;
+    adminUserId: string;
+    reason: string;
+    receipt: string;
+    now: Date;
+  }): Promise<'refunded' | 'no_payment' | 'not_applicable'> {
+    return this.transaction.run(async () => {
+      const locked = await this.ledger.lock({ paymentId });
+      if (!locked) return 'no_payment';
+      const { wedding, payment } = locked;
+      if (payment.status !== 'refund_requested') return 'not_applicable';
+      await this.transaction.client().payment.update({
+        where: { id: paymentId },
+        data: { refundOrigin: 'manual', refundedOutsideGateway: true, refundReceiptKey: receipt },
+      });
+      await this.refunded({ wedding, payment: { ...payment, refundOrigin: 'manual' }, now });
+      await this.adminLog({
+        action: 'payment.refund_recorded_manually',
+        weddingId: wedding.id,
+        paymentId,
+        adminUserId,
+        data: { reason, receipt, amountCents: payment.amountCents },
+        now,
+      });
+      await this.resolveAlerts({ paymentId, types: ['refund_failed'], adminUserId, now });
+      return 'refunded';
+    });
+  }
+
+  private async adminLog({
+    action,
+    weddingId,
+    paymentId,
+    adminUserId,
+    data,
+    now,
+  }: {
+    action: string;
+    weddingId: string;
+    paymentId: string;
+    adminUserId: string;
+    data: Record<string, unknown>;
+    now: Date;
+  }): Promise<void> {
+    await this.transaction.client().applicationLog.create({
+      data: {
+        createdAt: now,
+        action,
+        actorKind: 'admin',
+        actorUserId: adminUserId,
+        weddingId,
+        entityType: 'payment',
+        entityId: paymentId,
+        data: data as Prisma.InputJsonValue,
+      },
+    });
+  }
+
+  private async resolveAlerts({
+    paymentId,
+    types,
+    adminUserId,
+    now,
+  }: {
+    paymentId: string;
+    types: ('gateway_amount_mismatch' | 'refund_failed')[];
+    adminUserId: string;
+    now: Date;
+  }): Promise<void> {
+    await this.transaction.client().alert.updateMany({
+      where: { entityType: 'payment', entityId: paymentId, type: { in: types }, status: 'open' },
+      data: { status: 'resolved', resolvedAt: now, resolvedByUserId: adminUserId },
     });
   }
 

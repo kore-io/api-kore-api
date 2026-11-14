@@ -12,7 +12,7 @@ export interface RefundQueue {
    */
   enqueueCancel(input: {
     paymentId: string;
-    reason?: 'wedding_blocked' | 'wedding_deletion';
+    reason?: 'wedding_blocked' | 'wedding_deletion' | 'courtesy_extended';
   }): Promise<void>;
 }
 

@@ -32,6 +32,7 @@ import {
   ConfirmNameMismatchError,
   NoDeletionScheduledError,
   RefundWindowOpenError,
+  PaymentStateConflictError,
 } from '../domain/billing.errors';
 import { InstallmentsOutOfRangeError } from '../domain/pricing';
 
@@ -194,6 +195,12 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 409,
       error: 'NO_DELETION_SCHEDULED',
       message: 'There is no deletion to cancel.',
+    });
+  if (error instanceof PaymentStateConflictError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'PAYMENT_STATE_CONFLICT',
+      message: 'The payment is not in a state that allows this action.',
     });
   return toAccessHttpError(error);
 }

@@ -40,7 +40,7 @@ import {
   PayoutStatusConflictError,
   PayoutStillHeldError,
 } from '../../billing/domain/payout.errors';
-import { toHttpError as toAccessHttpError } from '../../access/presentation/access-http-errors';
+import { toHttpError as toBillingHttpError } from '../../billing/presentation/billing-http-errors';
 
 /** Erros do Backoffice para HTTP. */
 export function toHttpError(error: unknown): unknown {
@@ -241,5 +241,5 @@ export function toHttpError(error: unknown): unknown {
       error: 'PAYOUT_HELD',
       message: 'A commission of this payout is still being refunded or disputed.',
     });
-  return toAccessHttpError(error);
+  return toBillingHttpError(error);
 }

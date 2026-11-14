@@ -1,0 +1,262 @@
+import { INestApplication } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { randomUUID } from 'node:crypto';
+import request from 'supertest';
+import { addMonths } from '../../src/modules/billing/domain/pricing';
+import { BackofficePrismaService } from '../../src/shared/database/backoffice-prisma.service';
+import { localDate } from '../../src/shared/time/local-date';
+import { createTestApp } from '../support/create-test-app';
+import { createTestWorker } from '../support/create-test-worker';
+import { devPaymentEvent, expectStatus, publishByPayment } from '../support/payments';
+import { signedInUser, staffUser } from '../support/sessions';
+import { seedWedding } from '../support/weddings';
+
+const ORIGIN = process.env.ALLOWED_ORIGINS?.split(',')[0] ?? 'http://localhost:5173';
+const DAY_MS = 86_400_000;
+const day = (value: string) => new Date(`${value}T00:00:00Z`);
+
+/**
+ * A Cobrança do Backoffice (Backoffice - cobrança RN01 a RN07 e RN11): lista,
+ * detalhe, aba do casamento, Reembolsar, cortesia, CSV e as ações dos alertas.
+ */
+describe('Backoffice: Cobrança (Backoffice - cobrança RN02 a RN07 e RN11; banco real)', () => {
+  let app: INestApplication;
+  let worker: TestingModule;
+  let db: BackofficePrismaService;
+  const today = localDate({ at: new Date(), timezone: 'America/Sao_Paulo' });
+  const eventDate = addMonths({ day: today, months: 2 });
+  const endDate = addMonths({ day: eventDate, months: 3 });
+
+  beforeAll(async () => {
+    app = await createTestApp();
+    worker = await createTestWorker();
+    db = app.get(BackofficePrismaService);
+  });
+
+  afterAll(async () => {
+    await worker?.close();
+    await app?.close();
+  });
+
+  const http = () => request(app.getHttpServer());
+  const post = (cookie: string, path: string, body: Record<string, unknown> = {}) =>
+    http().post(`/v1/admin${path}`).set('Cookie', cookie).set('Origin', ORIGIN).send(body);
+  const get = (cookie: string, path: string, query: Record<string, string> = {}) =>
+    http().get(`/v1/admin${path}`).query(query).set('Cookie', cookie);
+
+  /** Ana publicou e pagou há `paidDaysAgo` dias (fora do prazo de 7 dias do casal). */
+  async function paid({ paidDaysAgo = 20 }: { paidDaysAgo?: number } = {}) {
+    const ana = await signedInUser({ app });
+    const { weddingId } = await seedWedding({ db, ownerId: ana.userId });
+    await db.wedding.update({ where: { id: weddingId }, data: { eventDate: day(eventDate) } });
+    const { paymentId } = await publishByPayment({ app, cookie: ana.cookie, weddingId, endDate });
+    await db.payment.update({
+      where: { id: paymentId },
+      data: { paidAt: new Date(Date.now() - paidDaysAgo * DAY_MS) },
+    });
+    return { ana, weddingId, paymentId };
+  }
+
+  it('RN05 - o Admin reembolsa a qualquer momento: integral, o site volta a rascunho, o motivo no log e o estorno pelo job', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const support = await staffUser({ app, role: 'support' });
+    const { weddingId, paymentId } = await paid();
+    expect(
+      (await post(support.cookie, `/payments/${paymentId}/refund`).expect(403)).body.error,
+    ).toBe('ACTION_NOT_ALLOWED');
+
+    const response = await post(admin.cookie, `/payments/${paymentId}/refund`, {
+      reason: 'Casal pediu pelo suporte.',
+    }).expect(202);
+    expect(response.body).toEqual({ status: 'refund_requested', refundsPaymentIds: [paymentId] });
+    expect(await db.payment.findUniqueOrThrow({ where: { id: paymentId } })).toMatchObject({
+      refundOrigin: 'admin',
+      refundRequestedByUserId: admin.userId,
+      refundReason: null,
+    });
+    expect((await db.wedding.findUniqueOrThrow({ where: { id: weddingId } })).status).toBe('draft');
+    const log = await db.applicationLog.findFirstOrThrow({
+      where: { action: 'payment.refund_requested', entityId: paymentId },
+    });
+    expect(log).toMatchObject({
+      actorUserId: admin.userId,
+      data: expect.objectContaining({ refundOrigin: 'admin', reason: 'Casal pediu pelo suporte.' }),
+    });
+    // O gateway local confirma o estorno pelo evento (Pagamentos e arrependimento RN04).
+    expectStatus(await devPaymentEvent({ app, paymentId, event: 'refund' }), 200);
+    const detail = await get(admin.cookie, `/payments/${paymentId}`).expect(200);
+    expect(detail.body).toMatchObject({
+      id: paymentId,
+      code: expect.stringMatching(/^P-\d{4,}$/),
+      status: 'refunded',
+      payerTaxIdLast4: '4725',
+      refund: { origin: 'admin', reason: 'Casal pediu pelo suporte.' },
+    });
+    expect((await post(admin.cookie, `/payments/${paymentId}/refund`).expect(409)).body.error).toBe(
+      'REFUND_ALREADY_REQUESTED',
+    );
+  });
+
+  it('RN05 - em contestação, o Reembolsar é recusado', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const { paymentId } = await paid();
+    await db.payment.update({
+      where: { id: paymentId },
+      data: { status: 'disputed', disputedAt: new Date(), disputeDeadline: day(eventDate) },
+    });
+    expect((await post(admin.cookie, `/payments/${paymentId}/refund`).expect(409)).body.error).toBe(
+      'PAYMENT_DISPUTED',
+    );
+  });
+
+  it('RN06 - Estender como cortesia: a nova data e o paidThrough, sem Payment nem comissão, o aviso ao casal e o log', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const { weddingId } = await paid();
+    const newEnd = addMonths({ day: endDate, months: 3 });
+    expect(
+      (
+        await post(admin.cookie, `/weddings/${weddingId}/courtesy`, {
+          months: 3,
+          reason: 'Compensação do bloqueio.',
+        }).expect(200)
+      ).body,
+    ).toEqual({ endDate: newEnd });
+    expect(await db.wedding.findUniqueOrThrow({ where: { id: weddingId } })).toMatchObject({
+      endDate: day(newEnd),
+      paidThrough: day(newEnd),
+    });
+    expect(
+      await db.courtesyExtension.count({ where: { weddingId, adminUserId: admin.userId } }),
+    ).toBe(1);
+    expect(await db.payment.count({ where: { weddingId } })).toBe(1);
+    const [notice] = await db.notification.findMany({
+      where: { weddingId, type: 'billing', groupKey: `billing:courtesy:${newEnd}` },
+    });
+    expect(notice.payload).toEqual([
+      expect.objectContaining({ kind: 'courtesy', endDate: newEnd }),
+    ]);
+    await db.applicationLog.findFirstOrThrow({
+      where: { action: 'wedding.courtesy_extended', weddingId },
+    });
+
+    // Até 12 meses depois do casamento (decisão 39).
+    expect(
+      (
+        await post(admin.cookie, `/weddings/${weddingId}/courtesy`, {
+          months: 12,
+          reason: 'Passa do limite.',
+        }).expect(422)
+      ).body.error,
+    ).toBe('END_DATE_OUT_OF_RANGE');
+
+    // A aba Cobrança do casamento: os pagamentos com a comissão e a cortesia.
+    const billing = await get(admin.cookie, `/weddings/${weddingId}`, { tab: 'billing' }).expect(
+      200,
+    );
+    expect(billing.body.billing.courtesies).toEqual([
+      expect.objectContaining({ months: 3, newEndDate: newEnd }),
+    ]);
+    expect(billing.body.billing.payments).toHaveLength(1);
+    const support = await staffUser({ app, role: 'support' });
+    await get(support.cookie, `/weddings/${weddingId}`, { tab: 'billing' }).expect(403);
+  });
+
+  it('RN07 - o CSV do período: o pagamento, o código e o log da exportação', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const { paymentId } = await paid({ paidDaysAgo: 1 });
+    const { shortCode } = await db.payment.findUniqueOrThrow({ where: { id: paymentId } });
+    const from = new Date(Date.now() - 2 * DAY_MS).toISOString();
+    const to = new Date().toISOString();
+    const response = await get(admin.cookie, '/payments/export', { from, to }).expect(200);
+    expect(response.headers['content-type']).toMatch(/^text\/csv/);
+    const text = response.text ?? Buffer.from(response.body as Buffer).toString('utf8');
+    expect(text).toContain(`P-${String(shortCode).padStart(4, '0')}`);
+    expect(text).not.toContain('529.982.247-25');
+    await db.applicationLog.findFirstOrThrow({
+      where: { action: 'payments.exported', actorUserId: admin.userId },
+    });
+  });
+
+  it('RN11 - Aplicar mesmo assim, Tentar o estorno de novo e Registrar reembolso feito por fora', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    // O valor menor no gateway: pago e não aplicado, com o alerta.
+    const mismatch = await paid();
+    await db.wedding.update({
+      where: { id: mismatch.weddingId },
+      data: { status: 'draft', endDate: null, paidThrough: null, publicationSource: null },
+    });
+    await db.commission.deleteMany({ where: { paymentId: mismatch.paymentId } });
+    await db.payment.update({ where: { id: mismatch.paymentId }, data: { appliedAt: null } });
+    await db.alert.create({
+      data: {
+        type: 'gateway_amount_mismatch',
+        weddingId: mismatch.weddingId,
+        entityType: 'payment',
+        entityId: mismatch.paymentId,
+        data: {},
+      },
+    });
+    await post(admin.cookie, `/payments/${mismatch.paymentId}/apply`, {
+      reason: 'Diferença de centavos.',
+    }).expect(200);
+    expect((await db.wedding.findUniqueOrThrow({ where: { id: mismatch.weddingId } })).status).toBe(
+      'published',
+    );
+    expect(
+      (await db.payment.findUniqueOrThrow({ where: { id: mismatch.paymentId } })).appliedByAdminAt,
+    ).toEqual(expect.any(Date));
+    expect(
+      await db.alert.count({
+        where: { entityId: mismatch.paymentId, status: 'open', type: 'gateway_amount_mismatch' },
+      }),
+    ).toBe(0);
+    await post(admin.cookie, `/payments/${mismatch.paymentId}/apply`, {
+      reason: 'De novo, por engano.',
+    }).expect(409);
+
+    // O estorno que falhou: Tentar de novo tira a desistência e chama o job.
+    const failed = await paid();
+    await db.payment.update({
+      where: { id: failed.paymentId },
+      data: {
+        status: 'refund_requested',
+        refundOrigin: 'couple',
+        refundRequestedAt: new Date(),
+        refundAttempts: 4,
+        refundLastError: 'refused',
+        refundFailedAt: new Date(),
+      },
+    });
+    await post(admin.cookie, `/payments/${failed.paymentId}/refund-retry`, {
+      reason: 'O Asaas voltou.',
+    }).expect(200);
+    await db.applicationLog.findFirstOrThrow({
+      where: { action: 'payment.refund_retried', entityId: failed.paymentId },
+    });
+
+    // Reembolso feito por fora: refunded, origem manual, com o comprovante, sem gateway.
+    const outside = await paid();
+    await db.payment.update({
+      where: { id: outside.paymentId },
+      data: {
+        status: 'refund_requested',
+        refundOrigin: 'couple',
+        refundRequestedAt: new Date(),
+        refundFailedAt: new Date(),
+      },
+    });
+    await post(admin.cookie, `/payments/${outside.paymentId}/manual-refund`, {
+      reason: 'Pix devolvido pelo banco.',
+      receipt: `E${randomUUID().slice(0, 8)}`,
+    }).expect(200);
+    expect(await db.payment.findUniqueOrThrow({ where: { id: outside.paymentId } })).toMatchObject({
+      status: 'refunded',
+      refundOrigin: 'manual',
+      refundedOutsideGateway: true,
+      refundReceiptKey: expect.any(String),
+    });
+    await db.applicationLog.findFirstOrThrow({
+      where: { action: 'payment.refund_recorded_manually', entityId: outside.paymentId },
+    });
+  });
+});
