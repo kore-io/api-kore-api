@@ -118,3 +118,24 @@ export class EndDateBeyondPaidError extends Error {
     super();
   }
 }
+
+/** O nome digitado não é o do casal (422 CONFIRM_NAME_MISMATCH; Retenção RN05). */
+export class ConfirmNameMismatchError extends Error {
+  override name = 'ConfirmNameMismatchError';
+}
+
+/**
+ * Algum pagamento ainda está nos 7 dias do CDC (409 REFUND_WINDOW_OPEN;
+ * Retenção RN06): a tela oferece o Desistir antes de excluir.
+ */
+export class RefundWindowOpenError extends Error {
+  override name = 'RefundWindowOpenError';
+  constructor(readonly refundableUntil: Date) {
+    super();
+  }
+}
+
+/** Nada para cancelar (409 NO_DELETION_SCHEDULED; Retenção RN05). */
+export class NoDeletionScheduledError extends Error {
+  override name = 'NoDeletionScheduledError';
+}

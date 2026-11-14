@@ -21,11 +21,12 @@ export class PaymentRefundsProcessor extends WorkerHost {
   }
 
   process(job: Job): Promise<unknown> {
-    // O pendente do casamento bloqueado (Casamento bloqueado RN06).
+    // O pendente do casamento bloqueado (Casamento bloqueado RN06) ou com a
+    // exclusão pedida (Retenção RN06); os jobs antigos, sem motivo, são do bloqueio.
     if (job.name === 'cancel-pending')
       return this.cancelPending.execute({
         paymentId: (job.data as CancelPendingJob).paymentId,
-        reason: 'wedding_blocked',
+        reason: (job.data as CancelPendingJob).reason ?? 'wedding_blocked',
         now: new Date(),
       });
     return this.refund.execute({ paymentId: (job.data as RefundJob).paymentId, now: new Date() });

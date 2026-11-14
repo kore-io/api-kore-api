@@ -46,7 +46,8 @@ export type CancelReason =
   | 'no_gateway_charge'
   | 'publication_refunded'
   | 'end_date_changed'
-  | 'wedding_blocked';
+  | 'wedding_blocked'
+  | 'wedding_deletion';
 
 /**
  * Aplica ao Payment o estado que o gateway devolveu na consulta (Publicar e
