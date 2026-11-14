@@ -47,6 +47,20 @@ export interface SiteExpiredNotice {
   partnerNames: [string, string];
 }
 
+/** O aviso de 30 dias antes do expurgo (Retenção e expurgo RN02): e-mail de serviço. */
+export interface PurgeSoonNotice {
+  to: string;
+  firstName: string;
+  /** Para a desistência do worker desfazer a marca do aviso (decisão 180(8)). */
+  weddingId: string;
+  noticeSentAt: Date;
+  /** AAAA-MM-DD: o dia em que os dados são apagados. */
+  purgeAt: string;
+  /** AAAA-MM-DD: desde quando o site está fora do ar. */
+  expiredAt: string;
+  partnerNames: [string, string];
+}
+
 export interface BillingMailer {
   paymentConfirmed({ notice }: { notice: PaymentConfirmedNotice }): Promise<void>;
   pixExpired({ notice }: { notice: PixExpiredNotice }): Promise<void>;
@@ -54,6 +68,7 @@ export interface BillingMailer {
   endDateSoon({ notice }: { notice: EndDateSoonNotice }): Promise<void>;
   graceStarted({ notice }: { notice: GraceNotice }): Promise<void>;
   siteExpired({ notice }: { notice: SiteExpiredNotice }): Promise<void>;
+  purgeSoon({ notice }: { notice: PurgeSoonNotice }): Promise<void>;
 }
 
 export const BILLING_MAILER = Symbol('BillingMailer');

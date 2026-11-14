@@ -8,8 +8,8 @@ import { DEFAULT_TIMEZONE, TRASH_RETENTION_DAYS } from '../../domain/trash';
  * do domínio (isPurgeDue), escrita em SQL para não varrer linha a linha: o dia
  * de deleted_at no fuso do casamento + 30 < o dia de hoje no mesmo fuso.
  * Os índices parciais de deleted_at IS NOT NULL (migration guests) servem
- * esta leitura. Casamento expurgado (lápide) não tem mais lista; o bloqueio
- * (que suspende o expurgo, RN10) nasce na Fase 3.
+ * esta leitura. Casamento expurgado (lápide) não tem mais lista; o bloqueado
+ * fica de fora (RN10).
  */
 @Injectable()
 export class PrismaTrashPurge implements TrashPurge {
@@ -26,6 +26,17 @@ export class PrismaTrashPurge implements TrashPurge {
               + ${TRASH_RETENTION_DAYS}
             < ($1::timestamptz AT TIME ZONE coalesce(w.timezone, '${DEFAULT_TIMEZONE}'))::date`;
 
+      // Retenção RN04 (card 67): o lock dos números de cada casamento com algo a
+      // apagar, na ordem das escritas da lixeira (números, depois grupos), para
+      // um restaurar no mesmo minuto não somar um convidado apagado.
+      await tx.$queryRawUnsafe(
+        `SELECT 1 FROM wedding_stats WHERE wedding_id IN (
+           SELECT wedding_id FROM parties WHERE id IN (${due('parties')})
+           UNION SELECT wedding_id FROM guests WHERE id IN (${due('guests')})
+           UNION SELECT wedding_id FROM tags WHERE id IN (${due('tags')}))
+         ORDER BY wedding_id FOR UPDATE`,
+        now,
+      );
       // Grupos: com eles vão os convidados (do lote ou que foram sozinhos
       // antes), as respostas e os vínculos de tag (ON DELETE CASCADE).
       const [{ parties, party_guests: partyGuests }] = await tx.$queryRawUnsafe<

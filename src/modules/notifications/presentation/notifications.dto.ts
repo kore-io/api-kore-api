@@ -71,9 +71,17 @@ class NotificationEntryResponse {
 export class BillingEntryResponse {
   /** O pagamento confirmado (Publicar e pagar RN13) ou o reembolso concluído (Pagamentos e arrependimento RN07). */
   @ApiProperty({
-    enum: ['payment_confirmed', 'refund_completed', 'end_date_soon', 'grace', 'expired'],
+    enum: [
+      'payment_confirmed',
+      'refund_completed',
+      'end_date_soon',
+      'grace',
+      'expired',
+      'purge_soon',
+    ],
   })
-  kind: 'payment_confirmed' | 'refund_completed' | 'end_date_soon' | 'grace' | 'expired';
+  kind:
+    'payment_confirmed' | 'refund_completed' | 'end_date_soon' | 'grace' | 'expired' | 'purge_soon';
   /** Só nos avisos de pagamento. */
   @ApiProperty({ format: 'uuid', required: false }) paymentId?: string;
   /** Os avisos de saída do ar (Data de saída do ar RN03): os dias até a endDate. */
@@ -85,6 +93,8 @@ export class BillingEntryResponse {
   @ApiProperty({ required: false, example: '2027-02-22' }) expiredAt?: string;
   @ApiProperty({ required: false, nullable: true, example: '2027-11-14' }) renewUntil?:
     string | null;
+  /** purge_soon (Retenção e expurgo RN02): o dia em que os dados são apagados, AAAA-MM-DD. */
+  @ApiProperty({ required: false, example: '2027-08-22' }) purgeAt?: string;
   /** A data de saída do ar paga, AAAA-MM-DD (só no payment_confirmed). */
   @ApiProperty({ required: false }) endDate?: string;
   @ApiProperty({ required: false, example: 33710 }) amountCents?: number;

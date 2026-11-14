@@ -42,6 +42,19 @@ export async function purgeWeddingData({
   // F3: os avisos de saída do ar (Retenção RN03). Pagamento, cliente do
   // gateway, comissão, cortesia, alerta e Ver como o casal ficam pela lápide.
   await tx.billingNoticeLog.deleteMany({ where: { weddingId } });
+  // O Payment fica pelo prazo fiscal, sem o texto livre do casal; o evento do
+  // gateway fica só com o tipo e os ids (Retenção RN03; Publicar e pagar RN02, B2-13).
+  await tx.payment.updateMany({
+    where: { weddingId, refundReason: { not: null } },
+    data: { refundReason: null },
+  });
+  await tx.$executeRaw`
+    UPDATE gateway_events
+    SET payload = jsonb_strip_nulls(jsonb_build_object(
+          'type', payload->'type',
+          'externalReference', payload->'externalReference',
+          'gatewayPaymentId', payload->'gatewayPaymentId'))
+    WHERE payment_id IN (SELECT id FROM payments WHERE wedding_id = ${weddingId}::uuid)`;
   // O site (Imagens do site RN11): seções, conteúdos e imagens com os arquivos.
   await tx.sitePreviewToken.deleteMany({ where: { weddingId } });
   await tx.sectionContent.deleteMany({ where: { weddingId } });

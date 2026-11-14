@@ -18311,7 +18311,8 @@
               "refund_completed",
               "end_date_soon",
               "grace",
-              "expired"
+              "expired",
+              "purge_soon"
             ],
             "type": "string"
           },
@@ -18346,6 +18347,11 @@
             "type": "string",
             "nullable": true,
             "example": "2027-11-14"
+          },
+          "purgeAt": {
+            "type": "string",
+            "description": "purge_soon (Retenção e expurgo RN02): o dia em que os dados são apagados, AAAA-MM-DD.",
+            "example": "2027-08-22"
           },
           "endDate": {
             "type": "string",
