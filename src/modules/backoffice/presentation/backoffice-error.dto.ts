@@ -58,3 +58,10 @@ export class ReferrerNotActiveErrorBody {
   @ApiProperty({ enum: ['REFERRER_NOT_ACTIVE'] }) error: 'REFERRER_NOT_ACTIVE';
   @ApiProperty() message: string;
 }
+
+export class GuestNotFoundErrorBody {
+  static readonly status = 404;
+  @ApiProperty({ enum: [404] }) statusCode: 404;
+  @ApiProperty({ enum: ['GUEST_NOT_FOUND'] }) error: 'GUEST_NOT_FOUND';
+  @ApiProperty() message: string;
+}

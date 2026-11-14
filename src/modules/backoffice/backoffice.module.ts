@@ -5,6 +5,9 @@ import { AdminInsights, SEARCH_TERM_HASHER } from './application/admin-insights.
 import { AdminWeddings } from './application/admin-weddings.use-cases';
 import { REFERRER_REASSIGNMENT } from './application/ports/referrer-reassignment.port';
 import { ReassignReferrer } from './application/reassign-referrer.use-case';
+import { EraseGuestOnRequest } from './application/erase-guest.use-case';
+import { GUEST_ERASURE } from './application/ports/guest-erasure.port';
+import { PrismaGuestErasure } from './infrastructure/backoffice/prisma-guest-erasure';
 import { PrismaReferrerReassignment } from './infrastructure/backoffice/prisma-referrer-reassignment';
 import { ADMIN_INSIGHTS_READER } from './application/ports/admin-insights.reader.port';
 import { PrismaAdminInsightsReader } from './infrastructure/backoffice/prisma-admin-insights.reader';
@@ -34,6 +37,8 @@ import { StaffGuard } from './presentation/staff.guard';
     AdminWeddings,
     { provide: REFERRER_REASSIGNMENT, useClass: PrismaReferrerReassignment },
     ReassignReferrer,
+    { provide: GUEST_ERASURE, useClass: PrismaGuestErasure },
+    EraseGuestOnRequest,
     { provide: ADMIN_INSIGHTS_READER, useClass: PrismaAdminInsightsReader },
     { provide: SEARCH_TERM_HASHER, useClass: HmacSearchTermHasher },
     AdminInsights,

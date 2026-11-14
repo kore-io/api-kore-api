@@ -340,3 +340,21 @@ export class ReassignReferrerResponse {
   /** `unchanged` quando o indicador escolhido já é o do casamento. */
   @ApiProperty({ enum: ['reassigned', 'unchanged'] }) status: 'reassigned' | 'unchanged';
 }
+
+/** Remover os dados a pedido do titular (RN10): "Como o pedido chegou". */
+export class EraseGuestBody {
+  @ApiProperty({
+    minLength: 3,
+    maxLength: 200,
+    example: 'E-mail do titular para o suporte em 14/11.',
+  })
+  @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @MinLength(3)
+  @MaxLength(200)
+  requestChannel: string;
+}
+
+export class GuestErasedResponse {
+  @ApiProperty({ enum: ['erased'] }) status: 'erased';
+}

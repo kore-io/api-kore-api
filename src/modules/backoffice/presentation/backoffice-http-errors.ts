@@ -1,5 +1,6 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import {
+  GuestNotFoundForErasureError,
   AlreadyPaidError,
   ReassignPaymentPendingError,
   ReferrerNotActiveError,
@@ -60,6 +61,12 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 409,
       error: 'REFERRER_NOT_ACTIVE',
       message: 'The referrer is not active.',
+    });
+  if (error instanceof GuestNotFoundForErasureError)
+    return new NotFoundException({
+      statusCode: 404,
+      error: 'GUEST_NOT_FOUND',
+      message: 'Guest not found.',
     });
   return error;
 }

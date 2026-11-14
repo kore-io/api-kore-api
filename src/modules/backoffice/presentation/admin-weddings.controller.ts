@@ -26,8 +26,10 @@ import {
 import { OwnTransactions } from '../../access/presentation/own-transactions.decorator';
 import { AdminWeddings } from '../application/admin-weddings.use-cases';
 import { ReassignReferrer } from '../application/reassign-referrer.use-case';
+import { EraseGuestOnRequest } from '../application/erase-guest.use-case';
 import type { StaffMember } from '../domain/staff';
 import {
+  GuestNotFoundErrorBody,
   AlreadyPaidErrorBody,
   ReassignPaymentPendingErrorBody,
   ReferrerNotActiveErrorBody,
@@ -44,6 +46,8 @@ import {
   AdminWeddingsQuery,
   AdminWeddingsResponse,
   ReassignReferrerBody,
+  EraseGuestBody,
+  GuestErasedResponse,
   ReassignReferrerResponse,
 } from './admin-weddings.dto';
 import { CurrentStaff, StaffGuard, StaffRoles } from './staff.guard';
@@ -65,6 +69,7 @@ export class AdminWeddingsController {
   constructor(
     private readonly weddings: AdminWeddings,
     private readonly reassignReferrer: ReassignReferrer,
+    private readonly eraseGuest: EraseGuestOnRequest,
   ) {}
 
   @Get()
@@ -182,6 +187,43 @@ export class AdminWeddingsController {
         now: new Date(),
       });
       return { status };
+    } catch (error) {
+      throw toHttpError(error);
+    }
+  }
+
+  /** Remover os dados de um convidado a pedido do titular (RN10): Admin e suporte. */
+  @Post(':id/guests/:guestId/erase')
+  @OwnTransactions()
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ type: GuestErasedResponse })
+  @ApiErrorResponses(
+    ...commonErrors({ validated: true, session: true, write: true }),
+    StaffOnlyErrorBody,
+    GuestNotFoundErrorBody,
+  )
+  async erase(
+    @CurrentStaff() staff: StaffMember,
+    @Param('id', weddingIdPipe) weddingId: string,
+    @Param(
+      'guestId',
+      new ParseUUIDPipe({
+        exceptionFactory: () =>
+          validationError({ errors: [{ path: 'guestId', code: 'IS_UUID', params: {} }] }),
+      }),
+    )
+    guestId: string,
+    @Body() body: EraseGuestBody,
+  ): Promise<GuestErasedResponse> {
+    try {
+      await this.eraseGuest.execute({
+        staff,
+        weddingId,
+        guestId,
+        requestChannel: body.requestChannel,
+        now: new Date(),
+      });
+      return { status: 'erased' };
     } catch (error) {
       throw toHttpError(error);
     }

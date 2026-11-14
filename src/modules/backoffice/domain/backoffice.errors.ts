@@ -31,6 +31,11 @@ export class ReferrerNotActiveError extends Error {
   override name = 'ReferrerNotActiveError';
 }
 
+/** O convidado não é do casamento (404 GUEST_NOT_FOUND; RN10). */
+export class GuestNotFoundForErasureError extends Error {
+  override name = 'GuestNotFoundForErasureError';
+}
+
 /** O alerta não existe ou não é do papel (404 ALERT_NOT_FOUND; RN12). */
 export class AlertNotFoundError extends Error {
   override name = 'AlertNotFoundError';
