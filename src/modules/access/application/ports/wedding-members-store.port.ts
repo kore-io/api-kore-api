@@ -24,6 +24,8 @@ export interface WeddingMembersStore {
   /** Pendentes no banco, inclusive os vencidos e o link sem e-mail (decisão 177, item 8). */
   listPendingInvitations({ weddingId }: { weddingId: string }): Promise<PendingAccessInvitation[]>;
   lockWedding({ weddingId }: { weddingId: string }): Promise<void>;
+  /** Quando o staff trocou o e-mail de acesso de quem pede (decisão 253(2)). */
+  accessEmailChangedAt({ userId }: { userId: string }): Promise<Date | null>;
   remove({
     membershipId,
     removedByUserId,

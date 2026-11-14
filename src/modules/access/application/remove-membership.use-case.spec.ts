@@ -31,6 +31,7 @@ function setup({ members, role }: { members: WeddingMember[]; role: 'owner' | 'c
     listActive: jest.fn().mockResolvedValue(members),
     listPendingInvitations: jest.fn(),
     lockWedding: jest.fn().mockResolvedValue(undefined),
+    accessEmailChangedAt: jest.fn().mockResolvedValue(null),
     remove: jest.fn().mockResolvedValue(undefined),
     releasePartnerLogin: jest.fn().mockResolvedValue(undefined),
     notifyRemoved: jest.fn().mockResolvedValue(undefined),

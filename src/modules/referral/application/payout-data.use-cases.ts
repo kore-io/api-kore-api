@@ -20,6 +20,7 @@ import {
 import { uuidV7 } from '../../../shared/ids/uuid-v7';
 import { ProfileNotOwnedError } from '../../access/domain/access.errors';
 import type { AuthenticatedSession } from '../../access/domain/authenticated-session';
+import { requireNoRecentAccessChange } from '../../access/domain/recent-access-change';
 import { requireRecentSession } from '../../access/domain/recent-session';
 import { OpaqueSessionTokens } from '../../access/infrastructure/opaque-session-tokens';
 import {
@@ -143,6 +144,12 @@ export class PayoutDataUseCases {
     now: Date;
   }): Promise<{ id: string; firstKey: boolean; emailMasked: string; confirmExpiresAt: Date }> {
     requireRecentSession({ session, now });
+    // Decisão 253(2): 48 h depois de o staff trocar o e-mail de acesso, nem a
+    // primeira chave nem a troca (o Admin não fura).
+    requireNoRecentAccessChange({
+      accessEmailChangedAt: await this.store.accessEmailChangedAt({ userId: session.userId }),
+      now,
+    });
     const normalized = normalizePixKey({ type, value: key });
     if (!normalized) throw new InvalidPayoutDataError();
     const { token, tokenHash } = this.tokens.generate();

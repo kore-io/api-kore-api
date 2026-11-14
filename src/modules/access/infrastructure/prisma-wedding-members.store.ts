@@ -42,6 +42,14 @@ export class PrismaWeddingMembersStore implements WeddingMembersStore {
     });
   }
 
+  async accessEmailChangedAt({ userId }: { userId: string }): Promise<Date | null> {
+    const user = await this.tenant.client().user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { accessEmailChangedAt: true },
+    });
+    return user.accessEmailChangedAt;
+  }
+
   async lockWedding({ weddingId }: { weddingId: string }): Promise<void> {
     await this.tenant.client()
       .$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`wedding:${weddingId}`}, 0))`;
