@@ -10220,9 +10220,10 @@
         "operationId": "AdminPayoutsController_list_v1",
         "parameters": [
           {
-            "name": "tab",
+            "name": "status",
             "required": false,
             "in": "query",
+            "description": "Solicitados · Retidos · Histórico (decisão 259(3)).",
             "schema": {
               "default": "requested",
               "type": "string",
@@ -10343,6 +10344,16 @@
               }
             }
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdempotencyKeyRequiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
           "401": {
             "content": {
               "application/json": {
@@ -10369,6 +10380,45 @@
                     },
                     {
                       "$ref": "#/components/schemas/ReauthRequiredErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayoutNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PayoutNotRequestedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PayoutHeldErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PayoutsDisabledAdminErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ReferrerBlockedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PayoutPixKeyChangePendingErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PayoutAmountMismatchErrorBody"
                     }
                   ]
                 }
@@ -10442,6 +10492,26 @@
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
                     }
                   ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayoutNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayoutStatusConflictErrorBody"
                 }
               }
             },
@@ -10538,6 +10608,26 @@
             },
             "description": ""
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayoutNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayoutNotRequestedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
           "429": {
             "content": {
               "application/json": {
@@ -10602,6 +10692,42 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayoutNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PayoutStatusConflictErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PayoutHeldErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ReferrerBlockedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PayoutPixKeyChangePendingErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PayoutBelowMinimumAdminErrorBody"
                     }
                   ]
                 }
@@ -23349,6 +23475,195 @@
           "total"
         ]
       },
+      "PayoutNotFoundErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PAYOUT_NOT_FOUND"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PayoutNotRequestedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PAYOUT_NOT_REQUESTED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "description": "O estado atual do repasse."
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "status"
+        ]
+      },
+      "PayoutHeldErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PAYOUT_HELD"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PayoutsDisabledAdminErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PAYOUTS_DISABLED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "ReferrerBlockedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "REFERRER_BLOCKED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PayoutPixKeyChangePendingErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PIX_KEY_CHANGE_PENDING"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "PayoutAmountMismatchErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PAYOUT_AMOUNT_MISMATCH"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "amountCents": {
+            "type": "number"
+          },
+          "itemsCents": {
+            "type": "number",
+            "description": "A soma das comissões não estornadas e dos ajustes."
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "amountCents",
+          "itemsCents"
+        ]
+      },
       "PayoutActionResponse": {
         "type": "object",
         "properties": {
@@ -23373,6 +23688,35 @@
           "status"
         ]
       },
+      "PayoutStatusConflictErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PAYOUT_STATUS_CONFLICT"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "status"
+        ]
+      },
       "AdminReasonBody": {
         "type": "object",
         "properties": {
@@ -23385,6 +23729,40 @@
         },
         "required": [
           "reason"
+        ]
+      },
+      "PayoutBelowMinimumAdminErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PAYOUT_BELOW_MINIMUM"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "amountCents": {
+            "type": "number",
+            "description": "O valor recalculado."
+          },
+          "minimumCents": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "amountCents",
+          "minimumCents"
         ]
       },
       "AdminReferrerResponse": {

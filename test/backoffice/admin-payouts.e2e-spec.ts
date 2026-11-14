@@ -53,12 +53,22 @@ describe('Backoffice: fila de Repasses (Backoffice - cobrança RN09; banco real)
   });
 
   const http = () => request(app.getHttpServer());
-  const post = (cookie: string, path: string, body: Record<string, unknown> = {}) =>
-    http().post(`/v1/admin/payouts${path}`).set('Cookie', cookie).set('Origin', ORIGIN).send(body);
+  const post = (
+    cookie: string,
+    path: string,
+    body: Record<string, unknown> = {},
+    idempotencyKey: string = randomUUID(),
+  ) =>
+    http()
+      .post(`/v1/admin/payouts${path}`)
+      .set('Cookie', cookie)
+      .set('Origin', ORIGIN)
+      .set('Idempotency-Key', idempotencyKey)
+      .send(body);
   const list = (cookie: string, tab: string, referrerId?: string) =>
     http()
       .get('/v1/admin/payouts')
-      .query({ tab, ...(referrerId ? { referrerId } : {}) })
+      .query({ status: tab, ...(referrerId ? { referrerId } : {}) })
       .set('Cookie', cookie);
 
   /** Fabiana com os dados para receber e uma comissão disponível por casamento indicado. */
@@ -163,9 +173,33 @@ describe('Backoffice: fila de Repasses (Backoffice - cobrança RN09; banco real)
       data: { authenticatedAt: new Date() },
     });
 
-    expect((await post(admin.cookie, `/${payoutId}/pay`).expect(200)).body).toEqual({
+    // Sem o Idempotency-Key, 400 (decisão 259(3)).
+    expect(
+      (
+        await http()
+          .post(`/v1/admin/payouts/${payoutId}/pay`)
+          .set('Cookie', admin.cookie)
+          .set('Origin', ORIGIN)
+          .expect(400)
+      ).body.error,
+    ).toBe('IDEMPOTENCY_KEY_REQUIRED');
+    const key = randomUUID();
+    expect((await post(admin.cookie, `/${payoutId}/pay`, {}, key).expect(200)).body).toEqual({
       status: 'processing',
     });
+    // A mesma chave (o clique repetido) responde igual, sem outro Pix.
+    expect((await post(admin.cookie, `/${payoutId}/pay`, {}, key).expect(200)).body).toEqual({
+      status: 'processing',
+    });
+    const paidLog = await db.applicationLog.findMany({
+      where: { action: 'payout.processing', entityId: payoutId },
+    });
+    expect(paidLog).toEqual([
+      expect.objectContaining({
+        actorUserId: admin.userId,
+        data: expect.objectContaining({ referrerId, amountCents: expect.any(Number) }),
+      }),
+    ]);
     // O job manda o Pix (o gateway local o deixa em processamento até a confirmação).
     const { externalRef } = await db.payout.findUniqueOrThrow({ where: { id: payoutId } });
     await until(
@@ -180,14 +214,26 @@ describe('Backoffice: fila de Repasses (Backoffice - cobrança RN09; banco real)
     expect(
       (requested.body.items as { id: string; status: string }[]).find((row) => row.id === payoutId),
     ).toMatchObject({ status: 'processing', processingAt: expect.any(String) });
-    // Pagar de novo não manda outro: só sai de Solicitado.
+    // A segunda aba (outra chave) não manda outro: só sai de Solicitado.
     expect((await post(admin.cookie, `/${payoutId}/pay`).expect(409)).body.error).toBe(
-      'PAYOUT_STATUS_CONFLICT',
+      'PAYOUT_NOT_REQUESTED',
     );
     // Tentar de novo consulta o gateway: o Pix existe, então nada muda.
     expect((await post(admin.cookie, `/${payoutId}/retry`).expect(200)).body.status).toEqual(
       expect.any(String),
     );
+    // O Tentar de novo fica no log com quem pediu e o que a consulta achou (RN01).
+    expect(
+      await db.applicationLog.findFirstOrThrow({
+        where: { action: 'payout.retried', entityId: payoutId },
+      }),
+    ).toMatchObject({
+      actorUserId: admin.userId,
+      data: expect.objectContaining({
+        gatewayStatus: expect.any(String),
+        result: expect.any(String),
+      }),
+    });
   });
 
   it('RN09 - Recusar com motivo: as comissões voltam ao saldo, o pedido não conta para os 30 dias e sai o e-mail', async () => {
@@ -214,7 +260,7 @@ describe('Backoffice: fila de Repasses (Backoffice - cobrança RN09; banco real)
           reason: 'De novo, por engano.',
         }).expect(409)
       ).body.error,
-    ).toBe('PAYOUT_STATUS_CONFLICT');
+    ).toBe('PAYOUT_NOT_REQUESTED');
     // O recusado não conta para os 30 dias: ela pede de novo agora.
     await http()
       .post('/v1/me/referrer/payouts')

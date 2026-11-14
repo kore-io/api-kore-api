@@ -1,6 +1,8 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  Headers,
   Get,
   HttpCode,
   HttpStatus,
@@ -36,9 +38,23 @@ import {
 import type { StaffMember } from '../domain/staff';
 import { AdminReasonBody } from './admin-weddings.dto';
 import { AdminPayoutsQuery, AdminPayoutsResponse, PayoutActionResponse } from './admin-payouts.dto';
-import { StaffOnlyErrorBody } from './backoffice-error.dto';
+import {
+  PayoutAmountMismatchErrorBody,
+  PayoutBelowMinimumAdminErrorBody,
+  PayoutHeldErrorBody,
+  PayoutNotFoundErrorBody,
+  PayoutNotRequestedErrorBody,
+  PayoutPixKeyChangePendingErrorBody,
+  PayoutsDisabledAdminErrorBody,
+  PayoutStatusConflictErrorBody,
+  ReferrerBlockedErrorBody,
+  StaffOnlyErrorBody,
+} from './backoffice-error.dto';
+import { IdempotencyKeyRequiredErrorBody } from '../../billing/presentation/billing-error.dto';
 import { toHttpError } from './backoffice-http-errors';
 import { CurrentStaff, StaffGuard, StaffRoles } from './staff.guard';
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const payoutIdPipe = new ParseUUIDPipe({
   exceptionFactory: () =>
@@ -73,7 +89,7 @@ export class AdminPayoutsController {
   async list(@Query() query: AdminPayoutsQuery): Promise<AdminPayoutsResponse> {
     const page = query.page ?? 1;
     const result = await this.queue.execute({
-      tab: query.tab ?? 'requested',
+      tab: query.status ?? 'requested',
       referrerId: query.referrerId,
       page,
     });
@@ -89,17 +105,37 @@ export class AdminPayoutsController {
     ...commonErrors({ session: true, write: true }),
     StaffOnlyErrorBody,
     ActionNotAllowedErrorBody,
+    IdempotencyKeyRequiredErrorBody,
+    PayoutNotFoundErrorBody,
+    PayoutNotRequestedErrorBody,
+    PayoutHeldErrorBody,
+    PayoutsDisabledAdminErrorBody,
+    ReferrerBlockedErrorBody,
+    PayoutPixKeyChangePendingErrorBody,
+    PayoutAmountMismatchErrorBody,
     ReauthRequiredErrorBody,
   )
   async payPayout(
     @CurrentStaff() staff: StaffMember,
     @CurrentSession() session: AuthenticatedSession,
     @Param('id', payoutIdPipe) payoutId: string,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
   ): Promise<PayoutActionResponse> {
+    if (!idempotencyKey || !UUID.test(idempotencyKey))
+      throw new BadRequestException({
+        statusCode: 400,
+        error: 'IDEMPOTENCY_KEY_REQUIRED',
+        message: 'Send an Idempotency-Key header with a UUID.',
+      });
     try {
       const now = new Date();
       requireRecentSession({ session, now });
-      await this.pay.execute({ payoutId, adminUserId: staff.userId, now });
+      await this.pay.execute({
+        payoutId,
+        adminUserId: staff.userId,
+        idempotencyKey: idempotencyKey.toLowerCase(),
+        now,
+      });
       return { status: 'processing' };
     } catch (error) {
       throw toHttpError(error);
@@ -115,10 +151,17 @@ export class AdminPayoutsController {
     ...commonErrors({ session: true, write: true }),
     StaffOnlyErrorBody,
     ActionNotAllowedErrorBody,
+    PayoutNotFoundErrorBody,
+    PayoutStatusConflictErrorBody,
   )
-  async retryPayout(@Param('id', payoutIdPipe) payoutId: string): Promise<PayoutActionResponse> {
+  async retryPayout(
+    @CurrentStaff() staff: StaffMember,
+    @Param('id', payoutIdPipe) payoutId: string,
+  ): Promise<PayoutActionResponse> {
     try {
-      return { status: await this.retry.execute({ payoutId, now: new Date() }) };
+      return {
+        status: await this.retry.execute({ payoutId, adminUserId: staff.userId, now: new Date() }),
+      };
     } catch (error) {
       throw toHttpError(error);
     }
@@ -133,6 +176,8 @@ export class AdminPayoutsController {
     ...commonErrors({ validated: true, session: true, write: true }),
     StaffOnlyErrorBody,
     ActionNotAllowedErrorBody,
+    PayoutNotFoundErrorBody,
+    PayoutNotRequestedErrorBody,
   )
   async rejectPayout(
     @CurrentStaff() staff: StaffMember,
@@ -161,6 +206,12 @@ export class AdminPayoutsController {
     ...commonErrors({ session: true, write: true }),
     StaffOnlyErrorBody,
     ActionNotAllowedErrorBody,
+    PayoutNotFoundErrorBody,
+    PayoutStatusConflictErrorBody,
+    PayoutHeldErrorBody,
+    ReferrerBlockedErrorBody,
+    PayoutPixKeyChangePendingErrorBody,
+    PayoutBelowMinimumAdminErrorBody,
   )
   async releasePayout(
     @CurrentStaff() staff: StaffMember,

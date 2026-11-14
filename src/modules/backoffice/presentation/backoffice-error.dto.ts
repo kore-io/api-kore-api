@@ -139,3 +139,77 @@ export class SupportSessionNotFoundErrorBody {
   @ApiProperty({ enum: ['SUPPORT_SESSION_NOT_FOUND'] }) error: 'SUPPORT_SESSION_NOT_FOUND';
   @ApiProperty() message: string;
 }
+
+/** A fila de Repasses (Backoffice - cobrança RN09; Contrato de API e decisão 259(3)). */
+export class PayoutNotFoundErrorBody {
+  static readonly status = 404;
+  @ApiProperty({ enum: [404] }) statusCode: 404;
+  @ApiProperty({ enum: ['PAYOUT_NOT_FOUND'] }) error: 'PAYOUT_NOT_FOUND';
+  @ApiProperty() message: string;
+}
+
+export class PayoutNotRequestedErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['PAYOUT_NOT_REQUESTED'] }) error: 'PAYOUT_NOT_REQUESTED';
+  @ApiProperty() message: string;
+  /** O estado atual do repasse. */
+  @ApiProperty() status: string;
+}
+
+export class PayoutHeldErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['PAYOUT_HELD'] }) error: 'PAYOUT_HELD';
+  @ApiProperty() message: string;
+}
+
+/** Tentar de novo fora de processing, Liberar fora de held. */
+export class PayoutStatusConflictErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['PAYOUT_STATUS_CONFLICT'] }) error: 'PAYOUT_STATUS_CONFLICT';
+  @ApiProperty() message: string;
+  @ApiProperty() status: string;
+}
+
+export class PayoutsDisabledAdminErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['PAYOUTS_DISABLED'] }) error: 'PAYOUTS_DISABLED';
+  @ApiProperty() message: string;
+}
+
+export class ReferrerBlockedErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['REFERRER_BLOCKED'] }) error: 'REFERRER_BLOCKED';
+  @ApiProperty() message: string;
+}
+
+export class PayoutPixKeyChangePendingErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['PIX_KEY_CHANGE_PENDING'] }) error: 'PIX_KEY_CHANGE_PENDING';
+  @ApiProperty() message: string;
+}
+
+export class PayoutAmountMismatchErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['PAYOUT_AMOUNT_MISMATCH'] }) error: 'PAYOUT_AMOUNT_MISMATCH';
+  @ApiProperty() message: string;
+  amountCents: number;
+  /** A soma das comissões não estornadas e dos ajustes. */
+  itemsCents: number;
+}
+
+export class PayoutBelowMinimumAdminErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['PAYOUT_BELOW_MINIMUM'] }) error: 'PAYOUT_BELOW_MINIMUM';
+  @ApiProperty() message: string;
+  /** O valor recalculado. */
+  amountCents: number;
+  minimumCents: number;
+}

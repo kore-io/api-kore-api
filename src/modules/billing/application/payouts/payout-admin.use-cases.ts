@@ -80,7 +80,8 @@ export class RejectPayout {
     return this.transaction.run(async () => {
       const outcome = await this.store.reject({ payoutId, byUserId: adminUserId, reason, now });
       if (outcome.result === 'not_found') throw new PayoutNotFoundError();
-      if (outcome.result === 'conflict') throw new PayoutStatusConflictError(outcome.status);
+      if (outcome.result === 'conflict')
+        throw new PayoutStatusConflictError(outcome.status, 'requested');
       const recipient = await this.ledger.recipient({ userId: outcome.referrerUserId });
       this.transaction.schedule(() =>
         this.outbox.enqueue({
@@ -121,7 +122,7 @@ export class ReleasePayout {
         case 'not_found':
           throw new PayoutNotFoundError();
         case 'conflict':
-          throw new PayoutStatusConflictError(outcome.status);
+          throw new PayoutStatusConflictError(outcome.status, 'held');
         case 'referrer_blocked':
           throw new PayoutReferrerBlockedError();
         case 'pix_key_change_pending':

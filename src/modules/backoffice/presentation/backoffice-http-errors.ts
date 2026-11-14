@@ -180,6 +180,20 @@ export function toHttpError(error: unknown): unknown {
       error: 'PAYOUT_NOT_FOUND',
       message: 'Payout not found.',
     });
+  if (error instanceof PayoutStatusConflictError && error.expected === 'requested')
+    return error.status === 'held'
+      ? new ConflictException({
+          statusCode: 409,
+          error: 'PAYOUT_HELD',
+          message: 'The payout is held. Release or reject it.',
+          status: error.status,
+        })
+      : new ConflictException({
+          statusCode: 409,
+          error: 'PAYOUT_NOT_REQUESTED',
+          message: 'The payout is no longer requested.',
+          status: error.status,
+        });
   if (error instanceof PayoutStatusConflictError)
     return new ConflictException({
       statusCode: 409,
@@ -224,7 +238,7 @@ export function toHttpError(error: unknown): unknown {
   if (error instanceof PayoutStillHeldError)
     return new ConflictException({
       statusCode: 409,
-      error: 'PAYOUT_STILL_HELD',
+      error: 'PAYOUT_HELD',
       message: 'A commission of this payout is still being refunded or disputed.',
     });
   return toAccessHttpError(error);

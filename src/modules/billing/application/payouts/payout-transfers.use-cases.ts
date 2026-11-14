@@ -113,25 +113,55 @@ export class PayPayout {
     this.enabled = config.get({ key: 'PAYOUTS_ENABLED' });
   }
 
+  /**
+   * O `Idempotency-Key` (Backoffice - cobrança, Contrato de API; decisão 259(3)):
+   * o mesmo pedido repetido depois do Pagar responde como o primeiro, sem outro
+   * Pix; outra chave no repasse que já saiu de requested (a segunda aba) é 409.
+   */
   async execute({
     payoutId,
     adminUserId,
+    idempotencyKey,
     now,
   }: {
     payoutId: string;
     adminUserId: string;
+    idempotencyKey: string;
     now: Date;
   }): Promise<void> {
     if (!this.enabled) throw new PayoutPaymentsDisabledError();
     await this.transaction.run(async () => {
       const payout = await this.ledger.lock({ payoutId });
       if (!payout) throw new PayoutNotFoundError();
-      if (payout.status !== 'requested') throw new PayoutStatusConflictError(payout.status);
+      if (payout.status !== 'requested') {
+        const replay = await this.transaction.client().applicationLog.count({
+          where: {
+            action: 'payout.processing',
+            entityType: 'payout',
+            entityId: payoutId,
+            data: { path: ['idempotencyKey'], equals: idempotencyKey },
+          },
+        });
+        if (replay > 0) return;
+        throw new PayoutStatusConflictError(payout.status, 'requested');
+      }
       if (payout.referrerStatus !== 'active') throw new PayoutReferrerBlockedError();
       if (payout.pixKeyChangePending) throw new PayoutPixKeyChangePendingError();
       if (payout.amountCents !== payout.itemsCents)
         throw new PayoutAmountMismatchError(payout.amountCents, payout.itemsCents);
       await this.ledger.markProcessing({ payoutId, paidByUserId: adminUserId, now });
+      // A ação que tira dinheiro do Kore fica no log (Backoffice - cobrança RN01; D19).
+      await this.transaction.client().applicationLog.create({
+        data: {
+          createdAt: now,
+          action: 'payout.processing',
+          actorKind: 'admin',
+          actorUserId: adminUserId,
+          entityType: 'payout',
+          entityId: payoutId,
+          data: { amountCents: payout.amountCents, referrerId: payout.referrerId, idempotencyKey },
+        },
+      });
       this.transaction.schedule(() => this.queue.enqueue({ payoutId }));
     });
   }
@@ -199,14 +229,42 @@ export class RetryPayout {
     private readonly sync: SyncPayout,
   ) {}
 
-  async execute({ payoutId, now }: { payoutId: string; now: Date }): Promise<PayoutSyncResult> {
+  async execute({
+    payoutId,
+    adminUserId,
+    now,
+  }: {
+    payoutId: string;
+    adminUserId: string;
+    now: Date;
+  }): Promise<PayoutSyncResult> {
     const payout = await this.transaction.run(() => this.ledger.lock({ payoutId }));
     if (!payout) throw new PayoutNotFoundError();
-    if (payout.status !== 'processing') throw new PayoutStatusConflictError(payout.status);
+    if (payout.status !== 'processing')
+      throw new PayoutStatusConflictError(payout.status, 'processing');
     const transfer = await this.gateway.getPixTransfer({ externalReference: payout.externalRef });
-    if (transfer) return this.sync.execute({ payoutId, transfer, now });
-    await this.queue.enqueue({ payoutId });
-    return 'pending';
+    const result = transfer ? await this.sync.execute({ payoutId, transfer, now }) : 'pending';
+    // Quem tentou e o que a consulta achou (Backoffice - cobrança RN01; D19).
+    await this.transaction.run((tx) =>
+      tx.applicationLog.create({
+        data: {
+          createdAt: now,
+          action: 'payout.retried',
+          actorKind: 'admin',
+          actorUserId: adminUserId,
+          entityType: 'payout',
+          entityId: payoutId,
+          data: {
+            amountCents: payout.amountCents,
+            referrerId: payout.referrerId,
+            gatewayStatus: transfer?.status ?? 'not_found',
+            result,
+          },
+        },
+      }),
+    );
+    if (!transfer) await this.queue.enqueue({ payoutId });
+    return result;
   }
 }
 

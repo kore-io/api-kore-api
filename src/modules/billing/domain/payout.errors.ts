@@ -3,10 +3,18 @@ export class PayoutNotFoundError extends Error {
   override name = 'PayoutNotFoundError';
 }
 
-/** Pagar só sai de requested; Tentar de novo, só de processing (409 PAYOUT_STATUS_CONFLICT). */
+/**
+ * O repasse não está no estado que a ação pede (Backoffice - cobrança, Contrato
+ * de API; decisão 259(3)): Pagar e Recusar pedem requested (409
+ * PAYOUT_NOT_REQUESTED; o retido dá 409 PAYOUT_HELD); Tentar de novo pede
+ * processing e Liberar pede held (409 PAYOUT_STATUS_CONFLICT).
+ */
 export class PayoutStatusConflictError extends Error {
   override name = 'PayoutStatusConflictError';
-  constructor(readonly status: string) {
+  constructor(
+    readonly status: string,
+    readonly expected: 'requested' | 'processing' | 'held',
+  ) {
     super();
   }
 }

@@ -8,10 +8,11 @@ import {
 } from '../../billing/application/ports/payout-admin.store.port';
 
 export class AdminPayoutsQuery {
+  /** Solicitados · Retidos · Histórico (decisão 259(3)). */
   @ApiProperty({ enum: PAYOUT_QUEUE_TABS, required: false, default: 'requested' })
   @IsOptional()
   @IsIn(PAYOUT_QUEUE_TABS)
-  tab?: PayoutQueueTab;
+  status?: PayoutQueueTab;
 
   /** Os repasses de um indicador (a aba Repasses do detalhe da cerimonialista). */
   @ApiProperty({ required: false, format: 'uuid' })
