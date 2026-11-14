@@ -238,4 +238,14 @@ describe('validateEnv', () => {
       validateEnv({ config: { ...validConfig, PAYMENT_GATEWAY_PROVIDER: 'asaas' } }),
     ).toThrow(/PAYMENT_GATEWAY_PROVIDER/);
   });
+
+  it('Backoffice - acesso RN01 (B9-2) - GOOGLE_STAFF_DOMAIN é opcional em local e test e obrigatória em homolog e production', () => {
+    expect(() => validateEnv({ config: validConfig })).not.toThrow();
+    expect(() => validateEnv({ config: { ...validConfig, APP_ENV: 'homolog' } })).toThrow(
+      /GOOGLE_STAFF_DOMAIN: obrigatória/,
+    );
+    expect(() =>
+      validateEnv({ config: { ...validConfig, GOOGLE_STAFF_DOMAIN: 'Kore com br' } }),
+    ).toThrow(/GOOGLE_STAFF_DOMAIN/);
+  });
 });

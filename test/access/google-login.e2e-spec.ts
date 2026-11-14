@@ -214,4 +214,18 @@ describe('Login pelo Google com o provedor de desenvolvimento (Login sem senha e
 
     expect(response.text).toContain('name="email"');
   });
+
+  it('Backoffice - acesso RN01 (B9-2) - o login pelo Google grava na sessão o hd verificado; o Gmail, sem hd, grava nulo', async () => {
+    const staff = `renata.${randomUUID()}@kore.com.br`;
+    const consumer = `ana.${randomUUID()}@gmail.com`;
+    await signInWithGoogle({ email: staff });
+    await signInWithGoogle({ email: consumer });
+    const sessionOf = (email: string) =>
+      backoffice.session.findFirstOrThrow({
+        where: { user: { email } },
+        select: { staffDomain: true, authMethod: true },
+      });
+    expect(await sessionOf(staff)).toEqual({ staffDomain: 'kore.com.br', authMethod: 'google' });
+    expect(await sessionOf(consumer)).toEqual({ staffDomain: null, authMethod: 'google' });
+  });
 });

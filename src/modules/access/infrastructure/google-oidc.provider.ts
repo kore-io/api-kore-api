@@ -62,6 +62,7 @@ export class GoogleOidcProvider implements GoogleIdentityProvider {
       subject: payload.sub,
       email: payload.email,
       emailVerified: payload.email_verified === true,
+      hostedDomain: typeof payload.hd === 'string' ? payload.hd.toLowerCase() : null,
     };
   }
 }

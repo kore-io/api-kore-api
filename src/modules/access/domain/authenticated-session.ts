@@ -10,4 +10,6 @@ export interface AuthenticatedSession {
   /** Como foi o login: o backoffice exige o Google do domínio (RN12). */
   authMethod: AuthMethod;
   activeProfile: ProfileKind | null;
+  /** O hd verificado do Google no login (Backoffice - acesso RN01); nulo no login por código. */
+  staffDomain: string | null;
 }

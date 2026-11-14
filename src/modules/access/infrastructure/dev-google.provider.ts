@@ -4,6 +4,7 @@ import type { GoogleIdentity } from '../domain/google-identity';
 
 export const DEV_GOOGLE_PATH = '/v1/auth/google/dev';
 const DEV_ENVS: readonly AppEnv[] = ['local', 'test'];
+const CONSUMER_DOMAINS = new Set(['gmail.com', 'googlemail.com']);
 
 /**
  * Provedor de desenvolvimento (decisões 96 e 147): simula a volta do Google
@@ -30,10 +31,14 @@ export class DevGoogleProvider implements GoogleIdentityProvider {
       email: string;
       verified: boolean;
     };
+    // Como o Google: o hd só vem nas contas do Workspace (aqui, todo domínio que
+    // não é do Gmail), para o Backoffice ser testável no local (RN01).
+    const domain = email.toLowerCase().split('@')[1] ?? '';
     return Promise.resolve({
       subject: `dev:${email.toLowerCase()}`,
       email,
       emailVerified: verified,
+      hostedDomain: domain && !CONSUMER_DOMAINS.has(domain) ? domain : null,
     });
   }
 }

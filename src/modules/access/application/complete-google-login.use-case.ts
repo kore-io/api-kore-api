@@ -37,6 +37,7 @@ export class CompleteGoogleLogin {
       email: identity.email.toLowerCase(),
       method: 'google',
       providerSubject: identity.subject,
+      staffDomain: identity.hostedDomain,
       origin: attempt.origin,
       ip,
       userAgent,

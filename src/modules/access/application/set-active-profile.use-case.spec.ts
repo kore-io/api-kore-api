@@ -10,6 +10,7 @@ const session: AuthenticatedSession = {
   authenticatedAt: new Date(),
   authMethod: 'email',
   activeProfile: null,
+  staffDomain: null,
 };
 
 function setup() {

@@ -4,4 +4,9 @@ export interface GoogleIdentity {
   subject: string;
   email: string;
   emailVerified: boolean;
+  /**
+   * A declaração `hd` do id_token (só nas contas do Google Workspace), em
+   * minúsculas; o guard do Backoffice a compara com o GOOGLE_STAFF_DOMAIN (RN01).
+   */
+  hostedDomain: string | null;
 }
