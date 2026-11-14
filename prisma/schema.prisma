@@ -74,18 +74,21 @@ enum AccessIpLogActor {
 // Usuário (Glossário): casal, cerimonialista, vendedor ou Admin Kore.
 // Convidado não é User.
 model User {
-  id              String       @id @default(uuid(7)) @db.Uuid
-  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
-  email           String       @unique(map: "uq_users_email") @db.Citext
+  id                   String       @id @default(uuid(7)) @db.Uuid
+  createdAt            DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  email                String       @unique(map: "uq_users_email") @db.Citext
   // Nulo até a pessoa informar o nome (cadastro do casal ou aceite de convite).
-  name            String?
-  avatarKey       String?      @map("avatar_key")
-  platformRole    PlatformRole @default(none) @map("platform_role")
-  status          UserStatus   @default(active)
-  lastLoginAt     DateTime?    @map("last_login_at") @db.Timestamptz(3)
-  termsVersion    String?      @map("terms_version")
-  termsAcceptedAt DateTime?    @map("terms_accepted_at") @db.Timestamptz(3)
+  name                 String?
+  avatarKey            String?      @map("avatar_key")
+  platformRole         PlatformRole @default(none) @map("platform_role")
+  status               UserStatus   @default(active)
+  lastLoginAt          DateTime?    @map("last_login_at") @db.Timestamptz(3)
+  termsVersion         String?      @map("terms_version")
+  termsAcceptedAt      DateTime?    @map("terms_accepted_at") @db.Timestamptz(3)
+  // Quando o staff trocou o e-mail de acesso (Backoffice - acesso RN09; decisão
+  // 253(2)): 48 h sem chave Pix nem remoção de membros. Só o kore_backoffice grava.
+  accessEmailChangedAt DateTime?    @map("access_email_changed_at") @db.Timestamptz(3)
 
   authIdentities            AuthIdentity[]
   sessions                  Session[]
@@ -1668,6 +1671,8 @@ enum AlertType {
   purge_failed
   access_email_changed
   manual_adjustment
+  access_email_locked
+  access_email_unlocked
 
   @@map("alert_type")
 }
