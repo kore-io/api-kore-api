@@ -11,6 +11,7 @@ import {
   Min,
   MinLength,
   MaxLength,
+  ValidateIf,
 } from 'class-validator';
 import { DATE_ONLY } from '../../access/presentation/weddings.dto';
 import {
@@ -325,4 +326,17 @@ export class AdminWeddingDetailResponse {
 
 export class AdminBlockStateResponse {
   blocked: boolean;
+}
+
+/** Reatribuir o indicador (RN07): outro indicador ativo, ou `null` (Sem indicador), e o motivo. */
+export class ReassignReferrerBody extends AdminReasonBody {
+  @ApiProperty({ type: String, format: 'uuid', nullable: true })
+  @ValidateIf((_body: unknown, value: unknown) => value !== null)
+  @IsUUID()
+  referrerId: string | null;
+}
+
+export class ReassignReferrerResponse {
+  /** `unchanged` quando o indicador escolhido já é o do casamento. */
+  @ApiProperty({ enum: ['reassigned', 'unchanged'] }) status: 'reassigned' | 'unchanged';
 }

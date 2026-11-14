@@ -5,6 +5,7 @@ import {
   CENTER_NOTIFICATION_TYPES,
   type CenterNotificationType,
   NOTIFICATION_TYPES,
+  PLANNER_CENTER_TYPES,
   PLANNER_NOTIFICATION_TYPES,
   type EmailFrequency,
   type NotificationRow,
@@ -18,6 +19,8 @@ const PREFERENCE_SELECT = { type: true, inApp: true, email: true, push: true } a
 /** A central do casal mostra só os tipos dela (Central RN01). */
 const COUPLE_TYPES = { in: [...NOTIFICATION_TYPES] };
 const PLANNER_TYPES = { in: [...PLANNER_NOTIFICATION_TYPES] };
+/** A lista e o "marcar todas" da central do indicador. */
+const PLANNER_CENTER = { in: [...PLANNER_CENTER_TYPES] };
 
 const NOTIFICATION_SELECT = {
   id: true,
@@ -117,7 +120,7 @@ export class PrismaNotificationStore implements NotificationStore {
   }): Promise<Prisma.NotificationWhereInput> {
     return {
       userId,
-      type: PLANNER_TYPES,
+      type: PLANNER_CENTER,
       weddingId: { notIn: await this.ownedWeddingIds({ userId }) },
     };
   }

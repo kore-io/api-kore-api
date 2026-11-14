@@ -1,5 +1,8 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import {
+  AlreadyPaidError,
+  ReassignPaymentPendingError,
+  ReferrerNotActiveError,
   AlertAlreadyResolvedError,
   AlertNotFoundError,
   AdminWeddingNotFoundError,
@@ -38,6 +41,25 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 409,
       error: 'ALERT_ALREADY_RESOLVED',
       message: 'The alert is already resolved.',
+    });
+  if (error instanceof AlreadyPaidError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'ALREADY_PAID',
+      message: 'The publication was already paid.',
+      paidAt: error.paidAt.toISOString(),
+    });
+  if (error instanceof ReassignPaymentPendingError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'PAYMENT_PENDING',
+      message: 'There is a pending payment quoted with the current referrer.',
+    });
+  if (error instanceof ReferrerNotActiveError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'REFERRER_NOT_ACTIVE',
+      message: 'The referrer is not active.',
     });
   return error;
 }

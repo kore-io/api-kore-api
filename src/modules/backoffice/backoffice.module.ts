@@ -3,6 +3,9 @@ import { BillingModule } from '../billing/billing.module';
 import { ipHasherProvider } from '../logs/infrastructure/ip-hasher.provider';
 import { AdminInsights, SEARCH_TERM_HASHER } from './application/admin-insights.use-cases';
 import { AdminWeddings } from './application/admin-weddings.use-cases';
+import { REFERRER_REASSIGNMENT } from './application/ports/referrer-reassignment.port';
+import { ReassignReferrer } from './application/reassign-referrer.use-case';
+import { PrismaReferrerReassignment } from './infrastructure/backoffice/prisma-referrer-reassignment';
 import { ADMIN_INSIGHTS_READER } from './application/ports/admin-insights.reader.port';
 import { PrismaAdminInsightsReader } from './infrastructure/backoffice/prisma-admin-insights.reader';
 import { HmacSearchTermHasher } from './infrastructure/hmac-search-term-hasher';
@@ -29,6 +32,8 @@ import { StaffGuard } from './presentation/staff.guard';
     adminLogWriterProvider,
     { provide: ADMIN_WEDDINGS_READER, useClass: PrismaAdminWeddingsReader },
     AdminWeddings,
+    { provide: REFERRER_REASSIGNMENT, useClass: PrismaReferrerReassignment },
+    ReassignReferrer,
     { provide: ADMIN_INSIGHTS_READER, useClass: PrismaAdminInsightsReader },
     { provide: SEARCH_TERM_HASHER, useClass: HmacSearchTermHasher },
     AdminInsights,

@@ -118,6 +118,8 @@ export class NotificationResponse {
   /**
    * rsvp: por grupo, sem restrição, música nem nome de convidado (Central RN04).
    * wedding_published e membership_removed: [{ partnerNames }] (revisão C8-3).
+   * referrer_reassigned: [{ partnerNames, direction }], `lost` ao indicador
+   * antigo e `gained` ao novo, sem o nome do outro (Backoffice - acesso RN07).
    * billing: um item por pagamento, com o valor só no detalhe (RN13).
    */
   @ApiProperty({

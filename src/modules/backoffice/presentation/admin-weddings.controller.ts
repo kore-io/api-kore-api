@@ -7,6 +7,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Put,
   Query,
   Req,
   UseGuards,
@@ -24,8 +25,12 @@ import {
 } from '../../access/presentation/access-error.dto';
 import { OwnTransactions } from '../../access/presentation/own-transactions.decorator';
 import { AdminWeddings } from '../application/admin-weddings.use-cases';
+import { ReassignReferrer } from '../application/reassign-referrer.use-case';
 import type { StaffMember } from '../domain/staff';
 import {
+  AlreadyPaidErrorBody,
+  ReassignPaymentPendingErrorBody,
+  ReferrerNotActiveErrorBody,
   AlreadyBlockedErrorBody,
   NotBlockedErrorBody,
   StaffOnlyErrorBody,
@@ -38,8 +43,10 @@ import {
   AdminWeddingQuery,
   AdminWeddingsQuery,
   AdminWeddingsResponse,
+  ReassignReferrerBody,
+  ReassignReferrerResponse,
 } from './admin-weddings.dto';
-import { CurrentStaff, StaffGuard } from './staff.guard';
+import { CurrentStaff, StaffGuard, StaffRoles } from './staff.guard';
 
 const weddingIdPipe = new ParseUUIDPipe({
   exceptionFactory: () =>
@@ -55,7 +62,10 @@ const weddingIdPipe = new ParseUUIDPipe({
 @Controller('admin/weddings')
 @UseGuards(StaffGuard)
 export class AdminWeddingsController {
-  constructor(private readonly weddings: AdminWeddings) {}
+  constructor(
+    private readonly weddings: AdminWeddings,
+    private readonly reassignReferrer: ReassignReferrer,
+  ) {}
 
   @Get()
   @OwnTransactions()
@@ -139,6 +149,39 @@ export class AdminWeddingsController {
     try {
       await this.weddings.unblock({ staff, weddingId, reason: body.reason, now: new Date() });
       return { blocked: false };
+    } catch (error) {
+      throw toHttpError(error);
+    }
+  }
+
+  /** Reatribuir o indicador (RN07): só o Admin, antes da publicação paga e sem pendente. */
+  @Put(':id/referrer')
+  @OwnTransactions()
+  @StaffRoles('admin')
+  @ApiOkResponse({ type: ReassignReferrerResponse })
+  @ApiErrorResponses(
+    ...commonErrors({ validated: true, session: true, write: true }),
+    StaffOnlyErrorBody,
+    ActionNotAllowedErrorBody,
+    WeddingNotFoundErrorBody,
+    AlreadyPaidErrorBody,
+    ReassignPaymentPendingErrorBody,
+    ReferrerNotActiveErrorBody,
+  )
+  async referrer(
+    @CurrentStaff() staff: StaffMember,
+    @Param('id', weddingIdPipe) weddingId: string,
+    @Body() body: ReassignReferrerBody,
+  ): Promise<ReassignReferrerResponse> {
+    try {
+      const status = await this.reassignReferrer.execute({
+        staff,
+        weddingId,
+        referrerId: body.referrerId,
+        reason: body.reason,
+        now: new Date(),
+      });
+      return { status };
     } catch (error) {
       throw toHttpError(error);
     }

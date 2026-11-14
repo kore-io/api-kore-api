@@ -35,3 +35,26 @@ export class AlertAlreadyResolvedErrorBody {
   @ApiProperty({ enum: ['ALERT_ALREADY_RESOLVED'] }) error: 'ALERT_ALREADY_RESOLVED';
   @ApiProperty() message: string;
 }
+
+export class AlreadyPaidErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['ALREADY_PAID'] }) error: 'ALREADY_PAID';
+  @ApiProperty() message: string;
+  /** Quando a publicação foi paga ("Indisponível: a publicação foi paga em 10/08."). */
+  @ApiProperty({ format: 'date-time' }) paidAt: string;
+}
+
+export class ReassignPaymentPendingErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['PAYMENT_PENDING'] }) error: 'PAYMENT_PENDING';
+  @ApiProperty() message: string;
+}
+
+export class ReferrerNotActiveErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['REFERRER_NOT_ACTIVE'] }) error: 'REFERRER_NOT_ACTIVE';
+  @ApiProperty() message: string;
+}
