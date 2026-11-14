@@ -25,7 +25,7 @@ const IP_HASH_SHORT = 8;
 const day = (value: Date | null) => (value ? value.toISOString().slice(0, 10) : null);
 const firstName = (name: string | null | undefined) => (name ?? '').trim().split(/\s+/)[0] ?? '';
 
-const ROW_SELECT = {
+export const ROW_SELECT = {
   id: true,
   slug: true,
   eventDate: true,
@@ -46,7 +46,7 @@ const ROW_SELECT = {
   payments: { where: { status: 'pending' }, select: { id: true }, take: 1 },
 } satisfies Prisma.WeddingSelect;
 
-type RowSource = Prisma.WeddingGetPayload<{ select: typeof ROW_SELECT }>;
+export type RowSource = Prisma.WeddingGetPayload<{ select: typeof ROW_SELECT }>;
 
 /** O "where" de cada status do filtro (RN05; decisão 251(3)). */
 function statusWhere(filter: AdminWeddingFilter): Prisma.WeddingWhereInput {
@@ -77,7 +77,7 @@ function rsvpPercentOf(stats: RowSource['stats']): number | null {
   return Number(stats.rsvpPercent);
 }
 
-function toRow(wedding: RowSource): AdminWeddingRow {
+export function toRow(wedding: RowSource): AdminWeddingRow {
   const referrer = referrerOf(wedding.referrer);
   const origin: WeddingOrigin = referrer?.kind ?? 'couple';
   const displayStatus: AdminWeddingFilter = wedding.blockedAt

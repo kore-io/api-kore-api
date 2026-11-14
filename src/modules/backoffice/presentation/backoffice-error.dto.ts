@@ -21,3 +21,17 @@ export class NotBlockedErrorBody {
   @ApiProperty({ enum: ['NOT_BLOCKED'] }) error: 'NOT_BLOCKED';
   @ApiProperty() message: string;
 }
+
+export class AlertNotFoundErrorBody {
+  static readonly status = 404;
+  @ApiProperty({ enum: [404] }) statusCode: 404;
+  @ApiProperty({ enum: ['ALERT_NOT_FOUND'] }) error: 'ALERT_NOT_FOUND';
+  @ApiProperty() message: string;
+}
+
+export class AlertAlreadyResolvedErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['ALERT_ALREADY_RESOLVED'] }) error: 'ALERT_ALREADY_RESOLVED';
+  @ApiProperty() message: string;
+}

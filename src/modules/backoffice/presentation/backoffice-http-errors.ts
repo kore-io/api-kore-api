@@ -1,5 +1,7 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import {
+  AlertAlreadyResolvedError,
+  AlertNotFoundError,
   AdminWeddingNotFoundError,
   AlreadyBlockedError,
   NotBlockedError,
@@ -24,6 +26,18 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 409,
       error: 'NOT_BLOCKED',
       message: 'The wedding is not blocked.',
+    });
+  if (error instanceof AlertNotFoundError)
+    return new NotFoundException({
+      statusCode: 404,
+      error: 'ALERT_NOT_FOUND',
+      message: 'Alert not found.',
+    });
+  if (error instanceof AlertAlreadyResolvedError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'ALERT_ALREADY_RESOLVED',
+      message: 'The alert is already resolved.',
     });
   return error;
 }

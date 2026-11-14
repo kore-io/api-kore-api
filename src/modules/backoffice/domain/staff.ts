@@ -28,3 +28,39 @@ export function isStaffSession({
 }): boolean {
   return authMethod === 'google' && staffDomain !== null && staffDomain === expectedDomain;
 }
+
+/**
+ * Os alertas de dinheiro (RN02 e RN12; decisão 69): o suporte não os vê nem
+ * os resolve. O suporte vê os de acesso, de conteúdo e do expurgo.
+ */
+export const MONEY_ALERT_TYPES = [
+  'orphan_payment',
+  'gateway_amount_mismatch',
+  'refund_failed',
+  'payment_disputed',
+  'dispute_lost',
+  'repeated_refund',
+  'payout_failed',
+  'manual_adjustment',
+  'pix_key_churn',
+  'webhook_failure',
+] as const;
+
+export function visibleAlertTypes({
+  role,
+  all,
+}: {
+  role: StaffRole;
+  all: readonly string[];
+}): string[] {
+  if (role === 'admin') return [...all];
+  return all.filter((type) => !(MONEY_ALERT_TYPES as readonly string[]).includes(type));
+}
+
+/** Os valores em centavos ficam fora do que o suporte lê (RN02; decisão 69). */
+export function withoutMoney({ data, role }: { data: unknown; role: StaffRole }): unknown {
+  if (role === 'admin' || !data || typeof data !== 'object' || Array.isArray(data)) return data;
+  return Object.fromEntries(
+    Object.entries(data as Record<string, unknown>).filter(([key]) => !/cents$/i.test(key)),
+  );
+}
