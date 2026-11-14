@@ -24,6 +24,14 @@ import { seedWedding } from '../support/weddings';
 
 const HOUR_MS = 60 * 60 * 1000;
 
+/**
+ * O relógio da rodada do teste, 30 dias à frente, com a rodada recortada ao
+ * casamento do teste (onlyWedding): as imagens do teste só vencem para ela, e
+ * ela não toca nas das outras rodadas no mesmo kore_test (a rotina atravessa o
+ * banco inteiro). Só a recusada (`failed`) vence para qualquer rodada.
+ */
+const testNow = () => new Date(Date.now() + 30 * 24 * HOUR_MS);
+
 /** Limpeza diária das imagens do site (S4 RN08; worker, banco e MinIO reais). */
 describe('Imagens do site: limpeza diária (worker)', () => {
   let worker: TestingModule;
@@ -110,6 +118,17 @@ describe('Imagens do site: limpeza diária (worker)', () => {
 
   const exists = async (id: string) => (await db.siteImage.count({ where: { id } })) === 1;
 
+  /** A rodada só no casamento do teste. */
+  function onlyWedding(weddingId: string) {
+    const cleanup = worker.get<SiteImageCleanup>(SITE_IMAGE_CLEANUP);
+    const list = cleanup.weddingsWithCandidates.bind(cleanup);
+    return jest
+      .spyOn(cleanup, 'weddingsWithCandidates')
+      .mockImplementationOnce(async (args) =>
+        (await list(args)).filter((candidate) => candidate === weddingId),
+      );
+  }
+
   it('RN08 - com o worker no ar, a rotina fica agendada todo dia às 2h30', async () => {
     const queue = worker.get<Queue>(getQueueToken(SITE_IMAGE_CLEANUP_QUEUE));
 
@@ -121,7 +140,7 @@ describe('Imagens do site: limpeza diária (worker)', () => {
 
   it('RN08 - apaga, com os arquivos, o envio abandonado, a recusada e a fora de uso há mais de 24 horas; o resto fica', async () => {
     const weddingId = await wedding();
-    const now = new Date();
+    const now = testNow();
     const ago = (hours: number) => new Date(now.getTime() - hours * HOUR_MS);
     const gone = {
       uploading: await image({ weddingId, status: 'uploading', updatedAt: ago(2) }),
@@ -154,7 +173,9 @@ describe('Imagens do site: limpeza diária (worker)', () => {
       inUse: await image({ weddingId, status: 'ready', updatedAt: ago(500), unusedSince: null }),
     };
 
+    const only = onlyWedding(weddingId);
     const counts = await clean.execute({ now });
+    only.mockRestore();
 
     for (const id of Object.values(gone)) {
       expect(await exists(id)).toBe(false);
@@ -164,13 +185,16 @@ describe('Imagens do site: limpeza diária (worker)', () => {
     expect(await files(kept.inUse)).toBe(3);
     expect(counts).toMatchObject({ weddingsFailed: 0 });
     expect(counts.stale).toBeGreaterThanOrEqual(2);
-    expect(counts.failed).toBeGreaterThanOrEqual(1);
+    // A recusada vence para qualquer rodada: outra pode tê-la apagado antes.
     expect(counts.unused).toBeGreaterThanOrEqual(2);
     // As apagadas deixam de contar no limite de 40 (RN07).
     expect(await db.siteImage.count({ where: { weddingId, status: { not: 'failed' } } })).toBe(3);
+    // O registro desta rodada, pelo relógio dela (outra rodada grava o seu).
     const log = await db.applicationLog.findFirstOrThrow({
-      where: { action: 'site_images.cleaned', createdAt: { gte: now } },
-      orderBy: { createdAt: 'desc' },
+      where: {
+        action: 'site_images.cleaned',
+        data: { path: ['now'], equals: now.toISOString() },
+      },
     });
     expect(log).toMatchObject({ actorKind: 'system', weddingId: null });
     expect(log.data).toMatchObject({ now: now.toISOString() });
@@ -178,7 +202,7 @@ describe('Imagens do site: limpeza diária (worker)', () => {
 
   it('RN08 - a foto que voltou a ser usada antes da rodada não é apagada (reconferido na transação)', async () => {
     const weddingId = await wedding();
-    const now = new Date();
+    const now = testNow();
     const id = await image({
       weddingId,
       status: 'ready',
@@ -194,7 +218,7 @@ describe('Imagens do site: limpeza diária (worker)', () => {
         const weddings = await list(args);
         expect(weddings).toContain(weddingId);
         await db.siteImage.update({ where: { id }, data: { unusedSince: null } });
-        return weddings;
+        return [weddingId];
       });
 
     await clean.execute({ now });
@@ -222,13 +246,17 @@ describe('Imagens do site: limpeza diária (worker)', () => {
     const old = await token(new Date(now.getTime() - 25 * HOUR_MS));
     const recent = await token(new Date(now.getTime() - 23 * HOUR_MS));
 
-    const { deleted } = await worker.get(CleanSitePreviewTokens).execute({ now });
+    // A rotina dos tokens é do banco inteiro: outra rodada pode ter apagado o
+    // antigo antes, então a contagem não é conferida; o estado e o registro, sim.
+    await worker.get(CleanSitePreviewTokens).execute({ now });
 
-    expect(deleted).toBeGreaterThanOrEqual(1);
     expect(await db.sitePreviewToken.count({ where: { id: old.id } })).toBe(0);
     expect(await db.sitePreviewToken.count({ where: { id: recent.id } })).toBe(1);
     await db.applicationLog.findFirstOrThrow({
-      where: { action: 'site_preview_tokens.cleaned', createdAt: { gte: now } },
+      where: {
+        action: 'site_preview_tokens.cleaned',
+        data: { path: ['now'], equals: now.toISOString() },
+      },
     });
   });
 });
