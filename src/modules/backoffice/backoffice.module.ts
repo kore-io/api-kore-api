@@ -1,3 +1,7 @@
+import { AdminPayments } from './application/admin-payments.use-cases';
+import { ADMIN_PAYMENTS_READER } from './application/ports/admin-payments.reader.port';
+import { PrismaAdminPaymentsReader } from './infrastructure/backoffice/prisma-admin-payments.reader';
+import { AdminPaymentsController } from './presentation/admin-payments.controller';
 import { AdminPayoutsController } from './presentation/admin-payouts.controller';
 import { Module } from '@nestjs/common';
 import { BillingModule } from '../billing/billing.module';
@@ -35,6 +39,7 @@ import { StaffGuard } from './presentation/staff.guard';
 @Module({
   imports: [BillingModule, AccessModule],
   controllers: [
+    AdminPaymentsController,
     AdminPayoutsController,
     AdminWeddingsController,
     AdminInsightsController,
@@ -47,6 +52,8 @@ import { StaffGuard } from './presentation/staff.guard';
     adminLogWriterProvider,
     { provide: ADMIN_WEDDINGS_READER, useClass: PrismaAdminWeddingsReader },
     AdminWeddings,
+    { provide: ADMIN_PAYMENTS_READER, useClass: PrismaAdminPaymentsReader },
+    AdminPayments,
     { provide: REFERRER_REASSIGNMENT, useClass: PrismaReferrerReassignment },
     ReassignReferrer,
     { provide: GUEST_ERASURE, useClass: PrismaGuestErasure },

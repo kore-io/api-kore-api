@@ -1,5 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { WeddingActionForbiddenError } from '../../access/domain/access.errors';
 import { BlockWedding } from '../../billing/application/block-wedding.use-case';
+import {
+  ADMIN_PAYMENTS_READER,
+  type AdminPaymentsReader,
+} from './ports/admin-payments.reader.port';
 import { IpHasher } from '../../logs/infrastructure/ip-hasher';
 import type { ApplicationLogWriter } from '../../logs/application/ports/application-log-writer.port';
 import {
@@ -24,19 +29,24 @@ import {
 /** O log do staff pela conexão do backoffice (as rotas /v1/admin não têm casamento na transação). */
 export const ADMIN_LOG_WRITER = Symbol('AdminLogWriter');
 
-export type AdminWeddingTab = 'general' | 'numbers' | 'guests' | 'log';
+export type AdminWeddingTab = 'general' | 'numbers' | 'guests' | 'log' | 'billing';
 export const ADMIN_WEDDING_TABS: readonly AdminWeddingTab[] = [
   'general',
   'numbers',
   'guests',
   'log',
+  'billing',
 ];
 
 export type AdminWeddingDetail =
   | { tab: 'general'; general: AdminWeddingGeneral | AdminWeddingTombstone }
   | { tab: 'numbers'; numbers: AdminWeddingNumbers }
   | { tab: 'guests'; guests: Page<AdminWeddingGuest> }
-  | { tab: 'log'; log: Page<AdminWeddingLogEntry> };
+  | { tab: 'log'; log: Page<AdminWeddingLogEntry> }
+  | {
+      tab: 'billing';
+      billing: NonNullable<Awaited<ReturnType<AdminPaymentsReader['ofWedding']>>>;
+    };
 
 /** Casamentos do Backoffice (Backoffice - acesso RN05 e RN06). */
 @Injectable()
@@ -44,6 +54,7 @@ export class AdminWeddings {
   constructor(
     @Inject(ADMIN_WEDDINGS_READER) private readonly reader: AdminWeddingsReader,
     @Inject(ADMIN_LOG_WRITER) private readonly log: ApplicationLogWriter,
+    @Inject(ADMIN_PAYMENTS_READER) private readonly payments: AdminPaymentsReader,
     private readonly blocks: BlockWedding,
     private readonly ipHasher: IpHasher,
   ) {}
@@ -88,6 +99,14 @@ export class AdminWeddings {
         if (!guests) throw new AdminWeddingNotFoundError();
         await this.record({ staff, weddingId, action: 'admin.guests_listed', ip, data: { page } });
         return { tab, guests };
+      }
+      case 'billing': {
+        // A aba Cobrança é só do Admin (Backoffice - cobrança RN01 e RN02).
+        if (staff.role !== 'admin') throw new WeddingActionForbiddenError();
+        const billing = await this.payments.ofWedding({ weddingId });
+        if (!billing) throw new AdminWeddingNotFoundError();
+        await this.record({ staff, weddingId, action: 'admin.wedding_viewed', ip, data: { tab } });
+        return { tab, billing };
       }
       case 'log': {
         const log = await this.reader.log({ weddingId, page });

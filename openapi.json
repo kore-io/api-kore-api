@@ -10215,6 +10215,1000 @@
         ]
       }
     },
+    "/v1/admin/payments": {
+      "get": {
+        "operationId": "AdminPaymentsController_list_v1",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "paid",
+                "failed",
+                "refund_requested",
+                "refunded",
+                "disputed"
+              ]
+            }
+          },
+          {
+            "name": "kind",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "publication",
+                "extension"
+              ]
+            }
+          },
+          {
+            "name": "method",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pix",
+                "card"
+              ]
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPaymentsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/payments/export": {
+      "get": {
+        "operationId": "AdminPaymentsController_export_v1",
+        "parameters": [
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "O CSV.",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Exportar CSV (RN07): os pagamentos e os estornos do período, para a contabilidade.",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/payments/{id}": {
+      "get": {
+        "operationId": "AdminPaymentsController_detail_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPaymentDetailResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/payments/{id}/refund": {
+      "post": {
+        "operationId": "AdminPaymentsController_refundPayment_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminRefundBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminRefundResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PaymentDisputedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RefundAlreadyRequestedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PaymentNotPaidErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RefundNotLastExtensionErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Reembolsar (RN05): integral, a qualquer momento; o estorno por job.",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/payments/{id}/apply": {
+      "post": {
+        "operationId": "AdminPaymentsController_apply_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminReasonBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPaymentActionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentNotMismatchedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Aplicar mesmo assim (RN11, o valor menor no gateway).",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/payments/{id}/refund/retry": {
+      "post": {
+        "operationId": "AdminPaymentsController_retryRefund_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminReasonBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPaymentActionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundNotFailedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Tentar o estorno de novo (RN11, o estorno que falhou).",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/payments/{id}/refund/manual": {
+      "post": {
+        "operationId": "AdminPaymentsController_manualRefund_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualRefundBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPaymentActionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RefundNotRequestedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RefundNotFailedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundReceiptMissingErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Registrar reembolso feito por fora (RN11): motivo e comprovante.",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/payments/{id}/refund/receipt-upload": {
+      "post": {
+        "operationId": "AdminPaymentsController_authorizeReceiptUpload_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefundReceiptUploadBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundReceiptUploadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RefundNotRequestedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RefundNotFailedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "O envio do comprovante do reembolso feito por fora (decisão 259(1)): a URL de PUT.",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/payments/{id}/refund/receipt": {
+      "get": {
+        "operationId": "AdminPaymentsController_receipt_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "O arquivo do comprovante."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PaymentNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RefundReceiptNotFoundErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "O comprovante, só para o Admin (decisão 259(1)): lido pela API, nunca público.",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/v1/admin/payouts": {
       "get": {
         "operationId": "AdminPayoutsController_list_v1",
@@ -10929,7 +11923,8 @@
                 "general",
                 "numbers",
                 "guests",
-                "log"
+                "log",
+                "billing"
               ]
             }
           }
@@ -11708,6 +12703,127 @@
           }
         },
         "summary": "Liberar a trava da troca do e-mail de acesso (decisão 253(1)): só o Admin.",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/weddings/{id}/courtesy": {
+      "post": {
+        "operationId": "AdminWeddingsController_extendAsCourtesy_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourtesyBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourtesyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotPublishedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndDateOutOfRangeErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Estender como cortesia (Backoffice - cobrança RN06): só o Admin, meses e motivo.",
         "tags": [
           "admin"
         ]
@@ -20722,7 +21838,8 @@
               "end_date_soon",
               "grace",
               "expired",
-              "purge_soon"
+              "purge_soon",
+              "courtesy"
             ],
             "type": "string"
           },
@@ -23319,6 +24436,670 @@
           "message"
         ]
       },
+      "AdminPaymentRowResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string",
+            "example": "P-0431"
+          },
+          "weddingId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "coupleNames": {
+            "type": "string",
+            "nullable": true
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "publication",
+              "extension"
+            ]
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "pix",
+              "card"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "paid",
+              "failed",
+              "canceled",
+              "refund_requested",
+              "refunded",
+              "disputed"
+            ]
+          },
+          "refundOrigin": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paidAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "amountCents": {
+            "type": "number"
+          },
+          "applied": {
+            "type": "boolean",
+            "description": "Pago e não aplicado: o pagamento sem destino, com o estorno automático."
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "weddingId",
+          "coupleNames",
+          "kind",
+          "method",
+          "status",
+          "refundOrigin",
+          "createdAt",
+          "paidAt",
+          "amountCents",
+          "applied"
+        ]
+      },
+      "AdminPaymentsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminPaymentRowResponse"
+            }
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageSize": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "total"
+        ]
+      },
+      "AdminPaymentReferrerResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "AdminPaymentCommissionResponse": {
+        "type": "object",
+        "properties": {
+          "amountCents": {
+            "type": "number"
+          },
+          "ratePercent": {
+            "type": "number",
+            "description": "O Admin vê o percentual (RN04)."
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "amountCents",
+          "ratePercent",
+          "status"
+        ]
+      },
+      "AdminPaymentRefundResponse": {
+        "type": "object",
+        "properties": {
+          "origin": {
+            "type": "string",
+            "nullable": true
+          },
+          "requestedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastError": {
+            "type": "string",
+            "nullable": true
+          },
+          "failedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "refundedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "attempts": {
+            "type": "number"
+          },
+          "outsideGateway": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "origin",
+          "requestedAt",
+          "reason",
+          "lastError",
+          "failedAt",
+          "refundedAt",
+          "attempts",
+          "outsideGateway"
+        ]
+      },
+      "AdminPaymentDisputeResponse": {
+        "type": "object",
+        "properties": {
+          "disputedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "deadline": {
+            "type": "string",
+            "nullable": true,
+            "description": "\"Prazo da defesa: até 16/11/2026, no Asaas\"."
+          }
+        },
+        "required": [
+          "disputedAt",
+          "deadline"
+        ]
+      },
+      "AdminPaymentDetailResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string",
+            "example": "P-0431"
+          },
+          "weddingId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "coupleNames": {
+            "type": "string",
+            "nullable": true
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "publication",
+              "extension"
+            ]
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "pix",
+              "card"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "paid",
+              "failed",
+              "canceled",
+              "refund_requested",
+              "refunded",
+              "disputed"
+            ]
+          },
+          "refundOrigin": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paidAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "gatewayFeeCents": {
+            "type": "number",
+            "nullable": true
+          },
+          "netCents": {
+            "type": "number",
+            "nullable": true
+          },
+          "gatewayPaymentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "appliedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "appliedByAdminAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "referrer": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AdminPaymentReferrerResponse"
+              }
+            ]
+          },
+          "commission": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AdminPaymentCommissionResponse"
+              }
+            ]
+          },
+          "refund": {
+            "$ref": "#/components/schemas/AdminPaymentRefundResponse"
+          },
+          "dispute": {
+            "$ref": "#/components/schemas/AdminPaymentDisputeResponse"
+          },
+          "installments": {
+            "type": "number"
+          },
+          "monthsCovered": {
+            "type": "number"
+          },
+          "periodStart": {
+            "type": "string"
+          },
+          "periodEnd": {
+            "type": "string"
+          },
+          "activationListCents": {
+            "type": "number"
+          },
+          "monthlyListCents": {
+            "type": "number"
+          },
+          "capDiscountCents": {
+            "type": "number"
+          },
+          "referralDiscountCents": {
+            "type": "number"
+          },
+          "pixDiscountCents": {
+            "type": "number"
+          },
+          "installmentInterestCents": {
+            "type": "number"
+          },
+          "payerTaxIdLast4": {
+            "type": "string"
+          },
+          "amountCents": {
+            "type": "number"
+          },
+          "applied": {
+            "type": "boolean",
+            "description": "Pago e não aplicado: o pagamento sem destino, com o estorno automático."
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "weddingId",
+          "coupleNames",
+          "kind",
+          "method",
+          "status",
+          "refundOrigin",
+          "createdAt",
+          "paidAt",
+          "gatewayFeeCents",
+          "netCents",
+          "gatewayPaymentId",
+          "appliedAt",
+          "appliedByAdminAt",
+          "referrer",
+          "commission",
+          "refund",
+          "dispute",
+          "installments",
+          "monthsCovered",
+          "periodStart",
+          "periodEnd",
+          "activationListCents",
+          "monthlyListCents",
+          "capDiscountCents",
+          "referralDiscountCents",
+          "pixDiscountCents",
+          "installmentInterestCents",
+          "payerTaxIdLast4",
+          "amountCents",
+          "applied"
+        ]
+      },
+      "AdminRefundBody": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 500
+          }
+        }
+      },
+      "AdminRefundResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "refund_requested"
+            ]
+          },
+          "refundsPaymentIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "pastGatewayWindow": {
+            "type": "boolean",
+            "description": "Passou do prazo de estorno do gateway: o estorno vai falhar (B3-6; decisão 259(2))."
+          }
+        },
+        "required": [
+          "status",
+          "refundsPaymentIds",
+          "pastGatewayWindow"
+        ]
+      },
+      "PaymentNotMismatchedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PAYMENT_NOT_MISMATCHED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "AdminReasonBody": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 500,
+            "example": "Denúncia de conteúdo impróprio."
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "AdminPaymentActionResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "applied",
+              "refund_retried",
+              "refunded"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "RefundNotFailedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "REFUND_NOT_FAILED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "RefundNotRequestedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "REFUND_NOT_REQUESTED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "RefundReceiptMissingErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "REFUND_RECEIPT_MISSING"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "ManualRefundBody": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 500,
+            "example": "Denúncia de conteúdo impróprio."
+          },
+          "receipt": {
+            "type": "string",
+            "description": "A chave do comprovante enviado (o `receiptKey` do envio; decisão 259(1)).",
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "reason",
+          "receipt"
+        ]
+      },
+      "RefundReceiptUploadBody": {
+        "type": "object",
+        "properties": {
+          "contentType": {
+            "enum": [
+              "application/pdf",
+              "image/jpeg",
+              "image/png"
+            ],
+            "type": "string"
+          },
+          "sizeBytes": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10485760
+          }
+        },
+        "required": [
+          "contentType",
+          "sizeBytes"
+        ]
+      },
+      "PresignedHeadersResponse": {
+        "type": "object",
+        "properties": {
+          "Content-Type": {
+            "type": "string"
+          },
+          "Content-Length": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "Content-Type",
+          "Content-Length"
+        ]
+      },
+      "RefundReceiptUploadResponse": {
+        "type": "object",
+        "properties": {
+          "headers": {
+            "$ref": "#/components/schemas/PresignedHeadersResponse"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "receiptKey": {
+            "type": "string",
+            "description": "A chave que vai no `receipt` do Registrar reembolso feito por fora."
+          },
+          "url": {
+            "type": "string",
+            "description": "O PUT do arquivo, com os cabeçalhos assinados."
+          }
+        },
+        "required": [
+          "headers",
+          "expiresAt",
+          "receiptKey",
+          "url"
+        ]
+      },
+      "RefundReceiptNotFoundErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "REFUND_RECEIPT_NOT_FOUND"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
       "AdminPayoutReferrerResponse": {
         "type": "object",
         "properties": {
@@ -23736,20 +25517,6 @@
           "error",
           "message",
           "status"
-        ]
-      },
-      "AdminReasonBody": {
-        "type": "object",
-        "properties": {
-          "reason": {
-            "type": "string",
-            "minLength": 10,
-            "maxLength": 500,
-            "example": "Denúncia de conteúdo impróprio."
-          }
-        },
-        "required": [
-          "reason"
         ]
       },
       "PayoutBelowMinimumAdminErrorBody": {
@@ -24337,6 +26104,149 @@
           "total"
         ]
       },
+      "AdminWeddingPaymentCommissionResponse": {
+        "type": "object",
+        "properties": {
+          "amountCents": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string"
+          },
+          "referrerName": {
+            "type": "string",
+            "description": "\"R$ 67,42 de Juliana Prado, Disponível\"."
+          }
+        },
+        "required": [
+          "amountCents",
+          "status",
+          "referrerName"
+        ]
+      },
+      "AdminWeddingPaymentResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string",
+            "example": "P-0431"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "publication",
+              "extension"
+            ]
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "pix",
+              "card"
+            ]
+          },
+          "refundOrigin": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paidAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "commission": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AdminWeddingPaymentCommissionResponse"
+              }
+            ]
+          },
+          "amountCents": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string"
+          },
+          "applied": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "kind",
+          "method",
+          "refundOrigin",
+          "createdAt",
+          "paidAt",
+          "commission",
+          "amountCents",
+          "status",
+          "applied"
+        ]
+      },
+      "AdminWeddingCourtesyResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "adminName": {
+            "type": "string",
+            "nullable": true
+          },
+          "months": {
+            "type": "number",
+            "description": "\"Cortesia de 3 meses em 26/09/2026 por Renata Lima\"."
+          },
+          "newEndDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "adminName",
+          "months",
+          "newEndDate"
+        ]
+      },
+      "AdminWeddingBillingResponse": {
+        "type": "object",
+        "properties": {
+          "payments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminWeddingPaymentResponse"
+            }
+          },
+          "courtesies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminWeddingCourtesyResponse"
+            }
+          }
+        },
+        "required": [
+          "payments",
+          "courtesies"
+        ]
+      },
       "AdminWeddingDetailResponse": {
         "type": "object",
         "properties": {
@@ -24345,7 +26255,8 @@
               "general",
               "numbers",
               "guests",
-              "log"
+              "log",
+              "billing"
             ],
             "type": "string"
           },
@@ -24360,6 +26271,14 @@
           },
           "log": {
             "$ref": "#/components/schemas/AdminWeddingLogResponse"
+          },
+          "billing": {
+            "description": "A aba Cobrança (só o Admin; Backoffice - cobrança RN02).",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AdminWeddingBillingResponse"
+              }
+            ]
           }
         },
         "required": [
@@ -24846,6 +26765,51 @@
         },
         "required": [
           "status"
+        ]
+      },
+      "CourtesyBody": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 500,
+            "example": "Denúncia de conteúdo impróprio."
+          },
+          "months": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 12
+          }
+        },
+        "required": [
+          "reason",
+          "months"
+        ]
+      },
+      "CourtesyResponse": {
+        "type": "object",
+        "properties": {
+          "previousEndDate": {
+            "type": "string",
+            "example": "2027-02-14"
+          },
+          "newEndDate": {
+            "type": "string",
+            "description": "A nova data de saída do ar (\"Data de saída do ar estendida para 14/05/2027.\").",
+            "example": "2027-05-14"
+          },
+          "canceledPaymentId": {
+            "type": "string",
+            "nullable": true,
+            "description": "O Pix de extensão pendente que a cortesia cancelou (B10-5).",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "previousEndDate",
+          "newEndDate",
+          "canceledPaymentId"
         ]
       },
       "MonthPointResponse": {

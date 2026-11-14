@@ -17,6 +17,7 @@ import {
   PAYMENT_LEDGER,
   type PaymentLedger,
 } from './ports/payment-ledger.port';
+import { ADMIN_BILLING_STORE, type AdminBillingStore } from './ports/admin-billing.store.port';
 
 export type SyncResult =
   | 'no_payment'
@@ -47,7 +48,8 @@ export type CancelReason =
   | 'publication_refunded'
   | 'end_date_changed'
   | 'wedding_blocked'
-  | 'wedding_deletion';
+  | 'wedding_deletion'
+  | 'courtesy_extended';
 
 /**
  * Aplica ao Payment o estado que o gateway devolveu na consulta (Publicar e
@@ -90,6 +92,7 @@ export class SyncPaymentWithGateway {
     @Inject(BILLING_PUSH) private readonly push: BillingPush,
     @Inject(REFUND_QUEUE) private readonly refunds: RefundQueue,
     @Inject(PRODUCT_EVENT_RECORDER) private readonly productEvents: ProductEventRecorder,
+    @Inject(ADMIN_BILLING_STORE) private readonly adminStore: AdminBillingStore,
   ) {}
 
   execute({
@@ -236,6 +239,107 @@ export class SyncPaymentWithGateway {
 
       await this.apply({ wedding, payment, now, cardLast4: charge.cardLast4 });
       return 'applied';
+    });
+  }
+
+  /**
+   * Aplicar mesmo assim (Backoffice - cobrança RN11; B10-3): o pagamento pago
+   * com valor menor (o `gateway_amount_mismatch`, sem appliedAt) é aplicado
+   * como se o total batesse, se o casamento ainda o aceita; grava o
+   * appliedByAdminAt, o log `payment.applied_by_admin` com o motivo e fecha o alerta.
+   */
+  applyByAdmin({
+    paymentId,
+    adminUserId,
+    reason,
+    now,
+  }: {
+    paymentId: string;
+    adminUserId: string;
+    reason: string;
+    now: Date;
+  }): Promise<'applied' | 'no_payment' | 'not_applicable'> {
+    return this.transaction.run(async () => {
+      const locked = await this.ledger.lock({ paymentId });
+      if (!locked) return 'no_payment';
+      const { wedding, payment } = locked;
+      if (payment.status !== 'paid' || payment.appliedAt) return 'not_applicable';
+      // Só com o gateway_amount_mismatch aberto (Contrato de API; 409 PAYMENT_NOT_MISMATCHED).
+      if (!(await this.adminStore.hasOpenAlert({ paymentId, type: 'gateway_amount_mismatch' })))
+        return 'not_applicable';
+      const decision = decideConfirmation({
+        payment: { ...payment, status: 'pending' },
+        wedding,
+        chargedCents: payment.amountCents,
+        otherPublicationApplied:
+          payment.kind === 'publication' &&
+          (await this.ledger.otherPublicationApplied({ weddingId: wedding.id, paymentId })),
+      });
+      if (decision.kind !== 'apply') return 'not_applicable';
+      await this.adminStore.markAppliedByAdmin({ paymentId, now });
+      await this.apply({ wedding, payment, now, cardLast4: payment.cardLast4 });
+      await this.adminStore.log({
+        action: 'payment.applied_by_admin',
+        weddingId: wedding.id,
+        paymentId,
+        adminUserId,
+        data: { reason, amountCents: payment.amountCents },
+        now,
+      });
+      await this.adminStore.resolveAlerts({
+        paymentId,
+        types: ['gateway_amount_mismatch'],
+        adminUserId,
+        now,
+      });
+      return 'applied';
+    });
+  }
+
+  /**
+   * Registrar reembolso feito por fora (RN11; B3-1): o pagamento em
+   * refund_requested vai a refunded com a origem manual, sem chamar o gateway,
+   * com o comprovante; os efeitos do reembolso concluído (a comissão estornada,
+   * o aviso ao casal), o log `payment.refund_recorded_manually` e o alerta fechado.
+   */
+  recordManualRefund({
+    paymentId,
+    adminUserId,
+    reason,
+    receipt,
+    now,
+  }: {
+    paymentId: string;
+    adminUserId: string;
+    reason: string;
+    /** A chave do comprovante no bucket privado (decisão 259(1)), já conferida. */
+    receipt: string;
+    now: Date;
+  }): Promise<'refunded' | 'no_payment' | 'not_applicable' | 'not_failed'> {
+    return this.transaction.run(async () => {
+      const locked = await this.ledger.lock({ paymentId });
+      if (!locked) return 'no_payment';
+      const { wedding, payment } = locked;
+      if (payment.status !== 'refund_requested') return 'not_applicable';
+      // Decisão 262: só com o estorno do gateway já falhado (nunca em dobro).
+      if (!payment.refundFailedAt) return 'not_failed';
+      await this.adminStore.markRefundedOutside({ paymentId, receiptKey: receipt });
+      await this.refunded({ wedding, payment: { ...payment, refundOrigin: 'manual' }, now });
+      await this.adminStore.log({
+        action: 'payment.refund_recorded_manually',
+        weddingId: wedding.id,
+        paymentId,
+        adminUserId,
+        data: { reason, receipt, amountCents: payment.amountCents },
+        now,
+      });
+      await this.adminStore.resolveAlerts({
+        paymentId,
+        types: ['refund_failed'],
+        adminUserId,
+        now,
+      });
+      return 'refunded';
     });
   }
 

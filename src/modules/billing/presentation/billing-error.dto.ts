@@ -170,3 +170,39 @@ export class NoDeletionScheduledErrorBody {
   @ApiProperty({ enum: ['NO_DELETION_SCHEDULED'] }) error: 'NO_DELETION_SCHEDULED';
   @ApiProperty() message: string;
 }
+
+/** As ações dos alertas de dinheiro (Backoffice - cobrança RN11; decisão 259). */
+export class PaymentNotMismatchedErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['PAYMENT_NOT_MISMATCHED'] }) error: 'PAYMENT_NOT_MISMATCHED';
+  @ApiProperty() message: string;
+}
+
+export class RefundNotFailedErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['REFUND_NOT_FAILED'] }) error: 'REFUND_NOT_FAILED';
+  @ApiProperty() message: string;
+}
+
+export class RefundNotRequestedErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['REFUND_NOT_REQUESTED'] }) error: 'REFUND_NOT_REQUESTED';
+  @ApiProperty() message: string;
+}
+
+export class RefundReceiptMissingErrorBody {
+  static readonly status = 422;
+  @ApiProperty({ enum: [422] }) statusCode: 422;
+  @ApiProperty({ enum: ['REFUND_RECEIPT_MISSING'] }) error: 'REFUND_RECEIPT_MISSING';
+  @ApiProperty() message: string;
+}
+
+export class RefundReceiptNotFoundErrorBody {
+  static readonly status = 404;
+  @ApiProperty({ enum: [404] }) statusCode: 404;
+  @ApiProperty({ enum: ['REFUND_RECEIPT_NOT_FOUND'] }) error: 'REFUND_RECEIPT_NOT_FOUND';
+  @ApiProperty() message: string;
+}

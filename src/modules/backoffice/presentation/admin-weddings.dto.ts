@@ -301,6 +301,42 @@ class AdminWeddingLogResponse {
   total: number;
 }
 
+class AdminWeddingPaymentCommissionResponse {
+  amountCents: number;
+  status: string;
+  /** "R$ 67,42 de Juliana Prado, Disponível". */
+  referrerName: string;
+}
+
+class AdminWeddingPaymentResponse {
+  @ApiProperty({ format: 'uuid' }) id: string;
+  @ApiProperty({ example: 'P-0431' }) code: string;
+  @ApiProperty({ enum: ['publication', 'extension'] }) kind: string;
+  amountCents: number;
+  @ApiProperty({ enum: ['pix', 'card'] }) method: string;
+  status: string;
+  applied: boolean;
+  @ApiProperty({ type: String, nullable: true }) refundOrigin: string | null;
+  @ApiProperty({ format: 'date-time' }) createdAt: string;
+  @ApiProperty({ type: String, format: 'date-time', nullable: true }) paidAt: string | null;
+  @ApiProperty({ type: AdminWeddingPaymentCommissionResponse, nullable: true })
+  commission: AdminWeddingPaymentCommissionResponse | null;
+}
+
+class AdminWeddingCourtesyResponse {
+  @ApiProperty({ format: 'uuid' }) id: string;
+  /** "Cortesia de 3 meses em 26/09/2026 por Renata Lima". */
+  months: number;
+  @ApiProperty({ format: 'date-time' }) createdAt: string;
+  @ApiProperty({ type: String, nullable: true }) adminName: string | null;
+  newEndDate: string;
+}
+
+class AdminWeddingBillingResponse {
+  @ApiProperty({ type: [AdminWeddingPaymentResponse] }) payments: AdminWeddingPaymentResponse[];
+  @ApiProperty({ type: [AdminWeddingCourtesyResponse] }) courtesies: AdminWeddingCourtesyResponse[];
+}
+
 /** O detalhe por aba (`?tab=`): só a aba pedida vem preenchida. */
 export class AdminWeddingDetailResponse {
   @ApiProperty({ enum: ADMIN_WEDDING_TABS }) tab: AdminWeddingTab;
@@ -311,6 +347,9 @@ export class AdminWeddingDetailResponse {
   @ApiProperty({ type: AdminWeddingGuestsResponse, required: false })
   guests?: Page<AdminWeddingGuest>;
   @ApiProperty({ type: AdminWeddingLogResponse, required: false }) log?: AdminWeddingLogResponse;
+  /** A aba Cobrança (só o Admin; Backoffice - cobrança RN02). */
+  @ApiProperty({ type: AdminWeddingBillingResponse, required: false })
+  billing?: AdminWeddingBillingResponse;
 
   static from({ detail }: { detail: AdminWeddingDetail }): AdminWeddingDetailResponse {
     switch (detail.tab) {
@@ -331,6 +370,21 @@ export class AdminWeddingDetailResponse {
             items: detail.log.items.map((item: AdminWeddingLogEntry) => ({
               ...item,
               createdAt: item.createdAt.toISOString(),
+            })),
+          },
+        };
+      case 'billing':
+        return {
+          tab: 'billing',
+          billing: {
+            payments: detail.billing.payments.map((payment) => ({
+              ...payment,
+              createdAt: payment.createdAt.toISOString(),
+              paidAt: payment.paidAt?.toISOString() ?? null,
+            })),
+            courtesies: detail.billing.courtesies.map((courtesy) => ({
+              ...courtesy,
+              createdAt: courtesy.createdAt.toISOString(),
             })),
           },
         };

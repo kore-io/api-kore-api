@@ -13,7 +13,7 @@ export interface RefundJob {
 
 export interface CancelPendingJob {
   paymentId: string;
-  reason?: 'wedding_blocked' | 'wedding_deletion';
+  reason?: 'wedding_blocked' | 'wedding_deletion' | 'courtesy_extended';
 }
 
 @Injectable()
@@ -45,7 +45,7 @@ export class BullmqRefundQueue implements RefundQueue {
     reason = 'wedding_blocked',
   }: {
     paymentId: string;
-    reason?: 'wedding_blocked' | 'wedding_deletion';
+    reason?: 'wedding_blocked' | 'wedding_deletion' | 'courtesy_extended';
   }): Promise<void> {
     const data: CancelPendingJob = { paymentId, reason };
     await this.queue.add('cancel-pending', data, {

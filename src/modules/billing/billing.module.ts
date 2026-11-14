@@ -1,3 +1,6 @@
+import { AdminPaymentActions } from './application/admin-payment-actions.use-cases';
+import { ExtendAsCourtesy } from './application/courtesy-extension.use-case';
+import { AdminRefund } from './application/admin-refund.use-case';
 import { PAYOUT_ADMIN_STORE } from './application/ports/payout-admin.store.port';
 import {
   ListPayoutQueue,
@@ -107,8 +110,14 @@ import { PAYMENT_REFUNDS_QUEUE } from './infrastructure/refunds.queue';
     { provide: WEDDING_DELETION_STORE, useClass: PrismaWeddingDeletionStore },
     RequestWeddingDeletion,
     CancelWeddingDeletion,
+    AdminRefund,
+    AdminPaymentActions,
+    ExtendAsCourtesy,
   ],
   exports: [
+    AdminRefund,
+    AdminPaymentActions,
+    ExtendAsCourtesy,
     BlockWedding,
     PayPayout,
     RetryPayout,

@@ -26,6 +26,10 @@ import {
 import { OwnTransactions } from '../../access/presentation/own-transactions.decorator';
 import { AdminWeddings } from '../application/admin-weddings.use-cases';
 import { ReassignReferrer } from '../application/reassign-referrer.use-case';
+import { ExtendAsCourtesy } from '../../billing/application/courtesy-extension.use-case';
+import { CourtesyBody, CourtesyResponse } from './admin-payments.dto';
+import { NotPublishedErrorBody } from '../../billing/presentation/billing-error.dto';
+import { EndDateOutOfRangeErrorBody } from '../../site/presentation/site-error.dto';
 import { EraseGuestOnRequest } from '../application/erase-guest.use-case';
 import { ChangeAccessEmail } from '../application/change-access-email.use-cases';
 import type { StaffMember } from '../domain/staff';
@@ -81,6 +85,7 @@ export class AdminWeddingsController {
   constructor(
     private readonly weddings: AdminWeddings,
     private readonly reassignReferrer: ReassignReferrer,
+    private readonly courtesy: ExtendAsCourtesy,
     private readonly eraseGuest: EraseGuestOnRequest,
     private readonly accessEmail: ChangeAccessEmail,
   ) {}
@@ -329,6 +334,38 @@ export class AdminWeddingsController {
         now: new Date(),
       });
       return { status: 'unlocked' };
+    } catch (error) {
+      throw toHttpError(error);
+    }
+  }
+
+  /** Estender como cortesia (Backoffice - cobrança RN06): só o Admin, meses e motivo. */
+  @Post(':id/courtesy')
+  @OwnTransactions()
+  @StaffRoles('admin')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ type: CourtesyResponse })
+  @ApiErrorResponses(
+    ...commonErrors({ validated: true, session: true, write: true }),
+    StaffOnlyErrorBody,
+    ActionNotAllowedErrorBody,
+    WeddingNotFoundErrorBody,
+    NotPublishedErrorBody,
+    EndDateOutOfRangeErrorBody,
+  )
+  async extendAsCourtesy(
+    @CurrentStaff() staff: StaffMember,
+    @Param('id', weddingIdPipe) weddingId: string,
+    @Body() body: CourtesyBody,
+  ): Promise<CourtesyResponse> {
+    try {
+      return await this.courtesy.execute({
+        weddingId,
+        adminUserId: staff.userId,
+        months: body.months,
+        reason: body.reason,
+        now: new Date(),
+      });
     } catch (error) {
       throw toHttpError(error);
     }
