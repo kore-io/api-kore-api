@@ -325,6 +325,11 @@ describe('Meus casamentos e alertas (banco real; decisões 223 e 224)', () => {
         canEditIdentity: false,
         coupleInvitations: [],
       });
+      // decisão 261(1): o vínculo ativo dela, para o "Sair do casamento".
+      const mine = await db.membership.findFirstOrThrow({
+        where: { weddingId, userId: planner.userId, removedAt: null },
+      });
+      expect(body.myMembershipId).toBe(mine.id);
     });
 
     it('RN01 - sem vínculo de colaboradora (outra assessoria, o casamento próprio, quem saiu): 404', async () => {

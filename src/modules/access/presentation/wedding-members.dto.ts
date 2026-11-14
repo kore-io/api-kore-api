@@ -11,6 +11,8 @@ class WeddingMemberResponse {
   @ApiProperty({ enum: ['owner', 'collaborator'] }) role: 'owner' | 'collaborator';
   /** Só no colaborador (decisão 177, item 8). */
   @ApiProperty({ enum: ['planner', 'seller'], required: false }) kind?: 'planner' | 'seller';
+  /** O vínculo de quem lê (decisão 261(2)). */
+  isMe: boolean;
 }
 
 class PendingInvitationResponse {
@@ -31,16 +33,19 @@ export class WeddingMembersResponse {
   static from({
     members,
     pendingInvitations,
+    viewerUserId,
   }: {
     members: WeddingMember[];
     pendingInvitations: PendingAccessInvitation[];
+    viewerUserId: string;
   }): WeddingMembersResponse {
     return {
-      members: members.map(({ id, name, role, kind }) => ({
+      members: members.map(({ id, userId, name, role, kind }) => ({
         id,
         name,
         role,
         ...(kind ? { kind } : {}),
+        isMe: userId === viewerUserId,
       })),
       pendingInvitations: pendingInvitations.map((invitation) => ({
         ...invitation,

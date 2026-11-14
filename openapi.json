@@ -14163,12 +14163,17 @@
           },
           "id": {
             "type": "string"
+          },
+          "isMe": {
+            "type": "boolean",
+            "description": "O vínculo de quem lê (decisão 261(2))."
           }
         },
         "required": [
           "name",
           "role",
-          "id"
+          "id",
+          "isMe"
         ]
       },
       "PendingInvitationResponse": {
@@ -20871,6 +20876,11 @@
           "stats": {
             "$ref": "#/components/schemas/MyWeddingStatsResponse"
           },
+          "myMembershipId": {
+            "type": "string",
+            "description": "O vínculo ativo de quem lê (decisão 261(1)).",
+            "format": "uuid"
+          },
           "coupleInvitations": {
             "description": "Só quando ela criou o casamento.",
             "type": "array",
@@ -20913,6 +20923,7 @@
           "origin",
           "slug",
           "stats",
+          "myMembershipId",
           "coupleInvitations",
           "hasOwner",
           "canEditIdentity",
