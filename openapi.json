@@ -10675,6 +10675,432 @@
           "admin"
         ]
       }
+    },
+    "/v1/admin/overview": {
+      "get": {
+        "operationId": "AdminInsightsController_overview_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOverviewResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/search": {
+      "get": {
+        "operationId": "AdminInsightsController_search_v1",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "description": "Casal, slug, e-mail, cerimonialista ou código de indicação.",
+            "schema": {
+              "minLength": 2,
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSearchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/logs": {
+      "get": {
+        "operationId": "AdminInsightsController_logs_v1",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "example": "wedding.blocked",
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "weddingId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminLogsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/alerts": {
+      "get": {
+        "operationId": "AdminInsightsController_alerts_v1",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "open",
+              "type": "string",
+              "enum": [
+                "open",
+                "resolved"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAlertsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/alerts/{id}/resolve": {
+      "post": {
+        "operationId": "AdminInsightsController_resolve_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAlertResolvedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertAlreadyResolvedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin"
+        ]
+      }
     }
   },
   "info": {
@@ -22235,6 +22661,464 @@
           "statusCode",
           "error",
           "message"
+        ]
+      },
+      "MonthPointResponse": {
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "string",
+            "example": "2026-11"
+          },
+          "value": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "month",
+          "value"
+        ]
+      },
+      "OverviewChartsResponse": {
+        "type": "object",
+        "properties": {
+          "created": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MonthPointResponse"
+            }
+          },
+          "published": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MonthPointResponse"
+            }
+          },
+          "revenueCents": {
+            "description": "Só para o Admin.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MonthPointResponse"
+            }
+          }
+        },
+        "required": [
+          "created",
+          "published"
+        ]
+      },
+      "OverviewRevenueResponse": {
+        "type": "object",
+        "properties": {
+          "publicationsCents": {
+            "type": "number"
+          },
+          "extensionsCents": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "publicationsCents",
+          "extensionsCents"
+        ]
+      },
+      "OverviewPayoutsResponse": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number"
+          },
+          "amountCents": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "count",
+          "amountCents"
+        ]
+      },
+      "AdminOverviewResponse": {
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "string",
+            "example": "2026-11"
+          },
+          "activationPercent": {
+            "type": "number",
+            "nullable": true
+          },
+          "rsvpAveragePercent": {
+            "type": "number",
+            "nullable": true
+          },
+          "charts": {
+            "$ref": "#/components/schemas/OverviewChartsResponse"
+          },
+          "revenue": {
+            "$ref": "#/components/schemas/OverviewRevenueResponse"
+          },
+          "payoutsRequested": {
+            "$ref": "#/components/schemas/OverviewPayoutsResponse"
+          },
+          "weddingsCreated": {
+            "type": "number"
+          },
+          "weddingsPublished": {
+            "type": "number"
+          },
+          "plannersActive": {
+            "type": "number"
+          },
+          "plannersNew": {
+            "type": "number"
+          },
+          "openAlerts": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "month",
+          "activationPercent",
+          "rsvpAveragePercent",
+          "charts",
+          "weddingsCreated",
+          "weddingsPublished",
+          "plannersActive",
+          "plannersNew",
+          "openAlerts"
+        ]
+      },
+      "AdminSearchReferrerResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "enum": [
+              "planner",
+              "seller"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "blocked",
+              "inactive"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "referralCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "name",
+          "referralCode"
+        ]
+      },
+      "AdminSearchResponse": {
+        "type": "object",
+        "properties": {
+          "weddings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminWeddingRowResponse"
+            }
+          },
+          "referrers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminSearchReferrerResponse"
+            }
+          }
+        },
+        "required": [
+          "weddings",
+          "referrers"
+        ]
+      },
+      "AdminLogRowResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actorKind": {
+            "type": "string",
+            "enum": [
+              "user",
+              "party",
+              "admin",
+              "system"
+            ]
+          },
+          "actorUserId": {
+            "type": "string",
+            "nullable": true
+          },
+          "weddingId": {
+            "type": "string",
+            "nullable": true
+          },
+          "supportSessionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "entityType": {
+            "type": "string",
+            "nullable": true
+          },
+          "entityId": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "type": "object",
+            "description": "Para o suporte, sem os valores em centavos (RN02).",
+            "nullable": true
+          },
+          "ipHashShort": {
+            "type": "string",
+            "nullable": true,
+            "description": "O hash do IP, curto; nunca o IP."
+          },
+          "action": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "actorKind",
+          "actorUserId",
+          "weddingId",
+          "supportSessionId",
+          "entityType",
+          "entityId",
+          "data",
+          "ipHashShort",
+          "action"
+        ]
+      },
+      "AdminLogsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminLogRowResponse"
+            }
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageSize": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "total"
+        ]
+      },
+      "AdminAlertResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "orphan_payment",
+              "gateway_amount_mismatch",
+              "refund_failed",
+              "payment_disputed",
+              "dispute_lost",
+              "repeated_refund",
+              "payout_failed",
+              "manual_adjustment",
+              "pix_key_churn",
+              "webhook_failure",
+              "login_abuse",
+              "photo_flood",
+              "purge_failed",
+              "access_email_changed"
+            ]
+          },
+          "status": {
+            "enum": [
+              "open",
+              "resolved"
+            ],
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "weddingId": {
+            "type": "string",
+            "nullable": true
+          },
+          "coupleNames": {
+            "type": "string",
+            "nullable": true,
+            "example": "Ana & Marcos"
+          },
+          "userId": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "type": "object",
+            "description": "O detalhe do tipo; o app monta o texto (RN12).",
+            "nullable": true
+          },
+          "resolvedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "resolvedByName": {
+            "type": "string",
+            "nullable": true
+          },
+          "entityType": {
+            "type": "string"
+          },
+          "entityId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "status",
+          "createdAt",
+          "weddingId",
+          "coupleNames",
+          "userId",
+          "data",
+          "resolvedAt",
+          "resolvedByName",
+          "entityType",
+          "entityId"
+        ]
+      },
+      "AdminAlertsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminAlertResponse"
+            }
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageSize": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "openCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "total",
+          "openCount"
+        ]
+      },
+      "AlertNotFoundErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "ALERT_NOT_FOUND"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "AlertAlreadyResolvedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "ALERT_ALREADY_RESOLVED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "AdminAlertResolvedResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "resolved"
+            ]
+          }
+        },
+        "required": [
+          "status"
         ]
       },
       "SpreadsheetTemplateHeaders": {

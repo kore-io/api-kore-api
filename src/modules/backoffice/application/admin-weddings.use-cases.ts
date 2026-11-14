@@ -6,7 +6,7 @@ import {
   NotBlockedError,
   AdminWeddingNotFoundError,
 } from '../domain/backoffice.errors';
-import type { StaffMember } from '../domain/staff';
+import { withoutMoney, type StaffMember } from '../domain/staff';
 import {
   ADMIN_WEDDINGS_READER,
   type AdminWeddingGeneral,
@@ -36,14 +36,6 @@ export type AdminWeddingDetail =
   | { tab: 'numbers'; numbers: AdminWeddingNumbers }
   | { tab: 'guests'; guests: Page<AdminWeddingGuest> }
   | { tab: 'log'; log: Page<AdminWeddingLogEntry> };
-
-/** Os valores em centavos ficam fora do que o suporte lê (RN02; decisão 69). */
-function withoutMoney(data: unknown): unknown {
-  if (!data || typeof data !== 'object' || Array.isArray(data)) return data;
-  return Object.fromEntries(
-    Object.entries(data as Record<string, unknown>).filter(([key]) => !/cents$/i.test(key)),
-  );
-}
 
 /** Casamentos do Backoffice (Backoffice - acesso RN05 e RN06). */
 @Injectable()
@@ -98,7 +90,10 @@ export class AdminWeddings {
         const log = await this.reader.log({ weddingId, page });
         if (!log) throw new AdminWeddingNotFoundError();
         if (staff.role === 'support')
-          log.items = log.items.map((item) => ({ ...item, data: withoutMoney(item.data) }));
+          log.items = log.items.map((item) => ({
+            ...item,
+            data: withoutMoney({ data: item.data, role: staff.role }),
+          }));
         return { tab, log };
       }
     }
