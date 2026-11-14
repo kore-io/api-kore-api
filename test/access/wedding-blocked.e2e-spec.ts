@@ -25,6 +25,9 @@ const ALLOWED = new Set([
   'post /v1/weddings/{weddingId}/site-previews',
   // Sair do casamento passa; remover outra pessoa é recusado no caso de uso.
   'delete /v1/weddings/{weddingId}/memberships/{id}',
+  // Excluir o casamento: idempotente com a exclusão agendada; o caso de uso recusa
+  // o bloqueado com 403 WEDDING_BLOCKED (sem corpo, aqui seria 400 da validação).
+  'post /v1/weddings/{weddingId}/deletion',
 ]);
 
 /**

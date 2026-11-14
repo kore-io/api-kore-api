@@ -61,6 +61,17 @@ export interface PurgeSoonNotice {
   partnerNames: [string, string];
 }
 
+/** A exclusão pedida (Retenção e expurgo RN05): e-mail de serviço às pessoas donas. */
+export interface DeletionScheduledNotice {
+  to: string;
+  firstName: string;
+  /** O primeiro nome de quem pediu ("Ana pediu para excluir…"). */
+  requesterFirstName: string;
+  /** AAAA-MM-DD. */
+  deletionScheduledFor: string;
+  partnerNames: [string, string];
+}
+
 export interface BillingMailer {
   paymentConfirmed({ notice }: { notice: PaymentConfirmedNotice }): Promise<void>;
   pixExpired({ notice }: { notice: PixExpiredNotice }): Promise<void>;
@@ -69,6 +80,7 @@ export interface BillingMailer {
   graceStarted({ notice }: { notice: GraceNotice }): Promise<void>;
   siteExpired({ notice }: { notice: SiteExpiredNotice }): Promise<void>;
   purgeSoon({ notice }: { notice: PurgeSoonNotice }): Promise<void>;
+  deletionScheduled({ notice }: { notice: DeletionScheduledNotice }): Promise<void>;
 }
 
 export const BILLING_MAILER = Symbol('BillingMailer');

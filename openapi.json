@@ -9978,6 +9978,241 @@
           "billing"
         ]
       }
+    },
+    "/v1/weddings/{weddingId}/deletion": {
+      "post": {
+        "operationId": "WeddingDeletionController_request_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeddingDeletionBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingDeletionScheduledResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ReauthRequiredErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RefundWindowOpenErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RefundInProgressErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PaymentDisputedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmNameMismatchErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Excluir o casamento: o site sai do ar na hora e tudo é apagado em 7 dias.",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/v1/weddings/{weddingId}/deletion/cancel": {
+      "post": {
+        "operationId": "WeddingDeletionController_cancel_v1",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingDeletionCanceledResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/NoDeletionScheduledErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Cancelar a exclusão: qualquer dono, até o expurgo.",
+        "tags": [
+          "billing"
+        ]
+      }
     }
   },
   "info": {
@@ -20709,6 +20944,171 @@
           "purgeAt",
           "publicationSource",
           "awaitingPayment"
+        ]
+      },
+      "RefundWindowOpenErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "REFUND_WINDOW_OPEN"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "refundableUntil": {
+            "type": "string",
+            "description": "O fim do prazo de desistir do pagamento mais recente.",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "refundableUntil"
+        ]
+      },
+      "ConfirmNameMismatchErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "CONFIRM_NAME_MISMATCH"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "WeddingDeletionBody": {
+        "type": "object",
+        "properties": {
+          "confirmName": {
+            "type": "string",
+            "description": "\"Ana & Marcos\", como o app mostra (decisão 163).",
+            "maxLength": 200,
+            "example": "Ana & Marcos"
+          }
+        },
+        "required": [
+          "confirmName"
+        ]
+      },
+      "WeddingDeletionScheduledResponse": {
+        "type": "object",
+        "properties": {
+          "deletionScheduledFor": {
+            "type": "string",
+            "description": "O dia do expurgo, AAAA-MM-DD (hoje + 7, no fuso do casamento).",
+            "example": "2026-11-21"
+          }
+        },
+        "required": [
+          "deletionScheduledFor"
+        ]
+      },
+      "NoDeletionScheduledErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "NO_DELETION_SCHEDULED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "WeddingLifecycleResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "awaiting_couple",
+              "draft",
+              "published",
+              "post_event",
+              "grace",
+              "expired"
+            ]
+          },
+          "endDate": {
+            "type": "string",
+            "nullable": true,
+            "example": "2027-02-14"
+          },
+          "graceUntil": {
+            "type": "string",
+            "nullable": true,
+            "example": "2027-02-21"
+          },
+          "expiredAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2027-02-22"
+          },
+          "deletionScheduledFor": {
+            "type": "string",
+            "nullable": true
+          },
+          "blocked": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "status",
+          "endDate",
+          "graceUntil",
+          "expiredAt",
+          "deletionScheduledFor",
+          "blocked"
+        ]
+      },
+      "WeddingDeletionCanceledResponse": {
+        "type": "object",
+        "properties": {
+          "lifecycle": {
+            "$ref": "#/components/schemas/WeddingLifecycleResponse"
+          }
+        },
+        "required": [
+          "lifecycle"
         ]
       },
       "SpreadsheetTemplateHeaders": {

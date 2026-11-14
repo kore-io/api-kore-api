@@ -40,6 +40,13 @@ import { PrismaBillingViewReader } from './infrastructure/prisma-billing-view.re
 import { PaymentsController } from './presentation/payments.controller';
 import { REFUND_REQUEST_STORE } from './application/ports/refund-request.store.port';
 import { RequestRefund } from './application/request-refund.use-case';
+import { WEDDING_DELETION_STORE } from './application/ports/wedding-deletion.store.port';
+import {
+  CancelWeddingDeletion,
+  RequestWeddingDeletion,
+} from './application/wedding-deletion.use-cases';
+import { PrismaWeddingDeletionStore } from './infrastructure/backoffice/prisma-wedding-deletion.store';
+import { WeddingDeletionController } from './presentation/wedding-deletion.controller';
 import { ChangeEndDate } from './application/change-end-date.use-case';
 import { PrismaRefundRequestStore } from './infrastructure/prisma-refund-request.store';
 import { PAYMENT_REFUNDS_QUEUE } from './infrastructure/refunds.queue';
@@ -62,6 +69,7 @@ import { PAYMENT_REFUNDS_QUEUE } from './infrastructure/refunds.queue';
     PricingController,
     BillingQuoteController,
     PaymentsController,
+    WeddingDeletionController,
   ],
   providers: [
     ...PAYMENT_GATEWAY_PROVIDERS,
@@ -84,6 +92,9 @@ import { PAYMENT_REFUNDS_QUEUE } from './infrastructure/refunds.queue';
     ChangeEndDate,
     { provide: WEDDING_BLOCKS, useClass: PrismaWeddingBlocks },
     BlockWedding,
+    { provide: WEDDING_DELETION_STORE, useClass: PrismaWeddingDeletionStore },
+    RequestWeddingDeletion,
+    CancelWeddingDeletion,
   ],
   exports: [
     BlockWedding,

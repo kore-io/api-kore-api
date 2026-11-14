@@ -144,3 +144,29 @@ export class EndDateBeyondPaidErrorBody {
   @ApiProperty() message: string;
   @ApiProperty({ example: '2027-02-14' }) paidThrough: string;
 }
+
+/** O nome digitado não é o do casal (Retenção e expurgo RN05). */
+export class ConfirmNameMismatchErrorBody {
+  static readonly status = 422;
+  @ApiProperty({ enum: [422] }) statusCode: 422;
+  @ApiProperty({ enum: ['CONFIRM_NAME_MISMATCH'] }) error: 'CONFIRM_NAME_MISMATCH';
+  @ApiProperty() message: string;
+}
+
+/** Algum pagamento ainda está nos 7 dias do CDC (Retenção e expurgo RN06): desistir antes. */
+export class RefundWindowOpenErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['REFUND_WINDOW_OPEN'] }) error: 'REFUND_WINDOW_OPEN';
+  @ApiProperty() message: string;
+  /** O fim do prazo de desistir do pagamento mais recente. */
+  @ApiProperty({ format: 'date-time' }) refundableUntil: string;
+}
+
+/** Não há exclusão agendada para cancelar (Retenção e expurgo RN05). */
+export class NoDeletionScheduledErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['NO_DELETION_SCHEDULED'] }) error: 'NO_DELETION_SCHEDULED';
+  @ApiProperty() message: string;
+}

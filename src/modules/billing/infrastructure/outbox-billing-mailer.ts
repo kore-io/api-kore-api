@@ -13,6 +13,7 @@ import type {
   GraceNotice,
   SiteExpiredNotice,
   PurgeSoonNotice,
+  DeletionScheduledNotice,
 } from '../application/ports/billing-mailer.port';
 import {
   endDateSoonEmail,
@@ -22,12 +23,15 @@ import {
   refundCompletedEmail,
   siteExpiredEmail,
   purgeSoonEmail,
+  deletionScheduledEmail,
 } from './emails/billing.email';
 
 /** Cobrança e publicação, na Área do Casal (página 21). */
 const BILLING_PATH = '/app/cobranca';
 /** Exportar os convidados, na Área do Casal. */
 const EXPORT_PATH = '/app/convidados/exportar';
+/** Configurações › Casamento, onde fica o Cancelar a exclusão (Retenção RN05, A11). */
+const WEDDING_SETTINGS_PATH = '/app/configuracoes/casamento';
 /** Etiqueta do aviso de expurgo, para a desistência do worker desfazer a marca (decisão 180(8)). */
 export const PURGE_SOON_EMAIL_TAG = 'retention_purge_notice';
 
@@ -96,6 +100,16 @@ export class OutboxBillingMailer implements BillingMailer {
         kind: PURGE_SOON_EMAIL_TAG,
         data: { weddingId: notice.weddingId, noticeSentAt: notice.noticeSentAt.toISOString() },
       },
+    });
+  }
+
+  async deletionScheduled({ notice }: { notice: DeletionScheduledNotice }): Promise<void> {
+    await this.outbox.enqueue({
+      message: deletionScheduledEmail({
+        notice,
+        url: new URL(WEDDING_SETTINGS_PATH, this.appUrl).toString(),
+      }),
+      priority: 'default',
     });
   }
 

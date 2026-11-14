@@ -29,6 +29,9 @@ import {
   PaymentPendingError,
   PriceChangedError,
   RefundInProgressError,
+  ConfirmNameMismatchError,
+  NoDeletionScheduledError,
+  RefundWindowOpenError,
 } from '../domain/billing.errors';
 import { InstallmentsOutOfRangeError } from '../domain/pricing';
 
@@ -173,5 +176,24 @@ export function toHttpError(error: unknown): unknown {
       },
       HttpStatus.SERVICE_UNAVAILABLE,
     );
+  if (error instanceof ConfirmNameMismatchError)
+    return new UnprocessableEntityException({
+      statusCode: 422,
+      error: 'CONFIRM_NAME_MISMATCH',
+      message: 'Type the couple name to confirm.',
+    });
+  if (error instanceof RefundWindowOpenError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'REFUND_WINDOW_OPEN',
+      message: 'A payment can still be refunded. Refund it before deleting the wedding.',
+      refundableUntil: error.refundableUntil.toISOString(),
+    });
+  if (error instanceof NoDeletionScheduledError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'NO_DELETION_SCHEDULED',
+      message: 'There is no deletion to cancel.',
+    });
   return toAccessHttpError(error);
 }
