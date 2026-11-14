@@ -1,3 +1,11 @@
+import { PAYOUT_ADMIN_STORE } from './application/ports/payout-admin.store.port';
+import {
+  ListPayoutQueue,
+  RejectPayout,
+  ReleasePayout,
+} from './application/payouts/payout-admin.use-cases';
+import { PayPayout, RetryPayout } from './application/payouts/payout-transfers.use-cases';
+import { PrismaPayoutAdminStore } from './infrastructure/backoffice/prisma-payout-admin.store';
 import { PAYOUT_TRANSFERS_QUEUE } from './infrastructure/payout-transfers.queue';
 import { producerQueue } from '../../shared/jobs/producer-queue';
 import { BullModule } from '@nestjs/bullmq';
@@ -92,12 +100,21 @@ import { PAYMENT_REFUNDS_QUEUE } from './infrastructure/refunds.queue';
     ChangeEndDate,
     { provide: WEDDING_BLOCKS, useClass: PrismaWeddingBlocks },
     BlockWedding,
+    { provide: PAYOUT_ADMIN_STORE, useClass: PrismaPayoutAdminStore },
+    ListPayoutQueue,
+    RejectPayout,
+    ReleasePayout,
     { provide: WEDDING_DELETION_STORE, useClass: PrismaWeddingDeletionStore },
     RequestWeddingDeletion,
     CancelWeddingDeletion,
   ],
   exports: [
     BlockWedding,
+    PayPayout,
+    RetryPayout,
+    ListPayoutQueue,
+    RejectPayout,
+    ReleasePayout,
     PAYMENT_GATEWAY,
     LocalGatewayStore,
     ReceiveGatewayWebhook,

@@ -25,7 +25,7 @@ import {
   type GatewayTransfer,
   type PaymentGateway,
 } from '../ports/payment-gateway.port';
-import { PAYOUT_LEDGER, type PayoutLedger } from '../ports/payout-ledger.port';
+import { PAYOUT_LEDGER, type LockedPayout, type PayoutLedger } from '../ports/payout-ledger.port';
 import {
   PAYOUT_TRANSFER_QUEUE,
   type PayoutTransferQueue,
@@ -113,26 +113,46 @@ export class PayPayout {
     this.enabled = config.get({ key: 'PAYOUTS_ENABLED' });
   }
 
+  /**
+   * O `Idempotency-Key` (Backoffice - cobrança, Contrato de API; decisão 259(3)):
+   * o mesmo pedido repetido depois do Pagar responde com o estado atual do
+   * repasse, sem outro Pix; outra chave no repasse que já saiu de requested (a
+   * segunda aba) é 409. Depois de uma falha definitiva o repasse volta a
+   * requested, e aí a mesma chave paga de novo (um Pix novo, com a mesma
+   * referência no gateway).
+   */
   async execute({
     payoutId,
     adminUserId,
+    idempotencyKey,
     now,
   }: {
     payoutId: string;
     adminUserId: string;
+    idempotencyKey: string;
     now: Date;
-  }): Promise<void> {
+  }): Promise<LockedPayout['status']> {
     if (!this.enabled) throw new PayoutPaymentsDisabledError();
-    await this.transaction.run(async () => {
+    return this.transaction.run(async () => {
       const payout = await this.ledger.lock({ payoutId });
       if (!payout) throw new PayoutNotFoundError();
-      if (payout.status !== 'requested') throw new PayoutStatusConflictError(payout.status);
+      if (payout.status !== 'requested') {
+        if (await this.ledger.paidWithKey({ payoutId, idempotencyKey })) return payout.status;
+        throw new PayoutStatusConflictError(payout.status, 'requested');
+      }
       if (payout.referrerStatus !== 'active') throw new PayoutReferrerBlockedError();
       if (payout.pixKeyChangePending) throw new PayoutPixKeyChangePendingError();
       if (payout.amountCents !== payout.itemsCents)
         throw new PayoutAmountMismatchError(payout.amountCents, payout.itemsCents);
-      await this.ledger.markProcessing({ payoutId, paidByUserId: adminUserId, now });
+      // A ação que tira dinheiro do Kore fica no log (Backoffice - cobrança RN01; D19).
+      await this.ledger.markProcessing({
+        payoutId,
+        paidByUserId: adminUserId,
+        idempotencyKey,
+        now,
+      });
       this.transaction.schedule(() => this.queue.enqueue({ payoutId }));
+      return 'processing' as const;
     });
   }
 }
@@ -199,14 +219,33 @@ export class RetryPayout {
     private readonly sync: SyncPayout,
   ) {}
 
-  async execute({ payoutId, now }: { payoutId: string; now: Date }): Promise<PayoutSyncResult> {
+  async execute({
+    payoutId,
+    adminUserId,
+    now,
+  }: {
+    payoutId: string;
+    adminUserId: string;
+    now: Date;
+  }): Promise<PayoutSyncResult> {
     const payout = await this.transaction.run(() => this.ledger.lock({ payoutId }));
     if (!payout) throw new PayoutNotFoundError();
-    if (payout.status !== 'processing') throw new PayoutStatusConflictError(payout.status);
+    if (payout.status !== 'processing')
+      throw new PayoutStatusConflictError(payout.status, 'processing');
     const transfer = await this.gateway.getPixTransfer({ externalReference: payout.externalRef });
-    if (transfer) return this.sync.execute({ payoutId, transfer, now });
-    await this.queue.enqueue({ payoutId });
-    return 'pending';
+    const result = transfer ? await this.sync.execute({ payoutId, transfer, now }) : 'pending';
+    // Quem tentou e o que a consulta achou (Backoffice - cobrança RN01; D19).
+    await this.transaction.run(() =>
+      this.ledger.recordRetry({
+        payoutId,
+        adminUserId,
+        gatewayStatus: transfer?.status ?? 'not_found',
+        result,
+        now,
+      }),
+    );
+    if (!transfer) await this.queue.enqueue({ payoutId });
+    return result;
   }
 }
 

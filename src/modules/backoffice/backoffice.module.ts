@@ -1,3 +1,4 @@
+import { AdminPayoutsController } from './presentation/admin-payouts.controller';
 import { Module } from '@nestjs/common';
 import { BillingModule } from '../billing/billing.module';
 import { ipHasherProvider } from '../logs/infrastructure/ip-hasher.provider';
@@ -33,7 +34,12 @@ import { StaffGuard } from './presentation/staff.guard';
  */
 @Module({
   imports: [BillingModule, AccessModule],
-  controllers: [AdminWeddingsController, AdminInsightsController, SupportSessionsController],
+  controllers: [
+    AdminPayoutsController,
+    AdminWeddingsController,
+    AdminInsightsController,
+    SupportSessionsController,
+  ],
   providers: [
     { provide: STAFF_DIRECTORY, useClass: PrismaStaffDirectory },
     StaffGuard,

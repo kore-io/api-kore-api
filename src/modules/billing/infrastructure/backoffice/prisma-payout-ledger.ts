@@ -61,15 +61,29 @@ export class PrismaPayoutLedger implements PayoutLedger {
   async markProcessing({
     payoutId,
     paidByUserId,
+    idempotencyKey,
     now,
   }: {
     payoutId: string;
     paidByUserId: string;
+    idempotencyKey: string;
     now: Date;
   }): Promise<void> {
-    await this.db().payout.update({
+    const payout = await this.db().payout.update({
       where: { id: payoutId },
       data: { status: 'processing', processingAt: now, paidByUserId, lastError: null },
+      select: { amountCents: true, referrerId: true },
+    });
+    await this.db().applicationLog.create({
+      data: {
+        createdAt: now,
+        action: 'payout.processing',
+        actorKind: 'admin',
+        actorUserId: paidByUserId,
+        entityType: 'payout',
+        entityId: payoutId,
+        data: { amountCents: payout.amountCents, referrerId: payout.referrerId, idempotencyKey },
+      },
     });
   }
 
@@ -147,6 +161,59 @@ export class PrismaPayoutLedger implements PayoutLedger {
       WHERE id = ${payoutId}::uuid AND status = 'requested'
         AND EXISTS (SELECT 1 FROM commissions c
                     WHERE c.payout_id = ${payoutId}::uuid AND c.status = 'held')`;
+  }
+
+  async paidWithKey({
+    payoutId,
+    idempotencyKey,
+  }: {
+    payoutId: string;
+    idempotencyKey: string;
+  }): Promise<boolean> {
+    const count = await this.db().applicationLog.count({
+      where: {
+        action: 'payout.processing',
+        entityType: 'payout',
+        entityId: payoutId,
+        data: { path: ['idempotencyKey'], equals: idempotencyKey },
+      },
+    });
+    return count > 0;
+  }
+
+  async recordRetry({
+    payoutId,
+    adminUserId,
+    gatewayStatus,
+    result,
+    now,
+  }: {
+    payoutId: string;
+    adminUserId: string;
+    gatewayStatus: string;
+    result: string;
+    now: Date;
+  }): Promise<void> {
+    const payout = await this.db().payout.findUniqueOrThrow({
+      where: { id: payoutId },
+      select: { amountCents: true, referrerId: true },
+    });
+    await this.db().applicationLog.create({
+      data: {
+        createdAt: now,
+        action: 'payout.retried',
+        actorKind: 'admin',
+        actorUserId: adminUserId,
+        entityType: 'payout',
+        entityId: payoutId,
+        data: {
+          amountCents: payout.amountCents,
+          referrerId: payout.referrerId,
+          gatewayStatus,
+          result,
+        },
+      },
+    });
   }
 
   async markStuck({

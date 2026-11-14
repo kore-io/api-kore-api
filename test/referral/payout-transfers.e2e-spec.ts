@@ -153,9 +153,12 @@ describe('Repasse: o Pix de saída (Repasse RN05 e RN08; banco real)', () => {
     const person = await requested();
     const adminId = await admin();
 
-    await worker
-      .get(PayPayout)
-      .execute({ payoutId: person.payoutId, adminUserId: adminId, now: new Date() });
+    await worker.get(PayPayout).execute({
+      payoutId: person.payoutId,
+      adminUserId: adminId,
+      idempotencyKey: randomUUID(),
+      now: new Date(),
+    });
 
     const { externalRef } = await payout(person.payoutId);
     const transfer = await until(
@@ -172,9 +175,12 @@ describe('Repasse: o Pix de saída (Repasse RN05 e RN08; banco real)', () => {
     });
     // Pagar de novo não manda outro Pix.
     await expect(
-      worker
-        .get(PayPayout)
-        .execute({ payoutId: person.payoutId, adminUserId: adminId, now: new Date() }),
+      worker.get(PayPayout).execute({
+        payoutId: person.payoutId,
+        adminUserId: adminId,
+        idempotencyKey: randomUUID(),
+        now: new Date(),
+      }),
     ).rejects.toThrow(PayoutStatusConflictError);
 
     expectStatus(await devPaymentEvent({ app, paymentId: externalRef, event: 'payout-paid' }), 200);
@@ -212,26 +218,35 @@ describe('Repasse: o Pix de saída (Repasse RN05 e RN08; banco real)', () => {
       data: { status: 'requested', holdReason: null },
     });
     await expect(
-      worker
-        .get(PayPayout)
-        .execute({ payoutId: mismatch.payoutId, adminUserId: await admin(), now: new Date() }),
+      worker.get(PayPayout).execute({
+        payoutId: mismatch.payoutId,
+        adminUserId: await admin(),
+        idempotencyKey: randomUUID(),
+        now: new Date(),
+      }),
     ).rejects.toThrow(PayoutAmountMismatchError);
 
     const blocked = await requested();
     await db.referrer.update({ where: { id: blocked.referrerId }, data: { status: 'blocked' } });
     await expect(
-      worker
-        .get(PayPayout)
-        .execute({ payoutId: blocked.payoutId, adminUserId: await admin(), now: new Date() }),
+      worker.get(PayPayout).execute({
+        payoutId: blocked.payoutId,
+        adminUserId: await admin(),
+        idempotencyKey: randomUUID(),
+        now: new Date(),
+      }),
     ).rejects.toThrow(PayoutReferrerBlockedError);
     expect(await payout(blocked.payoutId)).toMatchObject({ status: 'requested' });
   });
 
   it('RN05 - falha definitiva: volta a solicitado, com o motivo e o alerta payout_failed', async () => {
     const person = await requested();
-    await worker
-      .get(PayPayout)
-      .execute({ payoutId: person.payoutId, adminUserId: await admin(), now: new Date() });
+    await worker.get(PayPayout).execute({
+      payoutId: person.payoutId,
+      adminUserId: await admin(),
+      idempotencyKey: randomUUID(),
+      now: new Date(),
+    });
     const { externalRef } = await payout(person.payoutId);
     await until(
       () => app.get(LocalGatewayStore).transferByReference({ externalReference: externalRef }),
@@ -259,9 +274,12 @@ describe('Repasse: o Pix de saída (Repasse RN05 e RN08; banco real)', () => {
     const person = await requested();
     const { externalRef } = await payout(person.payoutId);
     await app.get(LocalGatewayStore).failNextCalls({ count: 1, scope: externalRef });
-    await worker
-      .get(PayPayout)
-      .execute({ payoutId: person.payoutId, adminUserId: await admin(), now: new Date() });
+    await worker.get(PayPayout).execute({
+      payoutId: person.payoutId,
+      adminUserId: await admin(),
+      idempotencyKey: randomUUID(),
+      now: new Date(),
+    });
 
     const stuck = await until(
       () => payout(person.payoutId),
@@ -278,7 +296,9 @@ describe('Repasse: o Pix de saída (Repasse RN05 e RN08; banco real)', () => {
     ).toBe(1);
 
     expect(
-      await worker.get(RetryPayout).execute({ payoutId: person.payoutId, now: new Date() }),
+      await worker
+        .get(RetryPayout)
+        .execute({ payoutId: person.payoutId, adminUserId: await admin(), now: new Date() }),
     ).toBe('pending');
     await until(
       () => app.get(LocalGatewayStore).transferByReference({ externalReference: externalRef }),
@@ -292,9 +312,12 @@ describe('Repasse: o Pix de saída (Repasse RN05 e RN08; banco real)', () => {
 
   it('Comissões RN05 (B6-4) - estornada durante o Pix: o repasse pago leva o ajuste negativo', async () => {
     const person = await requested();
-    await worker
-      .get(PayPayout)
-      .execute({ payoutId: person.payoutId, adminUserId: await admin(), now: new Date() });
+    await worker.get(PayPayout).execute({
+      payoutId: person.payoutId,
+      adminUserId: await admin(),
+      idempotencyKey: randomUUID(),
+      now: new Date(),
+    });
     const { externalRef } = await payout(person.payoutId);
     await until(
       () => app.get(LocalGatewayStore).transferByReference({ externalReference: externalRef }),
