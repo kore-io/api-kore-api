@@ -10,6 +10,11 @@ describe('Ações na cerimonialista (Backoffice - cobrança RN08)', () => {
     expect(isCommissionBlockable({ status: 'available' })).toBe(true);
     for (const status of ['paid', 'reversed', 'held', 'blocked'] as const)
       expect(isCommissionBlockable({ status })).toBe(false);
+    // Repasse B6-4: a do repasse em processamento ou pago segue o Pix.
+    expect(isCommissionBlockable({ status: 'available', payoutStatus: 'requested' })).toBe(true);
+    expect(isCommissionBlockable({ status: 'available', payoutStatus: 'held' })).toBe(true);
+    expect(isCommissionBlockable({ status: 'available', payoutStatus: 'processing' })).toBe(false);
+    expect(isCommissionBlockable({ status: 'available', payoutStatus: 'paid' })).toBe(false);
   });
 
   it('RN08 - desbloquear volta ao prazo de liberação', () => {

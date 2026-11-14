@@ -4,9 +4,20 @@
  */
 export type CommissionStatus = 'pending' | 'available' | 'paid' | 'reversed' | 'blocked' | 'held';
 
-/** B10-4: só a pendente e a disponível (dentro ou fora de um repasse) se bloqueiam. */
-export const isCommissionBlockable = ({ status }: { status: CommissionStatus }) =>
-  status === 'pending' || status === 'available';
+/**
+ * B10-4: só a pendente e a disponível se bloqueiam, fora de repasse ou num
+ * repasse pedido ou retido. A de um repasse em processamento ou pago segue o
+ * Pix (Repasse B6-4): bloqueá-la a deixaria presa a um repasse pago.
+ */
+export const isCommissionBlockable = ({
+  status,
+  payoutStatus = null,
+}: {
+  status: CommissionStatus;
+  payoutStatus?: string | null;
+}) =>
+  (status === 'pending' || status === 'available') &&
+  (payoutStatus === null || payoutStatus === 'requested' || payoutStatus === 'held');
 
 /** Desbloquear: a comissão volta a seguir o prazo de liberação. */
 export const unblockedStatus = ({

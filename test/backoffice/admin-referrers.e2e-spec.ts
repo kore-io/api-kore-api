@@ -236,6 +236,20 @@ describe('Backoffice: ações na cerimonialista (Backoffice - cobrança RN08; ba
       where: { action: 'commission.unblocked', entityId: commission.id },
     });
 
+    // Repasse B6-4: a comissão de um repasse em processamento segue o Pix.
+    const sending = await juliana({ payout: true });
+    await db.payout.update({
+      where: { id: sending.payoutId! },
+      data: { status: 'processing', processingAt: new Date() },
+    });
+    const inPix = await post(admin.cookie, `/commissions/${sending.commissions[0].id}/block`, {
+      reason: 'Tentativa durante o Pix',
+    }).expect(409);
+    expect(inPix.body).toMatchObject({ error: 'COMMISSION_NOT_BLOCKABLE', status: 'available' });
+    expect(
+      (await db.commission.findUniqueOrThrow({ where: { id: sending.commissions[0].id } })).status,
+    ).toBe('available');
+
     const paid = await juliana();
     await db.commission.update({
       where: { id: paid.commissions[0].id },

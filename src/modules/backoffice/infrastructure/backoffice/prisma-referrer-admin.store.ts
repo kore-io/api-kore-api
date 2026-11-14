@@ -64,14 +64,21 @@ export class PrismaReferrerAdminStore implements ReferrerAdminStore {
       select: { referrerId: true },
     });
     if (!found) return null;
-    // G2: o Referrer antes da Commission.
+    // G2: Referrer → Payout → Commission. Com o Referrer travado, o payoutId
+    // da comissão não muda (o pedido e o Pagar também travam o Referrer).
     await this.db()
       .$queryRaw`SELECT id FROM referrers WHERE id = ${found.referrerId}::uuid FOR UPDATE`;
-    const [row] = await this.db().$queryRaw<LockedCommission[]>`
+    const [link] = await this.db().$queryRaw<{ payoutId: string | null }[]>`
+      SELECT payout_id AS "payoutId" FROM commissions WHERE id = ${commissionId}::uuid`;
+    const [payout] = link?.payoutId
+      ? await this.db().$queryRaw<{ status: LockedCommission['payoutStatus'] }[]>`
+          SELECT status::text AS status FROM payouts WHERE id = ${link.payoutId}::uuid FOR UPDATE`
+      : [];
+    const [row] = await this.db().$queryRaw<Omit<LockedCommission, 'payoutStatus'>[]>`
       SELECT id, referrer_id AS "referrerId", status::text AS status, amount_cents AS "amountCents",
              available_at AS "availableAt", payout_id AS "payoutId"
       FROM commissions WHERE id = ${commissionId}::uuid FOR UPDATE`;
-    return row ?? null;
+    return row ? { ...row, payoutStatus: payout?.status ?? null } : null;
   }
 
   async blockReferrer({
@@ -292,12 +299,19 @@ export class PrismaReferrerAdminStore implements ReferrerAdminStore {
     if (saved === 0) return 'in_use';
     // A autoindicação de novo (Comissões RN03; B6-7): as pendentes e disponíveis
     // pagas por este documento ficam bloqueadas, e o repasse pedido, retido.
+    // G2: os repasses abertos dela antes das comissões.
+    await tx.$queryRaw`
+      SELECT id FROM payouts WHERE referrer_id = ${referrerId}::uuid
+        AND status IN ('requested', 'held') FOR UPDATE`;
     const blocked = await tx.$queryRaw<{ id: string; payout_id: string | null }[]>`
       UPDATE commissions c
       SET status = 'blocked', block_reason = 'self_referral', updated_at = ${now}
       FROM payments p
       WHERE p.id = c.payment_id AND c.referrer_id = ${referrerId}::uuid
         AND c.status IN ('pending', 'available') AND p.payer_tax_id_hash = ${hash}
+        -- A do repasse em processamento ou pago segue com ele (Repasse B6-4).
+        AND (c.payout_id IS NULL OR EXISTS (
+          SELECT 1 FROM payouts o WHERE o.id = c.payout_id AND o.status IN ('requested', 'held')))
       RETURNING c.id, c.payout_id`;
     const payoutIds = [...new Set(blocked.map((row) => row.payout_id).filter((id) => id !== null))];
     if (payoutIds.length > 0)

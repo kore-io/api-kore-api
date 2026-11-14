@@ -106,7 +106,9 @@ export class ReferrerAdminActions {
     return this.transaction.run(async () => {
       const commission = await this.store.lockCommission({ commissionId });
       if (!commission) throw new CommissionNotFoundError();
-      if (!isCommissionBlockable({ status: commission.status }))
+      if (
+        !isCommissionBlockable({ status: commission.status, payoutStatus: commission.payoutStatus })
+      )
         throw new CommissionNotBlockableError(commission.status);
       return this.store.blockCommission({ commission, adminUserId, reason, now });
     });

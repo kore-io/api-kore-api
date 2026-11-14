@@ -14,6 +14,8 @@ export interface LockedCommission {
   amountCents: number;
   availableAt: Date;
   payoutId: string | null;
+  /** O estado do repasse dela, travado antes da comissão (G2). */
+  payoutStatus: 'requested' | 'held' | 'processing' | 'paid' | 'rejected' | null;
 }
 
 /**
@@ -23,7 +25,7 @@ export interface LockedCommission {
  */
 export interface ReferrerAdminStore {
   lockReferrer(input: { referrerId: string }): Promise<LockedReferrer | null>;
-  /** Trava o Referrer da comissão e depois a comissão. */
+  /** Trava o Referrer da comissão, o repasse dela e depois a comissão (G2). */
   lockCommission(input: { commissionId: string }): Promise<LockedCommission | null>;
 
   /**
