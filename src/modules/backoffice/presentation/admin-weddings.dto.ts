@@ -12,6 +12,11 @@ import {
   MinLength,
   MaxLength,
   ValidateIf,
+  IsDefined,
+  IsObject,
+  IsBoolean,
+  IsEmail,
+  ValidateNested,
 } from 'class-validator';
 import { DATE_ONLY } from '../../access/presentation/weddings.dto';
 import {
@@ -139,6 +144,9 @@ class AdminPersonResponse {
   @ApiProperty({ type: String, nullable: true }) name: string | null;
   email: string;
   @ApiProperty({ enum: ['owner', 'collaborator'] }) role: 'owner' | 'collaborator';
+  /** A troca do e-mail pelo staff trava chave Pix e remoção de membros até aqui (decisão 253(2)). */
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  accessChangeLockedUntil: string | null;
 }
 
 class AdminPendingPaymentResponse {
@@ -222,7 +230,10 @@ export class AdminWeddingGeneralResponse {
       referrer: wedding.referrer,
       rsvpPercent: wedding.rsvpPercent,
       createdAt: wedding.createdAt.toISOString(),
-      people: wedding.people,
+      people: wedding.people.map((person) => ({
+        ...person,
+        accessChangeLockedUntil: person.accessChangeLockedUntil?.toISOString() ?? null,
+      })),
       publishedAt: wedding.publishedAt?.toISOString() ?? null,
       endDate: wedding.endDate,
       graceUntil: wedding.graceUntil,
@@ -353,4 +364,43 @@ export class EraseGuestBody {
 
 export class GuestErasedResponse {
   @ApiProperty({ enum: ['erased'] }) status: 'erased';
+}
+
+class AccessEmailChecksBody {
+  /** A data e a cidade do casamento conferidas com o casal. */
+  @ApiProperty() @IsBoolean() eventDateAndCity: boolean;
+  /** O nome da outra pessoa do casal. */
+  @ApiProperty() @IsBoolean() partnerName: boolean;
+}
+
+/** Trocar o e-mail de acesso (RN09): as confirmações, os 4 dígitos que o casal informou e o motivo. */
+export class ChangeAccessEmailBody extends AdminReasonBody {
+  @ApiProperty({ format: 'uuid' }) @IsUUID() userId: string;
+
+  @ApiProperty({ example: 'ana.nova@gmail.com' })
+  @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value))
+  @IsEmail()
+  @MaxLength(254)
+  newEmail: string;
+
+  @ApiProperty({ type: AccessEmailChecksBody })
+  @IsDefined()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => AccessEmailChecksBody)
+  checks: AccessEmailChecksBody;
+
+  /** Sem pagamento, não há CPF para conferir: vai sem o campo. */
+  @ApiProperty({ required: false, example: '4725' })
+  @IsOptional()
+  @Matches(/^\d{4}$/)
+  payerLast4?: string;
+}
+
+export class AccessEmailChangedResponse {
+  @ApiProperty({ enum: ['changed'] }) status: 'changed';
+}
+
+export class AccessEmailUnlockedResponse {
+  @ApiProperty({ enum: ['unlocked'] }) status: 'unlocked';
 }

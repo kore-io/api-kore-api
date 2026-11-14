@@ -12,7 +12,7 @@ import type {
   MonthPoint,
 } from '../../application/ports/admin-insights.reader.port';
 import type { Page } from '../../application/ports/admin-weddings.reader.port';
-import type { StaffRole } from '../../domain/staff';
+import { MONEY_ALERT_TYPES, type StaffRole } from '../../domain/staff';
 import { ROW_SELECT, toRow } from './prisma-admin-weddings.reader';
 
 const TZ = 'America/Sao_Paulo';
@@ -23,6 +23,8 @@ const IP_HASH_SHORT = 8;
 
 const firstName = (name: string | null | undefined) => (name ?? '').trim().split(/\s+/)[0] ?? '';
 const num = (value: unknown) => Number(value ?? 0);
+/** O curinga do LIKE como letra: o Prisma passa o `contains` sem escapar. */
+export const escapeLike = (term: string) => term.replace(/[\\%_]/g, (char) => `\\${char}`);
 
 /** Pela conexão do backoffice (decisão 180(5)). */
 @Injectable()
@@ -64,10 +66,7 @@ export class PrismaAdminInsightsReader implements AdminInsightsReader {
     const [alerts] = await this.db.$queryRaw<{ open: bigint }[]>`
       SELECT count(*) AS open FROM alerts
       WHERE status = 'open'
-        AND (${moneyAlerts} OR type::text NOT IN (
-          'orphan_payment', 'gateway_amount_mismatch', 'refund_failed', 'payment_disputed',
-          'dispute_lost', 'repeated_refund', 'payout_failed', 'manual_adjustment',
-          'pix_key_churn', 'webhook_failure'))`;
+        AND (${moneyAlerts} OR type::text NOT IN (${Prisma.join([...MONEY_ALERT_TYPES])}))`;
     const series = (rows: { month: string; value: unknown }[]): MonthPoint[] =>
       rows.map((row) => ({ month: row.month, value: num(row.value) }));
     // A coluna vem de uma lista fechada no código, nunca de entrada.
@@ -129,7 +128,8 @@ export class PrismaAdminInsightsReader implements AdminInsightsReader {
 
   /** Casal, slug, e-mail de quem tem acesso; indicador por nome, e-mail ou código (RN03). */
   async search({ term }: { term: string }): Promise<AdminSearchResult> {
-    const contains = { contains: term, mode: 'insensitive' as const };
+    // O % e o _ do termo valem como letra, não como curinga (q=%% não lista tudo).
+    const contains = { contains: escapeLike(term), mode: 'insensitive' as const };
     const [weddings, referrers] = await Promise.all([
       this.db.wedding.findMany({
         where: {
@@ -240,6 +240,7 @@ export class PrismaAdminInsightsReader implements AdminInsightsReader {
     const resolverIds = [
       ...new Set(rows.flatMap((row) => (row.resolvedByUserId ? [row.resolvedByUserId] : []))),
     ];
+    const alertUserIds = [...new Set(rows.flatMap((row) => (row.userId ? [row.userId] : [])))];
     const [partners, resolvers] = await Promise.all([
       this.db.partner.findMany({
         where: { weddingId: { in: weddingIds } },
@@ -247,8 +248,8 @@ export class PrismaAdminInsightsReader implements AdminInsightsReader {
         select: { weddingId: true, displayName: true },
       }),
       this.db.user.findMany({
-        where: { id: { in: resolverIds } },
-        select: { id: true, name: true },
+        where: { id: { in: [...resolverIds, ...alertUserIds] } },
+        select: { id: true, name: true, email: true },
       }),
     ]);
     const couple = new Map<string, string[]>();
@@ -258,6 +259,7 @@ export class PrismaAdminInsightsReader implements AdminInsightsReader {
         firstName(partner.displayName),
       ]);
     const resolverName = new Map(resolvers.map((user) => [user.id, user.name] as const));
+    const userOf = new Map(resolvers.map((user) => [user.id, user] as const));
     return {
       items: rows.map((row) => ({
         id: row.id,
@@ -267,6 +269,13 @@ export class PrismaAdminInsightsReader implements AdminInsightsReader {
         weddingId: row.weddingId,
         coupleNames: row.weddingId ? (couple.get(row.weddingId)?.join(' & ') ?? null) : null,
         userId: row.userId,
+        // A tela 19 mostra a pessoa do alerta de usuário (sugestão do Crivo no 11b).
+        user: row.userId
+          ? {
+              name: userOf.get(row.userId)?.name ?? null,
+              email: userOf.get(row.userId)?.email ?? null,
+            }
+          : null,
         entityType: row.entityType,
         entityId: row.entityId,
         data: row.data,
@@ -286,11 +295,13 @@ export class PrismaAdminInsightsReader implements AdminInsightsReader {
     alertId,
     types,
     byUserId,
+    ipHash,
     now,
   }: {
     alertId: string;
     types: string[];
     byUserId: string;
+    ipHash: string | null;
     now: Date;
   }): Promise<'resolved' | 'already_resolved' | 'not_found'> {
     return this.db.$transaction(async (tx) => {
@@ -316,6 +327,7 @@ export class PrismaAdminInsightsReader implements AdminInsightsReader {
           entityType: 'alert',
           entityId: alertId,
           data: { type: alert.type },
+          ipHash,
         },
       });
       return 'resolved';

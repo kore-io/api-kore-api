@@ -1,3 +1,4 @@
+import { RecentAccessChangeError } from '../domain/recent-access-change';
 import { ReauthRequiredError } from '../domain/recent-session';
 import { ContrastTooLowError } from '../../site/domain/site.errors';
 import {
@@ -341,6 +342,14 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 404,
       error: 'MEMBERSHIP_NOT_FOUND',
       message: 'Membership not found.',
+    });
+  }
+  if (error instanceof RecentAccessChangeError) {
+    return new ConflictException({
+      statusCode: 409,
+      error: 'RECENT_ACCESS_CHANGE',
+      message: 'The access e-mail was changed by the Kore team less than 48 hours ago.',
+      availableAt: error.availableAt.toISOString(),
     });
   }
   if (error instanceof ReauthRequiredError) {

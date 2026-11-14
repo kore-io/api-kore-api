@@ -138,4 +138,12 @@ export class PrismaPayoutDataStore implements PayoutDataStore {
     });
     return { email: user.email, firstName: user.name?.trim().split(/\s+/)[0] || null };
   }
+
+  async accessEmailChangedAt({ userId }: { userId: string }): Promise<Date | null> {
+    const user = await this.tenant.client().user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { accessEmailChangedAt: true },
+    });
+    return user.accessEmailChangedAt;
+  }
 }

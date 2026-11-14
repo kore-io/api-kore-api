@@ -124,9 +124,10 @@ export class AdminInsightsController {
       }),
     )
     alertId: string,
+    @Req() request: Request,
   ): Promise<AdminAlertResolvedResponse> {
     try {
-      await this.insights.resolveAlert({ staff, alertId, now: new Date() });
+      await this.insights.resolveAlert({ staff, alertId, ip: request.ip ?? null, now: new Date() });
       return { status: 'resolved' };
     } catch (error) {
       throw toHttpError(error);

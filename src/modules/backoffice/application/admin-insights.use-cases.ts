@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { IpHasher } from '../../logs/infrastructure/ip-hasher';
 import { AlertNotFoundError, AlertAlreadyResolvedError } from '../domain/backoffice.errors';
 import {
   MONEY_ALERT_TYPES,
@@ -38,6 +39,8 @@ export const ALERT_TYPES = [
   'photo_flood',
   'purge_failed',
   'access_email_changed',
+  'access_email_locked',
+  'access_email_unlocked',
 ] as const;
 
 /**
@@ -52,6 +55,7 @@ export class AdminInsights {
     @Inject(ADMIN_INSIGHTS_READER) private readonly reader: AdminInsightsReader,
     @Inject(ADMIN_LOG_WRITER) private readonly log: ApplicationLogWriter,
     @Inject(SEARCH_TERM_HASHER) private readonly hasher: SearchTermHasher,
+    private readonly ipHasher: IpHasher,
   ) {}
 
   async overview({ staff, now }: { staff: StaffMember; now: Date }): Promise<AdminOverview> {
@@ -133,16 +137,19 @@ export class AdminInsights {
   async resolveAlert({
     staff,
     alertId,
+    ip,
     now,
   }: {
     staff: StaffMember;
     alertId: string;
+    ip: string | null;
     now: Date;
   }): Promise<void> {
     const result = await this.reader.resolveAlert({
       alertId,
       types: visibleAlertTypes({ role: staff.role, all: ALERT_TYPES }),
       byUserId: staff.userId,
+      ipHash: ip ? this.ipHasher.hash({ ip }) : null,
       now,
     });
     if (result === 'not_found') throw new AlertNotFoundError();

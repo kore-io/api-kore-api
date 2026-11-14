@@ -24,6 +24,7 @@ import {
   type WeddingMembersStore,
 } from './ports/wedding-members-store.port';
 import { WEDDING_WRITE_STATE, type WeddingWriteState } from './ports/wedding-write-state.port';
+import { requireNoRecentAccessChange } from '../domain/recent-access-change';
 import { WeddingAuthorization } from './wedding-authorization.service';
 
 /**
@@ -75,6 +76,13 @@ export class RemoveMembership {
     if (refusal) throw new WeddingActionForbiddenError();
 
     const leaving = target.userId === userId;
+    // Decisão 253(2): 48 h depois de o staff trocar o e-mail de acesso, a pessoa
+    // não remove outra (sair do casamento continua).
+    if (!leaving)
+      requireNoRecentAccessChange({
+        accessEmailChangedAt: await this.store.accessEmailChangedAt({ userId }),
+        now,
+      });
     // Casamento bloqueado RN03: a colaboradora pode sair; o resto é escrita
     // (a rota passa pelo guard só por causa da saída).
     if (!(leaving && target.role === 'collaborator')) {

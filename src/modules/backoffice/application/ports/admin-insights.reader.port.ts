@@ -75,6 +75,8 @@ export interface AdminAlertRow {
   /** "Ana & Marcos"; nulo sem casamento ou com a lápide. */
   coupleNames: string | null;
   userId: string | null;
+  /** A pessoa do alerta de usuário (o nome e o e-mail, para a tela 19). */
+  user: { name: string | null; email: string | null } | null;
   entityType: string;
   entityId: string;
   data: unknown;
@@ -97,6 +99,7 @@ export interface AdminInsightsReader {
     alertId: string;
     types: string[];
     byUserId: string;
+    ipHash: string | null;
     now: Date;
   }): Promise<'resolved' | 'already_resolved' | 'not_found'>;
 }

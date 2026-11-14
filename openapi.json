@@ -10907,6 +10907,266 @@
         ]
       }
     },
+    "/v1/admin/weddings/{id}/access-email": {
+      "put": {
+        "operationId": "AdminWeddingsController_changeAccessEmail_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeAccessEmailBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessEmailChangedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/EmailInUseErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AccessEmailLockedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ChecksRequiredErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ChecksFailedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RateLimitedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AccessChangeRateLimitedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Ajudar a recuperar o acesso (RN09; decisão 253): Admin e suporte.",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/weddings/{id}/access-email/unlock": {
+      "post": {
+        "operationId": "AdminWeddingsController_unlockAccessEmail_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminReasonBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessEmailUnlockedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/NotLockedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/UnlockTooSoonErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Liberar a trava da troca do e-mail de acesso (decisão 253(1)): só o Admin.",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/v1/admin/overview": {
       "get": {
         "operationId": "AdminInsightsController_overview_v1",
@@ -22438,6 +22698,12 @@
             ],
             "type": "string"
           },
+          "accessChangeLockedUntil": {
+            "type": "string",
+            "nullable": true,
+            "description": "A troca do e-mail pelo staff trava chave Pix e remoção de membros até aqui (decisão 253(2)).",
+            "format": "date-time"
+          },
           "email": {
             "type": "string"
           }
@@ -22446,6 +22712,7 @@
           "userId",
           "name",
           "role",
+          "accessChangeLockedUntil",
           "email"
         ]
       },
@@ -23077,6 +23344,278 @@
           "status"
         ]
       },
+      "ChecksRequiredErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "CHECKS_REQUIRED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "ChecksFailedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "CHECKS_FAILED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "EmailInUseErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "EMAIL_IN_USE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "AccessEmailLockedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "ACCESS_EMAIL_LOCKED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "availableAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "availableAt"
+        ]
+      },
+      "AccessChangeRateLimitedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              429
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "RATE_LIMITED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "retryAt": {
+            "type": "string",
+            "description": "O começo do próximo dia de Brasília.",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "retryAt"
+        ]
+      },
+      "AccessEmailChecksBody": {
+        "type": "object",
+        "properties": {
+          "eventDateAndCity": {
+            "type": "boolean",
+            "description": "A data e a cidade do casamento conferidas com o casal."
+          },
+          "partnerName": {
+            "type": "boolean",
+            "description": "O nome da outra pessoa do casal."
+          }
+        },
+        "required": [
+          "eventDateAndCity",
+          "partnerName"
+        ]
+      },
+      "ChangeAccessEmailBody": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 500,
+            "example": "Denúncia de conteúdo impróprio."
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "newEmail": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email",
+            "example": "ana.nova@gmail.com"
+          },
+          "checks": {
+            "$ref": "#/components/schemas/AccessEmailChecksBody"
+          },
+          "payerLast4": {
+            "type": "string",
+            "description": "Sem pagamento, não há CPF para conferir: vai sem o campo.",
+            "pattern": "^\\d{4}$",
+            "example": "4725"
+          }
+        },
+        "required": [
+          "reason",
+          "userId",
+          "newEmail",
+          "checks"
+        ]
+      },
+      "AccessEmailChangedResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "changed"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "NotLockedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "NOT_LOCKED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "UnlockTooSoonErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "UNLOCK_TOO_SOON"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "availableAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "availableAt"
+        ]
+      },
+      "AccessEmailUnlockedResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "unlocked"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
       "MonthPointResponse": {
         "type": "object",
         "properties": {
@@ -23355,6 +23894,23 @@
           "total"
         ]
       },
+      "AdminAlertUserResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "name",
+          "email"
+        ]
+      },
       "AdminAlertResponse": {
         "type": "object",
         "properties": {
@@ -23378,7 +23934,9 @@
               "login_abuse",
               "photo_flood",
               "purge_failed",
-              "access_email_changed"
+              "access_email_changed",
+              "access_email_locked",
+              "access_email_unlocked"
             ]
           },
           "status": {
@@ -23404,6 +23962,16 @@
           "userId": {
             "type": "string",
             "nullable": true
+          },
+          "user": {
+            "nullable": true,
+            "description": "A pessoa do alerta de usuário.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AdminAlertUserResponse"
+              }
+            ]
           },
           "data": {
             "type": "object",
@@ -23434,6 +24002,7 @@
           "weddingId",
           "coupleNames",
           "userId",
+          "user",
           "data",
           "resolvedAt",
           "resolvedByName",

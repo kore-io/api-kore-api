@@ -262,3 +262,13 @@ export class ReauthRequiredErrorBody {
   @ApiProperty({ enum: ['REAUTH_REQUIRED'] }) error: 'REAUTH_REQUIRED';
   @ApiProperty() message: string;
 }
+
+/** O e-mail de acesso foi trocado pelo suporte há menos de 48 h (Backoffice - acesso RN09; decisão 253(2)). */
+export class RecentAccessChangeErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['RECENT_ACCESS_CHANGE'] }) error: 'RECENT_ACCESS_CHANGE';
+  @ApiProperty() message: string;
+  /** Quando a ação volta a valer. */
+  @ApiProperty({ format: 'date-time' }) availableAt: string;
+}

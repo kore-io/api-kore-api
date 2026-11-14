@@ -1,4 +1,8 @@
-import { AdminInsights, OVERVIEW_CACHE_MS } from './admin-insights.use-cases';
+import { AlertType } from '../../../generated/prisma/enums';
+import type { IpHasher } from '../../logs/infrastructure/ip-hasher';
+import { ALERT_TYPES, AdminInsights, OVERVIEW_CACHE_MS } from './admin-insights.use-cases';
+
+const ipHasher = { hash: jest.fn().mockReturnValue('h') } as unknown as IpHasher;
 import type { AdminInsightsReader, AdminOverview } from './ports/admin-insights.reader.port';
 
 const overview = (weddingsCreated: number): AdminOverview => ({
@@ -18,7 +22,12 @@ describe('AdminInsights (Backoffice - acesso RN04 e RN12)', () => {
     const reader = {
       overview: jest.fn().mockResolvedValueOnce(overview(1)).mockResolvedValue(overview(2)),
     } as unknown as jest.Mocked<AdminInsightsReader>;
-    const insights = new AdminInsights(reader, { record: jest.fn() }, { hash: jest.fn() });
+    const insights = new AdminInsights(
+      reader,
+      { record: jest.fn() },
+      { hash: jest.fn() },
+      ipHasher,
+    );
     const admin = { userId: 'a', role: 'admin' as const };
     const now = new Date('2026-11-14T12:00:00Z');
 
@@ -38,12 +47,28 @@ describe('AdminInsights (Backoffice - acesso RN04 e RN12)', () => {
         .fn()
         .mockResolvedValue({ items: [], page: 1, pageSize: 50, total: 0, openCount: 0 }),
     } as unknown as jest.Mocked<AdminInsightsReader>;
-    const insights = new AdminInsights(reader, { record: jest.fn() }, { hash: jest.fn() });
+    const insights = new AdminInsights(
+      reader,
+      { record: jest.fn() },
+      { hash: jest.fn() },
+      ipHasher,
+    );
     await insights.alerts({ staff: { userId: 's', role: 'support' }, status: 'open', page: 1 });
     expect(reader.alerts).toHaveBeenCalledWith({
       status: 'open',
       page: 1,
-      types: ['login_abuse', 'photo_flood', 'purge_failed', 'access_email_changed'],
+      types: [
+        'login_abuse',
+        'photo_flood',
+        'purge_failed',
+        'access_email_changed',
+        'access_email_locked',
+        'access_email_unlocked',
+      ],
     });
+  });
+
+  it('RN12 - a lista dos tipos de alerta é a do enum AlertType do banco', () => {
+    expect([...ALERT_TYPES].sort()).toEqual(Object.values(AlertType).sort());
   });
 });

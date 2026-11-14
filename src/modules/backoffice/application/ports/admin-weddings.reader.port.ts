@@ -59,7 +59,17 @@ export interface AdminWeddingListQuery {
 
 export interface AdminWeddingGeneral extends AdminWeddingRow {
   createdAt: Date;
-  people: { userId: string; name: string | null; email: string; role: 'owner' | 'collaborator' }[];
+  people: {
+    userId: string;
+    name: string | null;
+    email: string;
+    role: 'owner' | 'collaborator';
+    /**
+     * Até quando a pessoa não troca chave Pix nem remove membros, depois de o
+     * staff trocar o e-mail de acesso (decisão 253(2)); nulo fora das 48 h.
+     */
+    accessChangeLockedUntil: Date | null;
+  }[];
   publishedAt: Date | null;
   graceUntil: string | null;
   purgeAt: string | null;
