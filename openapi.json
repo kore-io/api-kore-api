@@ -10331,6 +10331,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "UUID (B2-10; decisão 259(3)).",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -23676,7 +23685,8 @@
               "pending",
               "unchanged",
               "rejected",
-              "requested"
+              "requested",
+              "held"
             ]
           },
           "amountCents": {

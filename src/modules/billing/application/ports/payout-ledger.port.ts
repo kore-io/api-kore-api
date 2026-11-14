@@ -23,8 +23,27 @@ export interface LockedPayout {
 export interface PayoutLedger {
   /** Trava o Referrer e depois o Payout (a ordem de trava, G2). Nulo: não existe. */
   lock(input: { payoutId: string }): Promise<LockedPayout | null>;
-  /** requested → processing, com quem tocou em Pagar (o commit vem antes do Pix; G1). */
-  markProcessing(input: { payoutId: string; paidByUserId: string; now: Date }): Promise<void>;
+  /**
+   * requested → processing, com quem tocou em Pagar (o commit vem antes do Pix;
+   * G1), e o log `payout.processing` com o valor, o indicador e a chave de
+   * idempotência (Backoffice - cobrança RN01; D19).
+   */
+  markProcessing(input: {
+    payoutId: string;
+    paidByUserId: string;
+    idempotencyKey: string;
+    now: Date;
+  }): Promise<void>;
+  /** Este Pagar já passou com esta chave (o replay; decisão 259(3)). */
+  paidWithKey(input: { payoutId: string; idempotencyKey: string }): Promise<boolean>;
+  /** O log `payout.retried`: quem tentou, o que a consulta achou e o resultado (RN01). */
+  recordRetry(input: {
+    payoutId: string;
+    adminUserId: string;
+    gatewayStatus: string;
+    result: string;
+    now: Date;
+  }): Promise<void>;
   /**
    * processing → paid: as comissões ficam pagas; a estornada durante o Pix
    * (B6-4) também, e ganha o ajuste negativo do mesmo valor.

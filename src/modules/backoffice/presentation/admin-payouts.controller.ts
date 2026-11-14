@@ -12,7 +12,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiHeader, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import {
   ApiErrorResponses,
   commonErrors,
@@ -98,6 +98,11 @@ export class AdminPayoutsController {
 
   /** Pagar (RN09; Repasse RN05): confere tudo na transação e manda o Pix por job. */
   @Post(':id/pay')
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    required: true,
+    description: 'UUID (B2-10; decisão 259(3)).',
+  })
   @OwnTransactions()
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: PayoutActionResponse })
@@ -130,13 +135,14 @@ export class AdminPayoutsController {
     try {
       const now = new Date();
       requireRecentSession({ session, now });
-      await this.pay.execute({
-        payoutId,
-        adminUserId: staff.userId,
-        idempotencyKey: idempotencyKey.toLowerCase(),
-        now,
-      });
-      return { status: 'processing' };
+      return {
+        status: await this.pay.execute({
+          payoutId,
+          adminUserId: staff.userId,
+          idempotencyKey: idempotencyKey.toLowerCase(),
+          now,
+        }),
+      };
     } catch (error) {
       throw toHttpError(error);
     }

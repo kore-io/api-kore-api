@@ -25,7 +25,7 @@ import {
   type GatewayTransfer,
   type PaymentGateway,
 } from '../ports/payment-gateway.port';
-import { PAYOUT_LEDGER, type PayoutLedger } from '../ports/payout-ledger.port';
+import { PAYOUT_LEDGER, type LockedPayout, type PayoutLedger } from '../ports/payout-ledger.port';
 import {
   PAYOUT_TRANSFER_QUEUE,
   type PayoutTransferQueue,
@@ -115,8 +115,11 @@ export class PayPayout {
 
   /**
    * O `Idempotency-Key` (Backoffice - cobrança, Contrato de API; decisão 259(3)):
-   * o mesmo pedido repetido depois do Pagar responde como o primeiro, sem outro
-   * Pix; outra chave no repasse que já saiu de requested (a segunda aba) é 409.
+   * o mesmo pedido repetido depois do Pagar responde com o estado atual do
+   * repasse, sem outro Pix; outra chave no repasse que já saiu de requested (a
+   * segunda aba) é 409. Depois de uma falha definitiva o repasse volta a
+   * requested, e aí a mesma chave paga de novo (um Pix novo, com a mesma
+   * referência no gateway).
    */
   async execute({
     payoutId,
@@ -128,41 +131,28 @@ export class PayPayout {
     adminUserId: string;
     idempotencyKey: string;
     now: Date;
-  }): Promise<void> {
+  }): Promise<LockedPayout['status']> {
     if (!this.enabled) throw new PayoutPaymentsDisabledError();
-    await this.transaction.run(async () => {
+    return this.transaction.run(async () => {
       const payout = await this.ledger.lock({ payoutId });
       if (!payout) throw new PayoutNotFoundError();
       if (payout.status !== 'requested') {
-        const replay = await this.transaction.client().applicationLog.count({
-          where: {
-            action: 'payout.processing',
-            entityType: 'payout',
-            entityId: payoutId,
-            data: { path: ['idempotencyKey'], equals: idempotencyKey },
-          },
-        });
-        if (replay > 0) return;
+        if (await this.ledger.paidWithKey({ payoutId, idempotencyKey })) return payout.status;
         throw new PayoutStatusConflictError(payout.status, 'requested');
       }
       if (payout.referrerStatus !== 'active') throw new PayoutReferrerBlockedError();
       if (payout.pixKeyChangePending) throw new PayoutPixKeyChangePendingError();
       if (payout.amountCents !== payout.itemsCents)
         throw new PayoutAmountMismatchError(payout.amountCents, payout.itemsCents);
-      await this.ledger.markProcessing({ payoutId, paidByUserId: adminUserId, now });
       // A ação que tira dinheiro do Kore fica no log (Backoffice - cobrança RN01; D19).
-      await this.transaction.client().applicationLog.create({
-        data: {
-          createdAt: now,
-          action: 'payout.processing',
-          actorKind: 'admin',
-          actorUserId: adminUserId,
-          entityType: 'payout',
-          entityId: payoutId,
-          data: { amountCents: payout.amountCents, referrerId: payout.referrerId, idempotencyKey },
-        },
+      await this.ledger.markProcessing({
+        payoutId,
+        paidByUserId: adminUserId,
+        idempotencyKey,
+        now,
       });
       this.transaction.schedule(() => this.queue.enqueue({ payoutId }));
+      return 'processing' as const;
     });
   }
 }
@@ -245,22 +235,13 @@ export class RetryPayout {
     const transfer = await this.gateway.getPixTransfer({ externalReference: payout.externalRef });
     const result = transfer ? await this.sync.execute({ payoutId, transfer, now }) : 'pending';
     // Quem tentou e o que a consulta achou (Backoffice - cobrança RN01; D19).
-    await this.transaction.run((tx) =>
-      tx.applicationLog.create({
-        data: {
-          createdAt: now,
-          action: 'payout.retried',
-          actorKind: 'admin',
-          actorUserId: adminUserId,
-          entityType: 'payout',
-          entityId: payoutId,
-          data: {
-            amountCents: payout.amountCents,
-            referrerId: payout.referrerId,
-            gatewayStatus: transfer?.status ?? 'not_found',
-            result,
-          },
-        },
+    await this.transaction.run(() =>
+      this.ledger.recordRetry({
+        payoutId,
+        adminUserId,
+        gatewayStatus: transfer?.status ?? 'not_found',
+        result,
+        now,
       }),
     );
     if (!transfer) await this.queue.enqueue({ payoutId });

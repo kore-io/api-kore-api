@@ -102,7 +102,7 @@ export class AdminPayoutsResponse {
 
 export class PayoutActionResponse {
   @ApiProperty({
-    enum: ['processing', 'paid', 'failed', 'pending', 'unchanged', 'rejected', 'requested'],
+    enum: ['processing', 'paid', 'failed', 'pending', 'unchanged', 'rejected', 'requested', 'held'],
   })
   status: string;
   /** O valor depois do Liberar. */
