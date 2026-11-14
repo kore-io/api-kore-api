@@ -7,14 +7,23 @@ import { BackofficePrismaService } from '../../src/shared/database/backoffice-pr
 import { localDate } from '../../src/shared/time/local-date';
 import { createTestApp } from '../support/create-test-app';
 import { createTestWorker } from '../support/create-test-worker';
-import { waitForInbox } from '../support/mailpit';
-import { expectStatus, payForExtension, publishByPayment } from '../support/payments';
+import { inbox, waitForInbox } from '../support/mailpit';
+import {
+  expectStatus,
+  payForExtension,
+  publishByPayment,
+  seedPaidExtension,
+} from '../support/payments';
 import { signedInUser } from '../support/sessions';
 import { seedWedding } from '../support/weddings';
 
 const ORIGIN = process.env.ALLOWED_ORIGINS?.split(',')[0] ?? 'http://localhost:5173';
 const SITE_ORIGIN = 'http://localhost:5174';
 const DAY_MS = 86_400_000;
+const MAILPIT_API_URL = process.env.MAILPIT_API_URL ?? 'http://localhost:8025';
+const textOf = async (id: string) =>
+  ((await (await fetch(`${MAILPIT_API_URL}/api/v1/message/${id}`)).json()) as { Text: string })
+    .Text;
 const day = (value: string) => new Date(`${value}T00:00:00Z`);
 
 /**
@@ -104,10 +113,15 @@ describe('Excluir o casamento (Retenção e expurgo RN05, RN06 e RN08; banco rea
       me.body.memberships as { weddingId: string; lifecycle: { deletionScheduledFor: string } }[]
     ).find((item) => item.weddingId === weddingId);
     expect(membership?.lifecycle.deletionScheduledFor).toBe(deletionDay);
-    for (const owner of [ana, marcos]) {
-      const [email] = await waitForInbox({ to: owner.email });
-      expect(email.Subject).toBe('O casamento será apagado em 7 dias');
-    }
+    // Todas as pessoas donas; quem pediu recebe a sua versão (decisão 252).
+    const [toAna] = await waitForInbox({ to: ana.email });
+    const [toMarcos] = await waitForInbox({ to: marcos.email });
+    expect([toAna.Subject, toMarcos.Subject]).toEqual([
+      'O casamento será apagado em 7 dias',
+      'O casamento será apagado em 7 dias',
+    ]);
+    expect(await textOf(toAna.ID)).toContain('Você pediu para excluir o casamento no Kore.');
+    expect(await textOf(toMarcos.ID)).toContain('Ana pediu para excluir o casamento no Kore.');
     await db.applicationLog.findFirstOrThrow({
       where: { weddingId, action: 'wedding.deletion_requested', actorUserId: ana.userId },
     });
@@ -252,5 +266,57 @@ describe('Excluir o casamento (Retenção e expurgo RN05, RN06 e RN08; banco rea
     expect((await requestDeletion(ana.cookie, weddingId).expect(403)).body.error).toBe(
       'WEDDING_BLOCKED',
     );
+  });
+
+  it('RN05 (isolamento) - a dona de outro casamento recebe 404 nas duas rotas, e nada muda no casamento', async () => {
+    const { ana, marcos, weddingId } = await wedding();
+    const other = await wedding();
+    expect((await requestDeletion(other.ana.cookie, weddingId).expect(404)).body.error).toBe(
+      'WEDDING_NOT_FOUND',
+    );
+    expect((await cancelDeletion(other.ana.cookie, weddingId).expect(404)).body.error).toBe(
+      'WEDDING_NOT_FOUND',
+    );
+    const target = await db.wedding.findUniqueOrThrow({ where: { id: weddingId } });
+    expect(target).toMatchObject({ deletionScheduledFor: null, deletionRequestedByUserId: null });
+    expect(
+      await db.applicationLog.count({
+        where: { weddingId, action: { startsWith: 'wedding.deletion' } },
+      }),
+    ).toBe(0);
+    // Os donos de A recebem só o e-mail da publicação, nunca o da exclusão.
+    for (const owner of [ana, marcos]) {
+      const subjects = (await inbox({ to: owner.email })).map((message) => message.Subject);
+      expect(subjects).not.toContain('O casamento será apagado em 7 dias');
+    }
+  });
+
+  it('RN06 - o prazo do CDC conta só o que o Desistir aceita: a extensão com cortesia depois não trava', async () => {
+    const { ana, weddingId } = await wedding();
+    const current = await db.wedding.findUniqueOrThrow({ where: { id: weddingId } });
+    const periodStart = current.endDate!.toISOString().slice(0, 10);
+    const periodEnd = addMonths({ day: periodStart, months: 3 });
+    await seedPaidExtension({
+      db,
+      gateway: app.get(LocalGatewayStore),
+      weddingId,
+      ownerId: ana.userId,
+      periodStart,
+      periodEnd,
+      paidAt: new Date(Date.now() - 2 * DAY_MS),
+    });
+    // Uma cortesia depois da extensão: o Desistir dela é recusado (não é a última).
+    await db.courtesyExtension.create({
+      data: {
+        weddingId,
+        months: 1,
+        reason: 'Cortesia de teste do suporte',
+        previousEndDate: day(periodEnd),
+        newEndDate: day(addMonths({ day: periodEnd, months: 1 })),
+        periodStart: day(periodEnd),
+        periodEnd: day(addMonths({ day: periodEnd, months: 1 })),
+      },
+    });
+    await requestDeletion(ana.cookie, weddingId).expect(202);
   });
 });

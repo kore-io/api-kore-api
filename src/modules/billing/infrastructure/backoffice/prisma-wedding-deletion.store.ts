@@ -56,15 +56,26 @@ export class PrismaWeddingDeletionStore implements WeddingDeletionStore {
     // Depois do Wedding, os Payments (a ordem única de Publicar e pagar RN18).
     await this.db().$queryRaw`
       SELECT id FROM payments WHERE wedding_id = ${weddingId}::uuid ORDER BY id FOR UPDATE`;
-    // O prazo de desistir, no fuso do casamento: o mesmo cálculo da
-    // request_payment_refund (até o fim do 7º dia depois do pagamento).
+    // O prazo de desistir, no fuso do casamento: o mesmo cálculo e o mesmo
+    // recorte da request_payment_refund (até o fim do 7º dia depois do
+    // pagamento; a publicação, ou só a última extensão, contando as cortesias),
+    // para a tela não mandar desistir do que o Desistir recusa.
     const [window] = await this.db().$queryRaw<{ until: Date | null }[]>`
       SELECT max((((p.paid_at AT TIME ZONE COALESCE(w.timezone, 'America/Sao_Paulo'))::date + 8)
                   ::timestamp AT TIME ZONE COALESCE(w.timezone, 'America/Sao_Paulo'))
                  - interval '1 millisecond') AS until
       FROM payments p JOIN weddings w ON w.id = p.wedding_id
       WHERE p.wedding_id = ${weddingId}::uuid AND p.status = 'paid'
-        AND p.applied_at IS NOT NULL AND p.paid_at IS NOT NULL`;
+        AND p.applied_at IS NOT NULL AND p.paid_at IS NOT NULL
+        AND (p.kind = 'publication' OR (
+          NOT EXISTS (
+            SELECT 1 FROM payments e
+            WHERE e.wedding_id = p.wedding_id AND e.kind = 'extension' AND e.id <> p.id
+              AND e.applied_at IS NOT NULL AND e.status IN ('paid', 'disputed')
+              AND e.period_start > p.period_start)
+          AND NOT EXISTS (
+            SELECT 1 FROM courtesy_extensions c
+            WHERE c.wedding_id = p.wedding_id AND c.period_start >= p.period_end)))`;
     const payments = await this.db().payment.findMany({
       where: { weddingId, status: { in: ['pending', 'refund_requested', 'disputed'] } },
       select: { id: true, status: true },

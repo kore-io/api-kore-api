@@ -67,6 +67,8 @@ export interface DeletionScheduledNotice {
   firstName: string;
   /** O primeiro nome de quem pediu ("Ana pediu para excluir…"). */
   requesterFirstName: string;
+  /** A versão de quem pediu ("Você pediu para excluir…"; decisão 252). */
+  isRequester: boolean;
   /** AAAA-MM-DD. */
   deletionScheduledFor: string;
   partnerNames: [string, string];

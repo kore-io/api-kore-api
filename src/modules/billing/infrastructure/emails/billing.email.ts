@@ -252,7 +252,10 @@ export function purgeSoonEmail({
   });
 }
 
-/** A exclusão pedida pelo casal (Retenção e expurgo RN05; textos da Pena). */
+/**
+ * A exclusão pedida pelo casal (Retenção e expurgo RN05; textos da Pena), a
+ * todas as pessoas donas; quem pediu recebe a sua versão (decisão 252).
+ */
 export function deletionScheduledEmail({
   notice,
   url,
@@ -269,13 +272,15 @@ export function deletionScheduledEmail({
       { kind: 'paragraph', text: `Olá, ${notice.firstName}!` },
       {
         kind: 'paragraph',
-        text: `${notice.requesterFirstName} pediu para excluir o casamento no Kore. O site saiu do ar, e os convidados, as respostas e o site serão apagados em ${until}`,
+        text: `${notice.isRequester ? 'Você' : notice.requesterFirstName} pediu para excluir o casamento no Kore. O site saiu do ar, e os convidados, as respostas e o site serão apagados em ${until}`,
       },
       { kind: 'paragraph', text: 'Se mudarem de ideia, cancelem a exclusão até lá.' },
       { kind: 'button', text: 'Cancelar a exclusão', href: url },
       {
         kind: 'paragraph',
-        text: 'Se ninguém do casal pediu, cancele agora e escreva para suporte@kore.com.br.',
+        text: notice.isRequester
+          ? 'Se não foi você, cancele agora e escreva para suporte@kore.com.br.'
+          : 'Se ninguém do casal pediu, cancele agora e escreva para suporte@kore.com.br.',
       },
     ],
     footer: OWNER_FOOTER(notice.partnerNames),

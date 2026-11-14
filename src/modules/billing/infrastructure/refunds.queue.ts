@@ -49,7 +49,9 @@ export class BullmqRefundQueue implements RefundQueue {
   }): Promise<void> {
     const data: CancelPendingJob = { paymentId, reason };
     await this.queue.add('cancel-pending', data, {
-      jobId: `cancel-${paymentId}`,
+      // Um id por motivo: o job falho do bloqueio (guardado em removeOnFail) não
+      // barra o da exclusão. O do bloqueio mantém o id de antes.
+      jobId: reason === 'wedding_blocked' ? `cancel-${paymentId}` : `cancel-${reason}-${paymentId}`,
       attempts: 5,
       backoff: { type: 'exponential', delay: 30_000 },
       removeOnComplete: true,

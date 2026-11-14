@@ -127,6 +127,7 @@ export class RequestWeddingDeletion extends WeddingDeletionBase {
               to: owner.email,
               firstName: owner.firstName,
               requesterFirstName: requester?.firstName ?? partnerNames[0],
+              isRequester: owner.userId === userId,
               deletionScheduledFor,
               partnerNames,
             },
