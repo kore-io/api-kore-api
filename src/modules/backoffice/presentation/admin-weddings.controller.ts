@@ -125,9 +125,16 @@ export class AdminWeddingsController {
     @CurrentStaff() staff: StaffMember,
     @Param('id', weddingIdPipe) weddingId: string,
     @Body() body: AdminReasonBody,
+    @Req() request: Request,
   ): Promise<AdminBlockStateResponse> {
     try {
-      await this.weddings.block({ staff, weddingId, reason: body.reason, now: new Date() });
+      await this.weddings.block({
+        staff,
+        weddingId,
+        reason: body.reason,
+        ip: request.ip ?? null,
+        now: new Date(),
+      });
       return { blocked: true };
     } catch (error) {
       throw toHttpError(error);
@@ -150,9 +157,16 @@ export class AdminWeddingsController {
     @CurrentStaff() staff: StaffMember,
     @Param('id', weddingIdPipe) weddingId: string,
     @Body() body: AdminReasonBody,
+    @Req() request: Request,
   ): Promise<AdminBlockStateResponse> {
     try {
-      await this.weddings.unblock({ staff, weddingId, reason: body.reason, now: new Date() });
+      await this.weddings.unblock({
+        staff,
+        weddingId,
+        reason: body.reason,
+        ip: request.ip ?? null,
+        now: new Date(),
+      });
       return { blocked: false };
     } catch (error) {
       throw toHttpError(error);

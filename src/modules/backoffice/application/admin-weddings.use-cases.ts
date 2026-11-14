@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { BlockWedding } from '../../billing/application/block-wedding.use-case';
+import { IpHasher } from '../../logs/infrastructure/ip-hasher';
 import type { ApplicationLogWriter } from '../../logs/application/ports/application-log-writer.port';
 import {
   AlreadyBlockedError,
@@ -44,6 +45,7 @@ export class AdminWeddings {
     @Inject(ADMIN_WEDDINGS_READER) private readonly reader: AdminWeddingsReader,
     @Inject(ADMIN_LOG_WRITER) private readonly log: ApplicationLogWriter,
     private readonly blocks: BlockWedding,
+    private readonly ipHasher: IpHasher,
   ) {}
 
   list({ query }: { query: AdminWeddingListQuery }): Promise<Page<AdminWeddingRow>> {
@@ -51,9 +53,9 @@ export class AdminWeddings {
   }
 
   /**
-   * O detalhe por aba. As leituras do staff vão ao log (B9-4): a aba Geral grava
-   * `admin.wedding_viewed` e a Convidados `admin.guests_listed`, uma linha por
-   * requisição. A Cobrança fica no Backoffice de cobrança (PR 12).
+   * O detalhe por aba. As leituras do staff vão ao log (B9-4), uma linha por
+   * requisição: a Convidados grava `admin.guests_listed`; as outras abas,
+   * `admin.wedding_viewed` com a aba. A Cobrança fica no Backoffice de cobrança (PR 12).
    */
   async detail({
     staff,
@@ -72,12 +74,13 @@ export class AdminWeddings {
       case 'general': {
         const general = await this.reader.general({ weddingId, role: staff.role });
         if (!general) throw new AdminWeddingNotFoundError();
-        await this.record({ staff, weddingId, action: 'admin.wedding_viewed', ip });
+        await this.record({ staff, weddingId, action: 'admin.wedding_viewed', ip, data: { tab } });
         return { tab, general };
       }
       case 'numbers': {
         const numbers = await this.reader.numbers({ weddingId });
         if (!numbers) throw new AdminWeddingNotFoundError();
+        await this.record({ staff, weddingId, action: 'admin.wedding_viewed', ip, data: { tab } });
         return { tab, numbers };
       }
       case 'guests': {
@@ -89,6 +92,13 @@ export class AdminWeddings {
       case 'log': {
         const log = await this.reader.log({ weddingId, page });
         if (!log) throw new AdminWeddingNotFoundError();
+        await this.record({
+          staff,
+          weddingId,
+          action: 'admin.wedding_viewed',
+          ip,
+          data: { tab, page },
+        });
         if (staff.role === 'support')
           log.items = log.items.map((item) => ({
             ...item,
@@ -104,14 +114,22 @@ export class AdminWeddings {
     staff,
     weddingId,
     reason,
+    ip,
     now,
   }: {
     staff: StaffMember;
     weddingId: string;
     reason: string;
+    ip: string | null;
     now: Date;
   }): Promise<void> {
-    const result = await this.blocks.block({ weddingId, byUserId: staff.userId, reason, now });
+    const result = await this.blocks.block({
+      weddingId,
+      byUserId: staff.userId,
+      reason,
+      ipHash: ip ? this.ipHasher.hash({ ip }) : null,
+      now,
+    });
     if (result === 'not_found') throw new AdminWeddingNotFoundError();
     if (result === 'already_blocked') throw new AlreadyBlockedError();
   }
@@ -120,14 +138,22 @@ export class AdminWeddings {
     staff,
     weddingId,
     reason,
+    ip,
     now,
   }: {
     staff: StaffMember;
     weddingId: string;
     reason: string;
+    ip: string | null;
     now: Date;
   }): Promise<void> {
-    const result = await this.blocks.unblock({ weddingId, byUserId: staff.userId, reason, now });
+    const result = await this.blocks.unblock({
+      weddingId,
+      byUserId: staff.userId,
+      reason,
+      ipHash: ip ? this.ipHasher.hash({ ip }) : null,
+      now,
+    });
     if (result === 'not_found') throw new AdminWeddingNotFoundError();
     if (result === 'not_blocked') throw new NotBlockedError();
   }

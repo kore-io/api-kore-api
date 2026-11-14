@@ -22430,6 +22430,14 @@
             "type": "string",
             "format": "uuid"
           },
+          "method": {
+            "description": "\"Pix de R$ 308,10 gerado em 25/09…\" ou o cartão em análise.",
+            "enum": [
+              "pix",
+              "card"
+            ],
+            "type": "string"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -22440,6 +22448,7 @@
         },
         "required": [
           "paymentId",
+          "method",
           "createdAt",
           "amountCents"
         ]

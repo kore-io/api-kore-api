@@ -65,7 +65,12 @@ export interface AdminWeddingGeneral extends AdminWeddingRow {
   purgeAt: string | null;
   deletionScheduledFor: string | null;
   /** O Pix pendente (só para o Admin; RN02 e RN06). */
-  pendingPayment: { paymentId: string; amountCents: number; createdAt: Date } | null;
+  pendingPayment: {
+    paymentId: string;
+    method: 'pix' | 'card';
+    amountCents: number;
+    createdAt: Date;
+  } | null;
   block: {
     blockedAt: Date;
     blockedBy: { userId: string; name: string | null } | null;

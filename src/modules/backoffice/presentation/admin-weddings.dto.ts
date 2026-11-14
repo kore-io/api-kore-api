@@ -142,6 +142,8 @@ class AdminPersonResponse {
 
 class AdminPendingPaymentResponse {
   @ApiProperty({ format: 'uuid' }) paymentId: string;
+  /** "Pix de R$ 308,10 gerado em 25/09…" ou o cartão em análise. */
+  @ApiProperty({ enum: ['pix', 'card'] }) method: 'pix' | 'card';
   amountCents: number;
   @ApiProperty({ format: 'date-time' }) createdAt: string;
 }
