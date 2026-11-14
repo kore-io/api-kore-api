@@ -26,7 +26,8 @@ function getMe({ plannerSignupEnabled = false }: { plannerSignupEnabled?: boolea
       .mockResolvedValue({ memberships: [], profiles: ['couple'], planner: null, referrer: null }),
   } satisfies ProfileDirectory;
   const config = { get: () => plannerSignupEnabled } as unknown as AppConfigService;
-  return new GetMe(users, profiles, config);
+  const identities = { providers: jest.fn().mockResolvedValue(['email', 'google']) };
+  return new GetMe(users, profiles, config, identities);
 }
 
 describe('GetMe (GET /v1/me)', () => {
@@ -64,5 +65,12 @@ describe('GetMe (GET /v1/me)', () => {
       (await getMe({ plannerSignupEnabled: true }).execute({ session, lastProfileOnDevice: null }))
         .plannerSignupEnabled,
     ).toBe(true);
+  });
+
+  it('decisão 254 - as formas de entrar vêm só com o provedor', async () => {
+    expect((await getMe().execute({ session, lastProfileOnDevice: null })).identities).toEqual([
+      { provider: 'email' },
+      { provider: 'google' },
+    ]);
   });
 });

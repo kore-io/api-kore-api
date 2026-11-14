@@ -49,6 +49,11 @@ class MeReferrerResponse {
 }
 
 /** GET /v1/me (decisões 163, 174 e 177). */
+/** Uma forma de entrar da conta (Configurações › Acesso; decisão 254): sem e-mail nem ids. */
+class MeIdentityResponse {
+  @ApiProperty({ enum: ['google', 'email'] }) provider: 'google' | 'email';
+}
+
 export class MeResponse {
   user: MeUserResponse;
   @ApiProperty({ type: [MeMembershipResponse] }) memberships: MeMembershipResponse[];
@@ -60,6 +65,8 @@ export class MeResponse {
   authenticatedAt: string;
   /** O cadastro próprio de cerimonialista está aberto (Cadastro e perfil RN02). */
   plannerSignupEnabled: boolean;
+  /** As formas de entrar: Google e E-mail com código (Configurações › Acesso; decisão 254). */
+  @ApiProperty({ type: [MeIdentityResponse] }) identities: MeIdentityResponse[];
 
   static from({ me }: { me: Me }): MeResponse {
     return {
@@ -75,6 +82,7 @@ export class MeResponse {
       referrer: me.referrer,
       authenticatedAt: me.authenticatedAt.toISOString(),
       plannerSignupEnabled: me.plannerSignupEnabled,
+      identities: me.identities,
     };
   }
 }

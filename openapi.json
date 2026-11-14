@@ -11270,6 +11270,21 @@
           "referralCode"
         ]
       },
+      "MeIdentityResponse": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "enum": [
+              "google",
+              "email"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider"
+        ]
+      },
       "MeUserResponse": {
         "type": "object",
         "properties": {
@@ -11355,6 +11370,13 @@
               }
             ]
           },
+          "identities": {
+            "description": "As formas de entrar: Google e E-mail com código (Configurações › Acesso; decisão 254).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeIdentityResponse"
+            }
+          },
           "user": {
             "$ref": "#/components/schemas/MeUserResponse"
           },
@@ -11373,6 +11395,7 @@
           "activeProfile",
           "lastProfileOnDevice",
           "referrer",
+          "identities",
           "user",
           "authenticatedAt",
           "plannerSignupEnabled"
