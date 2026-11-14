@@ -43,6 +43,7 @@ describe('Sessão (Login sem senha e sessão)', () => {
         plannerSignupEnabled: true,
         // A conta criada direto no banco, sem AuthIdentity (decisão 254).
         identities: [],
+        supportSession: null,
       });
     });
 

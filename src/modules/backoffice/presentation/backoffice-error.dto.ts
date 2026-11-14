@@ -125,3 +125,17 @@ export class UnlockTooSoonErrorBody {
   @ApiProperty() message: string;
   @ApiProperty({ format: 'date-time' }) availableAt: string;
 }
+
+export class NoOwnerErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['NO_OWNER'] }) error: 'NO_OWNER';
+  @ApiProperty() message: string;
+}
+
+export class SupportSessionNotFoundErrorBody {
+  static readonly status = 404;
+  @ApiProperty({ enum: [404] }) statusCode: 404;
+  @ApiProperty({ enum: ['SUPPORT_SESSION_NOT_FOUND'] }) error: 'SUPPORT_SESSION_NOT_FOUND';
+  @ApiProperty() message: string;
+}

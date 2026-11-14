@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { SupportContext } from '../../../shared/database/support-context';
 import { TenantTransaction } from '../../../shared/database/tenant-transaction';
 import type { MembershipRole } from '../domain/wedding-authorization';
 import { WEDDING_ACTIVITY, type WeddingActivity } from './ports/wedding-activity.port';
@@ -17,6 +18,7 @@ export class WeddingScope {
     private readonly tenant: TenantTransaction,
     private readonly authorization: WeddingAuthorization,
     @Inject(WEDDING_ACTIVITY) private readonly activity: WeddingActivity,
+    private readonly support: SupportContext,
   ) {}
 
   run<T>({
@@ -34,8 +36,10 @@ export class WeddingScope {
       work: async () => {
         if (!weddingId) return work({ role: null });
         const role = await this.authorization.require({ userId, weddingId, action: 'view' });
-        // Abrir o casamento conta como atividade da RN13 (decisões 136 e 180).
-        await this.activity.touch({ weddingId, now: new Date() });
+        // Abrir o casamento conta como atividade da RN13 (decisões 136 e 180);
+        // o Ver como o casal só lê (Backoffice - acesso RN08).
+        if (!this.support.forWedding(weddingId))
+          await this.activity.touch({ weddingId, now: new Date() });
         return work({ role });
       },
     });

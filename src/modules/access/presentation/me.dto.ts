@@ -54,6 +54,15 @@ class MeIdentityResponse {
   @ApiProperty({ enum: ['google', 'email'] }) provider: 'google' | 'email';
 }
 
+/** O Ver como o casal aberto (Backoffice - acesso RN08): a faixa "Você está vendo como…". */
+class MeSupportSessionResponse {
+  @ApiProperty({ format: 'uuid' }) weddingId: string;
+  @ApiProperty({ example: 'Ana & Marcos' }) coupleNames: string;
+  @ApiProperty({ format: 'date-time' }) startedAt: string;
+  /** Sem nova requisição, a sessão acaba aqui (30 minutos sem uso ou o teto de 2 horas). */
+  @ApiProperty({ format: 'date-time' }) expiresAt: string;
+}
+
 export class MeResponse {
   user: MeUserResponse;
   @ApiProperty({ type: [MeMembershipResponse] }) memberships: MeMembershipResponse[];
@@ -67,6 +76,8 @@ export class MeResponse {
   plannerSignupEnabled: boolean;
   /** As formas de entrar: Google e E-mail com código (Configurações › Acesso; decisão 254). */
   @ApiProperty({ type: [MeIdentityResponse] }) identities: MeIdentityResponse[];
+  @ApiProperty({ type: MeSupportSessionResponse, nullable: true })
+  supportSession: MeSupportSessionResponse | null;
 
   static from({ me }: { me: Me }): MeResponse {
     return {
@@ -83,6 +94,13 @@ export class MeResponse {
       authenticatedAt: me.authenticatedAt.toISOString(),
       plannerSignupEnabled: me.plannerSignupEnabled,
       identities: me.identities,
+      supportSession: me.supportSession
+        ? {
+            ...me.supportSession,
+            startedAt: me.supportSession.startedAt.toISOString(),
+            expiresAt: me.supportSession.expiresAt.toISOString(),
+          }
+        : null,
     };
   }
 }

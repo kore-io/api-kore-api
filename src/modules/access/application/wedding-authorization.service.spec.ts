@@ -1,3 +1,4 @@
+import { SupportContext } from '../../../shared/database/support-context';
 import { WeddingActionForbiddenError, WeddingNotFoundError } from '../domain/access.errors';
 import type { MembershipRole } from '../domain/wedding-authorization';
 import type { MembershipReader } from './ports/membership-reader.port';
@@ -23,7 +24,7 @@ function authorizationFor({
   const profiles = {
     referrerKind: jest.fn().mockResolvedValue(referrerKind),
   } as unknown as PlannerProfiles;
-  return new WeddingAuthorization(reader, profiles);
+  return new WeddingAuthorization(reader, profiles, new SupportContext());
 }
 
 const target = { userId: 'u1', weddingId: 'w1' };

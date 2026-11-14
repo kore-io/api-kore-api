@@ -1,3 +1,7 @@
+import { SUPPORT_SESSION_STORE } from './application/ports/support-session.store.port';
+import { PrismaSupportSessionStore } from './infrastructure/backoffice/prisma-support-session.store';
+import { SupportContextInterceptor } from './presentation/support-context.interceptor';
+import { SupportSessionGuard } from './presentation/support-session.guard';
 import { ReferralModule } from '../referral/referral.module';
 import { IDENTITY_DIRECTORY } from './application/ports/identity-directory.port';
 import { PrismaIdentityDirectory } from './infrastructure/prisma-identity-directory';
@@ -127,10 +131,16 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     { provide: USER_REPOSITORY, useClass: PrismaUserRepository },
     { provide: SESSION_TOKENS, useClass: OpaqueSessionTokens },
     { provide: APP_GUARD, useClass: SessionGuard },
+    // Ver como o casal (Backoffice - acesso RN08): depois da sessão, antes do
+    // guard das escritas e da validação.
+    { provide: APP_GUARD, useClass: SupportSessionGuard },
     // Depois da sessão, antes da validação (Casamento bloqueado RN02).
     { provide: APP_GUARD, useClass: WeddingWriteGuard },
     { provide: WEDDING_WRITE_STATE, useClass: PrismaWeddingWriteState },
+    // O contexto do Ver como o casal antes da transação da requisição.
+    { provide: APP_INTERCEPTOR, useClass: SupportContextInterceptor },
     { provide: APP_INTERCEPTOR, useClass: TenantTransactionInterceptor },
+    { provide: SUPPORT_SESSION_STORE, useClass: PrismaSupportSessionStore },
     { provide: MEMBERSHIP_READER, useClass: PrismaMembershipReader },
     WeddingAuthorization,
     WeddingScope,
@@ -213,6 +223,7 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     DeclineAccessInvitation,
   ],
   exports: [
+    SUPPORT_SESSION_STORE,
     SendAccessEmailChanged,
     StartSession,
     WeddingAuthorization,

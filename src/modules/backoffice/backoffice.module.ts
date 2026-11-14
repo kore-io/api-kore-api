@@ -17,6 +17,8 @@ import { ADMIN_INSIGHTS_READER } from './application/ports/admin-insights.reader
 import { PrismaAdminInsightsReader } from './infrastructure/backoffice/prisma-admin-insights.reader';
 import { HmacSearchTermHasher } from './infrastructure/hmac-search-term-hasher';
 import { AdminInsightsController } from './presentation/admin-insights.controller';
+import { SupportSessions } from './application/support-sessions.use-cases';
+import { SupportSessionsController } from './presentation/support-sessions.controller';
 import { adminLogWriterProvider } from './infrastructure/backoffice/admin-log-writer.provider';
 import { ADMIN_WEDDINGS_READER } from './application/ports/admin-weddings.reader.port';
 import { STAFF_DIRECTORY } from './application/ports/staff-directory.port';
@@ -31,7 +33,7 @@ import { StaffGuard } from './presentation/staff.guard';
  */
 @Module({
   imports: [BillingModule, AccessModule],
-  controllers: [AdminWeddingsController, AdminInsightsController],
+  controllers: [AdminWeddingsController, AdminInsightsController, SupportSessionsController],
   providers: [
     { provide: STAFF_DIRECTORY, useClass: PrismaStaffDirectory },
     StaffGuard,
@@ -45,6 +47,7 @@ import { StaffGuard } from './presentation/staff.guard';
     EraseGuestOnRequest,
     { provide: ACCESS_EMAIL_CHANGES, useClass: PrismaAccessEmailChanges },
     ChangeAccessEmail,
+    SupportSessions,
     { provide: ADMIN_INSIGHTS_READER, useClass: PrismaAdminInsightsReader },
     { provide: SEARCH_TERM_HASHER, useClass: HmacSearchTermHasher },
     AdminInsights,

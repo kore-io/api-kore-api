@@ -104,3 +104,13 @@ export class UnlockTooSoonError extends Error {
     super();
   }
 }
+
+/** Sem pessoa dona ativa, não há Ver como o casal (409 NO_OWNER; RN08). */
+export class NoOwnerError extends Error {
+  override name = 'NoOwnerError';
+}
+
+/** A sessão de suporte não existe, já acabou ou é de outra pessoa (404 SUPPORT_SESSION_NOT_FOUND). */
+export class SupportSessionNotFoundError extends Error {
+  override name = 'SupportSessionNotFoundError';
+}

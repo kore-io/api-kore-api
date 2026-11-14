@@ -56,6 +56,7 @@ describe('AuthenticateSession', () => {
         authMethod: 'email',
         activeProfile: null,
         staffDomain: null,
+        supportSessionId: null,
       });
     });
 

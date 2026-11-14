@@ -47,6 +47,7 @@ export class AuthenticateSession {
         authMethod: record.authMethod,
         activeProfile: record.activeProfile,
         staffDomain: record.staffDomain,
+        supportSessionId: record.supportSessionId,
       },
       renewedUntil,
     };
