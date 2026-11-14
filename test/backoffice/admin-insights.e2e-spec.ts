@@ -101,6 +101,14 @@ describe('Backoffice: visão geral, busca, log e alertas (Backoffice - acesso RN
       expect(JSON.stringify(log.data)).not.toContain(ana.email);
     }
     await get(support.cookie, '/search', { q: 'a' }).expect(400);
+    // O % e o _ valem como letra: não listam os 10 mais recentes (sugestão do Crivo, 11b).
+    for (const q of ['%%', '__']) {
+      const wild = (await get(support.cookie, '/search', { q }).expect(200)).body as {
+        weddings: unknown[];
+        referrers: unknown[];
+      };
+      expect([wild.weddings.length, wild.referrers.length]).toEqual([0, 0]);
+    }
   });
 
   it('RN11 - o Log da aplicação filtra por casamento e ação, fica nos últimos 30 dias sem período e tira os centavos do suporte', async () => {

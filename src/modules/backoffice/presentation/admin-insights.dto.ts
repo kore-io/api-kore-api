@@ -163,6 +163,11 @@ export class AdminAlertsQuery extends PageQuery {
   status?: 'open' | 'resolved';
 }
 
+class AdminAlertUserResponse {
+  @ApiProperty({ type: String, nullable: true }) name: string | null;
+  @ApiProperty({ type: String, nullable: true }) email: string | null;
+}
+
 class AdminAlertResponse {
   @ApiProperty({ format: 'uuid' }) id: string;
   @ApiProperty({ enum: ALERT_TYPES }) type: string;
@@ -172,6 +177,9 @@ class AdminAlertResponse {
   @ApiProperty({ type: String, nullable: true, example: 'Ana & Marcos' }) coupleNames:
     string | null;
   @ApiProperty({ type: String, nullable: true }) userId: string | null;
+  /** A pessoa do alerta de usuário. */
+  @ApiProperty({ type: AdminAlertUserResponse, nullable: true })
+  user: AdminAlertUserResponse | null;
   entityType: string;
   entityId: string;
   /** O detalhe do tipo; o app monta o texto (RN12). */
