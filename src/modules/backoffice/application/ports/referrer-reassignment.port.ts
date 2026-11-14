@@ -1,6 +1,6 @@
 export type ReassignResult =
   | { result: 'reassigned' | 'unchanged' }
-  | { result: 'not_found' | 'payment_pending' | 'referrer_not_active' }
+  | { result: 'not_found' | 'payment_pending' | 'referrer_not_active' | 'self_referral' }
   | { result: 'already_paid'; paidAt: Date };
 
 /**

@@ -38,7 +38,7 @@ export class PrismaGuestErasure implements GuestErasure {
       const [party] = await tx.$queryRaw<{ name: string; deletedAt: Date | null }[]>`
         SELECT name, deleted_at AS "deletedAt" FROM parties
         WHERE id = ${guest.partyId}::uuid FOR UPDATE`;
-      // Outra PESSOA do grupo: a vaga de acompanhante sem nome não conta (Crivo, 11d).
+      // Outra PESSOA do grupo (decisão 253(3)): a vaga de acompanhante sem nome não conta.
       const others = await tx.guest.count({
         where: { partyId: guest.partyId, id: { not: guestId }, name: { not: null } },
       });

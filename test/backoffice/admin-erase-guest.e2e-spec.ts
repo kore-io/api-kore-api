@@ -28,7 +28,7 @@ describe('Backoffice: remover a pedido do titular (Backoffice - acesso RN10; ban
       .post(`/v1/admin/weddings/${weddingId}/guests/${guestId}/erase`)
       .set('Cookie', cookie)
       .set('Origin', ORIGIN)
-      .send({ requestChannel: 'E-mail do titular ao suporte.' });
+      .send({ requestChannel: 'email' });
 
   async function weddingWithParty(guests: string[], partyName: string, plusOneSlots = 0) {
     const ana = await signedInUser({ app });
@@ -91,6 +91,7 @@ describe('Backoffice: remover a pedido do titular (Backoffice - acesso RN10; ban
       ipHash: expect.any(String),
     });
     expect(JSON.stringify(log.data)).not.toContain('Pedro');
+    expect(log.data).toMatchObject({ requestChannel: 'email' });
     // O aviso de RSVP guarda o nome do grupo, que fica.
     const [notice] = await db.notification.findMany({ where: { weddingId, type: 'rsvp' } });
     expect(notice.payload).toEqual([expect.objectContaining({ name: 'Família Moreira' })]);
@@ -126,6 +127,13 @@ describe('Backoffice: remover a pedido do titular (Backoffice - acesso RN10; ban
     await erase(support.cookie, first.weddingId, second.guestIds[0]).expect(404);
     expect(await db.guest.count({ where: { id: second.guestIds[0] } })).toBe(1);
     await erase(first.ana.cookie, first.weddingId, first.guestIds[0]).expect(403);
+    // Decisão 256(2): o canal é de uma lista fechada (o nome do titular não vai ao log).
+    await request(app.getHttpServer())
+      .post(`/v1/admin/weddings/${first.weddingId}/guests/${first.guestIds[0]}/erase`)
+      .set('Cookie', support.cookie)
+      .set('Origin', ORIGIN)
+      .send({ requestChannel: 'E-mail do Pedro Moreira' })
+      .expect(400);
   });
 
   it('RN10 (decisão 253(3)) - a vaga de acompanhante sem nome não é outra pessoa: Pedro + vaga vira "Grupo removido"', async () => {

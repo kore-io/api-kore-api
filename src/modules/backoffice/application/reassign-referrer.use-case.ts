@@ -5,6 +5,7 @@ import {
   AlreadyPaidError,
   ReassignPaymentPendingError,
   ReferrerNotActiveError,
+  SelfReferralError,
 } from '../domain/backoffice.errors';
 import type { StaffMember } from '../domain/staff';
 import {
@@ -52,6 +53,8 @@ export class ReassignReferrer {
         throw new ReassignPaymentPendingError();
       case 'referrer_not_active':
         throw new ReferrerNotActiveError();
+      case 'self_referral':
+        throw new SelfReferralError();
       default:
         return outcome.result;
     }

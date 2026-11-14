@@ -176,4 +176,23 @@ describe('Backoffice: reatribuir o indicador (Backoffice - acesso RN07; banco re
     ).toBe('ACTION_NOT_ALLOWED');
     await put(admin.cookie, weddingId, { referrerId: null, reason: 'curto' }).expect(400);
   });
+
+  it('RN07 (decisão 256(3)) - o indicador que é dono do casamento é recusado com 409 SELF_REFERRAL', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const juliana = await planner('Juliana Prado');
+    const { paula, weddingId } = await draftWedding(juliana.referrerId);
+    const paulaReferrer = await seedReferrer({ db, kind: 'planner', name: 'Paula Rocha' });
+    // Paula vira indicadora e é dona do casamento.
+    await db.referrer.update({
+      where: { userId: paulaReferrer.userId },
+      data: { userId: paula.userId },
+    });
+    const own = await db.referrer.findUniqueOrThrow({ where: { userId: paula.userId } });
+    expect(
+      (await put(admin.cookie, weddingId, { referrerId: own.id, reason }).expect(409)).body.error,
+    ).toBe('SELF_REFERRAL');
+    expect((await db.wedding.findUniqueOrThrow({ where: { id: weddingId } })).referrerId).toBe(
+      juliana.referrerId,
+    );
+  });
 });

@@ -1,5 +1,10 @@
-/** Como o pedido do titular chegou (RN10), em texto livre: fica no log. */
-export type RequestChannel = string;
+/**
+ * Como o pedido do titular chegou (RN10; decisão 256(2)): lista fechada, para
+ * o nome do titular nunca ir ao log. Rótulos: E-mail · WhatsApp · Telefone ·
+ * Pelo casal · Outro.
+ */
+export const REQUEST_CHANNELS = ['email', 'whatsapp', 'phone', 'couple', 'other'] as const;
+export type RequestChannel = (typeof REQUEST_CHANNELS)[number];
 
 /**
  * Remover os dados de um convidado a pedido do titular (Backoffice - acesso

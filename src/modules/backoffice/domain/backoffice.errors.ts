@@ -36,6 +36,11 @@ export class GuestNotFoundForErasureError extends Error {
   override name = 'GuestNotFoundForErasureError';
 }
 
+/** O indicador escolhido é dono do casamento (409 SELF_REFERRAL; decisão 256(3)). */
+export class SelfReferralError extends Error {
+  override name = 'SelfReferralError';
+}
+
 /** O alerta não existe ou não é do papel (404 ALERT_NOT_FOUND; RN12). */
 export class AlertNotFoundError extends Error {
   override name = 'AlertNotFoundError';

@@ -4,6 +4,7 @@ import {
   AlreadyPaidError,
   ReassignPaymentPendingError,
   ReferrerNotActiveError,
+  SelfReferralError,
   AlertAlreadyResolvedError,
   AlertNotFoundError,
   AdminWeddingNotFoundError,
@@ -55,6 +56,12 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 409,
       error: 'PAYMENT_PENDING',
       message: 'There is a pending payment quoted with the current referrer.',
+    });
+  if (error instanceof SelfReferralError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'SELF_REFERRAL',
+      message: 'The referrer is an owner of this wedding.',
     });
   if (error instanceof ReferrerNotActiveError)
     return new ConflictException({

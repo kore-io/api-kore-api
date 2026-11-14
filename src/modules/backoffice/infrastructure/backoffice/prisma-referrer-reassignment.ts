@@ -53,6 +53,11 @@ export class PrismaReferrerReassignment implements ReferrerReassignment {
           select: { status: true, userId: true },
         });
         if (!referrer || referrer.status !== 'active') return { result: 'referrer_not_active' };
+        // Autoindicação (decisão 256(3)): o indicador não pode ser dono do casamento.
+        const owner = await tx.membership.count({
+          where: { weddingId, userId: referrer.userId, role: 'owner', removedAt: null },
+        });
+        if (owner > 0) return { result: 'self_referral' };
         newUserId = referrer.userId;
       }
       if (wedding.referrerId === referrerId) return { result: 'unchanged' };

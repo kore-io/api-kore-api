@@ -33,6 +33,7 @@ import {
   AlreadyPaidErrorBody,
   ReassignPaymentPendingErrorBody,
   ReferrerNotActiveErrorBody,
+  SelfReferralErrorBody,
   AlreadyBlockedErrorBody,
   NotBlockedErrorBody,
   StaffOnlyErrorBody,
@@ -186,6 +187,7 @@ export class AdminWeddingsController {
     AlreadyPaidErrorBody,
     ReassignPaymentPendingErrorBody,
     ReferrerNotActiveErrorBody,
+    SelfReferralErrorBody,
   )
   async referrer(
     @CurrentStaff() staff: StaffMember,

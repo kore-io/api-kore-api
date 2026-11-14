@@ -65,3 +65,10 @@ export class GuestNotFoundErrorBody {
   @ApiProperty({ enum: ['GUEST_NOT_FOUND'] }) error: 'GUEST_NOT_FOUND';
   @ApiProperty() message: string;
 }
+
+export class SelfReferralErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['SELF_REFERRAL'] }) error: 'SELF_REFERRAL';
+  @ApiProperty() message: string;
+}

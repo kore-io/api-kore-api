@@ -27,6 +27,7 @@ import {
   type Page,
   type RsvpFilter,
 } from '../application/ports/admin-weddings.reader.port';
+import { REQUEST_CHANNELS, type RequestChannel } from '../application/ports/guest-erasure.port';
 import {
   ADMIN_WEDDING_TABS,
   type AdminWeddingDetail,
@@ -343,18 +344,11 @@ export class ReassignReferrerResponse {
   @ApiProperty({ enum: ['reassigned', 'unchanged'] }) status: 'reassigned' | 'unchanged';
 }
 
-/** Remover os dados a pedido do titular (RN10): "Como o pedido chegou". */
+/** Remover os dados a pedido do titular (RN10): "Como o pedido chegou" (decisão 256(2)). */
 export class EraseGuestBody {
-  @ApiProperty({
-    minLength: 3,
-    maxLength: 200,
-    example: 'E-mail do titular para o suporte em 14/11.',
-  })
-  @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value))
-  @IsString()
-  @MinLength(3)
-  @MaxLength(200)
-  requestChannel: string;
+  @ApiProperty({ enum: REQUEST_CHANNELS })
+  @IsIn(REQUEST_CHANNELS)
+  requestChannel: RequestChannel;
 }
 
 export class GuestErasedResponse {
