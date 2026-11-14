@@ -24,6 +24,13 @@ const HOUR = 60 * MINUTE;
  * kore_test é compartilhado). "Pago sem webhook" muda a cobrança direto no
  * gateway local, sem disparar o evento.
  */
+/**
+ * O relógio da lista do gateway com folga: a janela é `created_at < now`, e o
+ * created_at da cobrança local tem microssegundos; criada no mesmo milissegundo
+ * do new Date(), ela ficaria fora da janela (intermitência do CI, #138).
+ */
+const listNow = () => new Date(Date.now() + 1_000);
+
 describe('Reconciliação e troca do pendente (Publicar e pagar RN07 e RN11; banco real)', () => {
   let app: INestApplication;
   let worker: TestingModule;
@@ -367,7 +374,7 @@ describe('Reconciliação e troca do pendente (Publicar e pagar RN07 e RN11; ban
         cardLast4: null,
         failureReason: null,
       });
-      await reconcile.gatewayList({ now: new Date() });
+      await reconcile.gatewayList({ now: listNow() });
       const alert = await db.alert.findFirstOrThrow({
         where: { type: 'webhook_failure', entityType: 'gateway_charge', entityId: charge.id },
       });
@@ -391,7 +398,7 @@ describe('Reconciliação e troca do pendente (Publicar e pagar RN07 e RN11; ban
       expect(await weddingStatus(weddingId)).toBe('published');
 
       await paidWithoutWebhook(pixId);
-      await reconcile.gatewayList({ now: new Date(), weddingId });
+      await reconcile.gatewayList({ now: listNow(), weddingId });
       const orphan = await payment(pixId);
       expect(orphan).toMatchObject({ status: 'refund_requested', refundOrigin: 'automatic' });
       expect(orphan.appliedAt).toBeNull();
