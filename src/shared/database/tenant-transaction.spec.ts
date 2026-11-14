@@ -1,3 +1,4 @@
+import { SupportContext } from './support-context';
 import type { PrismaService } from './prisma.service';
 import {
   PartySiteNotLiveError,
@@ -14,7 +15,7 @@ function tenantWith({ commits }: { commits: boolean }) {
       return result;
     }),
   } as unknown as PrismaService;
-  return new TenantTransaction(prisma);
+  return new TenantTransaction(prisma, new SupportContext());
 }
 
 describe('TenantTransaction (decisões 153 e 170)', () => {
@@ -94,7 +95,7 @@ describe('TenantTransaction (decisões 153 e 170)', () => {
       const prisma = {
         $transaction: jest.fn((work: (client: typeof tx) => Promise<unknown>) => work(tx)),
       } as unknown as PrismaService;
-      return { tenant: new TenantTransaction(prisma), calls };
+      return { tenant: new TenantTransaction(prisma, new SupportContext()), calls };
     }
 
     it('define o casamento e o grupo, sem pessoa, entra no papel do grupo e reconfere o grupo antes do trabalho', async () => {

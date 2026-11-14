@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { SupportContext } from '../../../shared/database/support-context';
 import { WeddingActionForbiddenError, WeddingNotFoundError } from '../domain/access.errors';
 import {
   canManageSiteIdentity,
@@ -18,7 +19,18 @@ export class WeddingAuthorization {
   constructor(
     @Inject(MEMBERSHIP_READER) private readonly memberships: MembershipReader,
     @Inject(PLANNER_PROFILES) private readonly plannerProfiles: PlannerProfiles,
+    private readonly support: SupportContext,
   ) {}
+
+  /**
+   * O papel na requisição: no Ver como o casal, o staff vê o casamento da
+   * sessão como a colaboradora (Backoffice - acesso RN08: a Cobrança sem
+   * valores; a escrita já parou no guard).
+   */
+  private async roleOf({ userId, weddingId }: { userId: string; weddingId: string }) {
+    if (this.support.forWedding(weddingId)) return 'collaborator' as const;
+    return this.memberships.activeRole({ userId, weddingId });
+  }
 
   /**
    * A ação `manage_site_identity` (Dados básicos RN04): depende do papel, do
@@ -31,7 +43,8 @@ export class WeddingAuthorization {
     userId: string;
     weddingId: string;
   }): Promise<boolean> {
-    const role = await this.memberships.activeRole({ userId, weddingId });
+    if (this.support.forWedding(weddingId)) return false;
+    const role = await this.roleOf({ userId, weddingId });
     if (role === null) return false;
     if (role === 'owner') return true;
     const origin = await this.memberships.weddingOrigin({ weddingId });
@@ -53,7 +66,7 @@ export class WeddingAuthorization {
     weddingId: string;
     action: WeddingAction;
   }): Promise<boolean> {
-    const role = await this.memberships.activeRole({ userId, weddingId });
+    const role = await this.roleOf({ userId, weddingId });
     return role !== null && roleAllows({ role, action });
   }
 
@@ -71,7 +84,7 @@ export class WeddingAuthorization {
     weddingId: string;
     action: WeddingAction;
   }): Promise<MembershipRole | null> {
-    const role = await this.memberships.activeRole({ userId, weddingId });
+    const role = await this.roleOf({ userId, weddingId });
     return role !== null && roleAllows({ role, action }) ? role : null;
   }
 
@@ -84,7 +97,7 @@ export class WeddingAuthorization {
     weddingId: string;
     action: WeddingAction;
   }): Promise<MembershipRole> {
-    const role = await this.memberships.activeRole({ userId, weddingId });
+    const role = await this.roleOf({ userId, weddingId });
     if (role === null) throw new WeddingNotFoundError();
     if (!roleAllows({ role, action })) throw new WeddingActionForbiddenError();
     return role;

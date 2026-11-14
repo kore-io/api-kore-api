@@ -3,6 +3,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import type { Prisma } from '../../generated/prisma/client';
 import type { AfterCommit } from './after-commit.port';
 import { PrismaService } from './prisma.service';
+import { SupportContext } from './support-context';
 
 const logger = new Logger('TenantTransaction');
 
@@ -68,7 +69,10 @@ interface RequestTransaction {
 export class TenantTransaction implements AfterCommit {
   private readonly current = new AsyncLocalStorage<RequestTransaction>();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly support: SupportContext,
+  ) {}
 
   async run<T>({
     userId,
@@ -79,6 +83,21 @@ export class TenantTransaction implements AfterCommit {
     weddingId?: string;
     work: () => Promise<T>;
   }): Promise<T> {
+    // Ver como o casal (Backoffice - acesso RN08; B9-1): no casamento da sessão
+    // de suporte, as leituras rodam no papel kore_support (só SELECT), sem o id
+    // de ninguém em app.user_id.
+    const support = weddingId ? this.support.forWedding(weddingId) : undefined;
+    if (support)
+      return this.transaction({
+        settings: {
+          'app.wedding_id': support.weddingId,
+          'app.support_session_id': support.supportSessionId,
+        },
+        work: async (tx) => {
+          await tx.$executeRaw`SET LOCAL ROLE kore_support`;
+          return work();
+        },
+      });
     return this.transaction({
       settings: { 'app.user_id': userId, ...(weddingId ? { 'app.wedding_id': weddingId } : {}) },
       work: () => work(),

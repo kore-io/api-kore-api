@@ -7,6 +7,8 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import {
+  NoOwnerError,
+  SupportSessionNotFoundError,
   AccessChangeRateLimitedError,
   AccessEmailLockedError,
   AdminOnlyError,
@@ -147,6 +149,18 @@ export function toHttpError(error: unknown): unknown {
       error: 'UNLOCK_TOO_SOON',
       message: 'The lock was already released in the last 24 hours.',
       availableAt: error.availableAt.toISOString(),
+    });
+  if (error instanceof NoOwnerError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'NO_OWNER',
+      message: 'The couple has not accepted the invitation yet.',
+    });
+  if (error instanceof SupportSessionNotFoundError)
+    return new NotFoundException({
+      statusCode: 404,
+      error: 'SUPPORT_SESSION_NOT_FOUND',
+      message: 'Support session not found.',
     });
   return error;
 }

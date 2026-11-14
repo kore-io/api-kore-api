@@ -1,3 +1,4 @@
+import type { SupportSessionStore } from './ports/support-session.store.port';
 import type { AppConfigService } from '../../../shared/config/app-config.service';
 import type { AuthenticatedSession } from '../domain/authenticated-session';
 import { GetMe } from './get-me.use-case';
@@ -27,7 +28,11 @@ function getMe({ plannerSignupEnabled = false }: { plannerSignupEnabled?: boolea
   } satisfies ProfileDirectory;
   const config = { get: () => plannerSignupEnabled } as unknown as AppConfigService;
   const identities = { providers: jest.fn().mockResolvedValue(['email', 'google']) };
-  return new GetMe(users, profiles, config, identities);
+  const support = {
+    find: jest.fn(),
+    coupleNames: jest.fn(),
+  } as unknown as SupportSessionStore;
+  return new GetMe(users, profiles, config, identities, support);
 }
 
 describe('GetMe (GET /v1/me)', () => {

@@ -1,3 +1,4 @@
+import { NotInSupportSession } from '../../access/presentation/not-in-support-session.decorator';
 import { Controller, Get, Header, Param, Query, Req, Res, StreamableFile } from '@nestjs/common';
 import { ApiProduces, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
@@ -22,6 +23,8 @@ export class ExportController {
 
   /** Exportar: o arquivo na hora, sem cache (Exportação RN01 a RN10). */
   @Get('export')
+  // Ver como o casal: o Exportar leva os dados para fora (Backoffice - acesso RN08).
+  @NotInSupportSession()
   @Header('Cache-Control', 'no-store')
   @ApiProduces(XLSX, 'application/pdf')
   @ApiQuery(EXPORT_COLUMNS_QUERY)
