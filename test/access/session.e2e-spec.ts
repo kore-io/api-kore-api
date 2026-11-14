@@ -41,6 +41,8 @@ describe('Sessão (Login sem senha e sessão)', () => {
         referrer: null,
         authenticatedAt: expect.any(String),
         plannerSignupEnabled: true,
+        // A conta criada direto no banco, sem AuthIdentity (decisão 254).
+        identities: [],
       });
     });
 

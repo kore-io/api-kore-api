@@ -228,4 +228,23 @@ describe('Login pelo Google com o provedor de desenvolvimento (Login sem senha e
     expect(await sessionOf(staff)).toEqual({ staffDomain: 'kore.com.br', authMethod: 'google' });
     expect(await sessionOf(consumer)).toEqual({ staffDomain: null, authMethod: 'google' });
   });
+
+  it('decisão 254 - o GET /v1/me traz as formas de entrar só com o provedor, sem e-mail do Google nem ids', async () => {
+    const email = newEmail();
+    const response = await signInWithGoogle({ email });
+    const cookie = cookieValue(
+      response.headers['set-cookie'] as unknown as string[],
+      'kore_session',
+    );
+    const user = await backoffice.user.findUniqueOrThrow({ where: { email } });
+    // A mesma conta também já entrou por código.
+    await backoffice.authIdentity.create({
+      data: { userId: user.id, provider: 'email', providerSubject: email },
+    });
+    const me = await request(app.getHttpServer())
+      .get('/v1/me')
+      .set('Cookie', cookie ?? '')
+      .expect(200);
+    expect(me.body.identities).toEqual([{ provider: 'google' }, { provider: 'email' }]);
+  });
 });
