@@ -273,4 +273,76 @@ describe('Backoffice: trocar o e-mail de acesso (Backoffice - acesso RN09; decis
       .set('Origin', ORIGIN)
       .expect(204);
   });
+
+  it('decisão 253(1) - em paralelo, o limite do atendente vale: 6 trocas simultâneas dão 5 x 200 e 1 x 429', async () => {
+    const support = await staffUser({ app, role: 'support' });
+    const weddings = [];
+    for (let index = 0; index < 6; index++) weddings.push(await paidWedding());
+    const statuses = await Promise.all(
+      weddings.map(
+        async ({ ana, weddingId }) =>
+          (
+            await change(support.cookie, weddingId, {
+              userId: ana.userId,
+              newEmail: newEmail(),
+              payerLast4: '4725',
+            })
+          ).status,
+      ),
+    );
+    expect(statuses.sort()).toEqual([200, 200, 200, 200, 200, 429]);
+  });
+
+  it('RN09 - o corpo sem as confirmações é 400 com os erros, não 500', async () => {
+    const support = await staffUser({ app, role: 'support' });
+    const { ana, weddingId } = await paidWedding();
+    const response = await http()
+      .put(`/v1/admin/weddings/${weddingId}/access-email`)
+      .set('Cookie', support.cookie)
+      .set('Origin', ORIGIN)
+      .send({
+        userId: ana.userId,
+        newEmail: newEmail(),
+        payerLast4: '4725',
+        reason: 'Casal perdeu o acesso ao e-mail antigo.',
+      })
+      .expect(400);
+    expect(response.body.errors).toEqual(
+      expect.arrayContaining([expect.objectContaining({ path: 'checks' })]),
+    );
+  });
+
+  it('decisão 253(1) e (2) - a 2ª troca pelo Admin atualiza o alerta aberto; a ficha mostra até quando a pessoa fica travada', async () => {
+    const support = await staffUser({ app, role: 'support' });
+    const admin = await staffUser({ app, role: 'admin' });
+    const { ana, weddingId } = await paidWedding();
+    await change(support.cookie, weddingId, {
+      userId: ana.userId,
+      newEmail: newEmail(),
+      payerLast4: '4725',
+    }).expect(200);
+    await change(admin.cookie, weddingId, {
+      userId: ana.userId,
+      newEmail: newEmail(),
+      payerLast4: '4725',
+    }).expect(200);
+    const alerts = await db.alert.findMany({
+      where: { type: 'access_email_changed', entityId: ana.userId, status: 'open' },
+    });
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].data).toMatchObject({ byRole: 'admin', repeatWithin7Days: true });
+
+    const general = await http()
+      .get(`/v1/admin/weddings/${weddingId}`)
+      .set('Cookie', admin.cookie)
+      .expect(200);
+    const person = (
+      general.body.general.people as { userId: string; accessChangeLockedUntil: string | null }[]
+    ).find((item) => item.userId === ana.userId);
+    const changedAt = (await db.user.findUniqueOrThrow({ where: { id: ana.userId } }))
+      .accessEmailChangedAt!;
+    expect(person?.accessChangeLockedUntil).toBe(
+      new Date(changedAt.getTime() + 48 * HOUR_MS).toISOString(),
+    );
+  });
 });

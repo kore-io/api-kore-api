@@ -34,6 +34,9 @@ export class PrismaAccessEmailChanges implements AccessEmailChanges {
   change(input: AccessEmailChangeInput): Promise<AccessEmailChangeResult> {
     const { staff, weddingId, userId, now } = input;
     return this.db.$transaction(async (tx): Promise<AccessEmailChangeResult> => {
+      // Uma troca por atendente de cada vez, antes da trava do Wedding: a
+      // contagem do dia não é furada por pedidos em paralelo (decisão 253(1)).
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`access_email:${staff.userId}`}, 0))`;
       const [wedding] = await tx.$queryRaw<{ id: string }[]>`
         SELECT id::text FROM weddings
         WHERE id = ${weddingId}::uuid AND status <> 'purged' FOR UPDATE`;
@@ -266,6 +269,10 @@ export class PrismaAccessEmailChanges implements AccessEmailChanges {
     });
   }
 
+  /**
+   * O alerta aberto do mesmo tipo e entidade recebe o dado novo (a 2ª troca em
+   * 7 dias pelo Admin, a nova liberação): um alerta só, com o retrato atual.
+   */
   private async openAlert({
     tx,
     type,
@@ -285,6 +292,7 @@ export class PrismaAccessEmailChanges implements AccessEmailChanges {
       INSERT INTO alerts (id, type, wedding_id, entity_type, entity_id, data)
       VALUES (${uuidV7()}::uuid, ${type}::alert_type, ${weddingId}::uuid, ${entityType},
               ${entityId}, ${JSON.stringify(data)}::jsonb)
-      ON CONFLICT (type, entity_type, entity_id) WHERE status = 'open' DO NOTHING`;
+      ON CONFLICT (type, entity_type, entity_id) WHERE status = 'open'
+      DO UPDATE SET data = EXCLUDED.data`;
   }
 }

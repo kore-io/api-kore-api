@@ -22698,6 +22698,12 @@
             ],
             "type": "string"
           },
+          "accessChangeLockedUntil": {
+            "type": "string",
+            "nullable": true,
+            "description": "A troca do e-mail pelo staff trava chave Pix e remoção de membros até aqui (decisão 253(2)).",
+            "format": "date-time"
+          },
           "email": {
             "type": "string"
           }
@@ -22706,6 +22712,7 @@
           "userId",
           "name",
           "role",
+          "accessChangeLockedUntil",
           "email"
         ]
       },

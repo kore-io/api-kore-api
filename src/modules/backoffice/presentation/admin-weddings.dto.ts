@@ -12,6 +12,8 @@ import {
   MinLength,
   MaxLength,
   ValidateIf,
+  IsDefined,
+  IsObject,
   IsBoolean,
   IsEmail,
   ValidateNested,
@@ -142,6 +144,9 @@ class AdminPersonResponse {
   @ApiProperty({ type: String, nullable: true }) name: string | null;
   email: string;
   @ApiProperty({ enum: ['owner', 'collaborator'] }) role: 'owner' | 'collaborator';
+  /** A troca do e-mail pelo staff trava chave Pix e remoção de membros até aqui (decisão 253(2)). */
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  accessChangeLockedUntil: string | null;
 }
 
 class AdminPendingPaymentResponse {
@@ -225,7 +230,10 @@ export class AdminWeddingGeneralResponse {
       referrer: wedding.referrer,
       rsvpPercent: wedding.rsvpPercent,
       createdAt: wedding.createdAt.toISOString(),
-      people: wedding.people,
+      people: wedding.people.map((person) => ({
+        ...person,
+        accessChangeLockedUntil: person.accessChangeLockedUntil?.toISOString() ?? null,
+      })),
       publishedAt: wedding.publishedAt?.toISOString() ?? null,
       endDate: wedding.endDate,
       graceUntil: wedding.graceUntil,
@@ -376,6 +384,8 @@ export class ChangeAccessEmailBody extends AdminReasonBody {
   newEmail: string;
 
   @ApiProperty({ type: AccessEmailChecksBody })
+  @IsDefined()
+  @IsObject()
   @ValidateNested()
   @Type(() => AccessEmailChecksBody)
   checks: AccessEmailChecksBody;

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '../../../../generated/prisma/client';
 import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
+import { RECENT_ACCESS_CHANGE_MS } from '../../../access/domain/recent-access-change';
 import type { StaffRole } from '../../domain/staff';
 import type {
   AdminReferrer,
@@ -134,9 +135,11 @@ export class PrismaAdminWeddingsReader implements AdminWeddingsReader {
   async general({
     weddingId,
     role,
+    now = new Date(),
   }: {
     weddingId: string;
     role: StaffRole;
+    now?: Date;
   }): Promise<AdminWeddingGeneral | AdminWeddingTombstone | null> {
     const wedding = await this.db.wedding.findUnique({
       where: { id: weddingId },
@@ -152,7 +155,10 @@ export class PrismaAdminWeddingsReader implements AdminWeddingsReader {
         memberships: {
           where: { removedAt: null },
           orderBy: { createdAt: 'asc' },
-          select: { role: true, user: { select: { id: true, name: true, email: true } } },
+          select: {
+            role: true,
+            user: { select: { id: true, name: true, email: true, accessEmailChangedAt: true } },
+          },
         },
       },
     });
@@ -200,12 +206,18 @@ export class PrismaAdminWeddingsReader implements AdminWeddingsReader {
     return {
       ...toRow(wedding),
       createdAt: wedding.createdAt,
-      people: wedding.memberships.map(({ role: membershipRole, user }) => ({
-        userId: user.id,
-        name: user.name,
-        email: user.email,
-        role: membershipRole,
-      })),
+      people: wedding.memberships.map(({ role: membershipRole, user }) => {
+        const until = user.accessEmailChangedAt
+          ? new Date(user.accessEmailChangedAt.getTime() + RECENT_ACCESS_CHANGE_MS)
+          : null;
+        return {
+          userId: user.id,
+          name: user.name,
+          email: user.email,
+          role: membershipRole,
+          accessChangeLockedUntil: until && until > now ? until : null,
+        };
+      }),
       publishedAt: wedding.publishedAt,
       graceUntil: day(wedding.graceUntil),
       purgeAt: day(wedding.purgeAt),
