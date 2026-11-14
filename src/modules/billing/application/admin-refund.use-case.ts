@@ -8,6 +8,7 @@ import {
   RefundAlreadyRequestedError,
   RefundNotLastExtensionError,
 } from '../domain/billing.errors';
+import { pastGatewayWindow } from '../domain/refund-receipt';
 import { CancelPendingPayment } from './cancel-pending-payment';
 import { REFUND_QUEUE, type RefundQueue } from './ports/refund-queue.port';
 
@@ -41,11 +42,11 @@ export class AdminRefund {
     adminUserId: string;
     reason: string | null;
     now: Date;
-  }): Promise<{ refundsPaymentIds: string[] }> {
-    const { ids, pendingExtensionId } = await this.transaction.run(async (tx) => {
+  }): Promise<{ refundsPaymentIds: string[]; pastGatewayWindow: boolean }> {
+    const { ids, pendingExtensionId, pastWindow } = await this.transaction.run(async (tx) => {
       const payment = await tx.payment.findUnique({
         where: { id: paymentId },
-        select: { weddingId: true, kind: true },
+        select: { weddingId: true, kind: true, method: true, paidAt: true },
       });
       if (!payment) throw new PaymentNotFoundError();
       const [row] = await tx.$queryRaw<{ result: string; payment_ids: string[] }[]>`
@@ -96,7 +97,12 @@ export class AdminRefund {
               select: { id: true },
             })
           : null;
-      return { ids: row.payment_ids, pendingExtensionId: pending?.id ?? null };
+      return {
+        ids: row.payment_ids,
+        pendingExtensionId: pending?.id ?? null,
+        // O aviso do Dialog (B3-6; decisão 259(2)): o estorno vai falhar no gateway.
+        pastWindow: pastGatewayWindow({ method: payment.method, paidAt: payment.paidAt, now }),
+      };
     });
 
     // Depois do commit (G1). Sem a fila, a reconciliação repõe o estorno.
@@ -120,6 +126,6 @@ export class AdminRefund {
         );
       }
     }
-    return { refundsPaymentIds: ids };
+    return { refundsPaymentIds: ids, pastGatewayWindow: pastWindow };
   }
 }

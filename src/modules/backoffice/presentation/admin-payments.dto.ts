@@ -1,16 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import {
-  IsDate,
-  IsIn,
-  IsInt,
-  IsOptional,
-  IsString,
-  Max,
-  MaxLength,
-  Min,
-  MinLength,
-} from 'class-validator';
+import { IsDate, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import {
   ADMIN_PAYMENT_STATUSES,
   type AdminPaymentDetail,
@@ -18,6 +8,11 @@ import {
   type AdminPaymentStatus,
 } from '../application/ports/admin-payments.reader.port';
 import type { Page } from '../application/ports/admin-weddings.reader.port';
+import {
+  REFUND_RECEIPT_CONTENT_TYPES,
+  REFUND_RECEIPT_MAX_BYTES,
+  type RefundReceiptContentType,
+} from '../../billing/domain/refund-receipt';
 import { AdminReasonBody } from './admin-weddings.dto';
 
 const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
@@ -78,11 +73,9 @@ export class AdminRefundBody {
 
 /** Registrar reembolso feito por fora (RN11): o motivo e o comprovante, obrigatórios. */
 export class ManualRefundBody extends AdminReasonBody {
-  /** A referência do comprovante (o id da transferência, o protocolo). */
-  @ApiProperty({ minLength: 3, maxLength: 200 })
-  @Transform(trim)
+  /** A chave do comprovante enviado (o `receiptKey` do envio; decisão 259(1)). */
+  @ApiProperty({ maxLength: 200 })
   @IsString()
-  @MinLength(3)
   @MaxLength(200)
   receipt: string;
 }
@@ -207,6 +200,8 @@ export class AdminPaymentDetailResponse extends AdminPaymentRowResponse {
 export class AdminRefundResponse {
   @ApiProperty({ enum: ['refund_requested'] }) status: 'refund_requested';
   @ApiProperty({ type: [String], format: 'uuid' }) refundsPaymentIds: string[];
+  /** Passou do prazo de estorno do gateway: o estorno vai falhar (B3-6; decisão 259(2)). */
+  pastGatewayWindow: boolean;
 }
 
 export class AdminPaymentActionResponse {
@@ -214,6 +209,37 @@ export class AdminPaymentActionResponse {
 }
 
 export class CourtesyResponse {
+  @ApiProperty({ example: '2027-02-14' }) previousEndDate: string;
   /** A nova data de saída do ar ("Data de saída do ar estendida para 14/05/2027."). */
-  @ApiProperty({ example: '2027-05-14' }) endDate: string;
+  @ApiProperty({ example: '2027-05-14' }) newEndDate: string;
+  /** O Pix de extensão pendente que a cortesia cancelou (B10-5). */
+  @ApiProperty({ type: String, format: 'uuid', nullable: true }) canceledPaymentId: string | null;
+}
+
+/** O envio do comprovante (decisão 259(1)): PDF, JPG ou PNG até 10 MB. */
+export class RefundReceiptUploadBody {
+  @ApiProperty({ enum: REFUND_RECEIPT_CONTENT_TYPES })
+  @IsIn(REFUND_RECEIPT_CONTENT_TYPES)
+  contentType: RefundReceiptContentType;
+
+  @ApiProperty({ minimum: 1, maximum: REFUND_RECEIPT_MAX_BYTES })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(REFUND_RECEIPT_MAX_BYTES)
+  sizeBytes: number;
+}
+
+class PresignedHeadersResponse {
+  @ApiProperty({ name: 'Content-Type' }) 'Content-Type': string;
+  @ApiProperty({ name: 'Content-Length' }) 'Content-Length': string;
+}
+
+export class RefundReceiptUploadResponse {
+  /** A chave que vai no `receipt` do Registrar reembolso feito por fora. */
+  receiptKey: string;
+  /** O PUT do arquivo, com os cabeçalhos assinados. */
+  url: string;
+  @ApiProperty({ type: PresignedHeadersResponse }) headers: PresignedHeadersResponse;
+  @ApiProperty({ format: 'date-time' }) expiresAt: string;
 }

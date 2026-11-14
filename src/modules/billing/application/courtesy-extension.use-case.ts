@@ -41,7 +41,7 @@ export class ExtendAsCourtesy {
     months: number;
     reason: string;
     now: Date;
-  }): Promise<{ endDate: string }> {
+  }): Promise<{ previousEndDate: string; newEndDate: string; canceledPaymentId: string | null }> {
     return this.transaction.run(async (tx) => {
       const [wedding] = await tx.$queryRaw<
         {
@@ -131,7 +131,12 @@ export class ExtendAsCourtesy {
         this.transaction.schedule(() =>
           this.queue.enqueueCancel({ paymentId: id, reason: 'courtesy_extended' }),
         );
-      return { endDate: newEndDate };
+      return {
+        previousEndDate: wedding.endDate.toISOString().slice(0, 10),
+        newEndDate,
+        // O Pix de extensão pendente cancelado depois do commit (B10-5).
+        canceledPaymentId: pending[0]?.id ?? null,
+      };
     });
   }
 }

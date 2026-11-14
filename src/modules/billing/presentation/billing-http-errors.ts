@@ -32,7 +32,11 @@ import {
   ConfirmNameMismatchError,
   NoDeletionScheduledError,
   RefundWindowOpenError,
-  PaymentStateConflictError,
+  PaymentNotMismatchedError,
+  RefundNotFailedError,
+  RefundNotRequestedError,
+  RefundReceiptMissingError,
+  RefundReceiptNotFoundError,
 } from '../domain/billing.errors';
 import { InstallmentsOutOfRangeError } from '../domain/pricing';
 
@@ -196,11 +200,35 @@ export function toHttpError(error: unknown): unknown {
       error: 'NO_DELETION_SCHEDULED',
       message: 'There is no deletion to cancel.',
     });
-  if (error instanceof PaymentStateConflictError)
+  if (error instanceof PaymentNotMismatchedError)
     return new ConflictException({
       statusCode: 409,
-      error: 'PAYMENT_STATE_CONFLICT',
-      message: 'The payment is not in a state that allows this action.',
+      error: 'PAYMENT_NOT_MISMATCHED',
+      message: 'There is no open amount mismatch alert for this payment.',
+    });
+  if (error instanceof RefundNotFailedError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'REFUND_NOT_FAILED',
+      message: 'The refund of this payment has not failed.',
+    });
+  if (error instanceof RefundNotRequestedError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'REFUND_NOT_REQUESTED',
+      message: 'The payment is not waiting for a refund.',
+    });
+  if (error instanceof RefundReceiptMissingError)
+    return new UnprocessableEntityException({
+      statusCode: 422,
+      error: 'REFUND_RECEIPT_MISSING',
+      message: 'Upload the receipt first, with the key this API gave.',
+    });
+  if (error instanceof RefundReceiptNotFoundError)
+    return new NotFoundException({
+      statusCode: 404,
+      error: 'REFUND_RECEIPT_NOT_FOUND',
+      message: 'This payment has no refund receipt.',
     });
   return toAccessHttpError(error);
 }

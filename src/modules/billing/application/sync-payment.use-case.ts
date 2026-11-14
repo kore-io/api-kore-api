@@ -263,6 +263,16 @@ export class SyncPaymentWithGateway {
       if (!locked) return 'no_payment';
       const { wedding, payment } = locked;
       if (payment.status !== 'paid' || payment.appliedAt) return 'not_applicable';
+      // Só com o gateway_amount_mismatch aberto (Contrato de API; 409 PAYMENT_NOT_MISMATCHED).
+      const open = await this.transaction.client().alert.count({
+        where: {
+          entityType: 'payment',
+          entityId: paymentId,
+          type: 'gateway_amount_mismatch',
+          status: 'open',
+        },
+      });
+      if (open === 0) return 'not_applicable';
       const decision = decideConfirmation({
         payment: { ...payment, status: 'pending' },
         wedding,
@@ -306,6 +316,7 @@ export class SyncPaymentWithGateway {
     paymentId: string;
     adminUserId: string;
     reason: string;
+    /** A chave do comprovante no bucket privado (decisão 259(1)), já conferida. */
     receipt: string;
     now: Date;
   }): Promise<'refunded' | 'no_payment' | 'not_applicable'> {

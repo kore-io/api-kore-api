@@ -10503,6 +10503,16 @@
             },
             "description": ""
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
           "429": {
             "content": {
               "application/json": {
@@ -10586,6 +10596,39 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PaymentDisputedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RefundAlreadyRequestedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PaymentNotPaidErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RefundNotLastExtensionErrorBody"
                     }
                   ]
                 }
@@ -10684,6 +10727,26 @@
             },
             "description": ""
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentNotMismatchedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
           "429": {
             "content": {
               "application/json": {
@@ -10701,7 +10764,7 @@
         ]
       }
     },
-    "/v1/admin/payments/{id}/refund-retry": {
+    "/v1/admin/payments/{id}/refund/retry": {
       "post": {
         "operationId": "AdminPaymentsController_retryRefund_v1",
         "parameters": [
@@ -10775,6 +10838,26 @@
             },
             "description": ""
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundNotFailedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
           "429": {
             "content": {
               "application/json": {
@@ -10792,7 +10875,7 @@
         ]
       }
     },
-    "/v1/admin/payments/{id}/manual-refund": {
+    "/v1/admin/payments/{id}/refund/manual": {
       "post": {
         "operationId": "AdminPaymentsController_manualRefund_v1",
         "parameters": [
@@ -10866,6 +10949,36 @@
             },
             "description": ""
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundNotRequestedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundReceiptMissingErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
           "429": {
             "content": {
               "application/json": {
@@ -10878,6 +10991,205 @@
           }
         },
         "summary": "Registrar reembolso feito por fora (RN11): motivo e comprovante.",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/payments/{id}/refund/receipt-upload": {
+      "post": {
+        "operationId": "AdminPaymentsController_authorizeReceiptUpload_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefundReceiptUploadBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundReceiptUploadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundNotRequestedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "O envio do comprovante do reembolso feito por fora (decisão 259(1)): a URL de PUT.",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/payments/{id}/refund/receipt": {
+      "get": {
+        "operationId": "AdminPaymentsController_receipt_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "O arquivo do comprovante."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PaymentNotFoundErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RefundReceiptNotFoundErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "O comprovante, só para o Admin (decisão 259(1)): lido pela API, nunca público.",
         "tags": [
           "admin"
         ]
@@ -12461,6 +12773,26 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WeddingNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotPublishedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndDateOutOfRangeErrorBody"
                 }
               }
             },
@@ -24504,11 +24836,41 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          "pastGatewayWindow": {
+            "type": "boolean",
+            "description": "Passou do prazo de estorno do gateway: o estorno vai falhar (B3-6; decisão 259(2))."
           }
         },
         "required": [
           "status",
-          "refundsPaymentIds"
+          "refundsPaymentIds",
+          "pastGatewayWindow"
+        ]
+      },
+      "PaymentNotMismatchedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PAYMENT_NOT_MISMATCHED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
         ]
       },
       "AdminReasonBody": {
@@ -24541,6 +24903,81 @@
           "status"
         ]
       },
+      "RefundNotFailedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "REFUND_NOT_FAILED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "RefundNotRequestedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "REFUND_NOT_REQUESTED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "RefundReceiptMissingErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "REFUND_RECEIPT_MISSING"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
       "ManualRefundBody": {
         "type": "object",
         "properties": {
@@ -24552,14 +24989,101 @@
           },
           "receipt": {
             "type": "string",
-            "description": "A referência do comprovante (o id da transferência, o protocolo).",
-            "minLength": 3,
+            "description": "A chave do comprovante enviado (o `receiptKey` do envio; decisão 259(1)).",
             "maxLength": 200
           }
         },
         "required": [
           "reason",
           "receipt"
+        ]
+      },
+      "RefundReceiptUploadBody": {
+        "type": "object",
+        "properties": {
+          "contentType": {
+            "enum": [
+              "application/pdf",
+              "image/jpeg",
+              "image/png"
+            ],
+            "type": "string"
+          },
+          "sizeBytes": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10485760
+          }
+        },
+        "required": [
+          "contentType",
+          "sizeBytes"
+        ]
+      },
+      "PresignedHeadersResponse": {
+        "type": "object",
+        "properties": {
+          "Content-Type": {
+            "type": "string"
+          },
+          "Content-Length": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "Content-Type",
+          "Content-Length"
+        ]
+      },
+      "RefundReceiptUploadResponse": {
+        "type": "object",
+        "properties": {
+          "headers": {
+            "$ref": "#/components/schemas/PresignedHeadersResponse"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "receiptKey": {
+            "type": "string",
+            "description": "A chave que vai no `receipt` do Registrar reembolso feito por fora."
+          },
+          "url": {
+            "type": "string",
+            "description": "O PUT do arquivo, com os cabeçalhos assinados."
+          }
+        },
+        "required": [
+          "headers",
+          "expiresAt",
+          "receiptKey",
+          "url"
+        ]
+      },
+      "RefundReceiptNotFoundErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "REFUND_RECEIPT_NOT_FOUND"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
         ]
       },
       "AdminPayoutReferrerResponse": {
@@ -26252,14 +26776,26 @@
       "CourtesyResponse": {
         "type": "object",
         "properties": {
-          "endDate": {
+          "previousEndDate": {
+            "type": "string",
+            "example": "2027-02-14"
+          },
+          "newEndDate": {
             "type": "string",
             "description": "A nova data de saída do ar (\"Data de saída do ar estendida para 14/05/2027.\").",
             "example": "2027-05-14"
+          },
+          "canceledPaymentId": {
+            "type": "string",
+            "nullable": true,
+            "description": "O Pix de extensão pendente que a cortesia cancelou (B10-5).",
+            "format": "uuid"
           }
         },
         "required": [
-          "endDate"
+          "previousEndDate",
+          "newEndDate",
+          "canceledPaymentId"
         ]
       },
       "MonthPointResponse": {

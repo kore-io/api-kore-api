@@ -28,6 +28,8 @@ import { AdminWeddings } from '../application/admin-weddings.use-cases';
 import { ReassignReferrer } from '../application/reassign-referrer.use-case';
 import { ExtendAsCourtesy } from '../../billing/application/courtesy-extension.use-case';
 import { CourtesyBody, CourtesyResponse } from './admin-payments.dto';
+import { NotPublishedErrorBody } from '../../billing/presentation/billing-error.dto';
+import { EndDateOutOfRangeErrorBody } from '../../site/presentation/site-error.dto';
 import { EraseGuestOnRequest } from '../application/erase-guest.use-case';
 import { ChangeAccessEmail } from '../application/change-access-email.use-cases';
 import type { StaffMember } from '../domain/staff';
@@ -348,6 +350,8 @@ export class AdminWeddingsController {
     StaffOnlyErrorBody,
     ActionNotAllowedErrorBody,
     WeddingNotFoundErrorBody,
+    NotPublishedErrorBody,
+    EndDateOutOfRangeErrorBody,
   )
   async extendAsCourtesy(
     @CurrentStaff() staff: StaffMember,

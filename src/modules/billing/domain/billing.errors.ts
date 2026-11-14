@@ -140,7 +140,27 @@ export class NoDeletionScheduledError extends Error {
   override name = 'NoDeletionScheduledError';
 }
 
-/** A ação do Admin não vale no estado do pagamento (409 PAYMENT_STATE_CONFLICT; Backoffice - cobrança RN11). */
-export class PaymentStateConflictError extends Error {
-  override name = 'PaymentStateConflictError';
+/** Aplicar mesmo assim sem o gateway_amount_mismatch aberto (409 PAYMENT_NOT_MISMATCHED; Backoffice - cobrança RN11). */
+export class PaymentNotMismatchedError extends Error {
+  override name = 'PaymentNotMismatchedError';
+}
+
+/** Tentar o estorno de novo sem estorno que falhou (409 REFUND_NOT_FAILED; RN11). */
+export class RefundNotFailedError extends Error {
+  override name = 'RefundNotFailedError';
+}
+
+/** O reembolso feito por fora e o comprovante só valem em refund_requested (409 REFUND_NOT_REQUESTED; RN11). */
+export class RefundNotRequestedError extends Error {
+  override name = 'RefundNotRequestedError';
+}
+
+/** A chave do comprovante não é deste pagamento ou o arquivo não chegou (422 REFUND_RECEIPT_MISSING; decisão 259(1)). */
+export class RefundReceiptMissingError extends Error {
+  override name = 'RefundReceiptMissingError';
+}
+
+/** O pagamento não tem comprovante (404 REFUND_RECEIPT_NOT_FOUND). */
+export class RefundReceiptNotFoundError extends Error {
+  override name = 'RefundReceiptNotFoundError';
 }

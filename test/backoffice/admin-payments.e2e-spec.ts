@@ -68,7 +68,12 @@ describe('Backoffice: Cobrança (Backoffice - cobrança RN02 a RN07 e RN11; banc
     const response = await post(admin.cookie, `/payments/${paymentId}/refund`, {
       reason: 'Casal pediu pelo suporte.',
     }).expect(202);
-    expect(response.body).toEqual({ status: 'refund_requested', refundsPaymentIds: [paymentId] });
+    // Cartão: o prazo do gateway não está confirmado, então não passa (decisão 259(2)).
+    expect(response.body).toEqual({
+      status: 'refund_requested',
+      refundsPaymentIds: [paymentId],
+      pastGatewayWindow: false,
+    });
     expect(await db.payment.findUniqueOrThrow({ where: { id: paymentId } })).toMatchObject({
       refundOrigin: 'admin',
       refundRequestedByUserId: admin.userId,
@@ -120,7 +125,7 @@ describe('Backoffice: Cobrança (Backoffice - cobrança RN02 a RN07 e RN11; banc
           reason: 'Compensação do bloqueio.',
         }).expect(200)
       ).body,
-    ).toEqual({ endDate: newEnd });
+    ).toEqual({ previousEndDate: endDate, newEndDate: newEnd, canceledPaymentId: null });
     expect(await db.wedding.findUniqueOrThrow({ where: { id: weddingId } })).toMatchObject({
       endDate: day(newEnd),
       paidThrough: day(newEnd),
@@ -187,6 +192,14 @@ describe('Backoffice: Cobrança (Backoffice - cobrança RN02 a RN07 e RN11; banc
     });
     await db.commission.deleteMany({ where: { paymentId: mismatch.paymentId } });
     await db.payment.update({ where: { id: mismatch.paymentId }, data: { appliedAt: null } });
+    // Sem o alerta aberto, 409 PAYMENT_NOT_MISMATCHED (Contrato de API).
+    expect(
+      (
+        await post(admin.cookie, `/payments/${mismatch.paymentId}/apply`, {
+          reason: 'Sem alerta nenhum aberto.',
+        }).expect(409)
+      ).body.error,
+    ).toBe('PAYMENT_NOT_MISMATCHED');
     await db.alert.create({
       data: {
         type: 'gateway_amount_mismatch',
@@ -210,9 +223,13 @@ describe('Backoffice: Cobrança (Backoffice - cobrança RN02 a RN07 e RN11; banc
         where: { entityId: mismatch.paymentId, status: 'open', type: 'gateway_amount_mismatch' },
       }),
     ).toBe(0);
-    await post(admin.cookie, `/payments/${mismatch.paymentId}/apply`, {
-      reason: 'De novo, por engano.',
-    }).expect(409);
+    expect(
+      (
+        await post(admin.cookie, `/payments/${mismatch.paymentId}/apply`, {
+          reason: 'De novo, por engano.',
+        }).expect(409)
+      ).body.error,
+    ).toBe('PAYMENT_NOT_MISMATCHED');
 
     // O estorno que falhou: Tentar de novo tira a desistência e chama o job.
     const failed = await paid();
@@ -227,9 +244,17 @@ describe('Backoffice: Cobrança (Backoffice - cobrança RN02 a RN07 e RN11; banc
         refundFailedAt: new Date(),
       },
     });
-    await post(admin.cookie, `/payments/${failed.paymentId}/refund-retry`, {
+    await post(admin.cookie, `/payments/${failed.paymentId}/refund/retry`, {
       reason: 'O Asaas voltou.',
-    }).expect(200);
+    }).expect(202);
+    // Já sem a falha: 409 REFUND_NOT_FAILED.
+    expect(
+      (
+        await post(admin.cookie, `/payments/${failed.paymentId}/refund/retry`, {
+          reason: 'De novo, por engano.',
+        }).expect(409)
+      ).body.error,
+    ).toBe('REFUND_NOT_FAILED');
     await db.applicationLog.findFirstOrThrow({
       where: { action: 'payment.refund_retried', entityId: failed.paymentId },
     });
@@ -245,15 +270,48 @@ describe('Backoffice: Cobrança (Backoffice - cobrança RN02 a RN07 e RN11; banc
         refundFailedAt: new Date(),
       },
     });
-    await post(admin.cookie, `/payments/${outside.paymentId}/manual-refund`, {
+    // O comprovante sobe pela URL pré-assinada (decisão 259(1)); sem ele, 422.
+    expect(
+      (
+        await post(admin.cookie, `/payments/${outside.paymentId}/refund/manual`, {
+          reason: 'Pix devolvido pelo banco.',
+          receipt: `refund-receipts/${randomUUID()}/x.pdf`,
+        }).expect(422)
+      ).body.error,
+    ).toBe('REFUND_RECEIPT_MISSING');
+    const pdf = Buffer.from('%PDF-1.4 comprovante');
+    const upload = await post(
+      admin.cookie,
+      `/payments/${outside.paymentId}/refund/receipt-upload`,
+      {
+        contentType: 'application/pdf',
+        sizeBytes: pdf.length,
+      },
+    ).expect(201);
+    expect(upload.body.receiptKey).toMatch(new RegExp(`^refund-receipts/${outside.paymentId}/`));
+    const put = await fetch(upload.body.url as string, {
+      method: 'PUT',
+      body: new Uint8Array(pdf),
+      headers: { 'Content-Type': 'application/pdf' },
+    });
+    expect(put.status).toBe(200);
+    await post(admin.cookie, `/payments/${outside.paymentId}/refund/manual`, {
       reason: 'Pix devolvido pelo banco.',
-      receipt: `E${randomUUID().slice(0, 8)}`,
+      receipt: upload.body.receiptKey,
     }).expect(200);
+    // Só o Admin lê o comprovante, pela API.
+    const file = await get(admin.cookie, `/payments/${outside.paymentId}/refund/receipt`)
+      .buffer(true)
+      .expect(200);
+    expect(file.headers['content-type']).toMatch(/^application\/pdf/);
+    expect(Buffer.from(file.body as Buffer).toString()).toBe(pdf.toString());
+    const support = await staffUser({ app, role: 'support' });
+    await get(support.cookie, `/payments/${outside.paymentId}/refund/receipt`).expect(403);
     expect(await db.payment.findUniqueOrThrow({ where: { id: outside.paymentId } })).toMatchObject({
       status: 'refunded',
       refundOrigin: 'manual',
       refundedOutsideGateway: true,
-      refundReceiptKey: expect.any(String),
+      refundReceiptKey: upload.body.receiptKey,
     });
     await db.applicationLog.findFirstOrThrow({
       where: { action: 'payment.refund_recorded_manually', entityId: outside.paymentId },

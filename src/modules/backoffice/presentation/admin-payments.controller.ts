@@ -36,7 +36,21 @@ import {
   AdminRefundBody,
   AdminRefundResponse,
   ManualRefundBody,
+  RefundReceiptUploadBody,
+  RefundReceiptUploadResponse,
 } from './admin-payments.dto';
+import {
+  PaymentDisputedErrorBody,
+  PaymentNotFoundErrorBody,
+  PaymentNotMismatchedErrorBody,
+  PaymentNotPaidErrorBody,
+  RefundAlreadyRequestedErrorBody,
+  RefundNotFailedErrorBody,
+  RefundNotLastExtensionErrorBody,
+  RefundNotRequestedErrorBody,
+  RefundReceiptMissingErrorBody,
+  RefundReceiptNotFoundErrorBody,
+} from '../../billing/presentation/billing-error.dto';
 import { AdminReasonBody } from './admin-weddings.dto';
 import { StaffOnlyErrorBody } from './backoffice-error.dto';
 import { toHttpError } from './backoffice-http-errors';
@@ -113,6 +127,7 @@ export class AdminPaymentsController {
     ...commonErrors({ validated: true, session: true }),
     StaffOnlyErrorBody,
     ActionNotAllowedErrorBody,
+    PaymentNotFoundErrorBody,
   )
   async detail(@Param('id', paymentIdPipe) paymentId: string): Promise<AdminPaymentDetailResponse> {
     try {
@@ -133,6 +148,11 @@ export class AdminPaymentsController {
     ...commonErrors({ validated: true, session: true, write: true }),
     StaffOnlyErrorBody,
     ActionNotAllowedErrorBody,
+    PaymentNotFoundErrorBody,
+    PaymentDisputedErrorBody,
+    RefundAlreadyRequestedErrorBody,
+    PaymentNotPaidErrorBody,
+    RefundNotLastExtensionErrorBody,
   )
   async refundPayment(
     @CurrentStaff() staff: StaffMember,
@@ -140,13 +160,13 @@ export class AdminPaymentsController {
     @Body() body: AdminRefundBody,
   ): Promise<AdminRefundResponse> {
     try {
-      const { refundsPaymentIds } = await this.refund.execute({
+      const { refundsPaymentIds, pastGatewayWindow } = await this.refund.execute({
         paymentId,
         adminUserId: staff.userId,
         reason: body.reason || null,
         now: new Date(),
       });
-      return { status: 'refund_requested', refundsPaymentIds };
+      return { status: 'refund_requested', refundsPaymentIds, pastGatewayWindow };
     } catch (error) {
       throw toHttpError(error);
     }
@@ -161,6 +181,8 @@ export class AdminPaymentsController {
     ...commonErrors({ validated: true, session: true, write: true }),
     StaffOnlyErrorBody,
     ActionNotAllowedErrorBody,
+    PaymentNotFoundErrorBody,
+    PaymentNotMismatchedErrorBody,
   )
   async apply(
     @CurrentStaff() staff: StaffMember,
@@ -181,14 +203,16 @@ export class AdminPaymentsController {
   }
 
   /** Tentar o estorno de novo (RN11, o estorno que falhou). */
-  @Post(':id/refund-retry')
+  @Post(':id/refund/retry')
   @OwnTransactions()
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.ACCEPTED)
   @ApiOkResponse({ type: AdminPaymentActionResponse })
   @ApiErrorResponses(
     ...commonErrors({ validated: true, session: true, write: true }),
     StaffOnlyErrorBody,
     ActionNotAllowedErrorBody,
+    PaymentNotFoundErrorBody,
+    RefundNotFailedErrorBody,
   )
   async retryRefund(
     @CurrentStaff() staff: StaffMember,
@@ -209,7 +233,7 @@ export class AdminPaymentsController {
   }
 
   /** Registrar reembolso feito por fora (RN11): motivo e comprovante. */
-  @Post(':id/manual-refund')
+  @Post(':id/refund/manual')
   @OwnTransactions()
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: AdminPaymentActionResponse })
@@ -217,6 +241,9 @@ export class AdminPaymentsController {
     ...commonErrors({ validated: true, session: true, write: true }),
     StaffOnlyErrorBody,
     ActionNotAllowedErrorBody,
+    PaymentNotFoundErrorBody,
+    RefundNotRequestedErrorBody,
+    RefundReceiptMissingErrorBody,
   )
   async manualRefund(
     @CurrentStaff() staff: StaffMember,
@@ -228,10 +255,72 @@ export class AdminPaymentsController {
         paymentId,
         adminUserId: staff.userId,
         reason: body.reason,
-        receipt: body.receipt,
+        receiptKey: body.receipt,
         now: new Date(),
       });
       return { status: 'refunded' };
+    } catch (error) {
+      throw toHttpError(error);
+    }
+  }
+
+  /** O envio do comprovante do reembolso feito por fora (decisão 259(1)): a URL de PUT. */
+  @Post(':id/refund/receipt-upload')
+  @OwnTransactions()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOkResponse({ type: RefundReceiptUploadResponse })
+  @ApiErrorResponses(
+    ...commonErrors({ validated: true, session: true, write: true }),
+    StaffOnlyErrorBody,
+    ActionNotAllowedErrorBody,
+    PaymentNotFoundErrorBody,
+    RefundNotRequestedErrorBody,
+  )
+  async authorizeReceiptUpload(
+    @Param('id', paymentIdPipe) paymentId: string,
+    @Body() body: RefundReceiptUploadBody,
+  ): Promise<RefundReceiptUploadResponse> {
+    try {
+      const { receiptKey, upload } = await this.actions.authorizeReceiptUpload({
+        paymentId,
+        contentType: body.contentType,
+        sizeBytes: body.sizeBytes,
+        now: new Date(),
+      });
+      return {
+        receiptKey,
+        url: upload.url,
+        headers: upload.headers,
+        expiresAt: upload.expiresAt.toISOString(),
+      };
+    } catch (error) {
+      throw toHttpError(error);
+    }
+  }
+
+  /** O comprovante, só para o Admin (decisão 259(1)): lido pela API, nunca público. */
+  @Get(':id/refund/receipt')
+  @OwnTransactions()
+  @Header('Cache-Control', 'no-store')
+  @ApiProduces('application/pdf', 'image/jpeg', 'image/png')
+  @ApiOkResponse({ description: 'O arquivo do comprovante.' })
+  @ApiErrorResponses(
+    ...commonErrors({ validated: true, session: true }),
+    StaffOnlyErrorBody,
+    ActionNotAllowedErrorBody,
+    PaymentNotFoundErrorBody,
+    RefundReceiptNotFoundErrorBody,
+  )
+  async receipt(
+    @Param('id', paymentIdPipe) paymentId: string,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<StreamableFile> {
+    try {
+      const file = await this.actions.readReceipt({ paymentId });
+      response.setHeader('Content-Type', file.contentType);
+      response.setHeader('Content-Disposition', 'attachment; filename="comprovante"');
+      response.setHeader('X-Content-Type-Options', 'nosniff');
+      return new StreamableFile(file.body);
     } catch (error) {
       throw toHttpError(error);
     }
