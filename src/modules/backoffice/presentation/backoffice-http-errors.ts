@@ -1,5 +1,21 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
 import {
+  ConflictException,
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
+import {
+  AccessChangeRateLimitedError,
+  AccessEmailLockedError,
+  AdminOnlyError,
+  ChecksFailedError,
+  ChecksRequiredError,
+  EmailInUseError,
+  NotAnOwnerError,
+  NotLockedError,
+  UnlockTooSoonError,
   GuestNotFoundForErasureError,
   AlreadyPaidError,
   ReassignPaymentPendingError,
@@ -74,6 +90,63 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 404,
       error: 'GUEST_NOT_FOUND',
       message: 'Guest not found.',
+    });
+  if (error instanceof ChecksRequiredError)
+    return new UnprocessableEntityException({
+      statusCode: 422,
+      error: 'CHECKS_REQUIRED',
+      message: 'Confirm the three checks with the couple.',
+    });
+  if (error instanceof ChecksFailedError)
+    return new UnprocessableEntityException({
+      statusCode: 422,
+      error: 'CHECKS_FAILED',
+      message: 'The checks did not match.',
+    });
+  if (error instanceof EmailInUseError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'EMAIL_IN_USE',
+      message: 'This e-mail belongs to another Kore account.',
+    });
+  if (error instanceof AccessChangeRateLimitedError)
+    return new HttpException(
+      {
+        statusCode: 429,
+        error: 'RATE_LIMITED',
+        message: 'Daily limit of access e-mail changes reached. Ask the Admin.',
+        retryAt: error.retryAt.toISOString(),
+      },
+      HttpStatus.TOO_MANY_REQUESTS,
+    );
+  if (error instanceof AccessEmailLockedError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'ACCESS_EMAIL_LOCKED',
+      message: 'Too many failed checks for this wedding. Ask the Admin.',
+      availableAt: error.availableAt.toISOString(),
+    });
+  if (error instanceof AdminOnlyError || error instanceof NotAnOwnerError)
+    return new ForbiddenException({
+      statusCode: 403,
+      error: 'ACTION_NOT_ALLOWED',
+      message:
+        error instanceof AdminOnlyError
+          ? 'Only the Admin can do this. Ask the Admin.'
+          : 'Only an owner of the wedding can have the access e-mail changed.',
+    });
+  if (error instanceof NotLockedError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'NOT_LOCKED',
+      message: 'The access e-mail change is not locked for this wedding.',
+    });
+  if (error instanceof UnlockTooSoonError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'UNLOCK_TOO_SOON',
+      message: 'The lock was already released in the last 24 hours.',
+      availableAt: error.availableAt.toISOString(),
     });
   return error;
 }

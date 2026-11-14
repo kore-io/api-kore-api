@@ -1,6 +1,7 @@
 import { ReferralModule } from '../referral/referral.module';
 import { IDENTITY_DIRECTORY } from './application/ports/identity-directory.port';
 import { PrismaIdentityDirectory } from './infrastructure/prisma-identity-directory';
+import { SendAccessEmailChanged } from './application/send-access-email-changed.use-case';
 import { Module } from '@nestjs/common';
 import { AppConfigService } from '../../shared/config/app-config.service';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
@@ -122,6 +123,7 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
   providers: [
     { provide: SESSION_REPOSITORY, useClass: PrismaSessionRepository },
     { provide: IDENTITY_DIRECTORY, useClass: PrismaIdentityDirectory },
+    SendAccessEmailChanged,
     { provide: USER_REPOSITORY, useClass: PrismaUserRepository },
     { provide: SESSION_TOKENS, useClass: OpaqueSessionTokens },
     { provide: APP_GUARD, useClass: SessionGuard },
@@ -211,6 +213,7 @@ import { TenantTransactionInterceptor } from './presentation/tenant-transaction.
     DeclineAccessInvitation,
   ],
   exports: [
+    SendAccessEmailChanged,
     StartSession,
     WeddingAuthorization,
     WeddingScope,

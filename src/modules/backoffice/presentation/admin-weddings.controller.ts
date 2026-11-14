@@ -27,8 +27,16 @@ import { OwnTransactions } from '../../access/presentation/own-transactions.deco
 import { AdminWeddings } from '../application/admin-weddings.use-cases';
 import { ReassignReferrer } from '../application/reassign-referrer.use-case';
 import { EraseGuestOnRequest } from '../application/erase-guest.use-case';
+import { ChangeAccessEmail } from '../application/change-access-email.use-cases';
 import type { StaffMember } from '../domain/staff';
 import {
+  AccessChangeRateLimitedErrorBody,
+  AccessEmailLockedErrorBody,
+  ChecksFailedErrorBody,
+  ChecksRequiredErrorBody,
+  EmailInUseErrorBody,
+  NotLockedErrorBody,
+  UnlockTooSoonErrorBody,
   GuestNotFoundErrorBody,
   AlreadyPaidErrorBody,
   ReassignPaymentPendingErrorBody,
@@ -48,6 +56,9 @@ import {
   AdminWeddingsResponse,
   ReassignReferrerBody,
   EraseGuestBody,
+  AccessEmailChangedResponse,
+  AccessEmailUnlockedResponse,
+  ChangeAccessEmailBody,
   GuestErasedResponse,
   ReassignReferrerResponse,
 } from './admin-weddings.dto';
@@ -71,6 +82,7 @@ export class AdminWeddingsController {
     private readonly weddings: AdminWeddings,
     private readonly reassignReferrer: ReassignReferrer,
     private readonly eraseGuest: EraseGuestOnRequest,
+    private readonly accessEmail: ChangeAccessEmail,
   ) {}
 
   @Get()
@@ -244,6 +256,79 @@ export class AdminWeddingsController {
         now: new Date(),
       });
       return { status: 'erased' };
+    } catch (error) {
+      throw toHttpError(error);
+    }
+  }
+
+  /** Ajudar a recuperar o acesso (RN09; decisão 253): Admin e suporte. */
+  @Put(':id/access-email')
+  @OwnTransactions()
+  @ApiOkResponse({ type: AccessEmailChangedResponse })
+  @ApiErrorResponses(
+    ...commonErrors({ validated: true, session: true, write: true }),
+    StaffOnlyErrorBody,
+    ActionNotAllowedErrorBody,
+    WeddingNotFoundErrorBody,
+    ChecksRequiredErrorBody,
+    ChecksFailedErrorBody,
+    EmailInUseErrorBody,
+    AccessEmailLockedErrorBody,
+    AccessChangeRateLimitedErrorBody,
+  )
+  async changeAccessEmail(
+    @CurrentStaff() staff: StaffMember,
+    @Param('id', weddingIdPipe) weddingId: string,
+    @Body() body: ChangeAccessEmailBody,
+    @Req() request: Request,
+  ): Promise<AccessEmailChangedResponse> {
+    try {
+      await this.accessEmail.execute({
+        staff,
+        weddingId,
+        userId: body.userId,
+        newEmail: body.newEmail,
+        checks: body.checks,
+        payerLast4: body.payerLast4 ?? null,
+        reason: body.reason,
+        ip: request.ip ?? null,
+        now: new Date(),
+      });
+      return { status: 'changed' };
+    } catch (error) {
+      throw toHttpError(error);
+    }
+  }
+
+  /** Liberar a trava da troca do e-mail de acesso (decisão 253(1)): só o Admin. */
+  @Post(':id/access-email/unlock')
+  @OwnTransactions()
+  @StaffRoles('admin')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ type: AccessEmailUnlockedResponse })
+  @ApiErrorResponses(
+    ...commonErrors({ validated: true, session: true, write: true }),
+    StaffOnlyErrorBody,
+    ActionNotAllowedErrorBody,
+    WeddingNotFoundErrorBody,
+    NotLockedErrorBody,
+    UnlockTooSoonErrorBody,
+  )
+  async unlockAccessEmail(
+    @CurrentStaff() staff: StaffMember,
+    @Param('id', weddingIdPipe) weddingId: string,
+    @Body() body: AdminReasonBody,
+    @Req() request: Request,
+  ): Promise<AccessEmailUnlockedResponse> {
+    try {
+      await this.accessEmail.unlock({
+        staff,
+        weddingId,
+        reason: body.reason,
+        ip: request.ip ?? null,
+        now: new Date(),
+      });
+      return { status: 'unlocked' };
     } catch (error) {
       throw toHttpError(error);
     }

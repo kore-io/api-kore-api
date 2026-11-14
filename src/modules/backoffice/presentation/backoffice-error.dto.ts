@@ -72,3 +72,56 @@ export class SelfReferralErrorBody {
   @ApiProperty({ enum: ['SELF_REFERRAL'] }) error: 'SELF_REFERRAL';
   @ApiProperty() message: string;
 }
+export class ChecksRequiredErrorBody {
+  static readonly status = 422;
+  @ApiProperty({ enum: [422] }) statusCode: 422;
+  @ApiProperty({ enum: ['CHECKS_REQUIRED'] }) error: 'CHECKS_REQUIRED';
+  @ApiProperty() message: string;
+}
+
+export class ChecksFailedErrorBody {
+  static readonly status = 422;
+  @ApiProperty({ enum: [422] }) statusCode: 422;
+  @ApiProperty({ enum: ['CHECKS_FAILED'] }) error: 'CHECKS_FAILED';
+  @ApiProperty() message: string;
+}
+
+export class EmailInUseErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['EMAIL_IN_USE'] }) error: 'EMAIL_IN_USE';
+  @ApiProperty() message: string;
+}
+
+/** O limite do atendente no dia (decisão 253(1)): "Você chegou ao limite de trocas de hoje. Peça ao Admin." */
+export class AccessChangeRateLimitedErrorBody {
+  static readonly status = 429;
+  @ApiProperty({ enum: [429] }) statusCode: 429;
+  @ApiProperty({ enum: ['RATE_LIMITED'] }) error: 'RATE_LIMITED';
+  @ApiProperty() message: string;
+  /** O começo do próximo dia de Brasília. */
+  @ApiProperty({ format: 'date-time' }) retryAt: string;
+}
+
+export class AccessEmailLockedErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['ACCESS_EMAIL_LOCKED'] }) error: 'ACCESS_EMAIL_LOCKED';
+  @ApiProperty() message: string;
+  @ApiProperty({ format: 'date-time' }) availableAt: string;
+}
+
+export class NotLockedErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['NOT_LOCKED'] }) error: 'NOT_LOCKED';
+  @ApiProperty() message: string;
+}
+
+export class UnlockTooSoonErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['UNLOCK_TOO_SOON'] }) error: 'UNLOCK_TOO_SOON';
+  @ApiProperty() message: string;
+  @ApiProperty({ format: 'date-time' }) availableAt: string;
+}

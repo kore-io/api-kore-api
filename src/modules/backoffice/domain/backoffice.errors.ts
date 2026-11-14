@@ -50,3 +50,57 @@ export class AlertNotFoundError extends Error {
 export class AlertAlreadyResolvedError extends Error {
   override name = 'AlertAlreadyResolvedError';
 }
+
+/** As confirmações obrigatórias faltam (422 CHECKS_REQUIRED; RN09). */
+export class ChecksRequiredError extends Error {
+  override name = 'ChecksRequiredError';
+}
+
+/** Os 4 dígitos não são de quem pagou (422 CHECKS_FAILED; RN09). */
+export class ChecksFailedError extends Error {
+  override name = 'ChecksFailedError';
+}
+
+/** O novo e-mail já é de outra conta (409 EMAIL_IN_USE; RN09). */
+export class EmailInUseError extends Error {
+  override name = 'EmailInUseError';
+}
+
+/** O limite de trocas do atendente no dia (429 RATE_LIMITED; decisão 253(1)). */
+export class AccessChangeRateLimitedError extends Error {
+  override name = 'AccessChangeRateLimitedError';
+  constructor(readonly retryAt: Date) {
+    super();
+  }
+}
+
+/** A troca está travada no casamento (409 ACCESS_EMAIL_LOCKED; decisão 253(1)). */
+export class AccessEmailLockedError extends Error {
+  override name = 'AccessEmailLockedError';
+  constructor(readonly availableAt: Date) {
+    super();
+  }
+}
+
+/** Só o Admin faz isto (403 ACTION_NOT_ALLOWED, "Peça ao Admin."; decisão 253(1)). */
+export class AdminOnlyError extends Error {
+  override name = 'AdminOnlyError';
+}
+
+/** Não é dono do casamento, ou é do staff (403 ACTION_NOT_ALLOWED; RN09). */
+export class NotAnOwnerError extends Error {
+  override name = 'NotAnOwnerError';
+}
+
+/** Não há trava para liberar (409 NOT_LOCKED). */
+export class NotLockedError extends Error {
+  override name = 'NotLockedError';
+}
+
+/** A trava já foi liberada nas últimas 24 h (409 UNLOCK_TOO_SOON; decisão 253(1)). */
+export class UnlockTooSoonError extends Error {
+  override name = 'UnlockTooSoonError';
+  constructor(readonly availableAt: Date) {
+    super();
+  }
+}

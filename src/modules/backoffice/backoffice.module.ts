@@ -6,6 +6,10 @@ import { AdminWeddings } from './application/admin-weddings.use-cases';
 import { REFERRER_REASSIGNMENT } from './application/ports/referrer-reassignment.port';
 import { ReassignReferrer } from './application/reassign-referrer.use-case';
 import { EraseGuestOnRequest } from './application/erase-guest.use-case';
+import { ChangeAccessEmail } from './application/change-access-email.use-cases';
+import { ACCESS_EMAIL_CHANGES } from './application/ports/access-email-changes.port';
+import { PrismaAccessEmailChanges } from './infrastructure/backoffice/prisma-access-email-changes';
+import { AccessModule } from '../access/access.module';
 import { GUEST_ERASURE } from './application/ports/guest-erasure.port';
 import { PrismaGuestErasure } from './infrastructure/backoffice/prisma-guest-erasure';
 import { PrismaReferrerReassignment } from './infrastructure/backoffice/prisma-referrer-reassignment';
@@ -26,7 +30,7 @@ import { StaffGuard } from './presentation/staff.guard';
  * conexão do backoffice (decisão 180(5)), atrás do StaffGuard.
  */
 @Module({
-  imports: [BillingModule],
+  imports: [BillingModule, AccessModule],
   controllers: [AdminWeddingsController, AdminInsightsController],
   providers: [
     { provide: STAFF_DIRECTORY, useClass: PrismaStaffDirectory },
@@ -39,6 +43,8 @@ import { StaffGuard } from './presentation/staff.guard';
     ReassignReferrer,
     { provide: GUEST_ERASURE, useClass: PrismaGuestErasure },
     EraseGuestOnRequest,
+    { provide: ACCESS_EMAIL_CHANGES, useClass: PrismaAccessEmailChanges },
+    ChangeAccessEmail,
     { provide: ADMIN_INSIGHTS_READER, useClass: PrismaAdminInsightsReader },
     { provide: SEARCH_TERM_HASHER, useClass: HmacSearchTermHasher },
     AdminInsights,

@@ -12,6 +12,9 @@ import {
   MinLength,
   MaxLength,
   ValidateIf,
+  IsBoolean,
+  IsEmail,
+  ValidateNested,
 } from 'class-validator';
 import { DATE_ONLY } from '../../access/presentation/weddings.dto';
 import {
@@ -353,4 +356,41 @@ export class EraseGuestBody {
 
 export class GuestErasedResponse {
   @ApiProperty({ enum: ['erased'] }) status: 'erased';
+}
+
+class AccessEmailChecksBody {
+  /** A data e a cidade do casamento conferidas com o casal. */
+  @ApiProperty() @IsBoolean() eventDateAndCity: boolean;
+  /** O nome da outra pessoa do casal. */
+  @ApiProperty() @IsBoolean() partnerName: boolean;
+}
+
+/** Trocar o e-mail de acesso (RN09): as confirmações, os 4 dígitos que o casal informou e o motivo. */
+export class ChangeAccessEmailBody extends AdminReasonBody {
+  @ApiProperty({ format: 'uuid' }) @IsUUID() userId: string;
+
+  @ApiProperty({ example: 'ana.nova@gmail.com' })
+  @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value))
+  @IsEmail()
+  @MaxLength(254)
+  newEmail: string;
+
+  @ApiProperty({ type: AccessEmailChecksBody })
+  @ValidateNested()
+  @Type(() => AccessEmailChecksBody)
+  checks: AccessEmailChecksBody;
+
+  /** Sem pagamento, não há CPF para conferir: vai sem o campo. */
+  @ApiProperty({ required: false, example: '4725' })
+  @IsOptional()
+  @Matches(/^\d{4}$/)
+  payerLast4?: string;
+}
+
+export class AccessEmailChangedResponse {
+  @ApiProperty({ enum: ['changed'] }) status: 'changed';
+}
+
+export class AccessEmailUnlockedResponse {
+  @ApiProperty({ enum: ['unlocked'] }) status: 'unlocked';
 }
