@@ -82,6 +82,8 @@ export interface MyWeddingDetail extends MyWeddingItem {
   stats: { guestsTotal: number; confirmed: number; declined: number; pending: number };
   hasOwner: boolean;
   canEditIdentity: boolean;
+  /** O vínculo ativo de quem lê, para o "Sair do casamento" (decisão 261(1)). */
+  myMembershipId: string;
   /** Só quando ela criou o casamento (revisão C2-8): o convite do parceiro não é dela. */
   coupleInvitations: CoupleInvitationView[];
 }
@@ -220,6 +222,7 @@ export class GetMyWedding {
         pending: detail.stats.pending,
       },
       hasOwner: detail.hasOwner,
+      myMembershipId: detail.myMembershipId,
       canEditIdentity: await this.authorization.canManageSiteIdentity({ userId, weddingId }),
       coupleInvitations,
     };

@@ -20,6 +20,7 @@ const link = {
 };
 const detail = (extra: Partial<CollaborationDetail> = {}): CollaborationDetail => ({
   weddingId: 'w1',
+  myMembershipId: 'm1',
   partnerNames: ['Fernanda', 'João'],
   eventDate: null,
   city: 'Valinhos',

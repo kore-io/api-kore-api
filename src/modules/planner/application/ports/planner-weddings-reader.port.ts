@@ -12,6 +12,8 @@ export interface PendingCoupleInvitation {
 }
 
 export interface CollaborationDetail extends CollaborationRow {
+  /** O vínculo ativo de quem lê (decisão 261(1)). */
+  myMembershipId: string;
   slug: string | null;
   hasOwner: boolean;
   pendingCoupleInvitations: PendingCoupleInvitation[];

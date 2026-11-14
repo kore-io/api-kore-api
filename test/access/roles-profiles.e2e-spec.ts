@@ -190,9 +190,16 @@ describe('Papéis e perfis: /me, perfil ativo e colaboradores (banco real; decis
 
       const response = await members(ana.cookie, client.weddingId).expect(200);
 
+      // decisão 261(2): isMe marca o vínculo de quem lê.
       expect(response.body.members).toEqual([
-        { id: expect.any(String), name: 'Ana Beatriz Moreira', role: 'owner' },
-        { id: expect.any(String), name: 'Juliana Prado', role: 'collaborator', kind: 'planner' },
+        { id: expect.any(String), name: 'Ana Beatriz Moreira', role: 'owner', isMe: true },
+        {
+          id: expect.any(String),
+          name: 'Juliana Prado',
+          role: 'collaborator',
+          kind: 'planner',
+          isMe: false,
+        },
       ]);
       const pending = response.body.pendingInvitations as { id: string }[];
       expect(pending.map(({ id }) => id)).toEqual([expired.invitationId, link.invitationId]);
@@ -202,7 +209,16 @@ describe('Papéis e perfis: /me, perfil ativo e colaboradores (banco real; decis
       const { cookie, client } = await julianaWithTwoProfiles();
       const stranger = await signedInUser({ app });
 
-      await members(cookie, client.weddingId).expect(200);
+      const seen = await members(cookie, client.weddingId).expect(200);
+      expect(
+        (seen.body.members as { name: string; isMe: boolean }[]).map(({ name, isMe }) => [
+          name,
+          isMe,
+        ]),
+      ).toEqual([
+        ['Ana Beatriz Moreira', false],
+        ['Juliana Prado', true],
+      ]);
       expect((await members(stranger.cookie, client.weddingId).expect(404)).body.error).toBe(
         'WEDDING_NOT_FOUND',
       );

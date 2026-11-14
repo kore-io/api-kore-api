@@ -47,9 +47,10 @@ export class WeddingMembersController {
     @Param('weddingId') weddingId: string,
   ): Promise<WeddingMembersResponse> {
     try {
-      return WeddingMembersResponse.from(
-        await this.listMembers.execute({ userId: session.userId, weddingId }),
-      );
+      return WeddingMembersResponse.from({
+        ...(await this.listMembers.execute({ userId: session.userId, weddingId })),
+        viewerUserId: session.userId,
+      });
     } catch (error) {
       throw toHttpError(error);
     }
