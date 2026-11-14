@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { localDate } from '../../../shared/time/local-date';
-import { retentionStep } from '../domain/retention';
+import { promisedPurgeDay, retentionStep } from '../domain/retention';
 import { BILLING_MAILER, type BillingMailer } from './ports/billing-mailer.port';
 import {
   type RetentionCandidate,
@@ -68,12 +68,20 @@ export class PurgeRetainedWeddings {
       const purged = await this.store.purge({
         weddingId: wedding.weddingId,
         reason: step.reason,
+        seenDeletionScheduledFor: wedding.deletionScheduledFor,
         now,
       });
       return purged ? 'purged' : null;
     }
     const purgeAt = wedding.purgeAt as string;
-    const target = await this.store.markNotice({ weddingId: wedding.weddingId, purgeAt, now });
+    // O aviso atrasado promete o dia real: o expurgo espera os 30 dias do aviso.
+    const promisedDay = promisedPurgeDay({ purgeAt, today });
+    const target = await this.store.markNotice({
+      weddingId: wedding.weddingId,
+      purgeAt,
+      promisedDay,
+      now,
+    });
     if (!target) return null;
     try {
       for (const recipient of target.recipients)
@@ -83,14 +91,14 @@ export class PurgeRetainedWeddings {
             firstName: recipient.firstName,
             weddingId: wedding.weddingId,
             noticeSentAt: now,
-            purgeAt,
+            purgeAt: promisedDay,
             expiredAt: wedding.expiredAt ?? purgeAt,
             partnerNames: target.partnerNames,
           },
         });
     } catch (error) {
       // Sem o e-mail, o aviso não conta (RN02): a marca sai e a rodada de amanhã avisa.
-      await this.store.clearNotice({ weddingId: wedding.weddingId, noticeSentAt: now });
+      await this.store.clearNotice({ weddingId: wedding.weddingId, noticeSentAt: now, now });
       logger.warn(`Aviso de expurgo de ${wedding.weddingId} não saiu: ${(error as Error).name}`);
       return null;
     }

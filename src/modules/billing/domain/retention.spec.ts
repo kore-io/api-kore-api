@@ -1,4 +1,4 @@
-import { retentionStep } from './retention';
+import { promisedPurgeDay, retentionStep } from './retention';
 
 const noon = (day: string) => new Date(`${day}T15:00:00Z`);
 const expired = {
@@ -67,5 +67,10 @@ describe('retentionStep (Retenção e expurgo RN02, RN03 e RN05)', () => {
     expect(
       retentionStep({ ...scheduled, today: '2027-07-23', now: noon('2027-07-23') }),
     ).toBeNull();
+  });
+
+  it('RN02 - o aviso promete o purgeAt; atrasado, 30 dias depois do aviso', () => {
+    expect(promisedPurgeDay({ purgeAt: '2027-08-22', today: '2027-07-23' })).toBe('2027-08-22');
+    expect(promisedPurgeDay({ purgeAt: '2027-08-22', today: '2027-08-23' })).toBe('2027-09-22');
   });
 });

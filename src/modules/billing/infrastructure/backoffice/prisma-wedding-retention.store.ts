@@ -84,10 +84,12 @@ export class PrismaWeddingRetentionStore implements WeddingRetentionStore {
   markNotice({
     weddingId,
     purgeAt,
+    promisedDay,
     now,
   }: {
     weddingId: string;
     purgeAt: string;
+    promisedDay: string;
     now: Date;
   }): Promise<RetentionNoticeTarget | null> {
     return this.prisma.$transaction(async (tx) => {
@@ -111,7 +113,7 @@ export class PrismaWeddingRetentionStore implements WeddingRetentionStore {
           weddingId,
           entityType: 'wedding',
           entityId: weddingId,
-          data: { reason: 'retention', purgeAt },
+          data: { reason: 'retention', purgeAt, promisedDay },
         },
       });
       const owners = await tx.membership.findMany({
@@ -141,9 +143,9 @@ export class PrismaWeddingRetentionStore implements WeddingRetentionStore {
             userId,
             weddingId,
             type: 'billing' as const,
-            groupKey: `billing:purge_soon:${purgeAt}`,
+            groupKey: `billing:purge_soon:${promisedDay}`,
             payload: [
-              { kind: 'purge_soon', purgeAt, at: now.toISOString() },
+              { kind: 'purge_soon', purgeAt: promisedDay, at: now.toISOString() },
             ] as Prisma.InputJsonValue,
             createdAt: now,
             updatedAt: now,
@@ -164,9 +166,11 @@ export class PrismaWeddingRetentionStore implements WeddingRetentionStore {
   clearNotice({
     weddingId,
     noticeSentAt,
+    now,
   }: {
     weddingId: string;
     noticeSentAt: Date;
+    now: Date;
   }): Promise<boolean> {
     return this.prisma.$transaction(async (tx) => {
       const { count } = await tx.wedding.updateMany({
@@ -176,6 +180,7 @@ export class PrismaWeddingRetentionStore implements WeddingRetentionStore {
       if (count !== 1) return false;
       await tx.applicationLog.create({
         data: {
+          createdAt: now,
           action: PURGE_NOTICE_FAILED_ACTION,
           actorKind: 'system',
           weddingId,
@@ -191,10 +196,12 @@ export class PrismaWeddingRetentionStore implements WeddingRetentionStore {
   purge({
     weddingId,
     reason,
+    seenDeletionScheduledFor,
     now,
   }: {
     weddingId: string;
     reason: PurgeReason;
+    seenDeletionScheduledFor: string | null;
     now: Date;
   }): Promise<boolean> {
     return this.prisma.$transaction(
@@ -204,20 +211,25 @@ export class PrismaWeddingRetentionStore implements WeddingRetentionStore {
           {
             status: string;
             blocked: boolean;
-            deletion: boolean;
+            deletion: string | null;
             noticeSentAt: Date | null;
             requestedBy: string | null;
           }[]
         >`
           SELECT status::text AS status, blocked_at IS NOT NULL AS blocked,
-                 deletion_scheduled_for IS NOT NULL AS deletion,
+                 to_char(deletion_scheduled_for, 'YYYY-MM-DD') AS deletion,
                  purge_notice_sent_at AS "noticeSentAt",
                  deletion_requested_by_user_id::text AS "requestedBy"
           FROM weddings WHERE id = ${weddingId}::uuid FOR UPDATE`;
         if (!wedding || wedding.status === 'purged' || wedding.blocked) return false;
         // Confere de novo o que a rotina leu: cancelou a exclusão, renovou ou
         // o aviso foi desfeito no meio do caminho, e o expurgo não acontece.
-        if (reason === 'owner_request' && !wedding.deletion) return false;
+        // Cancelou e pediu de novo no meio da rodada: a data nova ainda não venceu.
+        if (
+          reason === 'owner_request' &&
+          (!wedding.deletion || wedding.deletion !== seenDeletionScheduledFor)
+        )
+          return false;
         if (
           reason === 'retention' &&
           (wedding.deletion || wedding.status !== 'expired' || !wedding.noticeSentAt)

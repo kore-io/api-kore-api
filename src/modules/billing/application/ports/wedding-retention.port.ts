@@ -37,11 +37,14 @@ export interface WeddingRetentionStore {
    */
   markNotice(input: {
     weddingId: string;
+    /** O purgeAt que a rotina leu (conferido de novo na gravação). */
     purgeAt: string;
+    /** O dia prometido no aviso (o item da central e o groupKey). */
+    promisedDay: string;
     now: Date;
   }): Promise<RetentionNoticeTarget | null>;
   /** O e-mail não saiu: desfaz a marca daquele aviso, para a rotina tentar de novo (decisão 180(8)). */
-  clearNotice(input: { weddingId: string; noticeSentAt: Date }): Promise<boolean>;
+  clearNotice(input: { weddingId: string; noticeSentAt: Date; now: Date }): Promise<boolean>;
   /**
    * Apaga os dados e deixa a lápide (a tabela da RN03), anonimiza o
    * `refundReason` e o `payload` dos eventos do gateway, apaga os arquivos das
@@ -49,7 +52,13 @@ export interface WeddingRetentionStore {
    * casamento travado. Na exclusão pedida pelo casal, a cerimonialista
    * colaboradora recebe o `membership_removed`. false se o estado mudou.
    */
-  purge(input: { weddingId: string; reason: PurgeReason; now: Date }): Promise<boolean>;
+  purge(input: {
+    weddingId: string;
+    reason: PurgeReason;
+    /** Na exclusão pedida: a data que a rotina leu, conferida sob a trava. */
+    seenDeletionScheduledFor: string | null;
+    now: Date;
+  }): Promise<boolean>;
   /** O `Alert purge_failed` do casamento que a rodada pulou (RN04). */
   openPurgeFailedAlert(input: { weddingId: string; error: string }): Promise<void>;
 }

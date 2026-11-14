@@ -34,7 +34,12 @@ describe('PurgeRetainedWeddings (Retenção e expurgo RN02 a RN04)', () => {
       weddingId: 'a',
       error: 'RangeError',
     });
-    expect(store.purge).toHaveBeenCalledWith({ weddingId: 'b', reason: 'retention', now });
+    expect(store.purge).toHaveBeenCalledWith({
+      weddingId: 'b',
+      reason: 'retention',
+      seenDeletionScheduledFor: null,
+      now,
+    });
   });
 
   it('RN02 - o e-mail do aviso não entra na fila: a marca é desfeita e o aviso não conta', async () => {
@@ -46,8 +51,16 @@ describe('PurgeRetainedWeddings (Retenção e expurgo RN02 a RN04)', () => {
       partnerNames: ['Ana', 'Marcos'],
     });
     mailer.purgeSoon.mockRejectedValue(new Error('fila fora'));
+    // O aviso atrasado (23/08, purgeAt 22/08) promete 30 dias depois do aviso.
+    store.markNotice.mockImplementation((input) => {
+      expect(input).toMatchObject({ purgeAt: '2027-08-22', promisedDay: '2027-09-22' });
+      return Promise.resolve({
+        recipients: [{ userId: 'u', email: 'ana@example.com', firstName: 'Ana' }],
+        partnerNames: ['Ana', 'Marcos'] as [string, string],
+      });
+    });
     expect(await useCase.execute({ now })).toEqual({ notices: 0, purged: 0, failed: 0 });
-    expect(store.clearNotice).toHaveBeenCalledWith({ weddingId: 'a', noticeSentAt: now });
+    expect(store.clearNotice).toHaveBeenCalledWith({ weddingId: 'a', noticeSentAt: now, now });
     expect(store.openPurgeFailedAlert).not.toHaveBeenCalled();
   });
 });

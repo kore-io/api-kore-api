@@ -28,6 +28,10 @@ export class PurgeSoonGiveUpHandler implements OnModuleInit {
   async onGaveUp({ tag }: { tag: EmailTag }): Promise<void> {
     const { weddingId, noticeSentAt } = tag.data;
     if (!weddingId || !noticeSentAt) return;
-    await this.store.clearNotice({ weddingId, noticeSentAt: new Date(noticeSentAt) });
+    await this.store.clearNotice({
+      weddingId,
+      noticeSentAt: new Date(noticeSentAt),
+      now: new Date(),
+    });
   }
 }

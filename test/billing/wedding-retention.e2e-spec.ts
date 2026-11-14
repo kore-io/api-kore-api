@@ -4,6 +4,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { PurgeRetainedWeddings } from '../../src/modules/billing/application/purge-retained-weddings.use-case';
 import { LocalGatewayStore } from '../../src/modules/billing/infrastructure/backoffice/local-gateway/local-gateway.store';
 import { BackofficePrismaService } from '../../src/shared/database/backoffice-prisma.service';
+import { EmailDeliveryFailures } from '../../src/shared/email/application/email-delivery-failures';
 import { createTestApp } from '../support/create-test-app';
 import { createTestWorker } from '../support/create-test-worker';
 import { waitForInbox } from '../support/mailpit';
@@ -170,10 +171,51 @@ describe('Retenção e expurgo do casamento (RN02, RN03 e RN05; banco real)', ()
     expect(log.data).toMatchObject({ reason: 'retention' });
   });
 
-  it('RN02 - sem o aviso, sem expurgo: a rodada depois do purgeAt só avisa', async () => {
-    const { weddingId } = await expiredWedding();
+  it('RN02 - sem o aviso, sem expurgo: a rodada depois do purgeAt avisa com o dia real, 30 dias depois', async () => {
+    const { ana, weddingId } = await expiredWedding();
     expect(await run(weddingId, '2027-08-23')).toEqual({ notices: 1, purged: 0, failed: 0 });
     expect((await wedding(weddingId)).status).toBe('expired');
+    // O aviso atrasado promete 22/09 (o aviso + 30), não o purgeAt que já passou.
+    const items = await db.notification.findMany({ where: { weddingId, type: 'billing' } });
+    expect(items.map((item) => [item.groupKey, item.payload])).toEqual([
+      [
+        'billing:purge_soon:2027-09-22',
+        [expect.objectContaining({ kind: 'purge_soon', purgeAt: '2027-09-22' })],
+      ],
+    ]);
+    const [email] = await waitForInbox({ to: ana.email });
+    const { Text } = (await (
+      await fetch(
+        `${process.env.MAILPIT_API_URL ?? 'http://localhost:8025'}/api/v1/message/${email.ID}`,
+      )
+    ).json()) as { Text: string };
+    expect(Text).toContain('Em 22 de set., os convidados, as respostas e o site serão apagados.');
+
+    expect(await run(weddingId, '2027-09-21')).toMatchObject({ purged: 0 });
+    expect(await run(weddingId, '2027-09-22')).toMatchObject({ purged: 1 });
+  });
+
+  it('RN02 (decisão 180(8)) - o worker desiste do e-mail: a marca sai, fica no log e a rodada seguinte avisa de novo', async () => {
+    const { weddingId } = await expiredWedding();
+    await run(weddingId, '2027-07-23');
+    const noticeSentAt = noonInSaoPaulo('2027-07-23');
+    expect((await wedding(weddingId)).purgeNoticeSentAt).toEqual(noticeSentAt);
+
+    // O processador da fila avisa assim depois da última tentativa (testado no unitário dele).
+    await worker.get(EmailDeliveryFailures).gaveUp({
+      tag: {
+        kind: 'retention_purge_notice',
+        data: { weddingId, noticeSentAt: noticeSentAt.toISOString() },
+      },
+    });
+
+    expect((await wedding(weddingId)).purgeNoticeSentAt).toBeNull();
+    await db.applicationLog.findFirstOrThrow({
+      where: { action: 'wedding.purge_notice_failed', weddingId },
+    });
+    // Sem o aviso, o expurgo espera; a rodada seguinte avisa de novo.
+    expect(await run(weddingId, '2027-08-23')).toEqual({ notices: 1, purged: 0, failed: 0 });
+    expect((await wedding(weddingId)).purgeNoticeSentAt).toEqual(noonInSaoPaulo('2027-08-23'));
   });
 
   it('RN03 - o casamento bloqueado não é avisado nem apagado', async () => {

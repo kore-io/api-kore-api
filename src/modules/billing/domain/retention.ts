@@ -49,3 +49,13 @@ export function retentionStep({
   const noticeMatured = now.getTime() >= purgeNoticeSentAt.getTime() + NOTICE_MS;
   return today > purgeAt && noticeMatured ? { kind: 'purge', reason: 'retention' } : null;
 }
+
+/**
+ * O dia que o aviso promete (RN02): o `purgeAt`, ou 30 dias depois do aviso
+ * quando ele sai atrasado (rotina parada, aviso refeito depois de uma falha),
+ * porque o expurgo espera os 30 dias do aviso. O maior dos dois.
+ */
+export function promisedPurgeDay({ purgeAt, today }: { purgeAt: Day; today: Day }): Day {
+  const earliest = addDays({ day: today, days: RETENTION_NOTICE_DAYS });
+  return purgeAt > earliest ? purgeAt : earliest;
+}
