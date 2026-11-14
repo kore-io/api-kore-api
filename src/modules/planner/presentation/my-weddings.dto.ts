@@ -98,6 +98,8 @@ export class MyWeddingDetailResponse extends MyWeddingItemResponse {
   hasOwner: boolean;
   /** O vínculo ativo de quem lê (decisão 261(1)). */
   @ApiProperty({ format: 'uuid' }) myMembershipId: string;
+  /** O fuso IANA do casamento, para o "Enviado em" (decisão 263). */
+  @ApiProperty({ example: 'America/Sao_Paulo' }) timezone: string;
   /** A data, a UF e o endereço (Novo casamento RN08). */
   canEditIdentity: boolean;
   /** Só quando ela criou o casamento. */
@@ -127,6 +129,7 @@ export class MyWeddingDetailResponse extends MyWeddingItemResponse {
       stats: detail.stats,
       hasOwner: detail.hasOwner,
       myMembershipId: detail.myMembershipId,
+      timezone: detail.timezone,
       canEditIdentity: detail.canEditIdentity,
       coupleInvitations: detail.coupleInvitations.map(invitation),
     };
