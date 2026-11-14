@@ -16,6 +16,8 @@ function buildRecord(overrides: Partial<SessionRecord> = {}): SessionRecord {
     authenticatedAt: ago(6 * DAY_MS),
     authMethod: 'email',
     activeProfile: null,
+    staffDomain: null,
+    supportSessionId: null,
     revokedAt: null,
     userStatus: 'active',
     ...overrides,
@@ -53,6 +55,7 @@ describe('AuthenticateSession', () => {
         authenticatedAt: ago(6 * DAY_MS),
         authMethod: 'email',
         activeProfile: null,
+        staffDomain: null,
       });
     });
 

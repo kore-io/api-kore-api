@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConditionalModule } from '@nestjs/config';
+import { BackofficeModule } from './modules/backoffice/backoffice.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { DevPaymentsModule } from './modules/billing/dev-payments.module';
 import { devPaymentRoutesEnabled } from './modules/billing/dev-routes';
@@ -50,6 +51,7 @@ import { RedisModule } from './shared/redis/redis.module';
     PlannerModule,
     ReferralModule,
     BillingModule,
+    BackofficeModule,
     // A rota dev de pagamentos só existe em local e test (Publicar e pagar RN15).
     ConditionalModule.registerWhen(DevPaymentsModule, devPaymentRoutesEnabled),
   ],

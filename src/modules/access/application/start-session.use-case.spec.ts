@@ -27,6 +27,7 @@ describe('StartSession', () => {
       now,
       expiresAt,
       authMethod: 'email',
+      staffDomain: null,
       userAgent: 'Mozilla/5.0',
     });
   });

@@ -10,6 +10,7 @@ const session: AuthenticatedSession = {
   authenticatedAt: new Date('2026-11-10T00:00:00Z'),
   authMethod: 'email',
   activeProfile: null,
+  staffDomain: null,
 };
 
 function getMe({ plannerSignupEnabled = false }: { plannerSignupEnabled?: boolean } = {}) {

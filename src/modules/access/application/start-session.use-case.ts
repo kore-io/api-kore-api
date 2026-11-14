@@ -20,16 +20,26 @@ export class StartSession {
     userId,
     now,
     authMethod,
+    staffDomain = null,
     userAgent,
   }: {
     userId: string;
     now: Date;
     authMethod: AuthMethod;
+    staffDomain?: string | null;
     userAgent?: string;
   }): Promise<{ token: string; expiresAt: Date }> {
     const { token, tokenHash } = this.tokens.generate();
     const expiresAt = renewedExpiry({ now });
-    await this.sessions.create({ userId, tokenHash, now, expiresAt, authMethod, userAgent });
+    await this.sessions.create({
+      userId,
+      tokenHash,
+      now,
+      expiresAt,
+      authMethod,
+      staffDomain,
+      userAgent,
+    });
     return { token, expiresAt };
   }
 }

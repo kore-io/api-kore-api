@@ -39,6 +39,7 @@ export class CompleteLogin {
     email,
     method,
     providerSubject,
+    staffDomain = null,
     origin,
     ip,
     userAgent,
@@ -47,6 +48,8 @@ export class CompleteLogin {
     email: string;
     method: AuthMethod;
     providerSubject: string;
+    /** O hd verificado do Google (RN01 do Backoffice); nulo no login por código. */
+    staffDomain?: string | null;
     origin: LoginOrigin;
     ip: string | null;
     userAgent?: string;
@@ -67,6 +70,7 @@ export class CompleteLogin {
       userId: account.id,
       now,
       authMethod: method,
+      staffDomain,
       userAgent,
     });
     if (ip) {

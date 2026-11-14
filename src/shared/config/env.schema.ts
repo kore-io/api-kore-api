@@ -85,6 +85,13 @@ export const envSchema = z
     GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
     // URL do callback da API registrada no Google (…/v1/auth/google/callback).
     GOOGLE_REDIRECT_URI: z.url({ protocol: /^https?$/ }).optional(),
+    // O domínio do Google da empresa (Backoffice - acesso RN01; B9-2): o guard do
+    // /v1/admin exige a declaração hd verificada igual a ele. Obrigatória em
+    // homolog e production; sem valor em local e test, kore.com.br.
+    GOOGLE_STAFF_DOMAIN: z
+      .string()
+      .regex(/^[a-z0-9.-]+\.[a-z]{2,}$/)
+      .optional(),
     // Chave do HMAC do cookie do state e do PKCE do Google (decisão 147).
     OAUTH_STATE_KEY: base64Key32,
     // Chave do HMAC do cookie do grupo, kore_party_<weddingId> (Site público
@@ -210,6 +217,13 @@ export const envSchema = z
           });
         }
       }
+    }
+    if (!env.GOOGLE_STAFF_DOMAIN && !LOCAL_KEY_ENVS.includes(env.APP_ENV)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['GOOGLE_STAFF_DOMAIN'],
+        message: 'obrigatória com APP_ENV homolog ou production (o Backoffice, RN01)',
+      });
     }
     if (env.GOOGLE_PROVIDER === 'dev' && !LOCAL_KEY_ENVS.includes(env.APP_ENV)) {
       ctx.addIssue({

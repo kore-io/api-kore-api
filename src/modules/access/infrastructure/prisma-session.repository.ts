@@ -20,6 +20,7 @@ export class PrismaSessionRepository implements SessionRepository {
     now,
     expiresAt,
     authMethod,
+    staffDomain,
     userAgent,
   }: {
     userId: string;
@@ -27,6 +28,7 @@ export class PrismaSessionRepository implements SessionRepository {
     now: Date;
     expiresAt: Date;
     authMethod: AuthMethod;
+    staffDomain: string | null;
     userAgent?: string;
   }): Promise<{ id: string }> {
     return this.prisma.session.create({
@@ -37,6 +39,7 @@ export class PrismaSessionRepository implements SessionRepository {
         lastSeenAt: now,
         authenticatedAt: now,
         authMethod,
+        staffDomain,
         userAgent,
       },
       select: { id: true },
@@ -57,6 +60,8 @@ export class PrismaSessionRepository implements SessionRepository {
       authenticatedAt: session.authenticatedAt,
       authMethod: session.authMethod,
       activeProfile: session.activeProfile,
+      staffDomain: session.staffDomain,
+      supportSessionId: session.supportSessionId,
       revokedAt: session.revokedAt,
       userStatus: session.user.status,
     };
