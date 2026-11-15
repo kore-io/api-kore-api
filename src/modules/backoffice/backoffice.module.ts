@@ -1,3 +1,7 @@
+import { ReferrerAdminActions } from './application/referrer-admin.use-cases';
+import { REFERRER_ADMIN_STORE } from './application/ports/referrer-admin.store.port';
+import { PrismaReferrerAdminStore } from './infrastructure/backoffice/prisma-referrer-admin.store';
+import { AdminReferrersController } from './presentation/admin-referrers.controller';
 import { AdminPayments } from './application/admin-payments.use-cases';
 import { ADMIN_PAYMENTS_READER } from './application/ports/admin-payments.reader.port';
 import { PrismaAdminPaymentsReader } from './infrastructure/backoffice/prisma-admin-payments.reader';
@@ -40,6 +44,7 @@ import { StaffGuard } from './presentation/staff.guard';
   imports: [BillingModule, AccessModule],
   controllers: [
     AdminPaymentsController,
+    AdminReferrersController,
     AdminPayoutsController,
     AdminWeddingsController,
     AdminInsightsController,
@@ -54,6 +59,8 @@ import { StaffGuard } from './presentation/staff.guard';
     AdminWeddings,
     { provide: ADMIN_PAYMENTS_READER, useClass: PrismaAdminPaymentsReader },
     AdminPayments,
+    { provide: REFERRER_ADMIN_STORE, useClass: PrismaReferrerAdminStore },
+    ReferrerAdminActions,
     { provide: REFERRER_REASSIGNMENT, useClass: PrismaReferrerReassignment },
     ReassignReferrer,
     { provide: GUEST_ERASURE, useClass: PrismaGuestErasure },
