@@ -8,7 +8,7 @@ const tag = { kind: 'purge_notice', data: { weddingId: 'w1' } };
 function processorWith({ onGaveUp }: { onGaveUp: jest.Mock }) {
   const failures = new EmailDeliveryFailures();
   failures.register({ handler: { kind: 'purge_notice', onGaveUp } });
-  const sender: EmailSender = { send: jest.fn() };
+  const sender: EmailSender = { send: jest.fn(), ping: jest.fn() };
   return new DefaultEmailProcessor(sender, failures);
 }
 
@@ -25,7 +25,7 @@ const failedJob = (attemptsMade: number, withTag = true) =>
 describe('EmailDeliveryProcessor', () => {
   it('dado um job da fila, quando processa, então envia o e-mail pelo SMTP', async () => {
     const send = jest.fn().mockResolvedValue(undefined);
-    const sender: EmailSender = { send };
+    const sender: EmailSender = { send, ping: jest.fn() };
     const message = { to: 'ana@kore.local', subject: 'Assunto', text: 'Corpo' };
 
     await new LoginEmailProcessor(sender, new EmailDeliveryFailures()).process({

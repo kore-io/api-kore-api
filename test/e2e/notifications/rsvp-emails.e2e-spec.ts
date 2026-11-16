@@ -347,7 +347,7 @@ describe('E-mails das respostas (worker)', () => {
     );
     const failing = new RsvpEmails(
       scoped,
-      { send: () => Promise.reject(new Error('SMTP fora')) },
+      { send: () => Promise.reject(new Error('SMTP fora')), ping: () => Promise.resolve() },
       worker.get(APPLICATION_LOG_WRITER),
       worker.get(AppConfigService),
     );

@@ -22,6 +22,11 @@ export class SmtpEmailSender implements EmailSender, OnModuleDestroy {
     await this.transporter.sendMail({ from: this.from, ...message });
   }
 
+  /** O SMTP responde ao EHLO e à autenticação, sem enviar (o Mailpit, no local). */
+  async ping(): Promise<void> {
+    await this.transporter.verify();
+  }
+
   onModuleDestroy(): void {
     this.transporter.close();
   }
