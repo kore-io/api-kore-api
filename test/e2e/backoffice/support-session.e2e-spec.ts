@@ -192,7 +192,7 @@ describe('Backoffice: Ver como o casal (Backoffice - acesso RN08; banco real)', 
     expect([mine > 0, theirs]).toEqual([true, 0]);
   });
 
-  it('RN02 e RN08 (decisão 69) - o banco garante também as colunas: do pagamento só o ciclo, de quem tem acesso só nome, e-mail e foto; o indicador removido sai', async () => {
+  it('RN02 e RN08 (decisão 69) - o banco garante também as colunas: do pagamento só o ciclo, de quem tem acesso só nome, e-mail e foto; do indicador só o tipo, e só os membros ativos', async () => {
     const { weddingId } = await viewing();
     const prisma = app.get(PrismaService);
     const asSupport = <T>(
@@ -230,6 +230,15 @@ describe('Backoffice: Ver como o casal (Backoffice - acesso RN08; banco real)', 
     expect(await visible()).toBe(1);
     await db.membership.update({ where: { id: membership.id }, data: { removedAt: new Date() } });
     expect(await visible()).toBe(0);
+    // Antes, a referrers_public_select (USING true) somava: o suporte lia todo indicador, com o CPF cifrado.
+    const outsider = await seedReferrer({ db, kind: 'planner', name: 'Fabiana Soares' });
+    expect(await asSupport((tx) => tx.referrer.count({ where: { userId: outsider.userId } }))).toBe(
+      0,
+    );
+    for (const column of ['tax_id_encrypted', 'tax_id_hash', 'rate_percent'])
+      await expect(
+        asSupport((tx) => tx.$queryRawUnsafe(`SELECT ${column} FROM referrers LIMIT 1`)),
+      ).rejects.toThrow(/permission denied/);
   });
 
   it('RN08 - termina sozinha com 30 minutos sem requisição e no teto de 2 horas', async () => {
