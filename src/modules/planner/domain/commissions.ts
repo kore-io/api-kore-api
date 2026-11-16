@@ -23,7 +23,7 @@ export interface CommissionBalances {
   pendingCents: number;
   /** Já recebido. */
   receivedCents: number;
-  /** "(R$ 158,04 em repasse)": available dentro de um repasse pedido. */
+  /** "(R$ 158,04 em repasse)": available dentro de um repasse ainda não pago. */
   inPayoutCents: number;
 }
 
@@ -31,12 +31,15 @@ export interface CommissionBalances {
 export interface AdjustmentRow {
   amountCents: number;
   payoutId: string | null;
+  /** O estado do repasse em que o ajuste entrou; nulo sem repasse. */
+  payoutStatus: 'requested' | 'held' | 'processing' | 'paid' | 'rejected' | null;
 }
 
 /**
  * Os saldos (RN02 e RN07): `blocked`, `held` e `reversed` ficam fora. O
- * Disponível soma os ajustes sem repasse (invariante 7; B6-2), e o "em
- * repasse", os que estão num repasse.
+ * Disponível soma os ajustes sem repasse (invariante 7; B6-2); o ajuste num
+ * repasse pago soma no Já recebido, e o de um repasse ainda não pago, no "em
+ * repasse" (a mesma regra do Backoffice, RN08).
  */
 export function commissionBalances(
   rows: readonly CommissionRow[],
@@ -44,17 +47,23 @@ export function commissionBalances(
 ): CommissionBalances {
   const sum = (filter: (row: CommissionRow) => boolean) =>
     rows.filter(filter).reduce((total, row) => total + row.amountCents, 0);
-  const adjusted = (inPayout: boolean) =>
+  const adjusted = (place: 'none' | 'open' | 'paid') =>
     adjustments
-      .filter((adjustment) => (adjustment.payoutId !== null) === inPayout)
+      .filter((adjustment) =>
+        adjustment.payoutId === null
+          ? place === 'none'
+          : adjustment.payoutStatus === 'paid'
+            ? place === 'paid'
+            : place === 'open',
+      )
       .reduce((total, adjustment) => total + adjustment.amountCents, 0);
   return {
     availableCents:
-      sum((row) => row.status === 'available' && row.payoutId === null) + adjusted(false),
+      sum((row) => row.status === 'available' && row.payoutId === null) + adjusted('none'),
     pendingCents: sum((row) => row.status === 'pending'),
-    receivedCents: sum((row) => row.status === 'paid'),
+    receivedCents: sum((row) => row.status === 'paid') + adjusted('paid'),
     inPayoutCents:
-      sum((row) => row.status === 'available' && row.payoutId !== null) + adjusted(true),
+      sum((row) => row.status === 'available' && row.payoutId !== null) + adjusted('open'),
   };
 }
 

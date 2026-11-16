@@ -203,7 +203,7 @@ describe('Backoffice: lista e detalhe das cerimonialistas (Backoffice - cobranç
     expect((await get(admin.cookie, `/referrers?city=${city}&status=blocked`)).body.total).toBe(0);
   });
 
-  it('RN08 - o repasse pago vai para o Já recebido, com o ajuste que entrou nele, e sai do "em repasse"', async () => {
+  it('RN08 e Comissões do indicador RN02 - o repasse pago vai para o Já recebido, com o ajuste que entrou nele, e sai do "em repasse", igual no Backoffice e no app', async () => {
     const person = await juliana({ payout: true, adjustmentCents: -500 });
     const total = person.commissions.reduce((sum, c) => sum + c.amountCents, 0) - 500;
     const paidAt = new Date();
@@ -224,6 +224,15 @@ describe('Backoffice: lista e detalhe das cerimonialistas (Backoffice - cobranç
       inPayoutCents: 0,
     });
     expect(row.payoutRequested).toBe(false);
+
+    // A tela Comissões da cerimonialista soma igual (o ajuste pago não fica "em repasse").
+    const cookie = await openSession({ app, userId: person.userId });
+    const mine = await http()
+      .get('/v1/me/referrer/commissions')
+      .set('Cookie', cookie)
+      .set('Origin', ORIGIN)
+      .expect(200);
+    expect(mine.body.balances).toEqual(row.balances);
   });
 
   it('RN01 e decisão 69 - o suporte lê a lista com os saldos, sem a tag e sem o filtro do repasse', async () => {
