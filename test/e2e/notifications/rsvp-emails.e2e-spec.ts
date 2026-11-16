@@ -23,37 +23,21 @@ import { seedWedding } from '../support/factories/weddings';
 const MAILPIT_API_URL = process.env.MAILPIT_API_URL ?? 'http://localhost:8025';
 const MINUTE = 60_000;
 
-/** Um fuso onde agora ainda não são 19h: a rotina real de 15 minutos não manda o resumo no meio do teste. */
-function quietTimezone(): string {
-  for (const zone of ['America/Sao_Paulo', 'Asia/Tokyo', 'Europe/London', 'Pacific/Auckland']) {
-    const hour = Number(
-      new Intl.DateTimeFormat('en-GB', {
-        timeZone: zone,
-        hour: '2-digit',
-        hourCycle: 'h23',
-      }).format(new Date()),
-    );
-    if (hour < 19) return zone;
-  }
-  return 'America/Sao_Paulo';
-}
+/**
+ * O relógio dos casos do Resumo diário: um dia fixo em São Paulo, e não a
+ * hora de verdade. Antes o teste procurava um fuso "quieto" pela hora real e,
+ * depois das 19h de São Paulo, caía num fuso fora do Brasil, que o banco
+ * recusa (chk_weddings_timezone). As rotinas reais não rodam no e2e
+ * (createTestWorker), então o `now` injetado é o único relógio.
+ */
+const TIMEZONE = 'America/Sao_Paulo';
+const DAY = '2026-11-10';
 
-/** O instante em que, no fuso, é hoje (no fuso) às hh:mm. */
-function todayAt({
-  timezone,
-  hour,
-  minute,
-}: {
-  timezone: string;
-  hour: number;
-  minute: number;
-}): Date {
-  const now = new Date();
-  const local = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
-  const offset = now.getTime() - local.getTime();
-  const target = new Date(local);
-  target.setHours(hour, minute, 0, 0);
-  return new Date(target.getTime() + offset);
+/** O instante do DAY às hh:mm em São Paulo (UTC−3, sem horário de verão). */
+function dayAt({ hour, minute }: { hour: number; minute: number }): Date {
+  const hh = String(hour).padStart(2, '0');
+  const mm = String(minute).padStart(2, '0');
+  return new Date(`${DAY}T${hh}:${mm}:00-03:00`);
 }
 
 /** Os e-mails das respostas (E-mail e push RN01 a RN06 e RN09; worker e Mailpit). */
@@ -74,7 +58,7 @@ describe('E-mails das respostas (worker)', () => {
 
   async function scenario({
     frequency,
-    timezone = quietTimezone(),
+    timezone = TIMEZONE,
   }: {
     frequency?: 'off' | 'immediate' | 'daily';
     timezone?: string;
@@ -132,9 +116,10 @@ describe('E-mails das respostas (worker)', () => {
 
   it('RN04 - a rotina de 15 minutos fica agendada', async () => {
     const queue = worker.get<Queue>(getQueueToken(NOTIFICATIONS_QUEUE));
-    expect(await queue.getJobScheduler(NOTIFICATIONS_SWEEP_SCHEDULER_ID)).toMatchObject({
-      pattern: '*/15 * * * *',
-    });
+    const scheduler = await queue.getJobScheduler(NOTIFICATIONS_SWEEP_SCHEDULER_ID);
+    expect(scheduler).toMatchObject({ pattern: '*/15 * * * *' });
+    // No e2e, a rotina fica registrada, mas não dispara (createTestWorker).
+    expect(scheduler?.next ?? 0).toBeGreaterThanOrEqual(Date.parse('2100-01-01T00:00:00Z'));
   });
 
   it('RN02 e RN03 - "Na hora": um e-mail com o que chegou; no intervalo de 15 minutos, espera; depois, só o que é novo', async () => {
@@ -256,20 +241,18 @@ describe('E-mails das respostas (worker)', () => {
   });
 
   it('RN04 - o Resumo diário: antes das 20h no fuso, nada; depois, um só no dia, mesmo rodando de novo', async () => {
-    const { email, userId, weddingId, timezone, moreira, duarte, entry, notify } = await scenario(
-      {},
-    );
-    const at = todayAt({ timezone, hour: 12, minute: 0 });
+    const { email, userId, weddingId, moreira, duarte, entry, notify } = await scenario({});
+    const at = dayAt({ hour: 12, minute: 0 });
     await notify([
       entry(moreira.id, 'Família Moreira', at),
       entry(duarte.id, 'Família Duarte', new Date(at.getTime() + MINUTE), 2, 1),
     ]);
 
-    const before = todayAt({ timezone, hour: 19, minute: 59 });
+    const before = dayAt({ hour: 19, minute: 59 });
     expect(await emails.send({ userId, weddingId, mode: 'digest', now: before })).toEqual({
       kind: 'skipped',
     });
-    const evening = todayAt({ timezone, hour: 20, minute: 10 });
+    const evening = dayAt({ hour: 20, minute: 10 });
     expect(await emails.send({ userId, weddingId, mode: 'digest', now: evening })).toEqual({
       kind: 'sent',
     });
@@ -299,7 +282,7 @@ describe('E-mails das respostas (worker)', () => {
       where: { id: weddingId },
       data: { status: 'published', publishedAt: new Date() },
     });
-    const evening = todayAt({ timezone, hour: 20, minute: 10 });
+    const evening = dayAt({ hour: 20, minute: 10 });
 
     await emails.sweep({ now: evening, weddingId });
 
@@ -308,7 +291,7 @@ describe('E-mails das respostas (worker)', () => {
       localDate({ at: evening, timezone }),
     );
 
-    const late = todayAt({ timezone, hour: 22, minute: 0 });
+    const late = dayAt({ hour: 22, minute: 0 });
     await notify([entry(moreira.id, 'Família Moreira', late)]);
     await emails.sweep({ now: new Date(late.getTime() + 15 * MINUTE), weddingId });
     expect(await inbox({ to: email })).toHaveLength(0);
