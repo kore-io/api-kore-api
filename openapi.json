@@ -14103,6 +14103,251 @@
           "admin"
         ]
       }
+    },
+    "/v1/admin/referrers": {
+      "get": {
+        "operationId": "AdminReferrersReadController_list_v1",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "A página, a partir de 1.",
+            "schema": {
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "kind",
+            "required": false,
+            "in": "query",
+            "description": "Só `planner` no lançamento (os vendedores ficam fora; decisão 230, D17).",
+            "schema": {
+              "default": "planner",
+              "type": "string",
+              "enum": [
+                "planner"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "blocked",
+                "inactive"
+              ]
+            }
+          },
+          {
+            "name": "hasPayout",
+            "required": false,
+            "in": "query",
+            "description": "Com (true) ou sem (false) um repasse solicitado ou retido; só o Admin (decisão 69).",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            }
+          },
+          {
+            "name": "city",
+            "required": false,
+            "in": "query",
+            "description": "Uma das cidades do perfil, sem diferenciar maiúsculas.",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 80,
+              "example": "Campinas",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminReferrersResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/referrers/{id}": {
+      "get": {
+        "operationId": "AdminReferrersReadController_detail_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "A página, a partir de 1.",
+            "schema": {
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "tab",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "weddings",
+              "type": "string",
+              "enum": [
+                "weddings",
+                "commissions",
+                "payouts"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminReferrerDetailResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferrerNotFoundErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin"
+        ]
+      }
     }
   },
   "info": {
@@ -28291,6 +28536,629 @@
         },
         "required": [
           "status"
+        ]
+      },
+      "AdminReferrerBalancesResponse": {
+        "type": "object",
+        "properties": {
+          "availableCents": {
+            "type": "number",
+            "description": "Comissão disponível (com os ajustes fora de repasse).",
+            "example": 0
+          },
+          "pendingCents": {
+            "type": "number",
+            "description": "Aguardando liberação.",
+            "example": 1740
+          },
+          "receivedCents": {
+            "type": "number",
+            "description": "Já recebido.",
+            "example": 6742
+          },
+          "inPayoutCents": {
+            "type": "number",
+            "description": "\"(R$ 158,04 em repasse)\": num repasse solicitado, retido ou em processamento.",
+            "example": 15804
+          }
+        },
+        "required": [
+          "availableCents",
+          "pendingCents",
+          "receivedCents",
+          "inPayoutCents"
+        ]
+      },
+      "AdminReferrerRowResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "planner"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "example": "Juliana Prado"
+          },
+          "creditName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Prado Assessoria"
+          },
+          "cities": {
+            "example": [
+              "Campinas",
+              "Valinhos"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "enum": [
+              "active",
+              "blocked",
+              "inactive"
+            ],
+            "type": "string"
+          },
+          "couplesCount": {
+            "type": "number",
+            "description": "Casais trazidos (sem os casamentos apagados).",
+            "example": 4
+          },
+          "balances": {
+            "$ref": "#/components/schemas/AdminReferrerBalancesResponse"
+          },
+          "payoutRequested": {
+            "type": "boolean",
+            "description": "A tag \"Repasse pedido\"; o servidor omite para o suporte (decisão 69)."
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "creditName",
+          "cities",
+          "status",
+          "couplesCount",
+          "balances",
+          "email"
+        ]
+      },
+      "AdminReferrersResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminReferrerRowResponse"
+            }
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageSize": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "total"
+        ]
+      },
+      "AdminReferrerBlockedByResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "userId",
+          "name"
+        ]
+      },
+      "AdminReferrerBlockResponse": {
+        "type": "object",
+        "properties": {
+          "blockedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "blockedBy": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AdminReferrerBlockedByResponse"
+              }
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "blockedAt",
+          "blockedBy",
+          "reason"
+        ]
+      },
+      "AdminReferrerHeaderResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "planner"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "example": "Juliana Prado"
+          },
+          "creditName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Prado Assessoria"
+          },
+          "cities": {
+            "example": [
+              "Campinas",
+              "Valinhos"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "enum": [
+              "active",
+              "blocked",
+              "inactive"
+            ],
+            "type": "string"
+          },
+          "couplesCount": {
+            "type": "number",
+            "description": "Casais trazidos (sem os casamentos apagados).",
+            "example": 4
+          },
+          "balances": {
+            "$ref": "#/components/schemas/AdminReferrerBalancesResponse"
+          },
+          "payoutRequested": {
+            "type": "boolean",
+            "description": "A tag \"Repasse pedido\"; o servidor omite para o suporte (decisão 69)."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ratePercent": {
+            "type": "number",
+            "description": "\"20% · padrão das Configurações\" (decisão 75).",
+            "example": 20
+          },
+          "taxIdType": {
+            "nullable": true,
+            "enum": [
+              "cpf",
+              "cnpj"
+            ],
+            "type": "string"
+          },
+          "taxIdMasked": {
+            "type": "string",
+            "nullable": true,
+            "example": "***.456.789-**"
+          },
+          "pixKeyMasked": {
+            "type": "string",
+            "nullable": true,
+            "description": "A chave Pix vigente, mascarada; o servidor omite para o suporte (decisão 69).",
+            "example": "jul***@prado.com.br"
+          },
+          "block": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AdminReferrerBlockResponse"
+              }
+            ]
+          },
+          "rateIsDefault": {
+            "type": "boolean",
+            "description": "A cerimonialista segue sempre o padrão das Configurações."
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "creditName",
+          "cities",
+          "status",
+          "couplesCount",
+          "balances",
+          "createdAt",
+          "ratePercent",
+          "taxIdType",
+          "taxIdMasked",
+          "block",
+          "rateIsDefault",
+          "email"
+        ]
+      },
+      "AdminReferrerWeddingsPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminWeddingRowResponse"
+            }
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageSize": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "total"
+        ]
+      },
+      "AdminReferrerCreatedByResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "userId",
+          "name"
+        ]
+      },
+      "AdminReferrerStatementEntryResponse": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "commission",
+              "adjustment"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "amountCents": {
+            "type": "number",
+            "description": "Positivo ou negativo (o ajuste).",
+            "example": 7322
+          },
+          "payoutId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "weddingId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "coupleNames": {
+            "type": "string",
+            "nullable": true,
+            "description": "\"Ana & Marcos\"; nulo com o casamento apagado ou no ajuste."
+          },
+          "paymentKind": {
+            "nullable": true,
+            "enum": [
+              "publication",
+              "extension"
+            ],
+            "type": "string"
+          },
+          "baseAmountCents": {
+            "type": "number",
+            "nullable": true,
+            "description": "O pago sem os juros do cartão."
+          },
+          "ratePercent": {
+            "type": "number",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "pending",
+              "available",
+              "paid",
+              "reversed",
+              "blocked",
+              "held"
+            ]
+          },
+          "blockReason": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "self_referral",
+              "referrer_blocked",
+              "admin"
+            ]
+          },
+          "availableAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "paidAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "adjustmentReason": {
+            "nullable": true,
+            "description": "O motivo do ajuste: `manual` é o \"Ajuste manual\".",
+            "enum": [
+              "refund",
+              "chargeback",
+              "manual"
+            ],
+            "type": "string"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true,
+            "description": "O motivo escrito pelo Admin."
+          },
+          "commissionId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "createdBy": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AdminReferrerCreatedByResponse"
+              }
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "createdAt",
+          "amountCents",
+          "payoutId",
+          "weddingId",
+          "coupleNames",
+          "paymentKind",
+          "baseAmountCents",
+          "ratePercent",
+          "status",
+          "blockReason",
+          "availableAt",
+          "paidAt",
+          "adjustmentReason",
+          "note",
+          "commissionId",
+          "createdBy"
+        ]
+      },
+      "AdminReferrerStatementPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminReferrerStatementEntryResponse"
+            }
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageSize": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "total"
+        ]
+      },
+      "AdminReferrerPayoutResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "enum": [
+              "requested",
+              "held",
+              "processing",
+              "paid",
+              "rejected"
+            ],
+            "type": "string"
+          },
+          "holdReason": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "refund",
+              "pix_key_change",
+              "referrer_blocked",
+              "dispute",
+              "commission_blocked"
+            ]
+          },
+          "amountCents": {
+            "type": "number",
+            "example": 15804
+          },
+          "pixKeyMasked": {
+            "type": "string",
+            "example": "jul***@prado.com.br"
+          },
+          "requestedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "processingAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "paidAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "rejectedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "rejectReason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "holdReason",
+          "amountCents",
+          "pixKeyMasked",
+          "requestedAt",
+          "processingAt",
+          "paidAt",
+          "rejectedAt",
+          "rejectReason"
+        ]
+      },
+      "AdminReferrerPayoutsPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminReferrerPayoutResponse"
+            }
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageSize": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "total"
+        ]
+      },
+      "AdminReferrerDetailResponse": {
+        "type": "object",
+        "properties": {
+          "tab": {
+            "enum": [
+              "weddings",
+              "commissions",
+              "payouts"
+            ],
+            "type": "string"
+          },
+          "referrer": {
+            "$ref": "#/components/schemas/AdminReferrerHeaderResponse"
+          },
+          "weddings": {
+            "$ref": "#/components/schemas/AdminReferrerWeddingsPage"
+          },
+          "statement": {
+            "description": "O extrato da aba Comissões.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AdminReferrerStatementPage"
+              }
+            ]
+          },
+          "payouts": {
+            "$ref": "#/components/schemas/AdminReferrerPayoutsPage"
+          }
+        },
+        "required": [
+          "tab",
+          "referrer"
         ]
       },
       "SpreadsheetTemplateHeaders": {
