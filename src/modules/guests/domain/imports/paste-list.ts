@@ -62,10 +62,15 @@ export function parsePastedList({ text }: { text: string }): PastedList {
     if (!source) return;
     const line = index + 1;
     const warnings = new Set<PasteWarning>();
+    // Os espaços seguidos viram um só antes das regex (os nomes já saíam
+    // assim): com um espaço por vez, o SEPARATORS e o PLUS ficam lineares; um
+    // trecho longo de espaços no texto colado levava segundos (CodeQL
+    // js/polynomial-redos).
+    const compact = source.replace(/\s+/g, ' ');
 
-    const colon = source.indexOf(':');
-    const groupPart = colon === -1 ? null : source.slice(0, colon).trim();
-    let peoplePart = colon === -1 ? source : source.slice(colon + 1);
+    const colon = compact.indexOf(':');
+    const groupPart = colon === -1 ? null : compact.slice(0, colon).trim();
+    let peoplePart = colon === -1 ? compact : compact.slice(colon + 1);
 
     let unnamed = 0;
     const plus = PLUS.exec(peoplePart);

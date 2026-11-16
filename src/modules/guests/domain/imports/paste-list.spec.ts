@@ -109,3 +109,35 @@ describe('comparableName e findDuplicateGuest (RN06, RN11)', () => {
     expect(findDuplicateGuest({ groups: [{ guests: ['Ana'] }, { guests: ['Ana'] }] })).toBeNull();
   });
 });
+
+describe('Lista colada: tempo com o texto no limite (CodeQL js/polynomial-redos)', () => {
+  /** O limite do texto colado no DTO da prévia. */
+  const N = 100_000;
+  const worstCases: Record<string, string> = {
+    'um trecho de espaços sem separador': 'a' + ' '.repeat(N - 2) + 'b',
+    'um trecho de espaços antes de "e"': 'a' + ' '.repeat(N - 3) + 'ex',
+    'um trecho de espaços antes de "+1x"': 'a' + ' '.repeat(N - 4) + '+1x',
+    'tabulação e espaço alternados': 'a' + ' \t'.repeat(N / 2 - 1) + 'b',
+    '"+" com dígitos sem fim de palavra': '+' + '1'.repeat(N - 2) + 'x',
+  };
+
+  it.each(Object.entries(worstCases))(
+    'RN10 - 100 mil caracteres com %s: a prévia lê em menos de 200 ms (antes, 28 s)',
+    (_label, text) => {
+      const started = performance.now();
+      parsePastedList({ text });
+      expect(performance.now() - started).toBeLessThan(200);
+    },
+  );
+
+  it('RN10 - os espaços seguidos não mudam o resultado: "Ana    e   Marcos" é o casal de sempre', () => {
+    const parsed = (text: string) =>
+      parsePastedList({ text }).groups.map((group) => ({ ...group, source: '' }));
+    expect(parsed('Família   Moreira :  Ana    e   Marcos  +   2')).toEqual(
+      parsed('Família Moreira: Ana e Marcos + 2'),
+    );
+    expect(parsePastedList({ text: 'Ana    e   Marcos' }).groups[0]?.source).toBe(
+      'Ana    e   Marcos',
+    );
+  });
+});
