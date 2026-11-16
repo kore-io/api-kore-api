@@ -14153,7 +14153,7 @@
             "name": "hasPayout",
             "required": false,
             "in": "query",
-            "description": "Com (true) ou sem (false) um repasse solicitado ou retido; só o Admin (decisão 69).",
+            "description": "Com (true) ou sem (false) um repasse solicitado (o retido não conta; decisão 273(2)); só o Admin (decisão 69).",
             "schema": {
               "type": "string",
               "enum": [

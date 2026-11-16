@@ -203,6 +203,44 @@ describe('Backoffice: lista e detalhe das cerimonialistas (Backoffice - cobranç
     expect((await get(admin.cookie, `/referrers?city=${city}&status=blocked`)).body.total).toBe(0);
   });
 
+  it('RN08 (decisão 273(2)) - o repasse retido não é "Repasse pedido": sai da tag e do filtro, segue no "em repasse"', async () => {
+    const person = await juliana({ payout: true });
+    const city = encodeURIComponent(person.city);
+    await db.payout.update({
+      where: { id: person.payoutId! },
+      data: { status: 'held', holdReason: 'referrer_blocked' },
+    });
+
+    const row = await rowOf(admin.cookie, person.city);
+    expect(row.payoutRequested).toBe(false);
+    expect(row.balances.inPayoutCents).toBe(
+      person.commissions.reduce((sum, c) => sum + c.amountCents, 0),
+    );
+    expect((await get(admin.cookie, `/referrers?city=${city}&hasPayout=true`)).body.total).toBe(0);
+    expect((await get(admin.cookie, `/referrers?city=${city}&hasPayout=false`)).body.total).toBe(1);
+  });
+
+  it('RN08 (decisão 273(1); Contrato de leitura A5) - a lista sai por nome, com acento no lugar certo, e não pela data de cadastro', async () => {
+    const city = `Cidade ${randomUUID()}`;
+    // Cadastradas fora da ordem do nome e da ordem inversa (a mais nova primeiro
+    // daria bruno, Zélia, Álvaro).
+    for (const name of ['Álvaro Souza', 'Zélia Prado', 'bruno Lima']) {
+      const seeded = await seedReferrer({ db, kind: 'planner', name });
+      await db.referrer.update({
+        where: { userId: seeded.userId },
+        data: { planner: { update: { cities: [city] } } },
+      });
+    }
+    const response = await get(admin.cookie, `/referrers?city=${encodeURIComponent(city)}`).expect(
+      200,
+    );
+    expect((response.body as { items: { name: string }[] }).items.map(({ name }) => name)).toEqual([
+      'Álvaro Souza',
+      'bruno Lima',
+      'Zélia Prado',
+    ]);
+  });
+
   it('RN08 e Comissões do indicador RN02 - o repasse pago vai para o Já recebido, com o ajuste que entrou nele, e sai do "em repasse", igual no Backoffice e no app', async () => {
     const person = await juliana({ payout: true, adjustmentCents: -500 });
     const total = person.commissions.reduce((sum, c) => sum + c.amountCents, 0) - 500;

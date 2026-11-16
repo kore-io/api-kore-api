@@ -34,7 +34,10 @@ export interface AdminReferrerRow {
   /** Casais trazidos: os casamentos com ela de indicadora, sem a lápide. */
   couplesCount: number;
   balances: AdminReferrerBalances;
-  /** A tag "Repasse pedido" (um repasse solicitado ou retido); só para o Admin (decisão 69). */
+  /**
+   * A tag "Repasse pedido": um repasse solicitado (`requested`); o retido fica
+   * só na fila de Repasses (decisão 273(2)). Só para o Admin (decisão 69).
+   */
   payoutRequested?: boolean;
 }
 

@@ -42,7 +42,7 @@ export class AdminReferrersQuery extends PageQuery {
   @IsIn(ADMIN_REFERRER_STATUSES)
   status?: AdminReferrerStatus;
 
-  /** Com (true) ou sem (false) um repasse solicitado ou retido; só o Admin (decisão 69). */
+  /** Com (true) ou sem (false) um repasse solicitado (o retido não conta; decisão 273(2)); só o Admin (decisão 69). */
   @ApiProperty({ enum: ['true', 'false'], required: false })
   @IsOptional()
   @IsIn(['true', 'false'])
