@@ -192,6 +192,46 @@ describe('Backoffice: Ver como o casal (Backoffice - acesso RN08; banco real)', 
     expect([mine > 0, theirs]).toEqual([true, 0]);
   });
 
+  it('RN02 e RN08 (decisão 69) - o banco garante também as colunas: do pagamento só o ciclo, de quem tem acesso só nome, e-mail e foto; o indicador removido sai', async () => {
+    const { weddingId } = await viewing();
+    const prisma = app.get(PrismaService);
+    const asSupport = <T>(
+      work: (tx: Parameters<Parameters<PrismaService['$transaction']>[0]>[0]) => Promise<T>,
+    ) =>
+      prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT set_config('app.wedding_id', ${weddingId}, true)`;
+        await tx.$executeRaw`SET LOCAL ROLE kore_support`;
+        return work(tx);
+      });
+
+    await asSupport((tx) => tx.$queryRaw`SELECT id, status, kind, paid_at FROM payments`);
+    for (const column of [
+      'amount_cents',
+      'payer_tax_id_last4',
+      'payer_name',
+      'gateway_payment_id',
+      'refund_reason',
+    ])
+      await expect(
+        asSupport((tx) => tx.$queryRawUnsafe(`SELECT ${column} FROM payments`)),
+      ).rejects.toThrow(/permission denied/);
+    await asSupport((tx) => tx.$queryRaw`SELECT id, name, email, avatar_key FROM users LIMIT 1`);
+    for (const column of ['platform_role', 'status', 'access_email_changed_at'])
+      await expect(
+        asSupport((tx) => tx.$queryRawUnsafe(`SELECT ${column} FROM users LIMIT 1`)),
+      ).rejects.toThrow(/permission denied/);
+
+    const planner = await seedReferrer({ db, kind: 'planner', name: 'Juliana Prado' });
+    const membership = await db.membership.create({
+      data: { weddingId, userId: planner.userId, role: 'collaborator' },
+    });
+    const visible = () =>
+      asSupport((tx) => tx.referrer.count({ where: { userId: planner.userId } }));
+    expect(await visible()).toBe(1);
+    await db.membership.update({ where: { id: membership.id }, data: { removedAt: new Date() } });
+    expect(await visible()).toBe(0);
+  });
+
   it('RN08 - termina sozinha com 30 minutos sem requisição e no teto de 2 horas', async () => {
     const idle = await viewing();
     await db.supportSession.update({
@@ -269,7 +309,7 @@ describe('Backoffice: Ver como o casal (Backoffice - acesso RN08; banco real)', 
     expect((await start(fresh.cookie, ownerless).expect(409)).body.error).toBe('NO_OWNER');
   });
 
-  it('RN01 e RN08 - o papel do staff é relido a cada requisição: sem papel, a sessão de suporte acaba com 403 STAFF_ONLY', async () => {
+  it('RN01 e RN08 - o papel do staff é relido a cada requisição: sem papel, a sessão de suporte acaba com 403 STAFF_ONLY e o motivo role_revoked', async () => {
     const { support, weddingId, supportSessionId } = await viewing();
     await db.user.update({ where: { id: support.userId }, data: { platformRole: 'none' } });
     const refused = await http()
@@ -280,6 +320,10 @@ describe('Backoffice: Ver como o casal (Backoffice - acesso RN08; banco real)', 
     expect(
       (await db.supportSession.findUniqueOrThrow({ where: { id: supportSessionId } })).endedAt,
     ).toEqual(expect.any(Date));
+    // Motivo próprio na auditoria, não o do Sair.
+    expect(
+      (await db.supportSession.findUniqueOrThrow({ where: { id: supportSessionId } })).endReason,
+    ).toBe('role_revoked');
     // A sessão de suporte acabou: o casamento não é dela (sem vínculo, 404).
     await http().get(`/v1/weddings/${weddingId}/parties`).set('Cookie', support.cookie).expect(404);
   });

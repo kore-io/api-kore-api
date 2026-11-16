@@ -3,7 +3,7 @@ export const SUPPORT_IDLE_MS = 30 * 60_000;
 /** E no teto de 2 horas (decisão 230, D20). */
 export const SUPPORT_MAX_MS = 2 * 60 * 60_000;
 
-export type SupportEndReason = 'exit' | 'idle' | 'max_duration' | 'logout';
+export type SupportEndReason = 'exit' | 'idle' | 'max_duration' | 'logout' | 'role_revoked';
 
 export interface SupportSessionRecord {
   id: string;
