@@ -1,0 +1,12 @@
+# gitleaks (decisão 265): as regras padrão, com as chaves de exemplo e de teste liberadas.
+# Esses valores são públicos de propósito e não valem fora de local e test; segredo de
+# verdade nunca entra no repositório (ADR de ambientes e segredos).
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Chaves de exemplo e de teste"
+paths = [
+  '''(^|/)\.env\.(example|test)$''',
+  '''\.(spec|test|e2e-spec)\.tsx?$''',
+]

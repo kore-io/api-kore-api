@@ -26,6 +26,37 @@ jobs:
           fetch-depth: 0
       - uses: wagoid/commitlint-github-action@b948419dd99f3fd78a6548d48f94e3df7f6bf3ed # v6.2.1
 
+  security:
+    name: Segurança (dependências e segredos)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # O histórico inteiro: o gitleaks procura segredo em todos os commits (decisão 265).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      # A versão do pnpm vem do packageManager do package.json; a do Node, do .nvmrc.
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      # Dependência com falha conhecida: barra alta e crítica; a moderada aparece no log.
+      - run: pnpm audit --audit-level high
+
+      # Binário oficial do gitleaks (MIT), fixado pela versão e pelo SHA-256 do release;
+      # as chaves de exemplo e de teste ficam liberadas no .gitleaks.toml.
+      - name: gitleaks
+        env:
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          curl -sSL -o "$RUNNER_TEMP/gitleaks.tgz" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/gitleaks.tgz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/gitleaks.tgz" -C "$RUNNER_TEMP" gitleaks
+          "$RUNNER_TEMP/gitleaks" git . --config .gitleaks.toml --redact --no-banner --verbose
+
   check:
     name: Formatação, lint, tipos, testes unitários, build e OpenAPI
     runs-on: ubuntu-latest
