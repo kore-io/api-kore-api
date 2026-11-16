@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import { localDate } from '@/shared/kernel/time/local-date';
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { WeddingPseudonymizer } from '@/modules/product-events/infrastructure/providers/wedding-pseudonymizer';
@@ -38,7 +39,9 @@ describe('Envios (banco real)', () => {
   });
 
   const http = () => request(app.getHttpServer());
-  const day = (offset: number) => new Date(Date.now() + offset * DAY_MS).toISOString().slice(0, 10);
+  // O dia de São Paulo, como a API: o dia UTC já é o seguinte das 21h à meia-noite.
+  const day = (offset: number) =>
+    localDate({ at: new Date(Date.now() + offset * DAY_MS), timezone: 'America/Sao_Paulo' });
 
   /** Ana & Marcos publicado em kore.com.br/<slug>, com a Família Moreira (Célia contato, com telefone). */
   async function scenario({ status = 'published' }: { status?: 'published' | 'draft' } = {}) {
