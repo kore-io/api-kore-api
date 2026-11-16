@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
+import { REFERRAL_SETTINGS_LOCK_KEY } from '@/shared/database/advisory-lock-keys';
 import { TenantTransaction } from '@/shared/database/tenant-transaction';
 import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import type {
@@ -69,6 +70,9 @@ export class PrismaPlannerProfiles implements PlannerProfiles {
     now: Date;
   }): Promise<{ referrerId: string; referralCode: string }> {
     const db = this.db();
+    // O padrão lido sob o lock compartilhado: uma troca da comissão padrão em
+    // curso termina antes, e a seguinte espera este cadastro (decisão 269).
+    await db.$executeRaw`SELECT pg_advisory_xact_lock_shared(hashtextextended(${REFERRAL_SETTINGS_LOCK_KEY}, 0))`;
     const settings = await db.referralSettings.findFirstOrThrow({
       select: { defaultRatePercent: true },
     });

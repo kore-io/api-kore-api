@@ -6,7 +6,7 @@ import { ADMIN_SETTINGS_STORE } from '@/modules/backoffice/application/ports/adm
 import type { AdminSettingsStore } from '@/modules/backoffice/application/ports/admin-settings.store.port';
 import { createTestApp } from '../support/harness/create-test-app';
 import { seedReferrer } from '../support/factories/referrers';
-import { staffUser } from '../support/harness/sessions';
+import { signedInUser, staffUser } from '../support/harness/sessions';
 
 const ORIGIN = process.env.ALLOWED_ORIGINS?.split(',')[0] ?? 'http://localhost:5173';
 
@@ -183,6 +183,46 @@ describe('Backoffice: Configurações (Backoffice - cobrança RN10; banco real)'
     ).rejects.toThrow(Rollback);
 
     // Desfeita: nada mudou para as outras suítes.
+    expect(await currentReferral()).toEqual(before);
+  });
+
+  it('decisão 269 - a cerimonialista que se cadastra durante a troca espera o fim dela e nasce com o padrão em vigor (transação desfeita)', async () => {
+    const juliana = await signedInUser({ app, name: 'Juliana Prado' });
+    const before = await currentReferral();
+    const after = { ...before, defaultRatePercent: before.defaultRatePercent === 22 ? 23 : 22 };
+    const transaction = app.get(BackofficeTransaction);
+    const store = app.get<AdminSettingsStore>(ADMIN_SETTINGS_STORE);
+    let signup: Promise<request.Response> | undefined;
+
+    await expect(
+      transaction.run(async () => {
+        await store.lockReferralSettings();
+        await store.updateReferralSettings({
+          values: after,
+          adminUserId: admin.userId,
+          now: new Date(),
+        });
+        // O cadastro chega com a troca aberta: espera o lock, sem ler o padrão de antes.
+        signup = http()
+          .post('/v1/me/planner')
+          .set('Cookie', juliana.cookie)
+          .set('Origin', ORIGIN)
+          .send({
+            creditName: 'Prado Assessoria',
+            cities: ['Campinas (SP)'],
+            termsVersion: '2026-09',
+          })
+          .then((response) => response);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        expect(await db.referrer.findUnique({ where: { userId: juliana.userId } })).toBeNull();
+        throw new Rollback();
+      }),
+    ).rejects.toThrow(Rollback);
+
+    expect((await signup!).status).toBe(201);
+    const created = await db.referrer.findUniqueOrThrow({ where: { userId: juliana.userId } });
+    // A troca foi desfeita: o padrão em vigor é o de antes, e ela nasce com ele.
+    expect(created.ratePercent).toBe((await currentReferral()).defaultRatePercent);
     expect(await currentReferral()).toEqual(before);
   });
 

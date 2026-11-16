@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@/generated/prisma/client';
+import { REFERRAL_SETTINGS_LOCK_KEY } from '@/shared/database/advisory-lock-keys';
 import { BackofficeTransaction } from '@/shared/database/backoffice-transaction';
 import type {
   AdminSettingsStore,
@@ -52,6 +53,10 @@ export class PrismaAdminSettingsStore implements AdminSettingsStore {
   }
 
   async lockReferralSettings(): Promise<ReferralSettingsValues> {
+    // Primeiro o lock exclusivo da troca: espera o cadastro de cerimonialista
+    // em curso e segura os próximos até o commit (decisão 269).
+    await this.db()
+      .$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${REFERRAL_SETTINGS_LOCK_KEY}, 0))`;
     // A linha é única (uq_referral_settings_single_row).
     const [row] = await this.db().$queryRaw<ReferralSettingsValues[]>`
       SELECT default_rate_percent AS "defaultRatePercent",
