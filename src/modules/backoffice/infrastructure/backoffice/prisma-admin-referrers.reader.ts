@@ -20,7 +20,7 @@ import { ADMIN_PAGE_SIZE, ROW_SELECT, toRow } from './prisma-admin-weddings.read
 
 const STATEMENT_PAGE_SIZE = 50;
 
-/** O repasse ainda não pago: o dinheiro "em repasse" e a tag "Repasse pedido". */
+/** O repasse ainda não pago: o dinheiro "em repasse". */
 const OPEN_PAYOUT = Prisma.sql`('requested', 'held', 'processing')`;
 
 interface RowSource {
@@ -67,7 +67,7 @@ const ROW_COLUMNS = Prisma.sql`
      JOIN payouts p ON p.id = a.payout_id
      WHERE a.referrer_id = r.id AND p.status IN ${OPEN_PAYOUT}) AS in_payout_cents,
   EXISTS (SELECT 1 FROM payouts p
-     WHERE p.referrer_id = r.id AND p.status IN ('requested', 'held')) AS payout_requested`;
+     WHERE p.referrer_id = r.id AND p.status = 'requested') AS payout_requested`;
 
 const FROM = Prisma.sql`
   FROM referrers r
@@ -118,14 +118,14 @@ export class PrismaAdminReferrersReader implements AdminReferrersReader {
     if (query.hasPayout !== undefined)
       and.push(
         Prisma.sql`${query.hasPayout ? Prisma.empty : Prisma.sql`NOT`} EXISTS (SELECT 1 FROM payouts p
-          WHERE p.referrer_id = r.id AND p.status IN ('requested', 'held'))`,
+          WHERE p.referrer_id = r.id AND p.status = 'requested')`,
       );
     const where = Prisma.sql`WHERE ${Prisma.join(and, ' AND ')}`;
     const [counted, rows] = await Promise.all([
       this.db.$queryRaw<{ total: bigint }[]>`SELECT count(*) AS total ${FROM} ${where}`,
       this.db.$queryRaw<RowSource[]>`
         SELECT ${ROW_COLUMNS} ${FROM} ${where}
-        ORDER BY r.created_at DESC, r.id DESC
+        ORDER BY u.name COLLATE "pt-BR-x-icu" NULLS LAST, r.id
         LIMIT ${ADMIN_PAGE_SIZE} OFFSET ${(query.page - 1) * ADMIN_PAGE_SIZE}`,
     ]);
     return {
