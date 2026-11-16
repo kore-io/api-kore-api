@@ -190,7 +190,6 @@ export class PrismaAdminReferrersReader implements AdminReferrersReader {
       ...toRowOf({ row, role }),
       createdAt: row.created_at,
       ratePercent: row.rate_percent,
-      rateIsDefault: true,
       taxIdType: row.tax_id_type,
       taxIdEncrypted: row.tax_id_encrypted,
       ...(role === 'admin' ? { pixKeyMasked: pixKey?.keyMasked ?? null } : {}),
@@ -289,10 +288,10 @@ export class PrismaAdminReferrersReader implements AdminReferrersReader {
         kind: 'commission',
         id: commission.id,
         createdAt: commission.createdAt,
-        weddingId: commission.weddingId,
+        weddingId: purged ? null : commission.weddingId,
         coupleNames: purged
           ? null
-          : partnerNames(first?.displayName ?? null, second?.displayName ?? null),
+          : partnerNames(first?.displayName ?? null, second?.displayName ?? null) || null,
         paymentKind: commission.payment.kind,
         baseAmountCents: commission.baseAmountCents,
         ratePercent: commission.ratePercent,

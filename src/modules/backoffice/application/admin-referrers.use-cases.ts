@@ -33,6 +33,8 @@ export const ADMIN_REFERRER_TABS: readonly AdminReferrerTab[] = [
 /** O cabeçalho do detalhe: o CPF ou CNPJ só mascarado. */
 export type AdminReferrerHeader = Omit<AdminReferrerProfile, 'taxIdEncrypted'> & {
   taxIdMasked: string | null;
+  /** A cerimonialista segue sempre o padrão das Configurações (decisão 75). */
+  rateIsDefault: boolean;
 };
 
 export type AdminReferrerDetail = { referrer: AdminReferrerHeader } & (
@@ -90,6 +92,10 @@ export class AdminReferrers {
     const { taxIdEncrypted, ...rest } = profile;
     const referrer: AdminReferrerHeader = {
       ...rest,
+      // "20% · padrão das Configurações": no lançamento só há a cerimonialista,
+      // que segue sempre o padrão (decisão 75); o vendedor com percentual
+      // próprio fica fora (decisão 230, D17).
+      rateIsDefault: true,
       taxIdMasked:
         profile.taxIdType && taxIdEncrypted
           ? maskTaxId({
