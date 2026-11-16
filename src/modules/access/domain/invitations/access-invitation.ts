@@ -1,4 +1,4 @@
-import type { MembershipRole } from './wedding-authorization';
+import type { MembershipRole } from '@/modules/access/domain/weddings/wedding-authorization';
 
 /** Os três tipos de convite de acesso (RN01 de Convites). */
 export const ACCESS_INVITATION_KINDS = ['partner', 'couple', 'planner'] as const;

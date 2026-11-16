@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@/generated/prisma/client';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
-import { RECENT_ACCESS_CHANGE_MS } from '@/modules/access/domain/recent-access-change';
+import { RECENT_ACCESS_CHANGE_MS } from '@/modules/access/domain/members/recent-access-change';
 import type { StaffRole } from '@/modules/backoffice/domain/staff';
 import type {
   AdminReferrer,

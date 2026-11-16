@@ -3,7 +3,7 @@ import {
   isValidSlugFormat,
   isReservedSlug,
   type SlugUnavailableReason,
-} from '@/modules/access/domain/wedding-signup';
+} from '@/modules/access/domain/weddings/wedding-signup';
 import {
   SLUG_REGISTRY,
   type SlugRegistry,

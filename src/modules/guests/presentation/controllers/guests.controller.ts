@@ -12,7 +12,7 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { ApiErrorResponses, commonErrors } from '@/shared/http/api-error-responses.decorator';
-import type { AuthenticatedSession } from '@/modules/access/domain/authenticated-session';
+import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
 import {
   ActionNotAllowedErrorBody,
   WeddingNotFoundErrorBody,

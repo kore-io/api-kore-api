@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { addMonths } from '@/modules/billing/domain/pricing';
+import { addMonths } from '@/modules/billing/domain/payments/pricing';
 import { ActivatePixKeys } from '@/modules/referral/application/activate-pix-keys.use-case';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import { uuidV7 } from '@/shared/ids/uuid-v7';

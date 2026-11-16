@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import request from 'supertest';
-import { addMonths } from '@/modules/billing/domain/pricing';
+import { addMonths } from '@/modules/billing/domain/payments/pricing';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { localDate } from '@/shared/time/local-date';

@@ -7,9 +7,9 @@ import { PIX_KEY_HASHER, type PixKeyHasher } from '@/shared/crypto/application/p
 import { TAX_ID_HASHER, type TaxIdHasher } from '@/shared/crypto/application/tax-id-hasher.port';
 import { uuidV7 } from '@/shared/ids/uuid-v7';
 import { ProfileNotOwnedError } from '@/modules/access/domain/access.errors';
-import type { AuthenticatedSession } from '@/modules/access/domain/authenticated-session';
-import { requireNoRecentAccessChange } from '@/modules/access/domain/recent-access-change';
-import { requireRecentSession } from '@/modules/access/domain/recent-session';
+import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
+import { requireNoRecentAccessChange } from '@/modules/access/domain/members/recent-access-change';
+import { requireRecentSession } from '@/modules/access/domain/sessions/recent-session';
 import { OpaqueSessionTokens } from '@/modules/access/infrastructure/providers/opaque-session-tokens';
 import {
   APPLICATION_LOG_WRITER,

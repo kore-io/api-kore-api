@@ -38,7 +38,7 @@ import {
   RefundReceiptMissingError,
   RefundReceiptNotFoundError,
 } from '@/modules/billing/domain/billing.errors';
-import { InstallmentsOutOfRangeError } from '@/modules/billing/domain/pricing';
+import { InstallmentsOutOfRangeError } from '@/modules/billing/domain/payments/pricing';
 
 /**
  * Erros da cobrança para HTTP (Preço e cotação, Contrato de API), com os

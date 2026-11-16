@@ -21,7 +21,7 @@ import {
   SLUG_MAX_LENGTH,
   SLUG_MIN_LENGTH,
   type BrazilianState,
-} from '@/modules/access/domain/wedding-signup';
+} from '@/modules/access/domain/weddings/wedding-signup';
 import { DATE_ONLY, lowercaseSlug, SLUG, trim } from './weddings.dto';
 
 /**

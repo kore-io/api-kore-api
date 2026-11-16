@@ -11,7 +11,7 @@ import {
 import { ApiCreatedResponse, ApiOkResponse, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { ApiErrorResponses, commonErrors } from '@/shared/http/api-error-responses.decorator';
 import { validationError } from '@/shared/http/validation-errors';
-import type { AuthenticatedSession } from '@/modules/access/domain/authenticated-session';
+import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
 import { WeddingNotFoundErrorBody } from '@/modules/access/presentation/dto/access-error.dto';
 import { CurrentSession } from '@/modules/access/presentation/http/decorators/current-session.decorator';
 import { OwnTransactions } from '@/modules/access/presentation/http/decorators/own-transactions.decorator';

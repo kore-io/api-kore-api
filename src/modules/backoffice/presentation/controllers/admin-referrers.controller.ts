@@ -12,7 +12,7 @@ import {
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { ApiErrorResponses, commonErrors } from '@/shared/http/api-error-responses.decorator';
 import { validationError } from '@/shared/http/validation-errors';
-import type { AuthenticatedSession } from '@/modules/access/domain/authenticated-session';
+import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
 import {
   ActionNotAllowedErrorBody,
   ReauthRequiredErrorBody,

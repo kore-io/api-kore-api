@@ -1,4 +1,4 @@
-import type { AuthMethod } from '@/modules/access/domain/authenticated-session';
+import type { AuthMethod } from '@/modules/access/domain/sessions/authenticated-session';
 
 /**
  * As formas de entrar da conta (Configurações › Acesso; decisão 254): os

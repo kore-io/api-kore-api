@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import type { Referral } from '@/modules/access/domain/referral';
+import type { Referral } from '@/modules/access/domain/profiles/referral';
 
 /** GET /v1/referrals/{code}. */
 export class ReferralResponse {

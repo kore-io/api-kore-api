@@ -12,7 +12,7 @@ import {
   MaxLength,
 } from 'class-validator';
 import { OptionalNotNull } from '@/shared/http/optional-not-null';
-import { TAG_COLORS, TAG_NAME_MAX, type TagColor } from '@/modules/guests/domain/party';
+import { TAG_COLORS, TAG_NAME_MAX, type TagColor } from '@/modules/guests/domain/parties/party';
 
 /** Nome sem espaços nas pontas (RN02). */
 const trim = ({ value }: { value: unknown }): unknown =>

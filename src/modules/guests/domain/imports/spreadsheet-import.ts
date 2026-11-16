@@ -7,8 +7,8 @@ import {
   TAG_NAME_MAX,
   TAGS_PER_WEDDING_MAX,
   type AgeGroup,
-} from './party';
-import { parsePhone } from './phone';
+} from '@/modules/guests/domain/parties/party';
+import { parsePhone } from '@/modules/guests/domain/parties/phone';
 
 /** Os 7 títulos do modelo, nesta ordem (Importação RN02 e RN03; decisão 184, item 1). */
 export const TEMPLATE_HEADERS = [

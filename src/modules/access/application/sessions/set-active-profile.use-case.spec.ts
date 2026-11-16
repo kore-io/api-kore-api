@@ -1,5 +1,5 @@
 import { ProfileNotOwnedError } from '@/modules/access/domain/access.errors';
-import type { AuthenticatedSession } from '@/modules/access/domain/authenticated-session';
+import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
 import type { ProfileDirectory } from '@/modules/access/application/ports/profile-directory.port';
 import type { SessionRepository } from '@/modules/access/application/ports/session-repository.port';
 import { SetActiveProfile } from './set-active-profile.use-case';

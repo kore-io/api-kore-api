@@ -6,9 +6,13 @@ import {
   PartyNotFoundError,
   type FieldIssue,
 } from '@/modules/guests/domain/guests.errors';
-import { canBeContact, defaultContactIndex, type AgeGroup } from '@/modules/guests/domain/party';
-import { parsePhone } from '@/modules/guests/domain/phone';
-import { guestsDelta } from '@/modules/guests/domain/wedding-stats';
+import {
+  canBeContact,
+  defaultContactIndex,
+  type AgeGroup,
+} from '@/modules/guests/domain/parties/party';
+import { parsePhone } from '@/modules/guests/domain/parties/phone';
+import { guestsDelta } from '@/modules/guests/domain/stats/wedding-stats';
 import { toPartyView, type PartyView } from './party-view';
 import { PARTY_LINKS, type PartyLinks } from './ports/party-links.port';
 import { PARTY_READER, type PartyReader } from './ports/party-reader.port';

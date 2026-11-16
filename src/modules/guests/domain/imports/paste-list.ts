@@ -1,4 +1,4 @@
-import { GUEST_NAME_MAX, PARTY_NAME_MAX } from './party';
+import { GUEST_NAME_MAX, PARTY_NAME_MAX } from '@/modules/guests/domain/parties/party';
 
 /** "+ N" de 1 a 20 por linha (Importação RN10; decisão 186, item 16). */
 export const PLUS_MIN = 1;

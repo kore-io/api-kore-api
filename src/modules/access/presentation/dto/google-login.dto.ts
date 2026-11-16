@@ -1,5 +1,5 @@
 import { IsEmail, IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
-import type { LoginOrigin } from '@/modules/access/domain/login-next-step';
+import type { LoginOrigin } from '@/modules/access/domain/login/login-next-step';
 
 const LOGIN_ORIGINS: LoginOrigin[] = [
   'invite',

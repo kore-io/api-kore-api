@@ -11,7 +11,7 @@ import {
   SUPPORT_SESSION_STORE,
   type SupportSessionStore,
 } from '@/modules/access/application/ports/support-session.store.port';
-import { supportSessionExpiry } from '@/modules/access/domain/support-session';
+import { supportSessionExpiry } from '@/modules/access/domain/sessions/support-session';
 import type { AuthenticatedRequest } from '@/modules/access/presentation/http/authenticated-request';
 import { NOT_IN_SUPPORT_SESSION } from '@/modules/access/presentation/http/decorators/not-in-support-session.decorator';
 

@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import type { Prisma, PrismaClient } from '@/generated/prisma/client';
-import { invitationExpiresAt } from '@/modules/access/domain/access-invitation';
-import { timezoneForState } from '@/modules/access/domain/wedding-signup';
+import { invitationExpiresAt } from '@/modules/access/domain/invitations/access-invitation';
+import { timezoneForState } from '@/modules/access/domain/weddings/wedding-signup';
 import { OpaqueSessionTokens } from '@/modules/access/infrastructure/providers/opaque-session-tokens';
 import { recomputeWeddingStats } from '@/modules/guests/infrastructure/backoffice/wedding-stats-recompute';
 import { uuidV7 } from '@/shared/ids/uuid-v7';

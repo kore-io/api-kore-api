@@ -12,7 +12,7 @@ import {
   type SiteSectionType,
 } from '@/modules/site/domain/site-sections';
 
-import { creditNameForSite } from '@/modules/access/domain/planner-profile';
+import { creditNameForSite } from '@/modules/access/domain/profiles/planner-profile';
 
 const LOCALE = 'pt-BR';
 

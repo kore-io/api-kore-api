@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { SPREADSHEET_MAX_BYTES } from '@/modules/guests/presentation/http/guards/spreadsheet-upload.guard';
 import { UNZIPPED_MAX_BYTES } from '@/modules/guests/infrastructure/providers/exceljs-spreadsheet-reader';
-import { IMPORT_GUESTS_MAX } from '@/modules/guests/domain/paste-list';
+import { IMPORT_GUESTS_MAX } from '@/modules/guests/domain/imports/paste-list';
 import { toHttpError as toAccessHttpError } from '@/modules/access/presentation/errors/access-http-errors';
 import { validationError } from '@/shared/http/validation-errors';
 import {

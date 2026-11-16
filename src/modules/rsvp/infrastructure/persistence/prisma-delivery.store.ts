@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@/generated/prisma/client';
 import { TenantTransaction } from '@/shared/database/tenant-transaction';
 import { uuidV7 } from '@/shared/ids/uuid-v7';
-import type { DeliveryStatus } from '@/modules/guests/domain/party';
+import type { DeliveryStatus } from '@/modules/guests/domain/parties/party';
 import type { DeliveryChannel } from '@/modules/rsvp/domain/deliveries';
 import type { MessageKind } from '@/modules/rsvp/domain/message-templates';
 import type {

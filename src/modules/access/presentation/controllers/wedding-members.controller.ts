@@ -15,7 +15,7 @@ import { ApiErrorResponses, commonErrors } from '@/shared/http/api-error-respons
 import { ListWeddingMembers } from '@/modules/access/application/members/list-wedding-members.use-case';
 import { RemoveMembership } from '@/modules/access/application/members/remove-membership.use-case';
 import { MembershipNotFoundError } from '@/modules/access/domain/access.errors';
-import type { AuthenticatedSession } from '@/modules/access/domain/authenticated-session';
+import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
 import {
   ActionNotAllowedErrorBody,
   CannotRemoveOwnerErrorBody,

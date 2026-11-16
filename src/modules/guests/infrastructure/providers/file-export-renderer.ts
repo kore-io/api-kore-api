@@ -10,7 +10,7 @@ import {
   COLUMN_TITLES,
   type ExportColumn,
   type ExportGuest,
-} from '@/modules/guests/domain/export';
+} from '@/modules/guests/domain/exports/export';
 
 /**
  * Os arquivos da exportação (ADR-39): o Excel com o exceljs e o PDF com o

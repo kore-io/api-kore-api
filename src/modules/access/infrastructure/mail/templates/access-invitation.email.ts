@@ -1,6 +1,6 @@
 import type { EmailMessage } from '@/shared/email/application/email-sender.port';
 import type { InvitationEmail } from '@/modules/access/application/ports/invitation-mailer.port';
-import { firstName } from '@/modules/access/domain/access-invitation';
+import { firstName } from '@/modules/access/domain/invitations/access-invitation';
 import { renderEmailHtml, SUPPORT_LINE, type EmailBlock } from './email-layout';
 
 const VALIDITY = 'O convite vale por 30 dias e só pode ser usado uma vez.';

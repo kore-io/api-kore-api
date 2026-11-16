@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import type { ProfileKind } from '@/modules/access/domain/authenticated-session';
-import { PROFILE_KINDS } from '@/modules/access/domain/profiles';
+import type { ProfileKind } from '@/modules/access/domain/sessions/authenticated-session';
+import { PROFILE_KINDS } from '@/modules/access/domain/profiles/profiles';
 
 /**
  * O último perfil escolhido neste aparelho (RN14 de Login; decisão 177, item 1):

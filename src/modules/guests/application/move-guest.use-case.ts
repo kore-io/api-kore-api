@@ -18,8 +18,8 @@ import {
   hasPending,
   isEmptySlot,
   type GroupMember,
-} from '@/modules/guests/domain/party-rules';
-import { canBeContact } from '@/modules/guests/domain/party';
+} from '@/modules/guests/domain/parties/party-rules';
+import { canBeContact } from '@/modules/guests/domain/parties/party';
 import {
   GROUP_STORE,
   type GroupRow,

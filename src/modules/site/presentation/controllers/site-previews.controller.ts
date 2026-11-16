@@ -3,7 +3,7 @@ import { Body, Controller, Param, Post, Res } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { ApiErrorResponses, commonErrors } from '@/shared/http/api-error-responses.decorator';
-import type { AuthenticatedSession } from '@/modules/access/domain/authenticated-session';
+import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
 import {
   ActionNotAllowedErrorBody,
   WeddingNotFoundErrorBody,

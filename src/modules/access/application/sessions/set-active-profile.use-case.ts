@@ -3,8 +3,8 @@ import { ProfileNotOwnedError } from '@/modules/access/domain/access.errors';
 import type {
   AuthenticatedSession,
   ProfileKind,
-} from '@/modules/access/domain/authenticated-session';
-import { homeFor } from '@/modules/access/domain/profiles';
+} from '@/modules/access/domain/sessions/authenticated-session';
+import { homeFor } from '@/modules/access/domain/profiles/profiles';
 import {
   PROFILE_DIRECTORY,
   type ProfileDirectory,

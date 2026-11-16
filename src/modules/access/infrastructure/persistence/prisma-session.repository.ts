@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { TenantTransaction } from '@/shared/database/tenant-transaction';
-import type { AuthMethod, ProfileKind } from '@/modules/access/domain/authenticated-session';
+import type {
+  AuthMethod,
+  ProfileKind,
+} from '@/modules/access/domain/sessions/authenticated-session';
 import type {
   SessionRecord,
   SessionRepository,

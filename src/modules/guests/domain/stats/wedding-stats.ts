@@ -1,4 +1,4 @@
-import type { AgeGroup, RsvpStatus } from './party';
+import type { AgeGroup, RsvpStatus } from '@/modules/guests/domain/parties/party';
 
 /**
  * O que muda nos números do casamento numa escrita (Grupos RN16): cada campo

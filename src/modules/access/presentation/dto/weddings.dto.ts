@@ -23,7 +23,7 @@ import {
   type BrazilianState,
   type ClientSignupSource,
   type PartnerTitle,
-} from '@/modules/access/domain/wedding-signup';
+} from '@/modules/access/domain/weddings/wedding-signup';
 
 /** Data do casamento, só o dia (YYYY-MM-DD) e existente no calendário. */
 export const DATE_ONLY = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;

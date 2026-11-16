@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { TenantTransaction } from '@/shared/database/tenant-transaction';
 import type { MembershipReader } from '@/modules/access/application/ports/membership-reader.port';
-import type { MembershipRole } from '@/modules/access/domain/wedding-authorization';
+import type { MembershipRole } from '@/modules/access/domain/weddings/wedding-authorization';
 
 @Injectable()
 export class PrismaMembershipReader implements MembershipReader {

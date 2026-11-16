@@ -5,8 +5,11 @@ import {
 import { Inject, Injectable } from '@nestjs/common';
 import { CheckSlugAvailability } from '@/modules/access/application/weddings/check-slug-availability.use-case';
 import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
-import { timezoneForState, type BrazilianState } from '@/modules/access/domain/wedding-signup';
-import { parsePhone } from '@/modules/guests/domain/phone';
+import {
+  timezoneForState,
+  type BrazilianState,
+} from '@/modules/access/domain/weddings/wedding-signup';
+import { parsePhone } from '@/modules/guests/domain/parties/phone';
 import { imagesInUse } from '@/modules/site/domain/site-sections';
 import { endDateRange, isEndDateInRange } from '@/modules/site/domain/publication';
 import {

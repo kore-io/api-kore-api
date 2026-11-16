@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { coupleLinkCipherContext } from '@/modules/access/domain/access-invitation';
+import { coupleLinkCipherContext } from '@/modules/access/domain/invitations/access-invitation';
 import { AccessCleanupProcessor } from '@/modules/access/infrastructure/jobs/access-cleanup.job';
 import { FIELD_CIPHER, type FieldCipher } from '@/shared/crypto/application/field-cipher.port';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';

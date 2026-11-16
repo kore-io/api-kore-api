@@ -6,7 +6,10 @@ import type {
   SpreadsheetSheet,
 } from '@/modules/guests/application/ports/spreadsheet-reader.port';
 import { FileTooLargeError, SpreadsheetRefusedError } from '@/modules/guests/domain/guests.errors';
-import { TEMPLATE_HEADERS, type CellValue } from '@/modules/guests/domain/spreadsheet-import';
+import {
+  TEMPLATE_HEADERS,
+  type CellValue,
+} from '@/modules/guests/domain/imports/spreadsheet-import';
 
 /** Limite do conteúdo descompactado, contra zip bomb (ADR-39; decisão 189, item 8). */
 export const UNZIPPED_MAX_BYTES = 50 * 1024 * 1024;

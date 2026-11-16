@@ -3,8 +3,8 @@ import { Type } from 'class-transformer';
 import { IsIn, IsInt, IsISO8601, Matches, Max, Min } from 'class-validator';
 import { OptionalNotNull } from '@/shared/http/optional-not-null';
 import { DATE_ONLY } from '@/modules/access/presentation/dto/weddings.dto';
-import type { BillingQuote } from '@/modules/billing/domain/quote';
-import { CURRENT_PRICE_TABLE } from '@/modules/billing/domain/pricing';
+import type { BillingQuote } from '@/modules/billing/domain/payments/quote';
+import { CURRENT_PRICE_TABLE } from '@/modules/billing/domain/payments/pricing';
 
 export class BillingQuoteQuery {
   @ApiProperty({ enum: ['publication', 'extension'] })

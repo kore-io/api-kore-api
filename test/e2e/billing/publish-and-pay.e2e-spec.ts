@@ -6,7 +6,7 @@ import {
   PAYMENT_GATEWAY,
   type PaymentGateway,
 } from '@/modules/billing/application/ports/payment-gateway.port';
-import { addMonths } from '@/modules/billing/domain/pricing';
+import { addMonths } from '@/modules/billing/domain/payments/pricing';
 import { LOCAL_WEBHOOK_TOKEN_HEADER } from '@/modules/billing/infrastructure/backoffice/local-gateway/local-payment-gateway';
 import { LocalGatewayStore } from '@/modules/billing/infrastructure/backoffice/local-gateway/local-gateway.store';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';

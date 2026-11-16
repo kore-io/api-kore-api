@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { canCancel, isPendingAt } from '@/modules/access/domain/access-invitation';
+import { canCancel, isPendingAt } from '@/modules/access/domain/invitations/access-invitation';
 import {
   InvitationNotFoundError,
   InvitationNotPendingError,

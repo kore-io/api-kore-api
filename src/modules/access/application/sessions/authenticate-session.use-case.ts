@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { SessionExpiredError } from '@/modules/access/domain/access.errors';
-import type { AuthenticatedSession } from '@/modules/access/domain/authenticated-session';
+import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
 import {
   isSessionActive,
   renewedExpiry,
   shouldRenew,
-} from '@/modules/access/domain/session-lifetime';
+} from '@/modules/access/domain/sessions/session-lifetime';
 import {
   SESSION_REPOSITORY,
   type SessionRepository,

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ReferralNotFoundError } from '@/modules/access/domain/access.errors';
-import { toReferral, type Referral } from '@/modules/access/domain/referral';
+import { toReferral, type Referral } from '@/modules/access/domain/profiles/referral';
 import {
   REFERRAL_DIRECTORY,
   type ReferralDirectory,

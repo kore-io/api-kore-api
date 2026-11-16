@@ -8,7 +8,7 @@ import {
 import {
   isLoginChallengeUsable,
   LOGIN_CHALLENGE_MAX_ATTEMPTS,
-} from '@/modules/access/domain/login-challenge-rules';
+} from '@/modules/access/domain/login/login-challenge-rules';
 import { CompleteLogin, type CompletedLogin } from './complete-login.use-case';
 import {
   LOGIN_CHALLENGE_SECRETS,

@@ -4,8 +4,8 @@ import { localDate } from '@/shared/time/local-date';
 import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
 import { WeddingScope } from '@/modules/access/application/services/wedding-scope.service';
 import { WeddingNotFoundError } from '@/modules/access/domain/access.errors';
-import type { AuthenticatedSession } from '@/modules/access/domain/authenticated-session';
-import { requireRecentSession } from '@/modules/access/domain/recent-session';
+import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
+import { requireRecentSession } from '@/modules/access/domain/sessions/recent-session';
 import {
   BillingWeddingBlockedError,
   ConfirmNameMismatchError,
@@ -14,7 +14,10 @@ import {
   RefundInProgressError,
   RefundWindowOpenError,
 } from '@/modules/billing/domain/billing.errors';
-import { confirmNameMatches, deletionDayFor } from '@/modules/billing/domain/wedding-deletion';
+import {
+  confirmNameMatches,
+  deletionDayFor,
+} from '@/modules/billing/domain/wedding-lifecycle/wedding-deletion';
 import {
   BILLING_MAILER,
   type BillingMailer,

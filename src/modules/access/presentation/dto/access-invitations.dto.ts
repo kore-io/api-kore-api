@@ -13,7 +13,7 @@ import type { SentInvitation } from '@/modules/access/application/invitations/se
 import {
   ACCESS_INVITATION_KINDS,
   type AccessInvitationKind,
-} from '@/modules/access/domain/access-invitation';
+} from '@/modules/access/domain/invitations/access-invitation';
 
 const normalizeEmails = ({ value }: { value: unknown }): unknown =>
   Array.isArray(value)

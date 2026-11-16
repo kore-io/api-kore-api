@@ -5,7 +5,7 @@
  * Todo e-mail em @exemplo.kore.local (decisão 181): em homologação, nada vai a
  * uma caixa de verdade.
  */
-import type { BrazilianState, PartnerTitle } from '@/modules/access/domain/wedding-signup';
+import type { BrazilianState, PartnerTitle } from '@/modules/access/domain/weddings/wedding-signup';
 
 export const SAMPLE_EMAIL_DOMAIN = 'exemplo.kore.local';
 

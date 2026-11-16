@@ -5,7 +5,7 @@
  * Respostas e envio vêm da nota (as telas precisam da variedade); o histórico
  * das respostas (GuestResponse) chega com a Fase 4.
  */
-import type { AgeGroup, DeliveryStatus, RsvpStatus } from '@/modules/guests/domain/party';
+import type { AgeGroup, DeliveryStatus, RsvpStatus } from '@/modules/guests/domain/parties/party';
 
 export const SAMPLE_GUESTS_WEDDING = 'ana-e-marcos';
 

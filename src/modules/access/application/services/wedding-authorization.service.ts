@@ -9,7 +9,7 @@ import {
   roleAllows,
   type MembershipRole,
   type WeddingAction,
-} from '@/modules/access/domain/wedding-authorization';
+} from '@/modules/access/domain/weddings/wedding-authorization';
 import {
   MEMBERSHIP_READER,
   type MembershipReader,

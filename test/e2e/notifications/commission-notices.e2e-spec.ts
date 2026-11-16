@@ -3,7 +3,7 @@ import type { TestingModule } from '@nestjs/testing';
 import { randomBytes } from 'node:crypto';
 import request from 'supertest';
 import { ReleaseCommissions } from '@/modules/billing/application/payouts/release-commissions.use-case';
-import { addMonths } from '@/modules/billing/domain/pricing';
+import { addMonths } from '@/modules/billing/domain/payments/pricing';
 import { CommissionEmails } from '@/modules/notifications/application/commission-emails.use-case';
 import { COMMISSION_EMAIL_STORE } from '@/modules/notifications/application/ports/commission-email-store.port';
 import type { CommissionEmailStore } from '@/modules/notifications/application/ports/commission-email-store.port';

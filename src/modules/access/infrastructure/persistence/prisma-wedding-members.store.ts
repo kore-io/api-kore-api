@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { TenantTransaction } from '@/shared/database/tenant-transaction';
 import type { PlannerLeftNotice } from '@/modules/access/application/ports/collaboration-notice-mailer.port';
-import { firstName } from '@/modules/access/domain/access-invitation';
-import { creditNameForSite } from '@/modules/access/domain/planner-profile';
+import { firstName } from '@/modules/access/domain/invitations/access-invitation';
+import { creditNameForSite } from '@/modules/access/domain/profiles/planner-profile';
 import type {
   PendingAccessInvitation,
   WeddingMember,

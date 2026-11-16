@@ -1,6 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { localDate } from '@/shared/time/local-date';
-import { promisedPurgeDay, retentionStep } from '@/modules/billing/domain/retention';
+import {
+  promisedPurgeDay,
+  retentionStep,
+} from '@/modules/billing/domain/wedding-lifecycle/retention';
 import {
   BILLING_MAILER,
   type BillingMailer,

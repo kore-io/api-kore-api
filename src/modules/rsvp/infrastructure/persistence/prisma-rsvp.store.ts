@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { TenantTransaction } from '@/shared/database/tenant-transaction';
 import { uuidV7 } from '@/shared/ids/uuid-v7';
 import { DEFAULT_TIMEZONE } from '@/shared/time/local-date';
-import type { StatsDelta } from '@/modules/guests/domain/wedding-stats';
+import type { StatsDelta } from '@/modules/guests/domain/stats/wedding-stats';
 import type { RsvpGuest, RsvpGuestUpdate } from '@/modules/rsvp/domain/rsvp';
 import type {
   ResponseActorInput,

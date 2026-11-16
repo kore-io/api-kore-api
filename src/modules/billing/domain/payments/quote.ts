@@ -5,7 +5,7 @@ import {
   BillingNotDraftError,
   BillingSlugMissingError,
   NotPublishedError,
-} from './billing.errors';
+} from '@/modules/billing/domain/billing.errors';
 import {
   addDays,
   addMonths,

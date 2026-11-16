@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { isReservedSlug, slugAlternatives } from '@/modules/access/domain/wedding-signup';
+import { isReservedSlug, slugAlternatives } from '@/modules/access/domain/weddings/wedding-signup';
 import {
   SLUG_REGISTRY,
   type SlugRegistry,

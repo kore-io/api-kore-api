@@ -9,7 +9,10 @@ import type {
   PlannerProfiles,
 } from '@/modules/access/application/ports/planner-profiles.port';
 import { PlannerProfileExistsError } from '@/modules/access/domain/access.errors';
-import { nextReferralCode, referralCodeBase } from '@/modules/access/domain/invitation-acceptance';
+import {
+  nextReferralCode,
+  referralCodeBase,
+} from '@/modules/access/domain/invitations/invitation-acceptance';
 
 /**
  * Conflitos seguidos no código antes de desistir. Cada um é outro aceite que

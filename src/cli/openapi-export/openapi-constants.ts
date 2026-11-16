@@ -2,8 +2,8 @@ import type { OpenAPIObject } from '@nestjs/swagger';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { RESERVED_SLUG_LIST } from '@/modules/access/domain/wedding-signup';
-import { TEMPLATE_HEADERS } from '@/modules/guests/domain/spreadsheet-import';
+import { RESERVED_SLUG_LIST } from '@/modules/access/domain/weddings/wedding-signup';
+import { TEMPLATE_HEADERS } from '@/modules/guests/domain/imports/spreadsheet-import';
 
 type Schemas = NonNullable<NonNullable<OpenAPIObject['components']>['schemas']>;
 

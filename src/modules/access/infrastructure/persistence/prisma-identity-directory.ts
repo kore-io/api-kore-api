@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
 import type { IdentityDirectory } from '@/modules/access/application/ports/identity-directory.port';
-import type { AuthMethod } from '@/modules/access/domain/authenticated-session';
+import type { AuthMethod } from '@/modules/access/domain/sessions/authenticated-session';
 
 @Injectable()
 export class PrismaIdentityDirectory implements IdentityDirectory {

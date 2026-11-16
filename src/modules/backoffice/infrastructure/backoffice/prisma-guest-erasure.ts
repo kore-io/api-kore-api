@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
-import { comparableName } from '@/modules/guests/domain/paste-list';
+import { comparableName } from '@/modules/guests/domain/imports/paste-list';
 import { recomputeWeddingStats } from '@/modules/guests/infrastructure/backoffice/wedding-stats-recompute';
 import type {
   GuestErasure,

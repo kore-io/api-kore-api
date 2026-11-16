@@ -7,7 +7,7 @@ import {
   BillingEndDateOutOfRangeError,
   NotPublishedError,
 } from '@/modules/billing/domain/billing.errors';
-import { addMonths } from '@/modules/billing/domain/pricing';
+import { addMonths } from '@/modules/billing/domain/payments/pricing';
 import {
   ADMIN_BILLING_STORE,
   type AdminBillingStore,

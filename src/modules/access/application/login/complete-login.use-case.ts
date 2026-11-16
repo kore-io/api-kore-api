@@ -8,12 +8,12 @@ import {
   type ProductEventRecorder,
 } from '@/modules/product-events/application/ports/product-event-recorder.port';
 import { UserBlockedError } from '@/modules/access/domain/access.errors';
-import type { AuthMethod } from '@/modules/access/domain/authenticated-session';
+import type { AuthMethod } from '@/modules/access/domain/sessions/authenticated-session';
 import {
   loginNextStep,
   type LoginNext,
   type LoginOrigin,
-} from '@/modules/access/domain/login-next-step';
+} from '@/modules/access/domain/login/login-next-step';
 import {
   PROFILE_DIRECTORY,
   type ProfileDirectory,

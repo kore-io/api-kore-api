@@ -1,6 +1,6 @@
 import type { SupportSessionStore } from '@/modules/access/application/ports/support-session.store.port';
 import type { AppConfigService } from '@/shared/config/app-config.service';
-import type { AuthenticatedSession } from '@/modules/access/domain/authenticated-session';
+import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
 import { GetMe } from './get-me.use-case';
 import type { ProfileDirectory } from '@/modules/access/application/ports/profile-directory.port';
 import type { UserRepository } from '@/modules/access/application/ports/user-repository.port';

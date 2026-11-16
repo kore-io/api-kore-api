@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { AuthMethod } from '@/modules/access/domain/authenticated-session';
-import { renewedExpiry } from '@/modules/access/domain/session-lifetime';
+import type { AuthMethod } from '@/modules/access/domain/sessions/authenticated-session';
+import { renewedExpiry } from '@/modules/access/domain/sessions/session-lifetime';
 import {
   SESSION_REPOSITORY,
   type SessionRepository,

@@ -1,4 +1,4 @@
-import type { InvitationSnapshot } from '@/modules/access/domain/invitation-acceptance';
+import type { InvitationSnapshot } from '@/modules/access/domain/invitations/invitation-acceptance';
 import { inviterOf } from './get-access-invitation.use-case';
 
 const inviter = (overrides: Partial<InvitationSnapshot['inviter']>) =>

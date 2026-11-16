@@ -7,7 +7,7 @@ import type {
   PublicSiteReader,
   PublicSiteRow,
 } from '@/modules/site/application/ports/public-site-reader.port';
-import { creditNameForSite } from '@/modules/access/domain/planner-profile';
+import { creditNameForSite } from '@/modules/access/domain/profiles/planner-profile';
 import type { SiteState } from '@/modules/site/domain/public-site';
 
 /**

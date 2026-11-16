@@ -18,7 +18,7 @@ import {
   TrashItemNotFoundError,
   type FieldIssue,
 } from '@/modules/guests/domain/guests.errors';
-import { canBeContact, TAGS_PER_WEDDING_MAX } from '@/modules/guests/domain/party';
+import { canBeContact, TAGS_PER_WEDDING_MAX } from '@/modules/guests/domain/parties/party';
 import {
   contactAfter,
   deliveryStatusAfter,
@@ -27,9 +27,9 @@ import {
   respondedAtAfter,
   sameInstant,
   type GroupMember,
-} from '@/modules/guests/domain/party-rules';
-import { purgeAt } from '@/modules/guests/domain/trash';
-import { guestsDelta } from '@/modules/guests/domain/wedding-stats';
+} from '@/modules/guests/domain/parties/party-rules';
+import { purgeAt } from '@/modules/guests/domain/trash/trash';
+import { guestsDelta } from '@/modules/guests/domain/stats/wedding-stats';
 import {
   GROUP_STORE,
   type GroupRow,

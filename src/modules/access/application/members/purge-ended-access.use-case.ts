@@ -3,7 +3,7 @@ import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,
 } from '@/modules/logs/application/ports/application-log-writer.port';
-import { LOGIN_REQUEST_WINDOW_MS } from '@/modules/access/domain/login-challenge-rules';
+import { LOGIN_REQUEST_WINDOW_MS } from '@/modules/access/domain/login/login-challenge-rules';
 import {
   ACCESS_CLEANUP,
   type AccessCleanup,

@@ -1,4 +1,4 @@
-import type { MembershipRole } from './wedding-authorization';
+import type { MembershipRole } from '@/modules/access/domain/weddings/wedding-authorization';
 
 export type RemovalRefusal =
   'action_not_allowed' | 'cannot_remove_owner' | 'last_owner' | 'wedding_has_no_owner';

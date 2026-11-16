@@ -11,7 +11,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { RSVP_STATUSES, type RsvpStatus } from '@/modules/guests/domain/party';
+import { RSVP_STATUSES, type RsvpStatus } from '@/modules/guests/domain/parties/party';
 import type { RsvpView } from '@/modules/rsvp/application/rsvp-view';
 
 /**

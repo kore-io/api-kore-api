@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@/generated/prisma/client';
 import { TenantTransaction } from '@/shared/database/tenant-transaction';
 import type { TagRow, TagStore } from '@/modules/guests/application/ports/tag-store.port';
-import type { TagColor } from '@/modules/guests/domain/party';
+import type { TagColor } from '@/modules/guests/domain/parties/party';
 
 /** O nome repetido entre as tags ativas bate no índice único parcial (migration guests). */
 function isNameTaken(error: unknown): boolean {

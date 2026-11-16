@@ -11,7 +11,7 @@ import {
   isReservedSlug,
   timezoneForState,
   type BrazilianState,
-} from '@/modules/access/domain/wedding-signup';
+} from '@/modules/access/domain/weddings/wedding-signup';
 import { checkedAppearance } from './create-wedding.use-case';
 import {
   PLANNER_PROFILES,

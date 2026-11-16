@@ -21,7 +21,7 @@ import {
   GetPlannerProfile,
   UpdatePlannerProfile,
 } from '@/modules/access/application/profiles/planner-profile.use-cases';
-import type { AuthenticatedSession } from '@/modules/access/domain/authenticated-session';
+import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
 import { ContrastTooLowErrorBody } from '@/modules/site/presentation/dto/site-error.dto';
 import {
   OwnerlessWeddingsLimitErrorBody,

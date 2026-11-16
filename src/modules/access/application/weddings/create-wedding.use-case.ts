@@ -5,7 +5,7 @@ import {
   SlugUnavailableError,
   TermsVersionOutdatedError,
 } from '@/modules/access/domain/access.errors';
-import { toReferral } from '@/modules/access/domain/referral';
+import { toReferral } from '@/modules/access/domain/profiles/referral';
 import {
   cleanText,
   isReservedSlug,
@@ -13,7 +13,7 @@ import {
   type BrazilianState,
   type ClientSignupSource,
   type PartnerTitle,
-} from '@/modules/access/domain/wedding-signup';
+} from '@/modules/access/domain/weddings/wedding-signup';
 import {
   evaluateAppearance,
   floorRatio,

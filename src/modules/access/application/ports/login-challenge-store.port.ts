@@ -1,4 +1,4 @@
-import type { LoginOrigin } from '@/modules/access/domain/login-next-step';
+import type { LoginOrigin } from '@/modules/access/domain/login/login-next-step';
 
 export interface LoginChallengeRecord {
   id: string;

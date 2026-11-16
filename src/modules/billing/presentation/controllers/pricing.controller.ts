@@ -2,7 +2,7 @@ import { Controller, Get, Header, Param, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { ApiErrorResponses, commonErrors } from '@/shared/http/api-error-responses.decorator';
 import { Public } from '@/shared/http/public.decorator';
-import type { AuthenticatedSession } from '@/modules/access/domain/authenticated-session';
+import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
 import {
   ActionNotAllowedErrorBody,
   WeddingNotFoundErrorBody,

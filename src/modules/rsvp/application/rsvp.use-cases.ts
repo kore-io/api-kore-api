@@ -4,7 +4,7 @@ import type { PartyTransactionContext } from '@/shared/database/tenant-transacti
 import { uuidV7 } from '@/shared/ids/uuid-v7';
 import { RsvpWriteRateLimit } from '@/shared/rate-limit/rsvp-write-rate-limit';
 import { daysBetween, localDate } from '@/shared/time/local-date';
-import { deliveryStatusAfter, hasPending } from '@/modules/guests/domain/party-rules';
+import { deliveryStatusAfter, hasPending } from '@/modules/guests/domain/parties/party-rules';
 import {
   ACCESS_IP_LOG_WRITER,
   type AccessIpLogWriter,

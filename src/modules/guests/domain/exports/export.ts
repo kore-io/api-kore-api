@@ -1,6 +1,6 @@
-import type { AgeGroup, RsvpStatus } from './party';
+import type { AgeGroup, RsvpStatus } from '@/modules/guests/domain/parties/party';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
-import { localDate } from './trash';
+import { localDate } from '@/modules/guests/domain/trash/trash';
 
 /** Os formatos (Exportação RN01). */
 export const EXPORT_FORMATS = ['xlsx', 'pdf'] as const;

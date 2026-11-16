@@ -2,8 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { FIELD_CIPHER, type FieldCipher } from '@/shared/crypto/application/field-cipher.port';
 import { TAX_ID_HASHER, type TaxIdHasher } from '@/shared/crypto/application/tax-id-hasher.port';
 import { BackofficeTransaction } from '@/shared/database/backoffice-transaction';
-import type { AuthenticatedSession } from '@/modules/access/domain/authenticated-session';
-import { requireRecentSession } from '@/modules/access/domain/recent-session';
+import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
+import { requireRecentSession } from '@/modules/access/domain/sessions/recent-session';
 import { maskTaxId, normalizeTaxId } from '@/modules/referral/domain/payout-data';
 import {
   CommissionNotBlockableError,

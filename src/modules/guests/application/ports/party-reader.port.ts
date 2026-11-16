@@ -1,4 +1,9 @@
-import type { AgeGroup, DeliveryStatus, RsvpStatus, TagColor } from '@/modules/guests/domain/party';
+import type {
+  AgeGroup,
+  DeliveryStatus,
+  RsvpStatus,
+  TagColor,
+} from '@/modules/guests/domain/parties/party';
 
 export interface TagSummary {
   id: string;

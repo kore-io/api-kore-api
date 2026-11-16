@@ -6,7 +6,7 @@ import {
   type PlannerProfiles,
 } from '@/modules/access/application/ports/planner-profiles.port';
 import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
-import { coupleLinkCipherContext } from '@/modules/access/domain/access-invitation';
+import { coupleLinkCipherContext } from '@/modules/access/domain/invitations/access-invitation';
 import { WeddingNotFoundError } from '@/modules/access/domain/access.errors';
 import { INVITATION_PATH } from '@/modules/access/infrastructure/mail/outbox-invitation-mailer';
 import {

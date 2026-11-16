@@ -9,7 +9,7 @@ import {
   SendPayoutTransfer,
 } from '@/modules/billing/application/payouts/payout-transfers.use-cases';
 import { ReleaseCommissions } from '@/modules/billing/application/payouts/release-commissions.use-case';
-import { addMonths } from '@/modules/billing/domain/pricing';
+import { addMonths } from '@/modules/billing/domain/payments/pricing';
 import {
   PayoutAmountMismatchError,
   PayoutReferrerBlockedError,

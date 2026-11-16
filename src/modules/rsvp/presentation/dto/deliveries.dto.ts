@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { ArrayMaxSize, ArrayMinSize, IsArray, IsIn, IsUUID } from 'class-validator';
-import { DELIVERY_STATUSES, type DeliveryStatus } from '@/modules/guests/domain/party';
+import { DELIVERY_STATUSES, type DeliveryStatus } from '@/modules/guests/domain/parties/party';
 import type {
   DeliveredParty,
   DeliveryQueue,

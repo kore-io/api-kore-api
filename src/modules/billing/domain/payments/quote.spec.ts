@@ -4,7 +4,7 @@ import {
   BillingNotDraftError,
   BillingSlugMissingError,
   NotPublishedError,
-} from './billing.errors';
+} from '@/modules/billing/domain/billing.errors';
 import { buildQuote, type QuoteWedding, referralDiscountFor } from './quote';
 
 // Hoje é 10/08/2026 às 15h20 em São Paulo (Contexto do Gherkin).

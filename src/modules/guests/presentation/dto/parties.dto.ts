@@ -31,7 +31,7 @@ import {
   type DeliveryStatus,
   type RsvpStatus,
   type TagColor,
-} from '@/modules/guests/domain/party';
+} from '@/modules/guests/domain/parties/party';
 import { OptionalNotNull } from '@/shared/http/optional-not-null';
 
 /** Nome sem espaços nas pontas (RN04). */

@@ -1,12 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { monthsBefore } from '@/shared/time/months-before';
-import { firstName } from '@/modules/access/domain/access-invitation';
+import { firstName } from '@/modules/access/domain/invitations/access-invitation';
 import {
   OWNERLESS_PURGE_MONTHS,
   PURGE_NOTICE_DAYS,
   ownerlessStep,
   promisedPurgeDate,
-} from '@/modules/access/domain/ownerless-purge';
+} from '@/modules/access/domain/weddings/ownerless-purge';
 import {
   OWNERLESS_WEDDINGS,
   type OwnerlessWeddings,

@@ -11,7 +11,7 @@ import {
   PlusOnesInUseError,
   type FieldIssue,
 } from '@/modules/guests/domain/guests.errors';
-import { canBeContact, type AgeGroup } from '@/modules/guests/domain/party';
+import { canBeContact, type AgeGroup } from '@/modules/guests/domain/parties/party';
 import {
   contactAfter,
   deliveryStatusAfter,
@@ -19,9 +19,9 @@ import {
   isEmptySlot,
   respondedAtAfter,
   sameInstant,
-} from '@/modules/guests/domain/party-rules';
-import { parsePhone } from '@/modules/guests/domain/phone';
-import { guestsDelta, type StatsDelta } from '@/modules/guests/domain/wedding-stats';
+} from '@/modules/guests/domain/parties/party-rules';
+import { parsePhone } from '@/modules/guests/domain/parties/phone';
+import { guestsDelta, type StatsDelta } from '@/modules/guests/domain/stats/wedding-stats';
 import { toPartyView, type PartyView } from './party-view';
 import {
   GROUP_STORE,

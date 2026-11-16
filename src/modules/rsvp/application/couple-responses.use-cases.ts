@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { uuidV7 } from '@/shared/ids/uuid-v7';
 import { localDate } from '@/shared/time/local-date';
 import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
-import { deliveryStatusAfter, hasPending } from '@/modules/guests/domain/party-rules';
+import { deliveryStatusAfter, hasPending } from '@/modules/guests/domain/parties/party-rules';
 import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,

@@ -10,8 +10,11 @@ import {
   deleteSiteImageObjects,
   purgeWeddingData,
 } from '@/modules/access/infrastructure/backoffice/wedding-purge';
-import { addDays } from '@/modules/billing/domain/pricing';
-import { RETENTION_NOTICE_DAYS, type PurgeReason } from '@/modules/billing/domain/retention';
+import { addDays } from '@/modules/billing/domain/payments/pricing';
+import {
+  RETENTION_NOTICE_DAYS,
+  type PurgeReason,
+} from '@/modules/billing/domain/wedding-lifecycle/retention';
 import type {
   RetentionCandidate,
   RetentionNoticeTarget,

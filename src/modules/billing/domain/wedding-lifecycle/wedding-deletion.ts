@@ -1,4 +1,4 @@
-import { addDays } from './pricing';
+import { addDays } from '@/modules/billing/domain/payments/pricing';
 
 /** O expurgo da exclusão pedida pelo casal fica para 7 dias depois (Retenção RN05; decisão 230, D14). */
 export const DELETION_DAYS = 7;

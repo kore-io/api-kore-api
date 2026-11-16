@@ -12,7 +12,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { ApiErrorResponses, commonErrors } from '@/shared/http/api-error-responses.decorator';
 import { CancelAccessInvitation } from '@/modules/access/application/invitations/cancel-access-invitation.use-case';
 import { SendAccessInvitations } from '@/modules/access/application/invitations/send-access-invitations.use-case';
-import type { AuthenticatedSession } from '@/modules/access/domain/authenticated-session';
+import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
 import { InvitationNotFoundError } from '@/modules/access/domain/access.errors';
 import {
   ActionNotAllowedErrorBody,

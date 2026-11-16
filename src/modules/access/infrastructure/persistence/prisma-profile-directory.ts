@@ -7,9 +7,12 @@ import type {
   MembershipSummary,
   ProfileDirectory,
 } from '@/modules/access/application/ports/profile-directory.port';
-import type { ProfileKind } from '@/modules/access/domain/authenticated-session';
-import { coupleNames, type InvitationPartner } from '@/modules/access/domain/invitation-acceptance';
-import { profilesOf } from '@/modules/access/domain/profiles';
+import type { ProfileKind } from '@/modules/access/domain/sessions/authenticated-session';
+import {
+  coupleNames,
+  type InvitationPartner,
+} from '@/modules/access/domain/invitations/invitation-acceptance';
+import { profilesOf } from '@/modules/access/domain/profiles/profiles';
 import { liveWeddingField } from './live-wedding-field';
 
 /**

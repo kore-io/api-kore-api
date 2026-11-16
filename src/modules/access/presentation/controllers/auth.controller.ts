@@ -4,7 +4,7 @@ import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { EndAllSessions } from '@/modules/access/application/sessions/end-all-sessions.use-case';
 import { EndSession } from '@/modules/access/application/sessions/end-session.use-case';
-import type { AuthenticatedSession } from '@/modules/access/domain/authenticated-session';
+import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
 import { CurrentSession } from '@/modules/access/presentation/http/decorators/current-session.decorator';
 import { clearSessionCookie } from '@/modules/access/presentation/http/cookies/session-cookie';
 

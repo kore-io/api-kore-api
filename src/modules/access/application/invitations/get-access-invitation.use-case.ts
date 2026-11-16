@@ -1,5 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { firstName, type AccessInvitationKind } from '@/modules/access/domain/access-invitation';
+import {
+  firstName,
+  type AccessInvitationKind,
+} from '@/modules/access/domain/invitations/access-invitation';
 import { InvitationInvalidError, SelfReferralError } from '@/modules/access/domain/access.errors';
 import {
   coupleNames,
@@ -7,8 +10,8 @@ import {
   invalidReason,
   isSelfReferral,
   type InvitationSnapshot,
-} from '@/modules/access/domain/invitation-acceptance';
-import { toReferral } from '@/modules/access/domain/referral';
+} from '@/modules/access/domain/invitations/invitation-acceptance';
+import { toReferral } from '@/modules/access/domain/profiles/referral';
 import {
   INVITATION_ACCEPTANCE_STORE,
   type InvitationAcceptanceStore,

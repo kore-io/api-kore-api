@@ -23,15 +23,15 @@ import {
   WeddingBlockedError,
   WeddingDeletionScheduledError,
 } from '@/modules/access/domain/access.errors';
-import { firstName } from '@/modules/access/domain/access-invitation';
+import { firstName } from '@/modules/access/domain/invitations/access-invitation';
 import {
   emailDiffers,
   invalidReason,
   isSelfReferral,
   partnerChoice,
-} from '@/modules/access/domain/invitation-acceptance';
-import type { MembershipRole } from '@/modules/access/domain/wedding-authorization';
-import { cleanText, type PartnerTitle } from '@/modules/access/domain/wedding-signup';
+} from '@/modules/access/domain/invitations/invitation-acceptance';
+import type { MembershipRole } from '@/modules/access/domain/weddings/wedding-authorization';
+import { cleanText, type PartnerTitle } from '@/modules/access/domain/weddings/wedding-signup';
 import {
   INVITATION_ACCEPTANCE_STORE,
   type InvitationAcceptanceStore,

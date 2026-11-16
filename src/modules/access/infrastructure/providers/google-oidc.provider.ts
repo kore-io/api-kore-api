@@ -1,6 +1,6 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import type { GoogleIdentityProvider } from '@/modules/access/application/ports/google-identity-provider.port';
-import type { GoogleIdentity } from '@/modules/access/domain/google-identity';
+import type { GoogleIdentity } from '@/modules/access/domain/login/google-identity';
 
 const AUTHORIZATION_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
 const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';

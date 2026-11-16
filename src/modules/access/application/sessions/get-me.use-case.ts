@@ -5,7 +5,7 @@ import type {
   AuthenticatedSession,
   AuthMethod,
   ProfileKind,
-} from '@/modules/access/domain/authenticated-session';
+} from '@/modules/access/domain/sessions/authenticated-session';
 import {
   PROFILE_DIRECTORY,
   type AccountOverview,
@@ -19,7 +19,7 @@ import {
   SUPPORT_SESSION_STORE,
   type SupportSessionStore,
 } from '@/modules/access/application/ports/support-session.store.port';
-import { supportSessionExpiresAt } from '@/modules/access/domain/support-session';
+import { supportSessionExpiresAt } from '@/modules/access/domain/sessions/support-session';
 import {
   USER_REPOSITORY,
   type UserProfile,

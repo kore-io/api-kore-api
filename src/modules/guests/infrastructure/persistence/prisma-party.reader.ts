@@ -10,7 +10,7 @@ import type {
   PartySummaryRow,
   TagSummary,
 } from '@/modules/guests/application/ports/party-reader.port';
-import type { DeliveryStatus, RsvpStatus } from '@/modules/guests/domain/party';
+import type { DeliveryStatus, RsvpStatus } from '@/modules/guests/domain/parties/party';
 
 /** O histórico do Painel devolve as 50 linhas mais recentes (Prazo RN05; R3-5). */
 const HISTORY_LIMIT = 50;

@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { BackofficeTransaction } from '@/shared/database/backoffice-transaction';
-import { coupleNames, type InvitationPartner } from '@/modules/access/domain/invitation-acceptance';
+import {
+  coupleNames,
+  type InvitationPartner,
+} from '@/modules/access/domain/invitations/invitation-acceptance';
 import type {
   DeletionMoneyLocks,
   DeletionTarget,

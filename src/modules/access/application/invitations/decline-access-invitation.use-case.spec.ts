@@ -1,5 +1,5 @@
 import { InvitationNotDeclinableError } from '@/modules/access/domain/access.errors';
-import type { InvitationSnapshot } from '@/modules/access/domain/invitation-acceptance';
+import type { InvitationSnapshot } from '@/modules/access/domain/invitations/invitation-acceptance';
 import { DeclineAccessInvitation } from './decline-access-invitation.use-case';
 import type { DeclineNotice } from '@/modules/access/application/ports/decline-notice-mailer.port';
 import type { InvitationAcceptanceStore } from '@/modules/access/application/ports/invitation-acceptance-store.port';

@@ -21,7 +21,7 @@ import {
   refundReceiptContentType,
   refundReceiptKey,
   type RefundReceiptContentType,
-} from '@/modules/billing/domain/refund-receipt';
+} from '@/modules/billing/domain/refunds/refund-receipt';
 import {
   ADMIN_BILLING_STORE,
   type AdminBillingStore,

@@ -14,13 +14,13 @@ import {
   SessionExpiredError,
   TermsVersionOutdatedError,
 } from '@/modules/access/domain/access.errors';
-import type { AuthenticatedSession } from '@/modules/access/domain/authenticated-session';
+import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
 import {
   checkPlannerProfile,
   isProfileComplete,
   type PlannerProfileInput,
-} from '@/modules/access/domain/planner-profile';
-import { homeFor } from '@/modules/access/domain/profiles';
+} from '@/modules/access/domain/profiles/planner-profile';
+import { homeFor } from '@/modules/access/domain/profiles/profiles';
 import {
   PLANNER_PROFILES,
   type PlannerProfileRecord,

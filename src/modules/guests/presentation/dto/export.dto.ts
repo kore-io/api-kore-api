@@ -8,7 +8,7 @@ import {
   type ExportColumn,
   type ExportFormat,
   type ExportWho,
-} from '@/modules/guests/domain/export';
+} from '@/modules/guests/domain/exports/export';
 
 /** "name,party,rsvp" vira a lista; espaços nas pontas saem. */
 const splitList = ({ value }: { value: unknown }): unknown =>

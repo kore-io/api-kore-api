@@ -1,5 +1,9 @@
 import { localDate } from '@/shared/time/local-date';
-import { GUEST_NAME_MAX, type AgeGroup, type RsvpStatus } from '@/modules/guests/domain/party';
+import {
+  GUEST_NAME_MAX,
+  type AgeGroup,
+  type RsvpStatus,
+} from '@/modules/guests/domain/parties/party';
 
 /** Restrição alimentar (RSVP RN03; decisão 189(9)) e sugestão de música (Música RN04). */
 export const DIETARY_RESTRICTION_MAX = 200;

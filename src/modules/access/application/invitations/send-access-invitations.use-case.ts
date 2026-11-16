@@ -14,7 +14,7 @@ import {
   roleGrantedBy,
   sendRefusal,
   type AccessInvitationKind,
-} from '@/modules/access/domain/access-invitation';
+} from '@/modules/access/domain/invitations/access-invitation';
 import {
   CoupleInvitationsFullError,
   InvalidInvitationRecipientsError,
@@ -23,7 +23,7 @@ import {
   SelfInvitationError,
   WeddingActionForbiddenError,
 } from '@/modules/access/domain/access.errors';
-import type { WeddingAction } from '@/modules/access/domain/wedding-authorization';
+import type { WeddingAction } from '@/modules/access/domain/weddings/wedding-authorization';
 import {
   ACCESS_INVITATION_STORE,
   type AccessInvitationStore,

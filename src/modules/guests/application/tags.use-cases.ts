@@ -8,7 +8,7 @@ import {
   TagNotFoundError,
   type FieldIssue,
 } from '@/modules/guests/domain/guests.errors';
-import { TAGS_PER_WEDDING_MAX, type TagColor } from '@/modules/guests/domain/party';
+import { TAGS_PER_WEDDING_MAX, type TagColor } from '@/modules/guests/domain/parties/party';
 import { TAG_STORE, type TagRow, type TagStore } from './ports/tag-store.port';
 
 /** Tela Tags, escolha no Novo grupo e filtro da lista (Tags RN04, RN05). */

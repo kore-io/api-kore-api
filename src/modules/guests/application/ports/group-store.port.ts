@@ -1,5 +1,5 @@
-import type { AgeGroup, DeliveryStatus } from '@/modules/guests/domain/party';
-import type { GroupMember } from '@/modules/guests/domain/party-rules';
+import type { AgeGroup, DeliveryStatus } from '@/modules/guests/domain/parties/party';
+import type { GroupMember } from '@/modules/guests/domain/parties/party-rules';
 import type { NewGuest } from './party-store.port';
 
 export interface GroupMemberRow extends GroupMember {

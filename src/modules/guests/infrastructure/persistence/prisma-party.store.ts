@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { TenantTransaction } from '@/shared/database/tenant-transaction';
 import type { NewParty, PartyStore } from '@/modules/guests/application/ports/party-store.port';
-import type { StatsDelta } from '@/modules/guests/domain/wedding-stats';
+import type { StatsDelta } from '@/modules/guests/domain/stats/wedding-stats';
 
 /** Grupos por lote no createMany: segura o tamanho de cada INSERT. */
 const BATCH_SIZE = 200;

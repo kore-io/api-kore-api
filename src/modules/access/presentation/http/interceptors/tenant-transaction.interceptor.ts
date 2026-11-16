@@ -3,7 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { from, lastValueFrom, type Observable } from 'rxjs';
 import { WeddingScope } from '@/modules/access/application/services/wedding-scope.service';
 import { WeddingNotFoundError } from '@/modules/access/domain/access.errors';
-import type { MembershipRole } from '@/modules/access/domain/wedding-authorization';
+import type { MembershipRole } from '@/modules/access/domain/weddings/wedding-authorization';
 import { toHttpError } from '@/modules/access/presentation/errors/access-http-errors';
 import type { AuthenticatedRequest } from '@/modules/access/presentation/http/authenticated-request';
 import { OWN_TRANSACTIONS } from '@/modules/access/presentation/http/decorators/own-transactions.decorator';

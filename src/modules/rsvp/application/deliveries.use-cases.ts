@@ -3,9 +3,9 @@ import { AppConfigService } from '@/shared/config/app-config.service';
 import { AFTER_COMMIT, type AfterCommit } from '@/shared/database/after-commit.port';
 import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
 import { PARTY_LINKS, type PartyLinks } from '@/modules/guests/application/ports/party-links.port';
-import type { DeliveryStatus } from '@/modules/guests/domain/party';
-import { maskEmail } from '@/modules/guests/domain/email';
-import { maskPhone } from '@/modules/guests/domain/phone';
+import type { DeliveryStatus } from '@/modules/guests/domain/parties/party';
+import { maskEmail } from '@/modules/guests/domain/parties/email';
+import { maskPhone } from '@/modules/guests/domain/parties/phone';
 import {
   PRODUCT_EVENT_RECORDER,
   type ProductEventRecorder,

@@ -1,8 +1,8 @@
-import { RESERVED_REFERRAL_CODES } from './planner-profile';
+import { RESERVED_REFERRAL_CODES } from '@/modules/access/domain/profiles/planner-profile';
 import type { AccessInvitationKind } from './access-invitation';
-import type { ReferrerRecord } from './referral';
-import type { MembershipRole } from './wedding-authorization';
-import type { PartnerTitle } from './wedding-signup';
+import type { ReferrerRecord } from '@/modules/access/domain/profiles/referral';
+import type { MembershipRole } from '@/modules/access/domain/weddings/wedding-authorization';
+import type { PartnerTitle } from '@/modules/access/domain/weddings/wedding-signup';
 
 export interface InvitationPartner {
   slot: 1 | 2;

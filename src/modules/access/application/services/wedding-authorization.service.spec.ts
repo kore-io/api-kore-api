@@ -3,7 +3,7 @@ import {
   WeddingActionForbiddenError,
   WeddingNotFoundError,
 } from '@/modules/access/domain/access.errors';
-import type { MembershipRole } from '@/modules/access/domain/wedding-authorization';
+import type { MembershipRole } from '@/modules/access/domain/weddings/wedding-authorization';
 import type { MembershipReader } from '@/modules/access/application/ports/membership-reader.port';
 import type { PlannerProfiles } from '@/modules/access/application/ports/planner-profiles.port';
 import { WeddingAuthorization } from './wedding-authorization.service';

@@ -8,8 +8,8 @@ import {
   LOGIN_CHALLENGE_TTL_MS,
   LOGIN_REQUEST_INTERVAL_MS,
   LOGIN_REQUEST_WINDOW_MS,
-} from '@/modules/access/domain/login-challenge-rules';
-import { storableOriginRef, type LoginOrigin } from '@/modules/access/domain/login-next-step';
+} from '@/modules/access/domain/login/login-challenge-rules';
+import { storableOriginRef, type LoginOrigin } from '@/modules/access/domain/login/login-next-step';
 import {
   LOGIN_CHALLENGE_SECRETS,
   type LoginChallengeSecrets,

@@ -1,7 +1,7 @@
 import type {
   SupportEndReason,
   SupportSessionRecord,
-} from '@/modules/access/domain/support-session';
+} from '@/modules/access/domain/sessions/support-session';
 
 /**
  * As sessões de suporte (Backoffice - acesso RN08), pela conexão do

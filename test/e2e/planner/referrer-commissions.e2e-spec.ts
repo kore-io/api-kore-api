@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { ReleaseCommissions } from '@/modules/billing/application/payouts/release-commissions.use-case';
-import { addMonths } from '@/modules/billing/domain/pricing';
+import { addMonths } from '@/modules/billing/domain/payments/pricing';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import { localDate } from '@/shared/time/local-date';
 import { createTestApp } from '../support/harness/create-test-app';

@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { SupportContext } from '@/shared/database/support-context';
 import { TenantTransaction } from '@/shared/database/tenant-transaction';
-import type { MembershipRole } from '@/modules/access/domain/wedding-authorization';
+import type { MembershipRole } from '@/modules/access/domain/weddings/wedding-authorization';
 import {
   WEDDING_ACTIVITY,
   type WeddingActivity,

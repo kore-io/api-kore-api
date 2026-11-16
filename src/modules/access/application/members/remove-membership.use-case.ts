@@ -14,7 +14,7 @@ import {
   WeddingBlockedError,
   WeddingDeletionScheduledError,
 } from '@/modules/access/domain/access.errors';
-import { removalRefusal } from '@/modules/access/domain/membership-removal';
+import { removalRefusal } from '@/modules/access/domain/members/membership-removal';
 import {
   COLLABORATION_NOTICE_MAILER,
   type CollaborationNoticeMailer,
@@ -27,7 +27,7 @@ import {
   WEDDING_WRITE_STATE,
   type WeddingWriteState,
 } from '@/modules/access/application/ports/wedding-write-state.port';
-import { requireNoRecentAccessChange } from '@/modules/access/domain/recent-access-change';
+import { requireNoRecentAccessChange } from '@/modules/access/domain/members/recent-access-change';
 import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
 
 /**

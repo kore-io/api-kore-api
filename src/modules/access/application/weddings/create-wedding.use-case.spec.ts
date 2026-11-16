@@ -3,7 +3,7 @@ import {
   SlugUnavailableError,
   TermsVersionOutdatedError,
 } from '@/modules/access/domain/access.errors';
-import type { ReferrerRecord } from '@/modules/access/domain/referral';
+import type { ReferrerRecord } from '@/modules/access/domain/profiles/referral';
 import { CreateWedding, type WeddingSignup } from './create-wedding.use-case';
 import type { ReferralDirectory } from '@/modules/access/application/ports/referral-directory.port';
 import type { SlugRegistry } from '@/modules/access/application/ports/slug-registry.port';

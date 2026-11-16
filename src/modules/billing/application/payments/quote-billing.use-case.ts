@@ -1,8 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
 import { WeddingNotFoundError } from '@/modules/access/domain/access.errors';
-import type { PaymentKindForPrice, PaymentMethodForPrice } from '@/modules/billing/domain/pricing';
-import { type BillingQuote, buildQuote, referralDiscountFor } from '@/modules/billing/domain/quote';
+import type {
+  PaymentKindForPrice,
+  PaymentMethodForPrice,
+} from '@/modules/billing/domain/payments/pricing';
+import {
+  type BillingQuote,
+  buildQuote,
+  referralDiscountFor,
+} from '@/modules/billing/domain/payments/quote';
 import {
   QUOTE_TARGET_READER,
   type QuoteTargetReader,

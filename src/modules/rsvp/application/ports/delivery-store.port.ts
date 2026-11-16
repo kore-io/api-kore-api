@@ -1,4 +1,4 @@
-import type { DeliveryStatus } from '@/modules/guests/domain/party';
+import type { DeliveryStatus } from '@/modules/guests/domain/parties/party';
 import type { DeliveryChannel } from '@/modules/rsvp/domain/deliveries';
 import type { MessageKind } from '@/modules/rsvp/domain/message-templates';
 

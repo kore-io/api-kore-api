@@ -14,7 +14,7 @@ import {
   NotPublishedError,
   WeddingDeletionScheduledError,
 } from '@/modules/billing/domain/billing.errors';
-import { addDays, addMonths, CURRENT_PRICE_TABLE } from '@/modules/billing/domain/pricing';
+import { addDays, addMonths, CURRENT_PRICE_TABLE } from '@/modules/billing/domain/payments/pricing';
 import { CancelPendingPayment } from '@/modules/billing/application/payments/cancel-pending-payment';
 import {
   PAYMENT_REQUEST_STORE,

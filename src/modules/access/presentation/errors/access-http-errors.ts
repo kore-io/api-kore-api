@@ -1,5 +1,5 @@
-import { RecentAccessChangeError } from '@/modules/access/domain/recent-access-change';
-import { ReauthRequiredError } from '@/modules/access/domain/recent-session';
+import { RecentAccessChangeError } from '@/modules/access/domain/members/recent-access-change';
+import { ReauthRequiredError } from '@/modules/access/domain/sessions/recent-session';
 import { ContrastTooLowError } from '@/modules/site/domain/site.errors';
 import {
   BadRequestException,

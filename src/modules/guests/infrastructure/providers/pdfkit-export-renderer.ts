@@ -7,7 +7,7 @@ import {
   formatPhone,
   type ExportColumn,
   type ExportGuest,
-} from '@/modules/guests/domain/export';
+} from '@/modules/guests/domain/exports/export';
 
 /** As fontes embutidas (OFL; ver fonts/README.md). */
 const FONTS_DIR = join(__dirname, '..', 'fonts');

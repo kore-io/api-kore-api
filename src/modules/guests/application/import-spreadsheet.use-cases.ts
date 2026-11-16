@@ -17,8 +17,8 @@ import {
   type ImportWarning,
   type SkippedRow,
   type SpreadsheetCheck,
-} from '@/modules/guests/domain/spreadsheet-import';
-import { guestsDelta } from '@/modules/guests/domain/wedding-stats';
+} from '@/modules/guests/domain/imports/spreadsheet-import';
+import { guestsDelta } from '@/modules/guests/domain/stats/wedding-stats';
 import { PARTY_LINKS, type PartyLinks } from './ports/party-links.port';
 import { PARTY_STORE, type NewParty, type PartyStore } from './ports/party-store.port';
 import { SPREADSHEET_READER, type SpreadsheetReader } from './ports/spreadsheet-reader.port';

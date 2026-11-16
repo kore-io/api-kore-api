@@ -1,5 +1,5 @@
 import type { FieldError } from '@/shared/http/validation-errors';
-import { BRAZILIAN_STATES, cleanText } from './wedding-signup';
+import { BRAZILIAN_STATES, cleanText } from '@/modules/access/domain/weddings/wedding-signup';
 
 /** Limites dos Dados profissionais (Cadastro e perfil RN04). */
 export const CREDIT_NAME_MIN = 2;

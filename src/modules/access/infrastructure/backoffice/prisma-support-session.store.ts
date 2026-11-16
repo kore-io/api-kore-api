@@ -5,7 +5,7 @@ import type { SupportSessionStore } from '@/modules/access/application/ports/sup
 import type {
   SupportEndReason,
   SupportSessionRecord,
-} from '@/modules/access/domain/support-session';
+} from '@/modules/access/domain/sessions/support-session';
 
 const SELECT = {
   id: true,

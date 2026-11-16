@@ -19,8 +19,11 @@ import {
   PriceChangedError,
   RefundInProgressError,
 } from '@/modules/billing/domain/billing.errors';
-import type { PaymentKindForPrice, PaymentMethodForPrice } from '@/modules/billing/domain/pricing';
-import { buildQuote, referralDiscountFor } from '@/modules/billing/domain/quote';
+import type {
+  PaymentKindForPrice,
+  PaymentMethodForPrice,
+} from '@/modules/billing/domain/payments/pricing';
+import { buildQuote, referralDiscountFor } from '@/modules/billing/domain/payments/quote';
 import {
   GATEWAY_CUSTOMERS,
   type GatewayCustomers,

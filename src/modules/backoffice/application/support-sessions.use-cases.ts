@@ -6,7 +6,7 @@ import {
 import {
   supportSessionExpiresAt,
   type SupportSessionRecord,
-} from '@/modules/access/domain/support-session';
+} from '@/modules/access/domain/sessions/support-session';
 import {
   AdminWeddingNotFoundError,
   NoOwnerError,

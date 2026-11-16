@@ -7,7 +7,7 @@ import {
   RefundAlreadyRequestedError,
   RefundNotLastExtensionError,
 } from '@/modules/billing/domain/billing.errors';
-import { pastGatewayWindow } from '@/modules/billing/domain/refund-receipt';
+import { pastGatewayWindow } from '@/modules/billing/domain/refunds/refund-receipt';
 import { CancelPendingPayment } from '@/modules/billing/application/payments/cancel-pending-payment';
 import {
   ADMIN_BILLING_STORE,

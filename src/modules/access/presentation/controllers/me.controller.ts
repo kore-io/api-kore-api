@@ -4,7 +4,7 @@ import type { Request, Response } from 'express';
 import { ApiErrorResponses, commonErrors } from '@/shared/http/api-error-responses.decorator';
 import { GetMe } from '@/modules/access/application/sessions/get-me.use-case';
 import { SetActiveProfile } from '@/modules/access/application/sessions/set-active-profile.use-case';
-import type { AuthenticatedSession } from '@/modules/access/domain/authenticated-session';
+import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
 import { ProfileNotOwnedErrorBody } from '@/modules/access/presentation/dto/access-error.dto';
 import { toHttpError } from '@/modules/access/presentation/errors/access-http-errors';
 import { CurrentSession } from '@/modules/access/presentation/http/decorators/current-session.decorator';

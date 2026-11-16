@@ -6,7 +6,7 @@ import type {
 import {
   ACCESS_INVITATION_KINDS,
   type AccessInvitationKind,
-} from '@/modules/access/domain/access-invitation';
+} from '@/modules/access/domain/invitations/access-invitation';
 
 class WeddingMemberResponse {
   id: string;

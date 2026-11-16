@@ -5,9 +5,9 @@ import type {
   ExportReader,
   ExportWedding,
 } from '@/modules/guests/application/ports/export-reader.port';
-import type { ExportGuest, ExportWho } from '@/modules/guests/domain/export';
-import type { AgeGroup, RsvpStatus } from '@/modules/guests/domain/party';
-import { coupleNames } from '@/modules/access/domain/invitation-acceptance';
+import type { ExportGuest, ExportWho } from '@/modules/guests/domain/exports/export';
+import type { AgeGroup, RsvpStatus } from '@/modules/guests/domain/parties/party';
+import { coupleNames } from '@/modules/access/domain/invitations/invitation-acceptance';
 
 /** Na transação da requisição, com a RLS ligada. */
 @Injectable()

@@ -1,4 +1,7 @@
-import { nextReferralCode, referralCodeBase } from './invitation-acceptance';
+import {
+  nextReferralCode,
+  referralCodeBase,
+} from '@/modules/access/domain/invitations/invitation-acceptance';
 import {
   checkPlannerProfile,
   creditNameForSite,

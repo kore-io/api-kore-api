@@ -12,7 +12,7 @@ import {
   REFUND_RECEIPT_CONTENT_TYPES,
   REFUND_RECEIPT_MAX_BYTES,
   type RefundReceiptContentType,
-} from '@/modules/billing/domain/refund-receipt';
+} from '@/modules/billing/domain/refunds/refund-receipt';
 import { AdminReasonBody } from './admin-weddings.dto';
 
 const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);

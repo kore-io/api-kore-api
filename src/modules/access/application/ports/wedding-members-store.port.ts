@@ -1,6 +1,6 @@
-import type { AccessInvitationKind } from '@/modules/access/domain/access-invitation';
+import type { AccessInvitationKind } from '@/modules/access/domain/invitations/access-invitation';
 import type { PlannerLeftNotice } from './collaboration-notice-mailer.port';
-import type { MembershipRole } from '@/modules/access/domain/wedding-authorization';
+import type { MembershipRole } from '@/modules/access/domain/weddings/wedding-authorization';
 
 export interface WeddingMember {
   id: string;

@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
-import { isValidSlugFormat } from '@/modules/access/domain/wedding-signup';
+import { isValidSlugFormat } from '@/modules/access/domain/weddings/wedding-signup';
 import { ApiErrorResponses, commonErrors } from '@/shared/http/api-error-responses.decorator';
 import { Public } from '@/shared/http/public.decorator';
 import { SiteRoute } from '@/shared/http/site-route.decorator';

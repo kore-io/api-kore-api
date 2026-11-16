@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { firstName } from '@/modules/access/domain/access-invitation';
+import { firstName } from '@/modules/access/domain/invitations/access-invitation';
 import {
   InvitationInvalidError,
   InvitationNotDeclinableError,
@@ -7,7 +7,7 @@ import {
 import {
   invalidReason,
   type InvitationSnapshot,
-} from '@/modules/access/domain/invitation-acceptance';
+} from '@/modules/access/domain/invitations/invitation-acceptance';
 import {
   DECLINE_NOTICE_MAILER,
   type DeclineNoticeMailer,

@@ -1,4 +1,4 @@
-import { addDays } from './pricing';
+import { addDays } from '@/modules/billing/domain/payments/pricing';
 
 /** AAAA-MM-DD. */
 type Day = string;

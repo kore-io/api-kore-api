@@ -5,7 +5,7 @@ import { OptionalSession, Public } from '@/shared/http/public.decorator';
 import { AcceptAccessInvitation } from '@/modules/access/application/invitations/accept-access-invitation.use-case';
 import { DeclineAccessInvitation } from '@/modules/access/application/invitations/decline-access-invitation.use-case';
 import { GetAccessInvitation } from '@/modules/access/application/invitations/get-access-invitation.use-case';
-import type { AuthenticatedSession } from '@/modules/access/domain/authenticated-session';
+import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
 import {
   AlreadyMemberErrorBody,
   SelfReferralErrorBody,

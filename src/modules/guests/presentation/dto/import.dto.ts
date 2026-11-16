@@ -12,8 +12,8 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { GUEST_NAME_MAX, PARTY_NAME_MAX } from '@/modules/guests/domain/party';
-import { IMPORT_GUESTS_MAX } from '@/modules/guests/domain/paste-list';
+import { GUEST_NAME_MAX, PARTY_NAME_MAX } from '@/modules/guests/domain/parties/party';
+import { IMPORT_GUESTS_MAX } from '@/modules/guests/domain/imports/paste-list';
 
 /** O texto colado, até 100.000 caracteres (contrato da prévia). */
 const PASTE_TEXT_MAX = 100_000;

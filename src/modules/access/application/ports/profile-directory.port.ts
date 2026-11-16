@@ -1,4 +1,4 @@
-import type { ProfileKind } from '@/modules/access/domain/authenticated-session';
+import type { ProfileKind } from '@/modules/access/domain/sessions/authenticated-session';
 
 /** Um vínculo ativo da pessoa, como os cartões da Seleção de perfil mostram (decisão 174). */
 export interface MembershipSummary {

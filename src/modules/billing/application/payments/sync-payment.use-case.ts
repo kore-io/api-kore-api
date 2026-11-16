@@ -5,7 +5,7 @@ import {
   PRODUCT_EVENT_RECORDER,
   type ProductEventRecorder,
 } from '@/modules/product-events/application/ports/product-event-recorder.port';
-import { decideConfirmation } from '@/modules/billing/domain/payment-confirmation';
+import { decideConfirmation } from '@/modules/billing/domain/payments/payment-confirmation';
 import {
   BILLING_MAILER,
   type BillingMailer,
@@ -18,7 +18,7 @@ import {
   REFUND_QUEUE,
   type RefundQueue,
 } from '@/modules/billing/application/ports/refund-queue.port';
-import { afterRefundFailure } from '@/modules/billing/domain/refund-attempts';
+import { afterRefundFailure } from '@/modules/billing/domain/refunds/refund-attempts';
 import type { GatewayCharge } from '@/modules/billing/application/ports/payment-gateway.port';
 import {
   type LedgerPayment,

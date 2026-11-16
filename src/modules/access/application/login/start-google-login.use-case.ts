@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { createHash, randomBytes } from 'node:crypto';
-import type { LoginOrigin } from '@/modules/access/domain/login-next-step';
-import { safeReturnPath } from '@/modules/access/domain/return-path';
+import type { LoginOrigin } from '@/modules/access/domain/login/login-next-step';
+import { safeReturnPath } from '@/modules/access/domain/login/return-path';
 import {
   GOOGLE_IDENTITY_PROVIDER,
   type GoogleIdentityProvider,

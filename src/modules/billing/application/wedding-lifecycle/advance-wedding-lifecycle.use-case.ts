@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { BackofficeTransaction } from '@/shared/database/backoffice-transaction';
 import { endDateRange } from '@/modules/site/domain/publication';
-import { CURRENT_PRICE_TABLE } from '@/modules/billing/domain/pricing';
+import { CURRENT_PRICE_TABLE } from '@/modules/billing/domain/payments/pricing';
 import {
   BILLING_MAILER,
   type BillingMailer,

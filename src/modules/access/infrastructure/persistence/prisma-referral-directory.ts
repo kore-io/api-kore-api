@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
 import type { ReferralDirectory } from '@/modules/access/application/ports/referral-directory.port';
-import type { ReferrerRecord } from '@/modules/access/domain/referral';
+import type { ReferrerRecord } from '@/modules/access/domain/profiles/referral';
 
 /** Leitura pública (sem sessão): indicadores e configurações não têm RLS de casamento. */
 @Injectable()

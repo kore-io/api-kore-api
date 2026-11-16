@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { AlertType, Prisma } from '@/generated/prisma/client';
 import { BackofficeTransaction } from '@/shared/database/backoffice-transaction';
 import { uuidV7 } from '@/shared/ids/uuid-v7';
-import { newCommission } from '@/modules/billing/domain/commission';
+import { newCommission } from '@/modules/billing/domain/payouts/commission';
 import type {
   BillingRecipient,
   LedgerLogEntry,

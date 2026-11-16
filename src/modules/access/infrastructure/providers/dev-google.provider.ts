@@ -1,6 +1,6 @@
 import type { AppEnv } from '@/shared/config/env.schema';
 import type { GoogleIdentityProvider } from '@/modules/access/application/ports/google-identity-provider.port';
-import type { GoogleIdentity } from '@/modules/access/domain/google-identity';
+import type { GoogleIdentity } from '@/modules/access/domain/login/google-identity';
 
 export const DEV_GOOGLE_PATH = '/v1/auth/google/dev';
 const DEV_ENVS: readonly AppEnv[] = ['local', 'test'];

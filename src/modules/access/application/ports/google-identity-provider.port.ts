@@ -1,4 +1,4 @@
-import type { GoogleIdentity } from '@/modules/access/domain/google-identity';
+import type { GoogleIdentity } from '@/modules/access/domain/login/google-identity';
 
 /**
  * Login pelo Google (OIDC com PKCE). No local e nos testes, um provedor de

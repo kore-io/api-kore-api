@@ -1,5 +1,5 @@
 import PDFDocument from 'pdfkit';
-import type { ExportGuest } from '@/modules/guests/domain/export';
+import type { ExportGuest } from '@/modules/guests/domain/exports/export';
 import { groupsOf, planPages, renderExportPdf, type PlannedBlock } from './pdfkit-export-renderer';
 
 const guest = (party: string, name: string, partyId = party): ExportGuest => ({

@@ -19,7 +19,7 @@ import {
   type ExportColumn,
   type ExportFormat,
   type ExportWho,
-} from '@/modules/guests/domain/export';
+} from '@/modules/guests/domain/exports/export';
 import { WeddingNotFoundError } from '@/modules/access/domain/access.errors';
 import {
   GuestFieldsInvalidError,

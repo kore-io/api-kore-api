@@ -1,5 +1,5 @@
-import { isValidCpf } from '@/modules/billing/domain/tax-id';
-import { maskPhone, parsePhone } from '@/modules/guests/domain/phone';
+import { isValidCpf } from '@/modules/billing/domain/payments/tax-id';
+import { maskPhone, parsePhone } from '@/modules/guests/domain/parties/phone';
 
 export type TaxIdType = 'cpf' | 'cnpj';
 export type PixKeyType = 'cpf' | 'cnpj' | 'email' | 'phone' | 'random';

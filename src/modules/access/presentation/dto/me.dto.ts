@@ -1,8 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsIn } from 'class-validator';
 import type { Me } from '@/modules/access/application/sessions/get-me.use-case';
-import type { PlatformRole, ProfileKind } from '@/modules/access/domain/authenticated-session';
-import { PROFILE_KINDS } from '@/modules/access/domain/profiles';
+import type {
+  PlatformRole,
+  ProfileKind,
+} from '@/modules/access/domain/sessions/authenticated-session';
+import { PROFILE_KINDS } from '@/modules/access/domain/profiles/profiles';
 
 class MeUserResponse {
   id: string;

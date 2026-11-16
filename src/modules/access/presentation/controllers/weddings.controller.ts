@@ -15,7 +15,7 @@ import { ContrastTooLowErrorBody } from '@/modules/site/presentation/dto/site-er
 import { CheckSlugAvailability } from '@/modules/access/application/weddings/check-slug-availability.use-case';
 import { CreateWedding } from '@/modules/access/application/weddings/create-wedding.use-case';
 import { DeleteWeddingByCreator } from '@/modules/access/application/weddings/delete-wedding-by-creator.use-case';
-import type { AuthenticatedSession } from '@/modules/access/domain/authenticated-session';
+import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
 import {
   ActionNotAllowedErrorBody,
   AlreadyOwnerErrorBody,

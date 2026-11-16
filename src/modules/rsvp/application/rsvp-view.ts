@@ -1,4 +1,4 @@
-import type { RsvpStatus } from '@/modules/guests/domain/party';
+import type { RsvpStatus } from '@/modules/guests/domain/parties/party';
 import { DEFAULT_SONG_QUESTION, type RsvpGuest, type RsvpState } from '@/modules/rsvp/domain/rsvp';
 import type { RsvpPartyRow, RsvpWeddingRow } from './ports/rsvp-store.port';
 

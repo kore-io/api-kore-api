@@ -7,7 +7,7 @@ import {
   SelfReferralError,
   SellerCannotBePlannerError,
 } from '@/modules/access/domain/access.errors';
-import type { InvitationSnapshot } from '@/modules/access/domain/invitation-acceptance';
+import type { InvitationSnapshot } from '@/modules/access/domain/invitations/invitation-acceptance';
 import {
   AcceptAccessInvitation,
   type InvitationAcceptance,

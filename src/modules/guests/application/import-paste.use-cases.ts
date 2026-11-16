@@ -14,8 +14,8 @@ import {
   parsePastedList,
   pastedGuestCount,
   type PastedList,
-} from '@/modules/guests/domain/paste-list';
-import { guestsDelta } from '@/modules/guests/domain/wedding-stats';
+} from '@/modules/guests/domain/imports/paste-list';
+import { guestsDelta } from '@/modules/guests/domain/stats/wedding-stats';
 import { PARTY_LINKS, type PartyLinks } from './ports/party-links.port';
 import { PARTY_STORE, type NewParty, type PartyStore } from './ports/party-store.port';
 

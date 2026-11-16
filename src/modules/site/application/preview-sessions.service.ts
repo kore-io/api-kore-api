@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { TenantTransaction } from '@/shared/database/tenant-transaction';
 import { SITE_PREVIEW_COOKIE_PREFIX } from '@/shared/http/session-cookie-name';
 import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
-import type { MembershipRole } from '@/modules/access/domain/wedding-authorization';
+import type { MembershipRole } from '@/modules/access/domain/weddings/wedding-authorization';
 import {
   PREVIEW_COOKIES,
   type PreviewCookieClaims,

@@ -15,8 +15,8 @@ import {
 import { ApiHeader, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { ApiErrorResponses, commonErrors } from '@/shared/http/api-error-responses.decorator';
 import { validationError } from '@/shared/http/validation-errors';
-import type { AuthenticatedSession } from '@/modules/access/domain/authenticated-session';
-import { requireRecentSession } from '@/modules/access/domain/recent-session';
+import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
+import { requireRecentSession } from '@/modules/access/domain/sessions/recent-session';
 import {
   ActionNotAllowedErrorBody,
   ReauthRequiredErrorBody,

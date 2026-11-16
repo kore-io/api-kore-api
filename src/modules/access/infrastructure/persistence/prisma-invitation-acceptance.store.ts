@@ -6,9 +6,9 @@ import type {
   AcceptRefusal,
   InvitationAcceptanceStore,
 } from '@/modules/access/application/ports/invitation-acceptance-store.port';
-import type { InvitationSnapshot } from '@/modules/access/domain/invitation-acceptance';
-import { creditNameForSite } from '@/modules/access/domain/planner-profile';
-import type { PartnerTitle } from '@/modules/access/domain/wedding-signup';
+import type { InvitationSnapshot } from '@/modules/access/domain/invitations/invitation-acceptance';
+import { creditNameForSite } from '@/modules/access/domain/profiles/planner-profile';
+import type { PartnerTitle } from '@/modules/access/domain/weddings/wedding-signup';
 
 type Json = Record<string, unknown>;
 

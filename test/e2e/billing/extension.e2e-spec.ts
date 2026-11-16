@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { addDays, addMonths } from '@/modules/billing/domain/pricing';
+import { addDays, addMonths } from '@/modules/billing/domain/payments/pricing';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import { localDate } from '@/shared/time/local-date';
 import { createTestApp } from '../support/harness/create-test-app';

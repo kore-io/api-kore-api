@@ -1,4 +1,4 @@
-import type { ProfileKind } from './authenticated-session';
+import type { ProfileKind } from '@/modules/access/domain/sessions/authenticated-session';
 
 export const PROFILE_KINDS: readonly ProfileKind[] = ['couple', 'planner', 'seller'];
 

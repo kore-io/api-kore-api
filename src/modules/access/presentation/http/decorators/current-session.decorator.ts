@@ -3,7 +3,7 @@ import {
   ExecutionContext,
   InternalServerErrorException,
 } from '@nestjs/common';
-import type { AuthenticatedSession } from '@/modules/access/domain/authenticated-session';
+import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
 import type { AuthenticatedRequest } from '@/modules/access/presentation/http/authenticated-request';
 
 /** A sessão validada pelo SessionGuard. Não existe em rota @Public(). */

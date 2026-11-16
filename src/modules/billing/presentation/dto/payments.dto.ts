@@ -18,7 +18,7 @@ import { OptionalNotNull } from '@/shared/http/optional-not-null';
 import { DATE_ONLY } from '@/modules/access/presentation/dto/weddings.dto';
 import type { PaymentCreated } from '@/modules/billing/application/payments/create-payment.use-case';
 import type { BillingView } from '@/modules/billing/application/payments/get-billing.use-case';
-import { isValidCpf } from '@/modules/billing/domain/tax-id';
+import { isValidCpf } from '@/modules/billing/domain/payments/tax-id';
 
 /** CPF válido, com ou sem máscara (Publicar e pagar RN02). */
 function IsCpf(): PropertyDecorator {
