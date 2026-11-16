@@ -25,7 +25,7 @@ export class ReferralSettingsBody {
   @ApiProperty({ example: 10 }) @IsInt() referralDiscountPercent: number;
   /** Prazo de liberação, de 0 a 90 dias. */
   @ApiProperty({ example: 30 }) @IsInt() commissionHoldDays: number;
-  /** Repasse mínimo em centavos, a partir de 100 (R$ 1). */
+  /** Repasse mínimo em centavos, de 100 (R$ 1) até 2.147.483.647 (o teto técnico da coluna). */
   @ApiProperty({ example: 5000 }) @IsInt() payoutMinCents: number;
 }
 

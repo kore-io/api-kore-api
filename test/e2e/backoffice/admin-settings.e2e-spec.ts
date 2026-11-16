@@ -104,6 +104,13 @@ describe('Backoffice: Configurações (Backoffice - cobrança RN10; banco real)'
       errors: [{ path: 'defaultRatePercent', code: 'MAX', params: { max: 100 } }],
     });
     expect(await currentReferral()).toEqual(before);
+    // O teto técnico da coluna (int4): acima dele, 422 e não 500.
+    for (const payoutMinCents of [2_147_483_648, 1e20])
+      expect(
+        (await put(admin.cookie, '/settings/referral', { ...before, payoutMinCents }).expect(422))
+          .body.errors,
+      ).toEqual([{ path: 'payoutMinCents', code: 'MAX', params: { max: 2_147_483_647 } }]);
+    expect(await currentReferral()).toEqual(before);
     await put(admin.cookie, '/settings/referral', { ...before, payoutMinCents: '50' }).expect(400);
   });
 

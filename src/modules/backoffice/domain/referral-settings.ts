@@ -24,11 +24,14 @@ export const REFERRAL_SETTINGS_FIELDS = [
  * 100, prazo de 0 a 90 dias, mínimo a partir de R$ 1. Os inteiros já vêm do
  * DTO; aqui ficam as faixas, que dão 422 (Contrato de API).
  */
-const RANGES: Record<keyof ReferralSettingsValues, { min: number; max?: number }> = {
+/** O teto técnico do repasse mínimo: a coluna é int4 (sem teto de negócio, decisão 78). */
+export const PAYOUT_MIN_CENTS_MAX = 2_147_483_647;
+
+const RANGES: Record<keyof ReferralSettingsValues, { min: number; max: number }> = {
   defaultRatePercent: { min: 0, max: 100 },
   referralDiscountPercent: { min: 0, max: 100 },
   commissionHoldDays: { min: 0, max: 90 },
-  payoutMinCents: { min: 100 },
+  payoutMinCents: { min: 100, max: PAYOUT_MIN_CENTS_MAX },
 };
 
 export function referralSettingsErrors(values: ReferralSettingsValues): FieldError[] {
@@ -37,8 +40,7 @@ export function referralSettingsErrors(values: ReferralSettingsValues): FieldErr
     const { min, max } = RANGES[field];
     const value = values[field];
     if (value < min) errors.push({ path: field, code: 'MIN', params: { min } });
-    else if (max !== undefined && value > max)
-      errors.push({ path: field, code: 'MAX', params: { max } });
+    else if (value > max) errors.push({ path: field, code: 'MAX', params: { max } });
   }
   return errors;
 }

@@ -30,6 +30,14 @@ describe('Indicação nas Configurações (Backoffice - cobrança RN10; decisão
     ]);
   });
 
+  it('RN10 - o repasse mínimo tem o teto técnico da coluna (int4): acima dele, 422 MAX em vez de 500', () => {
+    expect(referralSettingsErrors({ ...current, payoutMinCents: 2_147_483_647 })).toEqual([]);
+    for (const payoutMinCents of [2_147_483_648, 1e20])
+      expect(referralSettingsErrors({ ...current, payoutMinCents })).toEqual([
+        { path: 'payoutMinCents', code: 'MAX', params: { max: 2_147_483_647 } },
+      ]);
+  });
+
   it('RN10 (B6-1) - comissão padrão de 0%, prazo de 0 dias e mínimo de R$ 1 são aceitos', () => {
     expect(
       referralSettingsErrors({

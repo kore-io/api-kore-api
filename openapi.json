@@ -29526,7 +29526,7 @@
           },
           "payoutMinCents": {
             "type": "number",
-            "description": "Repasse mínimo em centavos, a partir de 100 (R$ 1).",
+            "description": "Repasse mínimo em centavos, de 100 (R$ 1) até 2.147.483.647 (o teto técnico da coluna).",
             "example": 5000
           },
           "updatedAt": {
@@ -29667,7 +29667,7 @@
           },
           "payoutMinCents": {
             "type": "number",
-            "description": "Repasse mínimo em centavos, a partir de 100 (R$ 1).",
+            "description": "Repasse mínimo em centavos, de 100 (R$ 1) até 2.147.483.647 (o teto técnico da coluna).",
             "example": 5000
           }
         },
