@@ -2117,6 +2117,9 @@
                       "$ref": "#/components/schemas/WeddingHasNoOwnerErrorBody"
                     },
                     {
+                      "$ref": "#/components/schemas/RecentAccessChangeErrorBody"
+                    },
+                    {
                       "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
                     }
                   ]
@@ -16983,6 +16986,11 @@
             ],
             "type": "string"
           },
+          "since": {
+            "type": "string",
+            "description": "Desde quando tem acesso ao casamento: o início do vínculo (decisão 271(1)).",
+            "format": "date-time"
+          },
           "id": {
             "type": "string"
           },
@@ -16994,6 +17002,7 @@
         "required": [
           "name",
           "role",
+          "since",
           "id",
           "isMe"
         ]
@@ -17148,6 +17157,37 @@
           "statusCode",
           "error",
           "message"
+        ]
+      },
+      "RecentAccessChangeErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "RECENT_ACCESS_CHANGE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "availableAt": {
+            "type": "string",
+            "description": "Quando a ação volta a valer.",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "availableAt"
         ]
       },
       "TaxIdLockedErrorBody": {

@@ -19,14 +19,22 @@ const notice = {
   agencyName: 'Prado Assessoria',
   partnerNames: ['Ana', 'Marcos'] as [string, string],
 };
-const ana: WeddingMember = { id: 'm-ana', userId: 'u-ana', name: 'Ana', role: 'owner' };
-const marcos: WeddingMember = { id: 'm-marcos', userId: 'u-marcos', name: 'Marcos', role: 'owner' };
+const since = new Date('2026-08-05T12:00:00Z');
+const ana: WeddingMember = { id: 'm-ana', userId: 'u-ana', name: 'Ana', role: 'owner', since };
+const marcos: WeddingMember = {
+  id: 'm-marcos',
+  userId: 'u-marcos',
+  name: 'Marcos',
+  role: 'owner',
+  since,
+};
 const juliana: WeddingMember = {
   id: 'm-j',
   userId: 'u-j',
   name: 'Juliana',
   role: 'collaborator',
   kind: 'planner',
+  since,
 };
 
 function setup({ members, role }: { members: WeddingMember[]; role: 'owner' | 'collaborator' }) {

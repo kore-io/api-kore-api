@@ -20,6 +20,7 @@ import {
   ActionNotAllowedErrorBody,
   CannotRemoveOwnerErrorBody,
   LastOwnerErrorBody,
+  RecentAccessChangeErrorBody,
   WeddingHasNoOwnerErrorBody,
   MembershipNotFoundErrorBody,
   WeddingNotFoundErrorBody,
@@ -66,6 +67,8 @@ export class WeddingMembersController {
     CannotRemoveOwnerErrorBody,
     LastOwnerErrorBody,
     WeddingHasNoOwnerErrorBody,
+    // A API já aplicava (decisão 253(2)); o contrato passa a listar (decisão 271(2)).
+    RecentAccessChangeErrorBody,
   )
   async remove(
     @CurrentSession() session: AuthenticatedSession,

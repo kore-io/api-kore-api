@@ -16,6 +16,8 @@ class WeddingMemberResponse {
   @ApiProperty({ enum: ['planner', 'seller'], required: false }) kind?: 'planner' | 'seller';
   /** O vínculo de quem lê (decisão 261(2)). */
   isMe: boolean;
+  /** Desde quando tem acesso ao casamento: o início do vínculo (decisão 271(1)). */
+  @ApiProperty({ format: 'date-time' }) since: string;
 }
 
 class PendingInvitationResponse {
@@ -43,12 +45,13 @@ export class WeddingMembersResponse {
     viewerUserId: string;
   }): WeddingMembersResponse {
     return {
-      members: members.map(({ id, userId, name, role, kind }) => ({
+      members: members.map(({ id, userId, name, role, kind, since }) => ({
         id,
         name,
         role,
         ...(kind ? { kind } : {}),
         isMe: userId === viewerUserId,
+        since: since.toISOString(),
       })),
       pendingInvitations: pendingInvitations.map((invitation) => ({
         ...invitation,

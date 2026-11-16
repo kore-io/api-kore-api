@@ -170,7 +170,7 @@ describe('Papéis e perfis: /me, perfil ativo e colaboradores (banco real; decis
   });
 
   describe('GET /v1/weddings/{weddingId}/memberships (RN02, RN05)', () => {
-    it('donos, a cerimonialista com o tipo e os convites pendentes (inclusive o link e o vencido)', async () => {
+    it('donos, a cerimonialista com o tipo, desde quando cada um tem acesso, e os convites pendentes (inclusive o link e o vencido)', async () => {
       const { client, ana } = await julianaWithTwoProfiles();
       const expired = await seedInvitation({
         db,
@@ -190,15 +190,33 @@ describe('Papéis e perfis: /me, perfil ativo e colaboradores (banco real; decis
 
       const response = await members(ana.cookie, client.weddingId).expect(200);
 
-      // decisão 261(2): isMe marca o vínculo de quem lê.
+      // decisão 261(2): isMe marca o vínculo de quem lê; decisão 271(1): since é o início do vínculo.
+      const since = async (userId: string) =>
+        (
+          await db.membership.findFirstOrThrow({
+            where: { weddingId: client.weddingId, userId, removedAt: null },
+          })
+        ).createdAt.toISOString();
+      const julianaId = (
+        await db.membership.findFirstOrThrow({
+          where: { weddingId: client.weddingId, role: 'collaborator', removedAt: null },
+        })
+      ).userId;
       expect(response.body.members).toEqual([
-        { id: expect.any(String), name: 'Ana Beatriz Moreira', role: 'owner', isMe: true },
+        {
+          id: expect.any(String),
+          name: 'Ana Beatriz Moreira',
+          role: 'owner',
+          isMe: true,
+          since: await since(ana.userId),
+        },
         {
           id: expect.any(String),
           name: 'Juliana Prado',
           role: 'collaborator',
           kind: 'planner',
           isMe: false,
+          since: await since(julianaId),
         },
       ]);
       const pending = response.body.pendingInvitations as { id: string }[];

@@ -9,6 +9,8 @@ export interface WeddingMember {
   role: MembershipRole;
   /** Só no colaborador: cerimonialista ou vendedor, pelo perfil de indicador. */
   kind?: 'planner' | 'seller';
+  /** Desde quando tem acesso: o início do vínculo ("Desde 05/08"; decisão 271(1)). */
+  since: Date;
 }
 
 export interface PendingAccessInvitation {
