@@ -1,5 +1,6 @@
 import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import { INestApplication } from '@nestjs/common';
+import { localDate } from '@/shared/kernel/time/local-date';
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
@@ -28,7 +29,9 @@ describe('Prazo de resposta e respostas pelo casal (banco real)', () => {
   });
 
   const http = () => request(app.getHttpServer());
-  const day = (offset: number) => new Date(Date.now() + offset * DAY_MS).toISOString().slice(0, 10);
+  // O dia de São Paulo, como a API: o dia UTC já é o seguinte das 21h à meia-noite.
+  const day = (offset: number) =>
+    localDate({ at: new Date(Date.now() + offset * DAY_MS), timezone: 'America/Sao_Paulo' });
   const ip = () => `10.${[1, 2, 3].map(() => Math.floor(Math.random() * 250)).join('.')}`;
 
   /** Ana (dona) e Juliana (colaboradora); casamento publicado em 60 dias. */
