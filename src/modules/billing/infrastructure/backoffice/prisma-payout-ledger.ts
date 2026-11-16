@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@/generated/prisma/client';
 import { BackofficeTransaction } from '@/shared/database/backoffice-transaction';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import type { PixKeyType } from '@/modules/referral/domain/payout-data';
 import type {
   LockedPayout,

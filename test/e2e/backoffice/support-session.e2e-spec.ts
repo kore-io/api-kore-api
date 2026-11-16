@@ -7,7 +7,7 @@ import request from 'supertest';
 import { addMonths } from '@/modules/billing/domain/payments/pricing';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import { PrismaService } from '@/shared/database/prisma.service';
-import { localDate } from '@/shared/time/local-date';
+import { localDate } from '@/shared/kernel/time/local-date';
 import { createTestApp } from '../support/harness/create-test-app';
 import { createTestWorker } from '../support/harness/create-test-worker';
 import { publishByPayment } from '../support/factories/payments';

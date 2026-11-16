@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { monthsBefore } from '@/shared/time/months-before';
+import { monthsBefore } from '@/shared/kernel/time/months-before';
 import { firstName } from '@/modules/access/domain/invitations/access-invitation';
 import {
   OWNERLESS_PURGE_MONTHS,

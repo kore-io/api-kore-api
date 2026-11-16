@@ -5,7 +5,7 @@ import { ReleaseCommissions } from '@/modules/billing/application/payouts/releas
 import { addMonths } from '@/modules/billing/domain/payments/pricing';
 import { TAX_ID_HASHER, type TaxIdHasher } from '@/shared/crypto/application/tax-id-hasher.port';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
-import { localDate } from '@/shared/time/local-date';
+import { localDate } from '@/shared/kernel/time/local-date';
 import { createTestApp } from '../support/harness/create-test-app';
 import { createTestWorker } from '../support/harness/create-test-worker';
 import {

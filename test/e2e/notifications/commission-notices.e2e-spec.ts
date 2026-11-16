@@ -12,7 +12,7 @@ import type { PushTarget } from '@/modules/notifications/application/ports/push-
 import { RsvpPush } from '@/modules/notifications/application/rsvp-push.use-case';
 import { AppConfigService } from '@/shared/config/app-config.service';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
-import { localDate } from '@/shared/time/local-date';
+import { localDate } from '@/shared/kernel/time/local-date';
 import { createTestApp } from '../support/harness/create-test-app';
 import { createTestWorker } from '../support/harness/create-test-worker';
 import { inbox, waitForInbox } from '../support/harness/mailpit';

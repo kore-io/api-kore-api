@@ -5,7 +5,7 @@ import {
   OBJECT_STORAGE,
   type ObjectStorage,
 } from '@/shared/storage/application/object-storage.port';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import {
   deleteSiteImageObjects,
   purgeWeddingData,

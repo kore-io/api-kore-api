@@ -4,7 +4,7 @@ import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,
 } from '@/modules/logs/application/ports/application-log-writer.port';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import {
   GuestFieldsInvalidError,
   PartyNotFoundError,

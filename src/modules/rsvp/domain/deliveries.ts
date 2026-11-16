@@ -1,4 +1,4 @@
-import { localDate } from '@/shared/time/local-date';
+import { localDate } from '@/shared/kernel/time/local-date';
 import type { MessageKind } from './message-templates';
 
 /** Os canais do envio (Envios RN05); o QR só no convite. */

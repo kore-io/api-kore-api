@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { Client } from 'pg';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import { createTestApp } from '../support/harness/create-test-app';
 import { seedReferrer } from '../support/factories/referrers';

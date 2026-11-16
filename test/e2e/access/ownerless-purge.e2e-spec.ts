@@ -3,7 +3,7 @@ import type { TestingModule } from '@nestjs/testing';
 import { randomBytes, randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { siteImageKeys } from '@/modules/site/domain/site-image';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import {
   OBJECT_STORAGE,
   type ObjectStorage,

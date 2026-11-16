@@ -1,4 +1,4 @@
-import { localDate } from '@/shared/time/local-date';
+import { localDate } from '@/shared/kernel/time/local-date';
 import {
   GUEST_NAME_MAX,
   type AgeGroup,

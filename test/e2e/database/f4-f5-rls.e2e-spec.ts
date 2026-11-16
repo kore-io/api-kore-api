@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { Client } from 'pg';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import { createTestApp } from '../support/harness/create-test-app';
 import { seedWedding } from '../support/factories/weddings';
 

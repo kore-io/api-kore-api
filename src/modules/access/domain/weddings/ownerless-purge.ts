@@ -1,4 +1,4 @@
-import { monthsAfter } from '@/shared/time/months-after';
+import { monthsAfter } from '@/shared/kernel/time/months-after';
 
 /** RN13 de Convites: 6 meses sem atividade, sem dono, e o casamento é excluído. */
 export const OWNERLESS_PURGE_MONTHS = 6;

@@ -14,7 +14,7 @@ import {
   SITE_IMAGE_CLEANUP_SCHEDULER_ID,
 } from '@/modules/site/infrastructure/jobs/site-image-cleanup.job';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import {
   OBJECT_STORAGE,
   type ObjectStorage,

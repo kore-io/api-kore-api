@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import {
   GuestFieldsInvalidError,
   TagLimitReachedError,

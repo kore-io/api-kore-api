@@ -1,4 +1,4 @@
-import { monthsAfter } from '@/shared/time/months-after';
+import { monthsAfter } from '@/shared/kernel/time/months-after';
 
 /** AAAA-MM-DD. */
 type Day = string;

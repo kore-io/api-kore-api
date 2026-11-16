@@ -5,7 +5,7 @@ import { EMAIL_OUTBOX, type EmailOutbox } from '@/shared/email/application/email
 import { FIELD_CIPHER, type FieldCipher } from '@/shared/crypto/application/field-cipher.port';
 import { PIX_KEY_HASHER, type PixKeyHasher } from '@/shared/crypto/application/pix-key-hasher.port';
 import { TAX_ID_HASHER, type TaxIdHasher } from '@/shared/crypto/application/tax-id-hasher.port';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import { ProfileNotOwnedError } from '@/modules/access/domain/access.errors';
 import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
 import { requireNoRecentAccessChange } from '@/modules/access/domain/members/recent-access-change';

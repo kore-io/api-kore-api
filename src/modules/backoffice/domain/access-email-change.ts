@@ -1,4 +1,4 @@
-import { localDate } from '@/shared/time/local-date';
+import { localDate } from '@/shared/kernel/time/local-date';
 
 // Decisão 253(1): os limites da troca do e-mail de acesso, num lugar só.
 /** Tentativas por atendente (suporte) por dia de Brasília, contando as recusadas por CHECKS_FAILED. */

@@ -46,10 +46,14 @@ src/
   main.ts, worker.ts         # pontos de entrada da API e do worker
   app/                       # módulos raiz (AppModule, WorkerModule)
   cli/                       # comandos fora da API: seed, openapi-export
-  shared/                    # banco, filas, e-mail, http, config, observabilidade…
+  shared/
+    kernel/                  # utilitários puros: ids, datas, concorrência
+    database/, redis/, jobs/, email/, storage/, crypto/, http/, config/…
   modules/<modulo>/
     <modulo>.module.ts, <modulo>-worker.module.ts
     domain/                  # regras puras, sem Nest nem Prisma
+      <conceito>/            # mesmo nome da feature em application/ (módulos grandes)
+      <modulo>.errors.ts     # erros do domínio, na raiz
     application/
       ports/                 # interfaces que a infraestrutura implementa
       <feature>/             # casos de uso agrupados por assunto (módulos grandes)

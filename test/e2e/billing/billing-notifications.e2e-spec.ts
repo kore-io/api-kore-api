@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto';
 import request from 'supertest';
 import { addMonths } from '@/modules/billing/domain/payments/pricing';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
-import { localDate } from '@/shared/time/local-date';
+import { localDate } from '@/shared/kernel/time/local-date';
 import { createTestApp } from '../support/harness/create-test-app';
 import { publishByPayment } from '../support/factories/payments';
 import { openSession, signedInUser } from '../support/harness/sessions';

@@ -1,7 +1,7 @@
 import { Prisma } from '@/generated/prisma/client';
 import { Injectable } from '@nestjs/common';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
-import { DEFAULT_TIMEZONE } from '@/shared/time/local-date';
+import { DEFAULT_TIMEZONE } from '@/shared/kernel/time/local-date';
 import type {
   EmailCandidate,
   EmailStateChange,

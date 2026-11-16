@@ -6,7 +6,7 @@ import {
 } from '@/modules/access/application/ports/invitation-acceptance-store.port';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import { TenantTransaction } from '@/shared/database/tenant-transaction';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import { createTestApp } from '../support/harness/create-test-app';
 import { seedInvitation } from '../support/factories/invitations';
 import { seedReferrer } from '../support/factories/referrers';

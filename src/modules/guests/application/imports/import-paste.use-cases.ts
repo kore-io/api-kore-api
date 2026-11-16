@@ -5,7 +5,7 @@ import {
   type ProductEventRecorder,
 } from '@/modules/product-events/application/ports/product-event-recorder.port';
 import { AFTER_COMMIT, type AfterCommit } from '@/shared/database/after-commit.port';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import { DuplicateGuestError, TooManyGuestsError } from '@/modules/guests/domain/guests.errors';
 import {
   comparableName,

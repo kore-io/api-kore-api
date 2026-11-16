@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Client } from 'pg';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 
 /**
  * Policies de inclusão do cadastro (decisão 153, item 4), direto no SQL com o

@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import { WeddingScope } from '@/modules/access/application/services/wedding-scope.service';
 import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
 import {

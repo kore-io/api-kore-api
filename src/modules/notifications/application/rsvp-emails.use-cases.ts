@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { AppConfigService } from '@/shared/config/app-config.service';
 import { EMAIL_SENDER, type EmailSender } from '@/shared/email/application/email-sender.port';
-import { localDate } from '@/shared/time/local-date';
+import { localDate } from '@/shared/kernel/time/local-date';
 import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,

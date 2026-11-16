@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { DEFAULT_TIMEZONE } from '@/shared/time/local-date';
+import { DEFAULT_TIMEZONE } from '@/shared/kernel/time/local-date';
 import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
 import {
   NoSongsToExportError,

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { BackofficeTransaction } from '@/shared/database/backoffice-transaction';
-import { localDate } from '@/shared/time/local-date';
+import { localDate } from '@/shared/kernel/time/local-date';
 import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
 import { WeddingScope } from '@/modules/access/application/services/wedding-scope.service';
 import { WeddingNotFoundError } from '@/modules/access/domain/access.errors';

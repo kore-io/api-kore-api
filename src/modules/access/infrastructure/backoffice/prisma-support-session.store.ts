@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import type { SupportSessionStore } from '@/modules/access/application/ports/support-session.store.port';
 import type {
   SupportEndReason,

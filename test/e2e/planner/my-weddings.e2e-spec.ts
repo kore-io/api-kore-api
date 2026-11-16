@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { randomBytes } from 'node:crypto';
 import request from 'supertest';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
-import { localDate } from '@/shared/time/local-date';
+import { localDate } from '@/shared/kernel/time/local-date';
 import { createTestApp } from '../support/harness/create-test-app';
 import { seedReferrer } from '../support/factories/referrers';
 import { openSession, signedInUser } from '../support/harness/sessions';

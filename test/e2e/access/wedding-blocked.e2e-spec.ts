@@ -8,7 +8,7 @@ import { BlockWedding } from '@/modules/billing/application/wedding-lifecycle/bl
 import { addMonths } from '@/modules/billing/domain/payments/pricing';
 import { LocalGatewayStore } from '@/modules/billing/infrastructure/backoffice/local-gateway/local-gateway.store';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
-import { localDate } from '@/shared/time/local-date';
+import { localDate } from '@/shared/kernel/time/local-date';
 import { createTestApp } from '../support/harness/create-test-app';
 import { createTestWorker } from '../support/harness/create-test-worker';
 import { expectStatus, payForExtension, publishByPayment } from '../support/factories/payments';

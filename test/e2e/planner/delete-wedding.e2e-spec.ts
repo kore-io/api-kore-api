@@ -4,7 +4,7 @@ import { Client } from 'pg';
 import request from 'supertest';
 import { siteImageKeys } from '@/modules/site/domain/site-image';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import {
   OBJECT_STORAGE,
   type ObjectStorage,

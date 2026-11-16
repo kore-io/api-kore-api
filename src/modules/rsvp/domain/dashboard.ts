@@ -1,4 +1,4 @@
-import { daysBetween, localDate } from '@/shared/time/local-date';
+import { daysBetween, localDate } from '@/shared/kernel/time/local-date';
 
 /** Os grupos ativos por status de envio (Dashboard RN02). */
 export interface DeliveryCounts {

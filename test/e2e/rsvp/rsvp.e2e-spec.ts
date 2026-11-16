@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { WeddingPseudonymizer } from '@/modules/product-events/infrastructure/providers/wedding-pseudonymizer';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import { NOTIFICATION_DISPATCHER } from '@/modules/notifications/application/ports/notification-dispatcher.port';
 import { createTestApp } from '../support/harness/create-test-app';
 import { signedInUser } from '../support/harness/sessions';

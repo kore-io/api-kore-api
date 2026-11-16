@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import {
   AlreadyOwnerError,
   SlugUnavailableError,

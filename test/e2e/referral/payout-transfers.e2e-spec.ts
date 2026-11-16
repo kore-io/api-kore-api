@@ -18,8 +18,8 @@ import {
 import { LocalGatewayStore } from '@/modules/billing/infrastructure/backoffice/local-gateway/local-gateway.store';
 import { FIELD_CIPHER, type FieldCipher } from '@/shared/crypto/application/field-cipher.port';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
-import { localDate } from '@/shared/time/local-date';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
+import { localDate } from '@/shared/kernel/time/local-date';
 import { createTestApp } from '../support/harness/create-test-app';
 import { createTestWorker } from '../support/harness/create-test-worker';
 import { waitForInbox } from '../support/harness/mailpit';

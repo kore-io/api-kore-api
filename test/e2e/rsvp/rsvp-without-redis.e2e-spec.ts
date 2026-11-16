@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { NOTIFICATIONS_QUEUE } from '@/modules/notifications/infrastructure/jobs/notifications-queue';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import { REDIS_CLIENT } from '@/shared/redis/redis.module';
 import { createTestApp } from '../support/harness/create-test-app';
 import { signedInUser } from '../support/harness/sessions';

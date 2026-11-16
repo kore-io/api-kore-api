@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { TenantTransaction } from '@/shared/database/tenant-transaction';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import type {
   NewPlannerProfile,
   PlannerProfileRecord,

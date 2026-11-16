@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import { createTestApp } from '../support/harness/create-test-app';
 import { seedReferrer } from '../support/factories/referrers';
 import { openSession, signedInUser } from '../support/harness/sessions';

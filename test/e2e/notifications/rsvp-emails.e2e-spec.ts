@@ -1,4 +1,4 @@
-import { localDate } from '@/shared/time/local-date';
+import { localDate } from '@/shared/kernel/time/local-date';
 import { getQueueToken } from '@nestjs/bullmq';
 import type { TestingModule } from '@nestjs/testing';
 import type { Job, Queue } from 'bullmq';

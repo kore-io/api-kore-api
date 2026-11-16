@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Client } from 'pg';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 
 /**
  * Migration da F6 direto no SQL, com o usuário real da API (kore_api):

@@ -4,7 +4,7 @@ import { invitationExpiresAt } from '@/modules/access/domain/invitations/access-
 import { timezoneForState } from '@/modules/access/domain/weddings/wedding-signup';
 import { OpaqueSessionTokens } from '@/modules/access/infrastructure/providers/opaque-session-tokens';
 import { recomputeWeddingStats } from '@/modules/guests/infrastructure/backoffice/wedding-stats-recompute';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import { INVITATION_PATH } from '@/modules/access/infrastructure/mail/outbox-invitation-mailer';
 import {
   ownAccountEmail,

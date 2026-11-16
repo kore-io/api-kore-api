@@ -1,4 +1,4 @@
-import { DEFAULT_TIMEZONE, localDate } from '@/shared/time/local-date';
+import { DEFAULT_TIMEZONE, localDate } from '@/shared/kernel/time/local-date';
 
 export { DEFAULT_TIMEZONE, localDate };
 

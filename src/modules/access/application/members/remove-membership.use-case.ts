@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AFTER_COMMIT, type AfterCommit } from '@/shared/database/after-commit.port';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,

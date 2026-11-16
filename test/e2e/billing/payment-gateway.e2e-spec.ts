@@ -17,7 +17,7 @@ import { buildOpenApiDocument } from '@/shared/http/configure-app';
 import { createTestApp } from '../support/harness/create-test-app';
 import { createTestWorker } from '../support/harness/create-test-worker';
 import { seedWedding } from '../support/factories/weddings';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 
 /**
  * A porta do gateway, o adaptador local com o estado no Postgres, o webhook e a

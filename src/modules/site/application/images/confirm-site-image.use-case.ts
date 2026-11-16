@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { Semaphore } from '@/shared/concurrency/semaphore';
+import { Semaphore } from '@/shared/kernel/concurrency/semaphore';
 import {
   OBJECT_STORAGE,
   type ObjectStorage,

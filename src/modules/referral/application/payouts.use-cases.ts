@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AppConfigService } from '@/shared/config/app-config.service';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import { ProfileNotOwnedError } from '@/modules/access/domain/access.errors';
 import {
   APPLICATION_LOG_WRITER,

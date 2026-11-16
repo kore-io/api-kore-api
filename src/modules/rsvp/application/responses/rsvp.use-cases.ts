@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AFTER_COMMIT, type AfterCommit } from '@/shared/database/after-commit.port';
 import type { PartyTransactionContext } from '@/shared/database/tenant-transaction';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import { RsvpWriteRateLimit } from '@/shared/rate-limit/rsvp-write-rate-limit';
-import { daysBetween, localDate } from '@/shared/time/local-date';
+import { daysBetween, localDate } from '@/shared/kernel/time/local-date';
 import { deliveryStatusAfter, hasPending } from '@/modules/guests/domain/parties/party-rules';
 import {
   ACCESS_IP_LOG_WRITER,

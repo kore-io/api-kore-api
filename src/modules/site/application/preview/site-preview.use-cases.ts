@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { createHash, randomBytes } from 'node:crypto';
 import { AppConfigService } from '@/shared/config/app-config.service';
 import { TenantTransaction } from '@/shared/database/tenant-transaction';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import { PartyLinkFailures } from '@/shared/rate-limit/party-link-failures';
 import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
 import {

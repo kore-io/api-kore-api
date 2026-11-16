@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { BackofficeTransaction } from '@/shared/database/backoffice-transaction';
-import { daysBetween, localDate } from '@/shared/time/local-date';
+import { daysBetween, localDate } from '@/shared/kernel/time/local-date';
 import {
   PRODUCT_EVENT_RECORDER,
   type ProductEventRecorder,

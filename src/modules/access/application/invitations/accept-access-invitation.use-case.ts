@@ -4,7 +4,7 @@ import {
   type WeddingWriteState,
 } from '@/modules/access/application/ports/wedding-write-state.port';
 import { AFTER_COMMIT, type AfterCommit } from '@/shared/database/after-commit.port';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import {
   PRODUCT_EVENT_RECORDER,
   type ProductEventRecorder,

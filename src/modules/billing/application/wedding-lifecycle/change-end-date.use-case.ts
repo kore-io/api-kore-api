@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { localDate } from '@/shared/time/local-date';
+import { localDate } from '@/shared/kernel/time/local-date';
 import { WeddingScope } from '@/modules/access/application/services/wedding-scope.service';
 import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
 import { WeddingNotFoundError } from '@/modules/access/domain/access.errors';

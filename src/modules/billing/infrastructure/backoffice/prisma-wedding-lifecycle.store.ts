@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@/generated/prisma/client';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
-import { uuidV7 } from '@/shared/ids/uuid-v7';
-import { DEFAULT_TIMEZONE } from '@/shared/time/local-date';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
+import { DEFAULT_TIMEZONE } from '@/shared/kernel/time/local-date';
 import type {
   DueNotice,
   WeddingLifecycleStore,
