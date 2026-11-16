@@ -51,8 +51,6 @@ export interface AdminReferrerProfile extends AdminReferrerRow {
   createdAt: Date;
   /** O percentual em leitura ("20% · padrão das Configurações"; decisão 75). */
   ratePercent: number;
-  /** A cerimonialista segue sempre o padrão das Configurações (decisão 75). */
-  rateIsDefault: boolean;
   taxIdType: 'cpf' | 'cnpj' | null;
   /** Cifrado; o caso de uso devolve só a máscara. */
   taxIdEncrypted: string | null;
@@ -72,8 +70,9 @@ export type AdminReferrerStatementEntry =
       kind: 'commission';
       id: string;
       createdAt: Date;
-      weddingId: string;
-      /** "Ana & Marcos"; nulo com o casamento apagado. */
+      /** Nulo com o casamento apagado (o link não abre). */
+      weddingId: string | null;
+      /** "Ana & Marcos"; nulo com o casamento apagado ou sem os nomes. */
       coupleNames: string | null;
       paymentKind: 'publication' | 'extension';
       baseAmountCents: number;

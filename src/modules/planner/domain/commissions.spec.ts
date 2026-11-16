@@ -63,9 +63,23 @@ describe('Os saldos e a soma por casamento (Comissões do indicador RN02, RN07 e
   it('RN02 (B6-2) - o Disponível soma os ajustes sem repasse; o do repasse vai em "em repasse"', () => {
     expect(
       commissionBalances(rows, [
-        { amountCents: -1_000, payoutId: null },
-        { amountCents: -500, payoutId: 'p1' },
+        { amountCents: -1_000, payoutId: null, payoutStatus: null },
+        { amountCents: -500, payoutId: 'p1', payoutStatus: 'requested' },
       ]),
     ).toMatchObject({ availableCents: 6_242, inPayoutCents: 2_500 });
+  });
+
+  it('RN02 (B6-2) - o ajuste de um repasse já pago soma no Já recebido e sai do "em repasse", como no Backoffice', () => {
+    const base = commissionBalances(rows);
+    expect(
+      commissionBalances(rows, [
+        { amountCents: -1_000, payoutId: 'p0', payoutStatus: 'paid' },
+        { amountCents: -500, payoutId: 'p1', payoutStatus: 'processing' },
+      ]),
+    ).toEqual({
+      ...base,
+      receivedCents: base.receivedCents - 1_000,
+      inPayoutCents: base.inPayoutCents - 500,
+    });
   });
 });

@@ -205,7 +205,7 @@ class AdminReferrerStatementEntryResponse {
     if (entry.kind === 'commission')
       return {
         ...common,
-        weddingId: entry.coupleNames === null ? null : entry.weddingId,
+        weddingId: entry.weddingId,
         coupleNames: entry.coupleNames,
         paymentKind: entry.paymentKind,
         baseAmountCents: entry.baseAmountCents,

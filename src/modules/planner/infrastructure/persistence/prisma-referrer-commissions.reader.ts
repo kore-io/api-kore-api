@@ -46,8 +46,12 @@ export class PrismaReferrerCommissionsReader implements ReferrerCommissionsReade
   }
 
   async adjustments(): Promise<AdjustmentRow[]> {
-    return this.tenant.client().commissionAdjustment.findMany({
-      select: { amountCents: true, payoutId: true },
+    const adjustments = await this.tenant.client().commissionAdjustment.findMany({
+      select: { amountCents: true, payoutId: true, payout: { select: { status: true } } },
     });
+    return adjustments.map(({ payout, ...adjustment }) => ({
+      ...adjustment,
+      payoutStatus: payout?.status ?? null,
+    }));
   }
 }
