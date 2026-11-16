@@ -2,8 +2,8 @@ import { getQueueToken } from '@nestjs/bullmq';
 import type { TestingModule } from '@nestjs/testing';
 import type { Queue } from 'bullmq';
 import { randomBytes, randomUUID } from 'node:crypto';
-import { CleanSiteImages } from '@/modules/site/application/clean-site-images.use-case';
-import { CleanSitePreviewTokens } from '@/modules/site/application/clean-site-preview-tokens.use-case';
+import { CleanSiteImages } from '@/modules/site/application/images/clean-site-images.use-case';
+import { CleanSitePreviewTokens } from '@/modules/site/application/preview/clean-site-preview-tokens.use-case';
 import {
   SITE_IMAGE_CLEANUP,
   type SiteImageCleanup,

@@ -20,7 +20,7 @@ import {
   keptStarterPalette,
 } from '@/modules/site/domain/appearance';
 import { ContrastTooLowError } from '@/modules/site/domain/site.errors';
-import type { SiteAppearanceInput } from '@/modules/site/application/update-site-appearance.use-case';
+import type { SiteAppearanceInput } from '@/modules/site/application/editor/update-site-appearance.use-case';
 import {
   REFERRAL_DIRECTORY,
   type ReferralDirectory,

@@ -18,7 +18,10 @@ import {
   WeddingNotFoundErrorBody,
 } from '@/modules/access/presentation/dto/access-error.dto';
 import { CurrentSession } from '@/modules/access/presentation/http/decorators/current-session.decorator';
-import { GetDeliveryQueue, MarkDeliveries } from '@/modules/rsvp/application/deliveries.use-cases';
+import {
+  GetDeliveryQueue,
+  MarkDeliveries,
+} from '@/modules/rsvp/application/deliveries/deliveries.use-cases';
 import {
   DeliveriesClosedErrorBody,
   SiteExpiredConflictErrorBody,

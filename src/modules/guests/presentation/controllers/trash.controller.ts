@@ -8,7 +8,7 @@ import {
   WeddingNotFoundErrorBody,
 } from '@/modules/access/presentation/dto/access-error.dto';
 import { CurrentSession } from '@/modules/access/presentation/http/decorators/current-session.decorator';
-import { ListTrash, RestoreTrashItem } from '@/modules/guests/application/trash.use-cases';
+import { ListTrash, RestoreTrashItem } from '@/modules/guests/application/trash/trash.use-cases';
 import {
   TagLimitReachedErrorBody,
   TagNameTakenErrorBody,

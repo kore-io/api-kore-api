@@ -7,7 +7,7 @@ import {
   WEDDING_STATS_RECOMPUTE_SCHEDULER_ID,
 } from '@/modules/guests/infrastructure/jobs/wedding-stats-recompute.job';
 import { WEDDING_STATS_RECOMPUTE } from '@/modules/guests/application/ports/wedding-stats-recompute.port';
-import { RecomputeWeddingStats } from '@/modules/guests/application/recompute-wedding-stats.use-case';
+import { RecomputeWeddingStats } from '@/modules/guests/application/stats/recompute-wedding-stats.use-case';
 import { PrismaWeddingStatsRecompute } from '@/modules/guests/infrastructure/backoffice/prisma-wedding-stats-recompute';
 import {
   findDivergentWeddingIds,

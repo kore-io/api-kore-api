@@ -11,7 +11,7 @@ import {
   SiteUnavailableErrorBody,
 } from '@/modules/site/presentation/dto/site-error.dto';
 import { SiteExpiredConflictErrorBody } from '@/modules/rsvp/presentation/dto/deliveries.dto';
-import { GetRsvp, SubmitRsvp } from '@/modules/rsvp/application/rsvp.use-cases';
+import { GetRsvp, SubmitRsvp } from '@/modules/rsvp/application/responses/rsvp.use-cases';
 import { toHttpError } from '@/modules/rsvp/presentation/errors/rsvp-http-errors';
 import {
   PartySessionInvalidErrorBody,

@@ -21,11 +21,11 @@ import { CurrentSession } from '@/modules/access/presentation/http/decorators/cu
 import {
   ImportPastedList,
   PreviewPastedList,
-} from '@/modules/guests/application/import-paste.use-cases';
+} from '@/modules/guests/application/imports/import-paste.use-cases';
 import {
   ImportSpreadsheet,
   PreviewSpreadsheet,
-} from '@/modules/guests/application/import-spreadsheet.use-cases';
+} from '@/modules/guests/application/imports/import-spreadsheet.use-cases';
 import { SpreadsheetUploadGuard } from '@/modules/guests/presentation/http/guards/spreadsheet-upload.guard';
 import {
   DuplicateErrorBody,

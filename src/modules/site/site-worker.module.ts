@@ -1,10 +1,10 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { LogsWorkerModule } from '@/modules/logs/logs-worker.module';
-import { CleanSitePreviewTokens } from './application/clean-site-preview-tokens.use-case';
+import { CleanSitePreviewTokens } from './application/preview/clean-site-preview-tokens.use-case';
 import { SITE_PREVIEW_TOKEN_CLEANUP } from './application/ports/site-preview-token-cleanup.port';
 import { PrismaSitePreviewTokenCleanup } from './infrastructure/backoffice/prisma-site-preview-token-cleanup';
-import { CleanSiteImages } from './application/clean-site-images.use-case';
+import { CleanSiteImages } from './application/images/clean-site-images.use-case';
 import { SITE_IMAGE_CLEANUP } from './application/ports/site-image-cleanup.port';
 import { PrismaSiteImageCleanup } from './infrastructure/backoffice/prisma-site-image-cleanup';
 import {
@@ -12,7 +12,7 @@ import {
   SiteImageCleanupProcessor,
   SiteImageCleanupScheduler,
 } from './infrastructure/jobs/site-image-cleanup.job';
-import { MoveToPostEvent } from './application/move-to-post-event.use-case';
+import { MoveToPostEvent } from './application/public-site/move-to-post-event.use-case';
 import { POST_EVENT_TRANSITION } from './application/ports/post-event-transition.port';
 import { PrismaPostEventTransition } from './infrastructure/backoffice/prisma-post-event-transition';
 import {

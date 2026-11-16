@@ -21,12 +21,12 @@ import {
   WeddingNotFoundErrorBody,
 } from '@/modules/access/presentation/dto/access-error.dto';
 import { CurrentSession } from '@/modules/access/presentation/http/decorators/current-session.decorator';
-import { CreateParty } from '@/modules/guests/application/create-party.use-case';
-import { GetParty } from '@/modules/guests/application/get-party.use-case';
-import { ListParties } from '@/modules/guests/application/list-parties.use-case';
-import { RegeneratePartyLink } from '@/modules/guests/application/regenerate-party-link.use-case';
-import { UpdateParty } from '@/modules/guests/application/update-party.use-case';
-import { TrashParties, TrashParty } from '@/modules/guests/application/trash.use-cases';
+import { CreateParty } from '@/modules/guests/application/parties/create-party.use-case';
+import { GetParty } from '@/modules/guests/application/parties/get-party.use-case';
+import { ListParties } from '@/modules/guests/application/parties/list-parties.use-case';
+import { RegeneratePartyLink } from '@/modules/guests/application/parties/regenerate-party-link.use-case';
+import { UpdateParty } from '@/modules/guests/application/parties/update-party.use-case';
+import { TrashParties, TrashParty } from '@/modules/guests/application/trash/trash.use-cases';
 import {
   TrashPartiesBody,
   TrashPartiesResponse,

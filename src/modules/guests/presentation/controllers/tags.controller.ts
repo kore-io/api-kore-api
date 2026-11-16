@@ -25,8 +25,8 @@ import {
   CreateTag,
   ListTags,
   UpdateTag,
-} from '@/modules/guests/application/tags.use-cases';
-import { TrashTag } from '@/modules/guests/application/trash.use-cases';
+} from '@/modules/guests/application/parties/tags.use-cases';
+import { TrashTag } from '@/modules/guests/application/trash/trash.use-cases';
 import { TrashedTagResponse } from '@/modules/guests/presentation/dto/trash.dto';
 import { TagNotFoundError } from '@/modules/guests/domain/guests.errors';
 import {

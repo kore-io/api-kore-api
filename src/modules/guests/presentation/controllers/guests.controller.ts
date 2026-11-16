@@ -18,8 +18,8 @@ import {
   WeddingNotFoundErrorBody,
 } from '@/modules/access/presentation/dto/access-error.dto';
 import { CurrentSession } from '@/modules/access/presentation/http/decorators/current-session.decorator';
-import { MoveGuest } from '@/modules/guests/application/move-guest.use-case';
-import { TrashGuest } from '@/modules/guests/application/trash.use-cases';
+import { MoveGuest } from '@/modules/guests/application/parties/move-guest.use-case';
+import { TrashGuest } from '@/modules/guests/application/trash/trash.use-cases';
 import { TrashedGuestResponse } from '@/modules/guests/presentation/dto/trash.dto';
 import { GuestNotFoundError } from '@/modules/guests/domain/guests.errors';
 import {

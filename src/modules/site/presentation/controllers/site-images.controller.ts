@@ -10,8 +10,8 @@ import {
 } from '@/modules/access/presentation/dto/access-error.dto';
 import { CurrentSession } from '@/modules/access/presentation/http/decorators/current-session.decorator';
 import { OwnTransactions } from '@/modules/access/presentation/http/decorators/own-transactions.decorator';
-import { ConfirmSiteImage } from '@/modules/site/application/confirm-site-image.use-case';
-import { AuthorizeSiteImageUpload } from '@/modules/site/application/authorize-site-image-upload.use-case';
+import { ConfirmSiteImage } from '@/modules/site/application/images/confirm-site-image.use-case';
+import { AuthorizeSiteImageUpload } from '@/modules/site/application/images/authorize-site-image-upload.use-case';
 import {
   SiteImageInvalidErrorBody,
   SiteImageLimitErrorBody,

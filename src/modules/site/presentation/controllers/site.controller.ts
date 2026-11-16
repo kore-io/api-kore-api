@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, ParseEnumPipe, Patch, Put } from '@nestjs/common';
 import { validationError } from '@/shared/http/validation-errors';
-import { UpdateSiteSection } from '@/modules/site/application/update-site-section.use-case';
+import { UpdateSiteSection } from '@/modules/site/application/editor/update-site-section.use-case';
 import { SITE_SECTION_TYPES, type SiteSectionType } from '@/modules/site/domain/site-sections';
 import { ApiTags } from '@nestjs/swagger';
 import { ApiErrorResponses, commonErrors } from '@/shared/http/api-error-responses.decorator';
@@ -10,9 +10,9 @@ import {
   WeddingNotFoundErrorBody,
 } from '@/modules/access/presentation/dto/access-error.dto';
 import { CurrentSession } from '@/modules/access/presentation/http/decorators/current-session.decorator';
-import { GetSiteEditor } from '@/modules/site/application/site-editor-view';
-import { UpdateSiteBasics } from '@/modules/site/application/update-site-basics.use-case';
-import { UpdateSiteAppearance } from '@/modules/site/application/update-site-appearance.use-case';
+import { GetSiteEditor } from '@/modules/site/application/editor/site-editor-view';
+import { UpdateSiteBasics } from '@/modules/site/application/editor/update-site-basics.use-case';
+import { UpdateSiteAppearance } from '@/modules/site/application/editor/update-site-appearance.use-case';
 import {
   SiteAppearanceResponse,
   UpdateSiteAppearanceBody,
@@ -35,7 +35,7 @@ import {
   UpdateSiteSectionBody,
   UpdateSongQuestionBody,
 } from '@/modules/site/presentation/dto/site.dto';
-import { UpdateSongQuestion } from '@/modules/site/application/update-song-question.use-case';
+import { UpdateSongQuestion } from '@/modules/site/application/editor/update-song-question.use-case';
 
 /** Editor do site (F2): leitura e Dados básicos. */
 @ApiTags('site')

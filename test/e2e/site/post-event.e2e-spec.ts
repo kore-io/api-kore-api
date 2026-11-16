@@ -2,7 +2,7 @@ import { getQueueToken } from '@nestjs/bullmq';
 import type { TestingModule } from '@nestjs/testing';
 import type { Queue } from 'bullmq';
 import { randomUUID } from 'node:crypto';
-import { MoveToPostEvent } from '@/modules/site/application/move-to-post-event.use-case';
+import { MoveToPostEvent } from '@/modules/site/application/public-site/move-to-post-event.use-case';
 import {
   POST_EVENT_QUEUE,
   POST_EVENT_SCHEDULER_ID,

@@ -12,7 +12,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { RSVP_STATUSES, type RsvpStatus } from '@/modules/guests/domain/parties/party';
-import type { RsvpView } from '@/modules/rsvp/application/rsvp-view';
+import type { RsvpView } from '@/modules/rsvp/application/responses/rsvp-view';
 
 /**
  * A resposta de um convidado (RSVP, contrato; R2-5). Os tamanhos (restrição

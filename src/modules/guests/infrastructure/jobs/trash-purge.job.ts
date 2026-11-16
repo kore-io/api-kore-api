@@ -3,7 +3,7 @@ import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import type { Queue } from 'bullmq';
 import { upsertDailyScheduler } from '@/shared/jobs/daily-scheduler';
 import type { PurgeCounts } from '@/modules/guests/application/ports/trash-purge.port';
-import { PurgeTrash } from '@/modules/guests/application/purge-trash.use-case';
+import { PurgeTrash } from '@/modules/guests/application/trash/purge-trash.use-case';
 
 export const TRASH_PURGE_QUEUE = 'trash-purge';
 export const TRASH_PURGE_SCHEDULER_ID = 'purge-trash';

@@ -1,6 +1,6 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import { ArrayMaxSize, ArrayMinSize, IsArray, IsIn, IsUUID } from 'class-validator';
-import type { RestoreResult } from '@/modules/guests/application/trash.use-cases';
+import type { RestoreResult } from '@/modules/guests/application/trash/trash.use-cases';
 import type { TrashListRow } from '@/modules/guests/application/ports/trash-store.port';
 
 /** Seleção múltipla: até 200 grupos por pedido (contrato). */

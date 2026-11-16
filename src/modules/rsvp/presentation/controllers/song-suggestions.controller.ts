@@ -13,7 +13,7 @@ import { NothingToExportErrorBody } from '@/modules/guests/presentation/dto/gues
 import {
   ExportSongSuggestions,
   ListSongSuggestions,
-} from '@/modules/rsvp/application/song-suggestions.use-cases';
+} from '@/modules/rsvp/application/responses/song-suggestions.use-cases';
 import { toHttpError } from '@/modules/rsvp/presentation/errors/rsvp-http-errors';
 import {
   SongQuestionDisabledErrorBody,

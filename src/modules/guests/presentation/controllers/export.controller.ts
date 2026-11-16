@@ -6,7 +6,7 @@ import { ApiErrorResponses, commonErrors } from '@/shared/http/api-error-respons
 import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
 import { WeddingNotFoundErrorBody } from '@/modules/access/presentation/dto/access-error.dto';
 import { CurrentSession } from '@/modules/access/presentation/http/decorators/current-session.decorator';
-import { ExportGuests } from '@/modules/guests/application/export-guests.use-case';
+import { ExportGuests } from '@/modules/guests/application/exports/export-guests.use-case';
 import { NothingToExportErrorBody } from '@/modules/guests/presentation/dto/guests-error.dto';
 import { toHttpError } from '@/modules/guests/presentation/errors/guests-http-errors';
 import {

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import type { DashboardView } from '@/modules/rsvp/application/dashboard.use-case';
+import type { DashboardView } from '@/modules/rsvp/application/dashboard/dashboard.use-case';
 
 class DashboardStatsResponse {
   /** Pessoas e vagas (Grupos RN13). */

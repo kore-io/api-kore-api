@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { uuidV7 } from '@/shared/ids/uuid-v7';
-import type { SiteAppearanceInput } from '@/modules/site/application/update-site-appearance.use-case';
+import type { SiteAppearanceInput } from '@/modules/site/application/editor/update-site-appearance.use-case';
 import {
   OwnerlessWeddingsLimitError,
   ProfileNotOwnedError,

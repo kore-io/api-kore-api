@@ -5,7 +5,7 @@ import { DELIVERY_STATUSES, type DeliveryStatus } from '@/modules/guests/domain/
 import type {
   DeliveredParty,
   DeliveryQueue,
-} from '@/modules/rsvp/application/deliveries.use-cases';
+} from '@/modules/rsvp/application/deliveries/deliveries.use-cases';
 import {
   DELIVERY_CHANNELS,
   DELIVERY_PARTIES_MAX,

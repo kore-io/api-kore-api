@@ -12,7 +12,7 @@ import { GuestNotFoundErrorBody } from '@/modules/guests/presentation/dto/guests
 import {
   ChangeGuestResponse,
   SetRsvpDeadline,
-} from '@/modules/rsvp/application/couple-responses.use-cases';
+} from '@/modules/rsvp/application/responses/couple-responses.use-cases';
 import {
   DeadlineAfterEventErrorBody,
   DeadlineInPastErrorBody,

@@ -5,7 +5,7 @@ import { ApiErrorResponses, commonErrors } from '@/shared/http/api-error-respons
 import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
 import { WeddingNotFoundErrorBody } from '@/modules/access/presentation/dto/access-error.dto';
 import { CurrentSession } from '@/modules/access/presentation/http/decorators/current-session.decorator';
-import { GetDashboard } from '@/modules/rsvp/application/dashboard.use-case';
+import { GetDashboard } from '@/modules/rsvp/application/dashboard/dashboard.use-case';
 import { DashboardResponse } from '@/modules/rsvp/presentation/dto/dashboard.dto';
 import { toHttpError } from '@/modules/rsvp/presentation/errors/rsvp-http-errors';
 

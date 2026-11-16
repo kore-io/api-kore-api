@@ -21,8 +21,8 @@ import { validationError } from '@/shared/http/validation-errors';
 import {
   GetPublicSite,
   GetSiteLinkPreview,
-} from '@/modules/site/application/public-site.use-cases';
-import { StartPartySession } from '@/modules/site/application/start-party-session.use-case';
+} from '@/modules/site/application/public-site/public-site.use-cases';
+import { StartPartySession } from '@/modules/site/application/public-site/start-party-session.use-case';
 import {
   clearPartyCookie,
   setPartyCookie,
@@ -32,7 +32,7 @@ import {
   ListPreviewParties,
   StartPreviewSession,
   UpdatePreviewSession,
-} from '@/modules/site/application/site-preview.use-cases';
+} from '@/modules/site/application/preview/site-preview.use-cases';
 import {
   PreviewInvalidErrorBody,
   PreviewRequiredErrorBody,

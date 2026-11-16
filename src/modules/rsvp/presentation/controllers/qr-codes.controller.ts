@@ -18,7 +18,7 @@ import {
   WeddingNotFoundErrorBody,
 } from '@/modules/access/presentation/dto/access-error.dto';
 import { CurrentSession } from '@/modules/access/presentation/http/decorators/current-session.decorator';
-import { DownloadQrCodes } from '@/modules/rsvp/application/qr-codes.use-case';
+import { DownloadQrCodes } from '@/modules/rsvp/application/deliveries/qr-codes.use-case';
 import {
   DeliveriesClosedErrorBody,
   SiteExpiredConflictErrorBody,

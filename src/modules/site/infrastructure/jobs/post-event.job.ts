@@ -2,7 +2,7 @@ import { InjectQueue, OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullm
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import type { Queue } from 'bullmq';
 import { upsertDailyScheduler } from '@/shared/jobs/daily-scheduler';
-import { MoveToPostEvent } from '@/modules/site/application/move-to-post-event.use-case';
+import { MoveToPostEvent } from '@/modules/site/application/public-site/move-to-post-event.use-case';
 
 export const POST_EVENT_QUEUE = 'post-event';
 export const POST_EVENT_SCHEDULER_ID = 'move-to-post-event';

@@ -27,7 +27,7 @@ import {
 } from '@/modules/access/domain/weddings/wedding-signup';
 import { DATE_ONLY, lowercaseSlug } from '@/modules/access/presentation/dto/weddings.dto';
 import { SITE_SECTION_TYPES, type SiteSectionType } from '@/modules/site/domain/site-sections';
-import type { SiteEditorView } from '@/modules/site/application/site-editor-view';
+import type { SiteEditorView } from '@/modules/site/application/editor/site-editor-view';
 
 /** Nomes e cidade: sem espaços sobrando (decisão 166). */
 const clean = ({ value }: { value: unknown }): unknown =>

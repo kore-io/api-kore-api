@@ -2,8 +2,8 @@ import { InjectQueue, OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullm
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import type { Queue } from 'bullmq';
 import { upsertDailyScheduler } from '@/shared/jobs/daily-scheduler';
-import { CleanSiteImages } from '@/modules/site/application/clean-site-images.use-case';
-import { CleanSitePreviewTokens } from '@/modules/site/application/clean-site-preview-tokens.use-case';
+import { CleanSiteImages } from '@/modules/site/application/images/clean-site-images.use-case';
+import { CleanSitePreviewTokens } from '@/modules/site/application/preview/clean-site-preview-tokens.use-case';
 
 export const SITE_IMAGE_CLEANUP_QUEUE = 'site-image-cleanup';
 export const SITE_IMAGE_CLEANUP_SCHEDULER_ID = 'clean-site-images';

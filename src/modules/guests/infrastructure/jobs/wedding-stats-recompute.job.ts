@@ -2,7 +2,7 @@ import { InjectQueue, OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullm
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import type { Queue } from 'bullmq';
 import { upsertDailyScheduler } from '@/shared/jobs/daily-scheduler';
-import { RecomputeWeddingStats } from '@/modules/guests/application/recompute-wedding-stats.use-case';
+import { RecomputeWeddingStats } from '@/modules/guests/application/stats/recompute-wedding-stats.use-case';
 
 export const WEDDING_STATS_RECOMPUTE_QUEUE = 'wedding-stats-recompute';
 export const WEDDING_STATS_RECOMPUTE_SCHEDULER_ID = 'recompute-wedding-stats';

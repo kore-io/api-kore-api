@@ -11,7 +11,7 @@ import { CurrentSession } from '@/modules/access/presentation/http/decorators/cu
 import {
   ListMessageTemplates,
   SaveMessageTemplate,
-} from '@/modules/rsvp/application/message-templates.use-cases';
+} from '@/modules/rsvp/application/deliveries/message-templates.use-cases';
 import { MESSAGE_KINDS, type MessageKind } from '@/modules/rsvp/domain/message-templates';
 import {
   LinkPlaceholderMissingErrorBody,

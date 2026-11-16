@@ -16,8 +16,8 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import type { PartyList } from '@/modules/guests/application/list-parties.use-case';
-import type { PartyView } from '@/modules/guests/application/party-view';
+import type { PartyList } from '@/modules/guests/application/parties/list-parties.use-case';
+import type { PartyView } from '@/modules/guests/application/parties/party-view';
 import {
   AGE_GROUPS,
   DELIVERY_STATUSES,

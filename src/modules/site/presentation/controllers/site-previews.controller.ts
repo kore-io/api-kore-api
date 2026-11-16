@@ -9,7 +9,7 @@ import {
   WeddingNotFoundErrorBody,
 } from '@/modules/access/presentation/dto/access-error.dto';
 import { CurrentSession } from '@/modules/access/presentation/http/decorators/current-session.decorator';
-import { CreateSitePreview } from '@/modules/site/application/site-preview.use-cases';
+import { CreateSitePreview } from '@/modules/site/application/preview/site-preview.use-cases';
 import {
   PreviewModeBody,
   SitePreviewResponse,

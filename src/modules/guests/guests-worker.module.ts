@@ -2,9 +2,9 @@ import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { LogsWorkerModule } from '@/modules/logs/logs-worker.module';
 import { WEDDING_STATS_RECOMPUTE } from './application/ports/wedding-stats-recompute.port';
-import { RecomputeWeddingStats } from './application/recompute-wedding-stats.use-case';
+import { RecomputeWeddingStats } from './application/stats/recompute-wedding-stats.use-case';
 import { TRASH_PURGE } from './application/ports/trash-purge.port';
-import { PurgeTrash } from './application/purge-trash.use-case';
+import { PurgeTrash } from './application/trash/purge-trash.use-case';
 import { PrismaTrashPurge } from './infrastructure/backoffice/prisma-trash-purge';
 import {
   TRASH_PURGE_QUEUE,
