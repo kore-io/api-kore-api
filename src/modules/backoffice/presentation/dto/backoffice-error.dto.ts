@@ -237,3 +237,28 @@ export class CommissionNotBlockableErrorBody {
   /** O estado atual da comissão. */
   @ApiProperty() status: string;
 }
+
+class FieldErrorBody {
+  @ApiProperty({ example: 'defaultRatePercent' }) path: string;
+  @ApiProperty({ example: 'MAX' }) code: string;
+  @ApiProperty({ type: 'object', additionalProperties: true, example: { max: 100 } })
+  params: Record<string, unknown>;
+}
+
+/** A Indicação fora do formato (Backoffice - cobrança RN10; decisão 78). */
+export class ReferralSettingsOutOfRangeErrorBody {
+  static readonly status = 422;
+  @ApiProperty({ enum: [422] }) statusCode: 422;
+  @ApiProperty({ enum: ['REFERRAL_SETTINGS_OUT_OF_RANGE'] })
+  error: 'REFERRAL_SETTINGS_OUT_OF_RANGE';
+  @ApiProperty({ type: [String] }) message: string[];
+  @ApiProperty({ type: [FieldErrorBody] }) errors: FieldErrorBody[];
+}
+
+/** O Testar conexão de uma integração que ainda não existe (o mapa; decisão 267(1)). */
+export class IntegrationNotConfiguredErrorBody {
+  static readonly status = 409;
+  @ApiProperty({ enum: [409] }) statusCode: 409;
+  @ApiProperty({ enum: ['INTEGRATION_NOT_CONFIGURED'] }) error: 'INTEGRATION_NOT_CONFIGURED';
+  @ApiProperty() message: string;
+}

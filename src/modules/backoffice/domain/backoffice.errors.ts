@@ -1,3 +1,5 @@
+import type { FieldError } from '@/shared/http/validation-errors';
+
 /** O casamento não existe (404 WEDDING_NOT_FOUND). */
 export class AdminWeddingNotFoundError extends Error {
   override name = 'AdminWeddingNotFoundError';
@@ -113,4 +115,17 @@ export class NoOwnerError extends Error {
 /** A sessão de suporte não existe, já acabou ou é de outra pessoa (404 SUPPORT_SESSION_NOT_FOUND). */
 export class SupportSessionNotFoundError extends Error {
   override name = 'SupportSessionNotFoundError';
+}
+
+/** A Indicação fora do formato (decisão 78): 422 com os campos (Backoffice - cobrança RN10). */
+export class InvalidReferralSettingsError extends Error {
+  override name = 'InvalidReferralSettingsError';
+  constructor(readonly errors: FieldError[]) {
+    super('Referral settings out of range.');
+  }
+}
+
+/** A integração ainda não existe na API (o mapa; decisão 267(1)): 409. */
+export class IntegrationNotConfiguredError extends Error {
+  override name = 'IntegrationNotConfiguredError';
 }

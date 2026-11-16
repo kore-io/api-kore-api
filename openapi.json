@@ -14348,6 +14348,256 @@
           "admin"
         ]
       }
+    },
+    "/v1/admin/settings": {
+      "get": {
+        "operationId": "AdminSettingsController_read_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSettingsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Valores vigentes, Indicação e Integrações, numa leitura só (Penpot 21).",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/settings/referral": {
+      "put": {
+        "operationId": "AdminSettingsController_updateReferral_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReferralSettingsBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateReferralSettingsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ReauthRequiredErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferralSettingsOutOfRangeErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Salvar a Indicação: sessão recente; 422 fora do formato (decisão 78); a\ncerimonialista acompanha a Comissão padrão (decisão 75).",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/integrations/{name}/test": {
+      "post": {
+        "operationId": "AdminSettingsController_testIntegration_v1",
+        "parameters": [
+          {
+            "name": "name",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": [
+                "asaas",
+                "email",
+                "maps"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationTestResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationNotConfiguredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Testar conexão (B10-8): o ping da porta; o local responde \"Conectado (local)\".",
+        "tags": [
+          "admin"
+        ]
+      }
     }
   },
   "info": {
@@ -29159,6 +29409,339 @@
         "required": [
           "tab",
           "referrer"
+        ]
+      },
+      "CurrentValuesResponse": {
+        "type": "object",
+        "properties": {
+          "priceVersion": {
+            "type": "string",
+            "example": "2026-11"
+          },
+          "activationCents": {
+            "type": "number",
+            "example": 14900
+          },
+          "monthlyCents": {
+            "type": "number",
+            "example": 2900
+          },
+          "capCents": {
+            "type": "number",
+            "description": "Preço máximo da publicação.",
+            "example": 44900
+          },
+          "pixDiscountPercent": {
+            "type": "number",
+            "example": 3
+          },
+          "interestFreeUpTo": {
+            "type": "number",
+            "description": "Parcelamento sem juros até.",
+            "example": 6
+          },
+          "maxInstallments": {
+            "type": "number",
+            "example": 12
+          },
+          "interestBasisPoints": {
+            "type": "number",
+            "description": "Juros de 7x a 12x: 3,99% (399) + R$ 0,49 (49) sobre o valor.",
+            "example": 399
+          },
+          "interestFixedCents": {
+            "type": "number",
+            "example": 49
+          },
+          "minInstallmentCents": {
+            "type": "number",
+            "example": 500
+          },
+          "endDateMaxMonthsAfterEvent": {
+            "type": "number",
+            "description": "Data de saída do ar até N meses depois do casamento.",
+            "example": 12
+          },
+          "retentionMonthsAfterExpired": {
+            "type": "number",
+            "description": "Retenção: \"6 meses depois de expirar\".",
+            "example": 6
+          },
+          "payoutRequestIntervalDays": {
+            "type": "number",
+            "description": "Pedido de repasse a cada N dias, contados do último.",
+            "example": 30
+          }
+        },
+        "required": [
+          "priceVersion",
+          "activationCents",
+          "monthlyCents",
+          "capCents",
+          "pixDiscountPercent",
+          "interestFreeUpTo",
+          "maxInstallments",
+          "interestBasisPoints",
+          "interestFixedCents",
+          "minInstallmentCents",
+          "endDateMaxMonthsAfterEvent",
+          "retentionMonthsAfterExpired",
+          "payoutRequestIntervalDays"
+        ]
+      },
+      "UpdatedByResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "userId",
+          "name"
+        ]
+      },
+      "ReferralSettingsResponse": {
+        "type": "object",
+        "properties": {
+          "defaultRatePercent": {
+            "type": "number",
+            "description": "Comissão padrão, de 0 a 100.",
+            "example": 22
+          },
+          "referralDiscountPercent": {
+            "type": "number",
+            "description": "Desconto de indicação, de 0 a 100.",
+            "example": 10
+          },
+          "commissionHoldDays": {
+            "type": "number",
+            "description": "Prazo de liberação, de 0 a 90 dias.",
+            "example": 30
+          },
+          "payoutMinCents": {
+            "type": "number",
+            "description": "Repasse mínimo em centavos, a partir de 100 (R$ 1).",
+            "example": 5000
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedBy": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UpdatedByResponse"
+              }
+            ]
+          }
+        },
+        "required": [
+          "defaultRatePercent",
+          "referralDiscountPercent",
+          "commissionHoldDays",
+          "payoutMinCents",
+          "updatedAt",
+          "updatedBy"
+        ]
+      },
+      "IntegrationStatusResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "enum": [
+              "asaas",
+              "email",
+              "maps"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "description": "`not_configured`: ainda não existe na API (o mapa; decisão 267(1)).",
+            "enum": [
+              "connected",
+              "failed",
+              "not_tested",
+              "not_configured"
+            ],
+            "type": "string"
+          },
+          "testedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "O último Testar conexão; nulo sem teste.",
+            "format": "date-time"
+          },
+          "local": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "status",
+          "testedAt",
+          "local"
+        ]
+      },
+      "AdminSettingsResponse": {
+        "type": "object",
+        "properties": {
+          "current": {
+            "$ref": "#/components/schemas/CurrentValuesResponse"
+          },
+          "referral": {
+            "$ref": "#/components/schemas/ReferralSettingsResponse"
+          },
+          "integrations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationStatusResponse"
+            }
+          }
+        },
+        "required": [
+          "current",
+          "referral",
+          "integrations"
+        ]
+      },
+      "ReferralSettingsOutOfRangeErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "REFERRAL_SETTINGS_OUT_OF_RANGE"
+            ]
+          },
+          "message": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorBody"
+            }
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "errors"
+        ]
+      },
+      "ReferralSettingsBody": {
+        "type": "object",
+        "properties": {
+          "defaultRatePercent": {
+            "type": "number",
+            "description": "Comissão padrão, de 0 a 100.",
+            "example": 22
+          },
+          "referralDiscountPercent": {
+            "type": "number",
+            "description": "Desconto de indicação, de 0 a 100.",
+            "example": 10
+          },
+          "commissionHoldDays": {
+            "type": "number",
+            "description": "Prazo de liberação, de 0 a 90 dias.",
+            "example": 30
+          },
+          "payoutMinCents": {
+            "type": "number",
+            "description": "Repasse mínimo em centavos, a partir de 100 (R$ 1).",
+            "example": 5000
+          }
+        },
+        "required": [
+          "defaultRatePercent",
+          "referralDiscountPercent",
+          "commissionHoldDays",
+          "payoutMinCents"
+        ]
+      },
+      "UpdateReferralSettingsResponse": {
+        "type": "object",
+        "properties": {
+          "changed": {
+            "type": "boolean",
+            "description": "Falso quando nada mudou: nada foi gravado."
+          },
+          "referral": {
+            "$ref": "#/components/schemas/ReferralSettingsResponse"
+          }
+        },
+        "required": [
+          "changed",
+          "referral"
+        ]
+      },
+      "IntegrationNotConfiguredErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "INTEGRATION_NOT_CONFIGURED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "IntegrationTestResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "enum": [
+              "connected",
+              "failed"
+            ],
+            "type": "string"
+          },
+          "testedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "local": {
+            "type": "boolean",
+            "description": "O adaptador local: \"Conectado (local)\"."
+          }
+        },
+        "required": [
+          "status",
+          "testedAt",
+          "local"
         ]
       },
       "SpreadsheetTemplateHeaders": {

@@ -5,6 +5,7 @@ import { ipHasherProvider } from '@/modules/logs/infrastructure/providers/ip-has
 import { AdminInsights, SEARCH_TERM_HASHER } from './application/admin-insights.use-cases';
 import { AdminPayments } from './application/admin-payments.use-cases';
 import { AdminReferrers } from './application/admin-referrers.use-cases';
+import { AdminSettings } from './application/admin-settings.use-cases';
 import { AdminWeddings } from './application/admin-weddings.use-cases';
 import { ChangeAccessEmail } from './application/change-access-email.use-cases';
 import { EraseGuestOnRequest } from './application/erase-guest.use-case';
@@ -12,6 +13,7 @@ import { ACCESS_EMAIL_CHANGES } from './application/ports/access-email-changes.p
 import { ADMIN_INSIGHTS_READER } from './application/ports/admin-insights.reader.port';
 import { ADMIN_PAYMENTS_READER } from './application/ports/admin-payments.reader.port';
 import { ADMIN_REFERRERS_READER } from './application/ports/admin-referrers.reader.port';
+import { ADMIN_SETTINGS_STORE } from './application/ports/admin-settings.store.port';
 import { ADMIN_WEDDINGS_READER } from './application/ports/admin-weddings.reader.port';
 import { GUEST_ERASURE } from './application/ports/guest-erasure.port';
 import { REFERRER_ADMIN_STORE } from './application/ports/referrer-admin.store.port';
@@ -25,17 +27,20 @@ import { PrismaAccessEmailChanges } from './infrastructure/backoffice/prisma-acc
 import { PrismaAdminInsightsReader } from './infrastructure/backoffice/prisma-admin-insights.reader';
 import { PrismaAdminPaymentsReader } from './infrastructure/backoffice/prisma-admin-payments.reader';
 import { PrismaAdminReferrersReader } from './infrastructure/backoffice/prisma-admin-referrers.reader';
+import { PrismaAdminSettingsStore } from './infrastructure/backoffice/prisma-admin-settings.store';
 import { PrismaAdminWeddingsReader } from './infrastructure/backoffice/prisma-admin-weddings.reader';
 import { PrismaGuestErasure } from './infrastructure/backoffice/prisma-guest-erasure';
 import { PrismaReferrerAdminStore } from './infrastructure/backoffice/prisma-referrer-admin.store';
 import { PrismaReferrerReassignment } from './infrastructure/backoffice/prisma-referrer-reassignment';
 import { PrismaStaffDirectory } from './infrastructure/backoffice/prisma-staff-directory';
 import { HmacSearchTermHasher } from './infrastructure/providers/hmac-search-term-hasher';
+import { integrationProbesProvider } from './infrastructure/providers/integration-probes.provider';
 import { AdminInsightsController } from './presentation/controllers/admin-insights.controller';
 import { AdminPaymentsController } from './presentation/controllers/admin-payments.controller';
 import { AdminPayoutsController } from './presentation/controllers/admin-payouts.controller';
 import { AdminReferrersReadController } from './presentation/controllers/admin-referrers-read.controller';
 import { AdminReferrersController } from './presentation/controllers/admin-referrers.controller';
+import { AdminSettingsController } from './presentation/controllers/admin-settings.controller';
 import { AdminWeddingsController } from './presentation/controllers/admin-weddings.controller';
 import { SupportSessionsController } from './presentation/controllers/support-sessions.controller';
 import { StaffGuard } from './presentation/http/guards/staff.guard';
@@ -54,6 +59,7 @@ import { StaffGuard } from './presentation/http/guards/staff.guard';
     AdminInsightsController,
     SupportSessionsController,
     AdminReferrersReadController,
+    AdminSettingsController,
   ],
   providers: [
     { provide: STAFF_DIRECTORY, useClass: PrismaStaffDirectory },
@@ -78,6 +84,9 @@ import { StaffGuard } from './presentation/http/guards/staff.guard';
     AdminInsights,
     { provide: ADMIN_REFERRERS_READER, useClass: PrismaAdminReferrersReader },
     AdminReferrers,
+    { provide: ADMIN_SETTINGS_STORE, useClass: PrismaAdminSettingsStore },
+    integrationProbesProvider,
+    AdminSettings,
   ],
 })
 export class BackofficeModule {}
