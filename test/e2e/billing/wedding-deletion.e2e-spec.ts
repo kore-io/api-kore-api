@@ -114,12 +114,10 @@ describe('Excluir o casamento (Retenção e expurgo RN05, RN06 e RN08; banco rea
     ).find((item) => item.weddingId === weddingId);
     expect(membership?.lifecycle.deletionScheduledFor).toBe(deletionDay);
     // Todas as pessoas donas; quem pediu recebe a sua versão (decisão 252).
-    const [toAna] = await waitForInbox({ to: ana.email });
-    const [toMarcos] = await waitForInbox({ to: marcos.email });
-    expect([toAna.Subject, toMarcos.Subject]).toEqual([
-      'O casamento será apagado em 7 dias',
-      'O casamento será apagado em 7 dias',
-    ]);
+    // Pelo assunto: o e-mail da publicação, assíncrono, pode chegar depois.
+    const subject = 'O casamento será apagado em 7 dias';
+    const [toAna] = await waitForInbox({ to: ana.email, subject });
+    const [toMarcos] = await waitForInbox({ to: marcos.email, subject });
     expect(await textOf(toAna.ID)).toContain('Você pediu para excluir o casamento no Kore.');
     expect(await textOf(toMarcos.ID)).toContain('Ana pediu para excluir o casamento no Kore.');
     await db.applicationLog.findFirstOrThrow({
