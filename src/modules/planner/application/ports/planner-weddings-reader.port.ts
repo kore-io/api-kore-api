@@ -1,4 +1,4 @@
-import type { CollaborationRow, DeliveryCounts } from '../../domain/my-weddings';
+import type { CollaborationRow, DeliveryCounts } from '@/modules/planner/domain/my-weddings';
 
 /** Convite do casal pendente de um casamento (Meus casamentos RN08 e RN09). */
 export interface PendingCoupleInvitation {

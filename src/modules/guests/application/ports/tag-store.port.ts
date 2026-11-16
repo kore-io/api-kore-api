@@ -1,4 +1,4 @@
-import type { TagColor } from '../../domain/party';
+import type { TagColor } from '@/modules/guests/domain/parties/party';
 
 export interface TagRow {
   id: string;

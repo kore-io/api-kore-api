@@ -2,14 +2,14 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   PLANNER_PROFILES,
   type PlannerProfiles,
-} from '../../access/application/ports/planner-profiles.port';
-import type { MyWeddingStatus } from '../domain/my-weddings';
+} from '@/modules/access/application/ports/planner-profiles.port';
+import type { MyWeddingStatus } from '@/modules/planner/domain/my-weddings';
 import {
   REFERRED_WEDDINGS_READER,
   type ReferredWeddingsReader,
 } from './ports/referred-weddings-reader.port';
 import { requirePlannerProfile } from './planner-gate';
-import { commissionsByWedding } from '../domain/commissions';
+import { commissionsByWedding } from '@/modules/planner/domain/commissions';
 import {
   REFERRER_COMMISSIONS_READER,
   type ReferrerCommissionsReader,

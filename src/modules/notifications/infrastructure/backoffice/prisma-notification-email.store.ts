@@ -1,14 +1,14 @@
-import { Prisma } from '../../../../generated/prisma/client';
+import { Prisma } from '@/generated/prisma/client';
 import { Injectable } from '@nestjs/common';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
-import { DEFAULT_TIMEZONE } from '../../../../shared/time/local-date';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import { DEFAULT_TIMEZONE } from '@/shared/kernel/time/local-date';
 import type {
   EmailCandidate,
   EmailStateChange,
   LockedEmailState,
   NotificationEmailStore,
-} from '../../application/ports/notification-email-store.port';
-import type { EmailFrequency } from '../../application/ports/notification-store.port';
+} from '@/modules/notifications/application/ports/notification-email-store.port';
+import type { EmailFrequency } from '@/modules/notifications/application/ports/notification-store.port';
 import { partnerNamesOf, preferenceWhere, recipientRole } from './notification-recipient';
 
 /** O envio de e-mail cabe na transação (o SMTP aceita em segundos). */

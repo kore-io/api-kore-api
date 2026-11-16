@@ -1,17 +1,17 @@
 import { Module } from '@nestjs/common';
-import { AccessModule } from '../access/access.module';
+import { AccessModule } from '@/modules/access/access.module';
 import { GetMyWedding, ListMyWeddings } from './application/my-weddings.use-cases';
 import { PLANNER_WEDDINGS_READER } from './application/ports/planner-weddings-reader.port';
-import { PrismaPlannerWeddingsReader } from './infrastructure/prisma-planner-weddings.reader';
-import { MyWeddingsController } from './presentation/my-weddings.controller';
+import { PrismaPlannerWeddingsReader } from './infrastructure/persistence/prisma-planner-weddings.reader';
+import { MyWeddingsController } from './presentation/controllers/my-weddings.controller';
 import { REFERRED_WEDDINGS_READER } from './application/ports/referred-weddings-reader.port';
 import { ListReferredWeddings } from './application/referred-weddings.use-case';
 import { REFERRER_COMMISSIONS_READER } from './application/ports/referrer-commissions-reader.port';
 import { ListReferrerCommissions } from './application/referrer-commissions.use-case';
-import { PrismaReferrerCommissionsReader } from './infrastructure/prisma-referrer-commissions.reader';
-import { ReferrerCommissionsController } from './presentation/referrer-commissions.controller';
-import { PrismaReferredWeddingsReader } from './infrastructure/prisma-referred-weddings.reader';
-import { ReferredWeddingsController } from './presentation/referred-weddings.controller';
+import { PrismaReferrerCommissionsReader } from './infrastructure/persistence/prisma-referrer-commissions.reader';
+import { ReferrerCommissionsController } from './presentation/controllers/referrer-commissions.controller';
+import { PrismaReferredWeddingsReader } from './infrastructure/persistence/prisma-referred-weddings.reader';
+import { ReferredWeddingsController } from './presentation/controllers/referred-weddings.controller';
 import {
   CreatePlannerTemplate,
   DeletePlannerTemplate,
@@ -19,8 +19,8 @@ import {
   UpdatePlannerTemplate,
 } from './application/planner-templates.use-cases';
 import { PLANNER_TEMPLATE_STORE } from './application/ports/planner-template-store.port';
-import { PrismaPlannerTemplateStore } from './infrastructure/prisma-planner-template.store';
-import { PlannerTemplatesController } from './presentation/planner-templates.controller';
+import { PrismaPlannerTemplateStore } from './infrastructure/persistence/prisma-planner-template.store';
+import { PlannerTemplatesController } from './presentation/controllers/planner-templates.controller';
 
 /**
  * Área do cerimonialista (decisão 223, D1): lê por vínculo, pela autorização

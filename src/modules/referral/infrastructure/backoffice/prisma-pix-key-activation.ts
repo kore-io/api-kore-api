@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
-import type { PixKeyActivation } from '../../application/activate-pix-keys.use-case';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import type { PixKeyActivation } from '@/modules/referral/application/activate-pix-keys.use-case';
 
 /** Pela conexão do backoffice: a função trava cada Referrer antes de trocar a chave. */
 @Injectable()

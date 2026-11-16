@@ -1,13 +1,13 @@
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject, Logger } from '@nestjs/common';
-import { EmailDeliveryFailures } from '../application/email-delivery-failures';
-import type { EmailTag } from '../application/email-outbox.port';
+import { EmailDeliveryFailures } from '@/shared/email/application/email-delivery-failures';
+import type { EmailTag } from '@/shared/email/application/email-outbox.port';
 import type { Job } from 'bullmq';
 import {
   EMAIL_SENDER,
   type EmailMessage,
   type EmailSender,
-} from '../application/email-sender.port';
+} from '@/shared/email/application/email-sender.port';
 import { DEFAULT_EMAIL_QUEUE, LOGIN_EMAIL_QUEUE } from './email-queues';
 
 const logger = new Logger('EmailDelivery');

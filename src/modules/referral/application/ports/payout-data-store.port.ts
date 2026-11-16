@@ -1,4 +1,4 @@
-import type { PixKeyType, TaxIdType } from '../../domain/payout-data';
+import type { PixKeyType, TaxIdType } from '@/modules/referral/domain/payout-data';
 
 export interface PixKeyRow {
   id: string;

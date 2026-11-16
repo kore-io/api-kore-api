@@ -21,7 +21,11 @@
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["node", "jest"]
+    "types": ["node", "jest"],
+    // Imports de src/ por caminho absoluto: @/modules/..., @/shared/...
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": ["src", "test", "scripts", "*.ts"]
 }

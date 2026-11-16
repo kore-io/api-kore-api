@@ -1,4 +1,4 @@
-import type { MyWeddingStatus } from '../../domain/my-weddings';
+import type { MyWeddingStatus } from '@/modules/planner/domain/my-weddings';
 
 /** Um casal que veio pelo link dela, como a função do banco devolve (RN04). */
 export interface ReferredWeddingRow {

@@ -1,4 +1,4 @@
-import type { CellValue } from '../../domain/spreadsheet-import';
+import type { CellValue } from '@/modules/guests/domain/imports/spreadsheet-import';
 
 /** A primeira aba da planilha: a linha dos títulos e as outras, em texto ou número. */
 export interface SpreadsheetSheet {

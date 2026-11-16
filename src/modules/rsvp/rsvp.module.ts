@@ -1,54 +1,57 @@
 import { Module } from '@nestjs/common';
-import { RsvpWriteRateLimit } from '../../shared/rate-limit/rsvp-write-rate-limit';
-import { AccessModule } from '../access/access.module';
-import { NotificationsModule } from '../notifications/notifications.module';
-import { SiteModule } from '../site/site.module';
-import { ChangeGuestResponse, SetRsvpDeadline } from './application/couple-responses.use-cases';
-import { CoupleResponsesController } from './presentation/couple-responses.controller';
+import { RsvpWriteRateLimit } from '@/shared/rate-limit/rsvp-write-rate-limit';
+import { AccessModule } from '@/modules/access/access.module';
+import { NotificationsModule } from '@/modules/notifications/notifications.module';
+import { SiteModule } from '@/modules/site/site.module';
+import {
+  ChangeGuestResponse,
+  SetRsvpDeadline,
+} from './application/responses/couple-responses.use-cases';
+import { CoupleResponsesController } from './presentation/controllers/couple-responses.controller';
 import {
   ListMessageTemplates,
   MessageTemplates,
   SaveMessageTemplate,
-} from './application/message-templates.use-cases';
+} from './application/deliveries/message-templates.use-cases';
 import { MESSAGE_TEMPLATE_STORE } from './application/ports/message-template-store.port';
-import { PrismaMessageTemplateStore } from './infrastructure/prisma-message-template.store';
-import { MessageTemplatesController } from './presentation/message-templates.controller';
+import { PrismaMessageTemplateStore } from './infrastructure/persistence/prisma-message-template.store';
+import { MessageTemplatesController } from './presentation/controllers/message-templates.controller';
 import {
   DeliveryGuard,
   DeliveryMarker,
   GetDeliveryQueue,
   MarkDeliveries,
-} from './application/deliveries.use-cases';
+} from './application/deliveries/deliveries.use-cases';
 import { DELIVERY_STORE } from './application/ports/delivery-store.port';
-import { PrismaDeliveryStore } from './infrastructure/prisma-delivery.store';
-import { DeliveriesController } from './presentation/deliveries.controller';
-import { DownloadQrCodes } from './application/qr-codes.use-case';
+import { PrismaDeliveryStore } from './infrastructure/persistence/prisma-delivery.store';
+import { DeliveriesController } from './presentation/controllers/deliveries.controller';
+import { DownloadQrCodes } from './application/deliveries/qr-codes.use-case';
 import { QR_RENDERER } from './application/ports/qr-renderer.port';
-import { QrcodeRenderer } from './infrastructure/qrcode-renderer';
-import { QrCodesController } from './presentation/qr-codes.controller';
+import { QrcodeRenderer } from './infrastructure/providers/qrcode-renderer';
+import { QrCodesController } from './presentation/controllers/qr-codes.controller';
 import {
   ExportSongSuggestions,
   ListSongSuggestions,
   SongSuggestionsAccess,
-} from './application/song-suggestions.use-cases';
+} from './application/responses/song-suggestions.use-cases';
 import {
   SONG_SUGGESTIONS_FILE,
   SONG_SUGGESTION_READER,
 } from './application/ports/song-suggestion-reader.port';
-import { PrismaSongSuggestionReader } from './infrastructure/prisma-song-suggestion.reader';
-import { SongSuggestionsXlsx } from './infrastructure/song-suggestions-xlsx';
-import { SongSuggestionsController } from './presentation/song-suggestions.controller';
-import { GetDashboard } from './application/dashboard.use-case';
+import { PrismaSongSuggestionReader } from './infrastructure/persistence/prisma-song-suggestion.reader';
+import { SongSuggestionsXlsx } from './infrastructure/providers/song-suggestions-xlsx';
+import { SongSuggestionsController } from './presentation/controllers/song-suggestions.controller';
+import { GetDashboard } from './application/dashboard/dashboard.use-case';
 import { DASHBOARD_READER } from './application/ports/dashboard-reader.port';
-import { PrismaDashboardReader } from './infrastructure/prisma-dashboard.reader';
-import { DashboardController } from './presentation/dashboard.controller';
-import { PARTY_LINKS } from '../guests/application/ports/party-links.port';
-import { RandomPartyLinks } from '../guests/infrastructure/random-party-links';
+import { PrismaDashboardReader } from './infrastructure/persistence/prisma-dashboard.reader';
+import { DashboardController } from './presentation/controllers/dashboard.controller';
+import { PARTY_LINKS } from '@/modules/guests/application/ports/party-links.port';
+import { RandomPartyLinks } from '@/modules/guests/infrastructure/providers/random-party-links';
 import { RSVP_STORE } from './application/ports/rsvp-store.port';
-import { RsvpSessions } from './application/rsvp-sessions.service';
-import { GetRsvp, SubmitRsvp } from './application/rsvp.use-cases';
-import { PrismaRsvpStore } from './infrastructure/prisma-rsvp.store';
-import { RsvpController } from './presentation/rsvp.controller';
+import { RsvpSessions } from './application/responses/rsvp-sessions.service';
+import { GetRsvp, SubmitRsvp } from './application/responses/rsvp.use-cases';
+import { PrismaRsvpStore } from './infrastructure/persistence/prisma-rsvp.store';
+import { RsvpController } from './presentation/controllers/rsvp.controller';
 
 /** Contexto RSVP (F4): Confirmar presença no site do casal, o prazo e as respostas pelo casal. */
 @Module({

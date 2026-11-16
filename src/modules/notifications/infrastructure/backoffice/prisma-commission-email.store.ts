@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import type {
   CommissionEmailStore,
   LockedCommissionEmail,
-} from '../../application/ports/commission-email-store.port';
+} from '@/modules/notifications/application/ports/commission-email-store.port';
 
 /** O envio cabe na transação (o SMTP aceita em segundos). */
 const SEND_TRANSACTION_TIMEOUT_MS = 30_000;

@@ -1,14 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { IpHasher } from '../../logs/infrastructure/ip-hasher';
-import { AlertNotFoundError, AlertAlreadyResolvedError } from '../domain/backoffice.errors';
+import { IpHasher } from '@/modules/logs/infrastructure/providers/ip-hasher';
+import {
+  AlertNotFoundError,
+  AlertAlreadyResolvedError,
+} from '@/modules/backoffice/domain/backoffice.errors';
 import {
   MONEY_ALERT_TYPES,
   visibleAlertTypes,
   withoutMoney,
   type StaffMember,
   type StaffRole,
-} from '../domain/staff';
-import type { ApplicationLogWriter } from '../../logs/application/ports/application-log-writer.port';
+} from '@/modules/backoffice/domain/staff';
+import type { ApplicationLogWriter } from '@/modules/logs/application/ports/application-log-writer.port';
 import { ADMIN_LOG_WRITER } from './admin-weddings.use-cases';
 import {
   ADMIN_INSIGHTS_READER,

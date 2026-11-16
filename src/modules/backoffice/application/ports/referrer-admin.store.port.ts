@@ -1,4 +1,4 @@
-import type { CommissionStatus } from '../../domain/referrer-admin';
+import type { CommissionStatus } from '@/modules/backoffice/domain/referrer-admin';
 
 export interface LockedReferrer {
   id: string;

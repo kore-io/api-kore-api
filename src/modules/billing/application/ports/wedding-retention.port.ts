@@ -1,4 +1,4 @@
-import type { PurgeReason } from '../../domain/retention';
+import type { PurgeReason } from '@/modules/billing/domain/wedding-lifecycle/retention';
 import type { BillingRecipient } from './payment-ledger.port';
 
 /** Um casamento que a rotina da retenção olha (Retenção RN02, RN03 e RN05). */

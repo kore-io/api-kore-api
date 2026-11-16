@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { applicationLogRetentionCutoff } from '../domain/application-log-retention';
+import { applicationLogRetentionCutoff } from '@/modules/logs/domain/application-log-retention';
 import {
   APPLICATION_LOG_RETENTION,
   type ApplicationLogRetention,

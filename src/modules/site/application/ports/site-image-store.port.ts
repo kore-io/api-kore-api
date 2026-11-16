@@ -1,4 +1,4 @@
-import type { SiteImageStatus } from '../../domain/site-image';
+import type { SiteImageStatus } from '@/modules/site/domain/site-image';
 
 /** Imagens do site na transação da requisição, com a RLS ligada. */
 export interface SiteImageStore {

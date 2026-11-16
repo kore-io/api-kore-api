@@ -1,12 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { BackofficeTransaction } from '../../../../shared/database/backoffice-transaction';
-import { coupleNames, type InvitationPartner } from '../../../access/domain/invitation-acceptance';
+import { BackofficeTransaction } from '@/shared/database/backoffice-transaction';
+import {
+  coupleNames,
+  type InvitationPartner,
+} from '@/modules/access/domain/invitations/invitation-acceptance';
 import type {
   DeletionMoneyLocks,
   DeletionTarget,
   WeddingDeletionStore,
   WeddingLifecycleView,
-} from '../../application/ports/wedding-deletion.store.port';
+} from '@/modules/billing/application/ports/wedding-deletion.store.port';
 
 const day = (value: Date | null) => (value ? value.toISOString().slice(0, 10) : null);
 const firstName = (name: string | null | undefined) => (name ?? '').trim().split(/\s+/)[0] ?? '';

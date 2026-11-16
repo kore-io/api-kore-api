@@ -32,7 +32,7 @@ export default tseslint.config(
       'src/**/infrastructure/backoffice/**',
       'src/**/*-worker.module.ts',
       // O seed dos dados de exemplo (pnpm db:seed) atravessa os casamentos, como as rotinas.
-      'src/seed.ts',
+      'src/cli/seed/**',
     ],
     rules: {
       'no-restricted-imports': [

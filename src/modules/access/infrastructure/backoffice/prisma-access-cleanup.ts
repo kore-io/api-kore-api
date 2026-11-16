@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
-import type { AccessCleanup } from '../../application/ports/access-cleanup.port';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import type { AccessCleanup } from '@/modules/access/application/ports/access-cleanup.port';
 
 const DELETE_BATCH_SIZE = 5_000;
 

@@ -1,9 +1,9 @@
-import './instrumentation';
+import '@/shared/observability/instrumentation';
 import { NestFactory } from '@nestjs/core';
 import { Logger } from 'nestjs-pino';
-import { AppModule } from './app.module';
-import { AppConfigService } from './shared/config/app-config.service';
-import { configureApp } from './shared/http/configure-app';
+import { AppModule } from './app/app.module';
+import { AppConfigService } from '@/shared/config/app-config.service';
+import { configureApp } from '@/shared/http/configure-app';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, {

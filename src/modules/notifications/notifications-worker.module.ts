@@ -1,19 +1,19 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
-import { LogsWorkerModule } from '../logs/logs-worker.module';
+import { LogsWorkerModule } from '@/modules/logs/logs-worker.module';
 import { NOTIFICATION_EMAIL_STORE } from './application/ports/notification-email-store.port';
 import { RsvpEmails } from './application/rsvp-emails.use-cases';
 import { RsvpPush } from './application/rsvp-push.use-case';
 import { PUSH_SENDER } from './application/ports/push-sender.port';
 import { PUSH_STORE } from './application/ports/push-store.port';
 import { PrismaPushStore } from './infrastructure/backoffice/prisma-push.store';
-import { WebPushSender } from './infrastructure/web-push-sender';
+import { WebPushSender } from './infrastructure/providers/web-push-sender';
 import { PrismaNotificationEmailStore } from './infrastructure/backoffice/prisma-notification-email.store';
-import { NOTIFICATIONS_QUEUE } from './infrastructure/notifications-queue';
+import { NOTIFICATIONS_QUEUE } from './infrastructure/jobs/notifications-queue';
 import {
   NotificationsProcessor,
   NotificationsSweepScheduler,
-} from './infrastructure/notifications.processor';
+} from './infrastructure/jobs/notifications.processor';
 import { CleanNotifications } from './application/clean-notifications.use-case';
 import { NOTIFICATION_RETENTION } from './application/ports/notification-retention.port';
 import { PrismaNotificationRetention } from './infrastructure/backoffice/prisma-notification-retention';
@@ -21,7 +21,7 @@ import {
   NOTIFICATION_RETENTION_QUEUE,
   NotificationRetentionProcessor,
   NotificationRetentionScheduler,
-} from './infrastructure/notification-retention.job';
+} from './infrastructure/jobs/notification-retention.job';
 import { PlannerDigest } from './application/planner-digest.use-case';
 import { CommissionEmails } from './application/commission-emails.use-case';
 import { COMMISSION_EMAIL_STORE } from './application/ports/commission-email-store.port';

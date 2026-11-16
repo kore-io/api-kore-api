@@ -8,13 +8,13 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
-import { AppConfigService } from '../../config/app-config.service';
+import { AppConfigService } from '@/shared/config/app-config.service';
 import type {
   ObjectStorage,
   PresignedPut,
   StorageBucket,
   StoredObjectHead,
-} from '../application/object-storage.port';
+} from '@/shared/storage/application/object-storage.port';
 
 // O DeleteObjects aceita até 1.000 chaves por chamada.
 const DELETE_BATCH = 1000;

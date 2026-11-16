@@ -1,7 +1,7 @@
-import './instrumentation';
+import '@/shared/observability/instrumentation';
 import { NestFactory } from '@nestjs/core';
 import { Logger } from 'nestjs-pino';
-import { WorkerModule } from './worker.module';
+import { WorkerModule } from './app/worker.module';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.createApplicationContext(WorkerModule, { bufferLogs: true });

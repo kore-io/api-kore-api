@@ -1,17 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AppConfigService } from '../../../shared/config/app-config.service';
-import {
-  FIELD_CIPHER,
-  type FieldCipher,
-} from '../../../shared/crypto/application/field-cipher.port';
+import { AppConfigService } from '@/shared/config/app-config.service';
+import { FIELD_CIPHER, type FieldCipher } from '@/shared/crypto/application/field-cipher.port';
 import {
   PLANNER_PROFILES,
   type PlannerProfiles,
-} from '../../access/application/ports/planner-profiles.port';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
-import { coupleLinkCipherContext } from '../../access/domain/access-invitation';
-import { WeddingNotFoundError } from '../../access/domain/access.errors';
-import { INVITATION_PATH } from '../../access/infrastructure/outbox-invitation-mailer';
+} from '@/modules/access/application/ports/planner-profiles.port';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
+import { coupleLinkCipherContext } from '@/modules/access/domain/invitations/access-invitation';
+import { WeddingNotFoundError } from '@/modules/access/domain/access.errors';
+import { INVITATION_PATH } from '@/modules/access/infrastructure/mail/outbox-invitation-mailer';
 import {
   compareWeddings,
   hasInvitationsNotSentAlert,
@@ -22,14 +19,14 @@ import {
   type CollaborationRow,
   type MyWeddingStatus,
   type WeddingOrigin,
-} from '../domain/my-weddings';
+} from '@/modules/planner/domain/my-weddings';
 import {
   PLANNER_WEDDINGS_READER,
   type PendingCoupleInvitation,
   type PlannerWeddingsReader,
 } from './ports/planner-weddings-reader.port';
 import { requirePlannerProfile } from './planner-gate';
-import { commissionBalances } from '../domain/commissions';
+import { commissionBalances } from '@/modules/planner/domain/commissions';
 import {
   REFERRER_COMMISSIONS_READER,
   type ReferrerCommissionsReader,

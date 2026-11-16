@@ -1,4 +1,4 @@
-import type { PixKeyType } from '../../../referral/domain/payout-data';
+import type { PixKeyType } from '@/modules/referral/domain/payout-data';
 
 /** O repasse travado, com o que o Pagar confere (Repasse RN05; B7-3). */
 export interface LockedPayout {

@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '../../../../generated/prisma/client';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
+import type { Prisma } from '@/generated/prisma/client';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import type {
   AdminPaymentDetail,
   AdminPaymentQuery,
   AdminPaymentRow,
   AdminPaymentsReader,
-} from '../../application/ports/admin-payments.reader.port';
-import type { Page } from '../../application/ports/admin-weddings.reader.port';
-import type { PaymentsCsvRow } from '../../domain/payments-csv';
+} from '@/modules/backoffice/application/ports/admin-payments.reader.port';
+import type { Page } from '@/modules/backoffice/application/ports/admin-weddings.reader.port';
+import type { PaymentsCsvRow } from '@/modules/backoffice/domain/payments-csv';
 
 const PAGE_SIZE = 50;
 const day = (value: Date | null) => (value ? value.toISOString().slice(0, 10) : null);

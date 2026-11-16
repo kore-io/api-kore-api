@@ -1,4 +1,7 @@
-import type { PlannerTemplateKind, TemplateSectionType } from '../../domain/planner-template';
+import type {
+  PlannerTemplateKind,
+  TemplateSectionType,
+} from '@/modules/planner/domain/planner-template';
 
 export interface PlannerTemplate {
   id: string;

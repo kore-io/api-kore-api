@@ -1,4 +1,4 @@
-import type { PreviewMode } from '../../domain/site-preview';
+import type { PreviewMode } from '@/modules/site/domain/site-preview';
 
 export interface PreviewTokenRow {
   id: string;

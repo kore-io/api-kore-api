@@ -1,4 +1,4 @@
-import type { PaymentsCsvRow } from '../../domain/payments-csv';
+import type { PaymentsCsvRow } from '@/modules/backoffice/domain/payments-csv';
 import type { Page } from './admin-weddings.reader.port';
 
 /** Os status do filtro da Cobrança (RN03): "Falhou" é o "Não aprovado" do casal. */

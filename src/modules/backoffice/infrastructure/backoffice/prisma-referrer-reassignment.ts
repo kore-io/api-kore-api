@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '../../../../generated/prisma/client';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
-import { uuidV7 } from '../../../../shared/ids/uuid-v7';
+import type { Prisma } from '@/generated/prisma/client';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import type {
   ReassignResult,
   ReferrerReassignment,
-} from '../../application/ports/referrer-reassignment.port';
+} from '@/modules/backoffice/application/ports/referrer-reassignment.port';
 
 const firstName = (name: string | null | undefined) => (name ?? '').trim().split(/\s+/)[0] ?? '';
 

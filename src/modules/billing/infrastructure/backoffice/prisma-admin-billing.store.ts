@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '../../../../generated/prisma/client';
-import { BackofficeTransaction } from '../../../../shared/database/backoffice-transaction';
-import { uuidV7 } from '../../../../shared/ids/uuid-v7';
+import type { Prisma } from '@/generated/prisma/client';
+import { BackofficeTransaction } from '@/shared/database/backoffice-transaction';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import type {
   AdminBillingStore,
   AdminRefundOutcome,
   CourtesyWedding,
-} from '../../application/ports/admin-billing.store.port';
+} from '@/modules/billing/application/ports/admin-billing.store.port';
 
 /** Pelo kore_backoffice, na transação corrente (decisão 180(5)). */
 @Injectable()

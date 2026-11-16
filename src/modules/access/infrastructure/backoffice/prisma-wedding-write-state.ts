@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
-import type { WeddingWriteState } from '../../application/ports/wedding-write-state.port';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import type { WeddingWriteState } from '@/modules/access/application/ports/wedding-write-state.port';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

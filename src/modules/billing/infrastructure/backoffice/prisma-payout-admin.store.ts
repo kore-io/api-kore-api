@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '../../../../generated/prisma/client';
-import { BackofficeTransaction } from '../../../../shared/database/backoffice-transaction';
+import type { Prisma } from '@/generated/prisma/client';
+import { BackofficeTransaction } from '@/shared/database/backoffice-transaction';
 import type {
   PayoutAdminStore,
   PayoutQueueRow,
   PayoutQueueTab,
   RejectResult,
   ReleaseResult,
-} from '../../application/ports/payout-admin.store.port';
+} from '@/modules/billing/application/ports/payout-admin.store.port';
 
 const PAGE_SIZE = 50;
 const TAB_STATUSES: Record<PayoutQueueTab, Prisma.PayoutWhereInput['status']> = {

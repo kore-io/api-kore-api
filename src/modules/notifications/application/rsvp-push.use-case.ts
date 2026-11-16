@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AppConfigService } from '../../../shared/config/app-config.service';
-import { isAllowedPushEndpoint } from '../domain/push-endpoint';
+import { AppConfigService } from '@/shared/config/app-config.service';
+import { isAllowedPushEndpoint } from '@/modules/notifications/domain/push-endpoint';
 import { PLANNER_COMMISSIONS_PATH } from './rsvp-emails.use-cases';
 import { PUSH_SENDER, type PushSender } from './ports/push-sender.port';
 import { PUSH_STORE, type PushStore, type PushType } from './ports/push-store.port';

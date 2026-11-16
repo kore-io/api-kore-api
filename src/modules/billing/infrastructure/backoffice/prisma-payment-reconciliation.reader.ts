@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import type {
   PaymentReconciliationReader,
   ReconcilingPayment,
-} from '../../application/ports/payment-reconciliation.reader.port';
+} from '@/modules/billing/application/ports/payment-reconciliation.reader.port';
 
 const SELECT = {
   id: true,

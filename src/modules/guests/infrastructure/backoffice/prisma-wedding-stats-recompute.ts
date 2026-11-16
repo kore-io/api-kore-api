@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
-import { postgresErrorCode } from '../../../../shared/database/postgres-error';
-import type { WeddingStatsRecompute } from '../../application/ports/wedding-stats-recompute.port';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import { postgresErrorCode } from '@/shared/database/postgres-error';
+import type { WeddingStatsRecompute } from '@/modules/guests/application/ports/wedding-stats-recompute.port';
 import { findDivergentWeddingIds, recomputeWeddingStats } from './wedding-stats-recompute';
 
 /** SQLSTATE do lock_timeout: a linha ficou presa além do prazo. */

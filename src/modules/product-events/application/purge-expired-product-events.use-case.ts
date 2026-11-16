@@ -2,8 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,
-} from '../../logs/application/ports/application-log-writer.port';
-import { productEventRetentionCutoff } from '../domain/product-event-retention';
+} from '@/modules/logs/application/ports/application-log-writer.port';
+import { productEventRetentionCutoff } from '@/modules/product-events/domain/product-event-retention';
 import {
   PRODUCT_EVENT_RETENTION,
   type ProductEventRetention,

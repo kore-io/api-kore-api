@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
-import { AppEnv, LOCAL_KEY_ENVS } from '../../config/env.schema';
+import { AppEnv, LOCAL_KEY_ENVS } from '@/shared/config/env.schema';
 import { aesGcmDecrypt, aesGcmEncrypt } from './aes-gcm';
-import { DataKey, KeyManagement } from '../application/key-management.port';
+import { DataKey, KeyManagement } from '@/shared/crypto/application/key-management.port';
 
 const DATA_KEY_BYTES = 32;
 

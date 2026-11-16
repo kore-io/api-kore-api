@@ -2,7 +2,7 @@ import { Controller, Get, ServiceUnavailableException, VERSION_NEUTRAL } from '@
 import { ApiTags } from '@nestjs/swagger';
 import { HealthCheck, HealthCheckResult, HealthCheckService } from '@nestjs/terminus';
 import { SkipThrottle } from '@nestjs/throttler';
-import { Public } from '../http/public.decorator';
+import { Public } from '@/shared/http/public.decorator';
 import { DatabaseHealthIndicator, RedisHealthIndicator } from './health.indicators';
 
 // Rota de infraestrutura: fica fora do /v1 (decisão 97, item 2).

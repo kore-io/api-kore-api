@@ -1,4 +1,4 @@
-import type { StaffMember } from '../../domain/staff';
+import type { StaffMember } from '@/modules/backoffice/domain/staff';
 
 export interface AccessEmailChangeInput {
   staff: StaffMember;

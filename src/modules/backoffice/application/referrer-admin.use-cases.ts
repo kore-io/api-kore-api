@@ -1,16 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
-import {
-  FIELD_CIPHER,
-  type FieldCipher,
-} from '../../../shared/crypto/application/field-cipher.port';
-import {
-  TAX_ID_HASHER,
-  type TaxIdHasher,
-} from '../../../shared/crypto/application/tax-id-hasher.port';
-import { BackofficeTransaction } from '../../../shared/database/backoffice-transaction';
-import type { AuthenticatedSession } from '../../access/domain/authenticated-session';
-import { requireRecentSession } from '../../access/domain/recent-session';
-import { maskTaxId, normalizeTaxId } from '../../referral/domain/payout-data';
+import { FIELD_CIPHER, type FieldCipher } from '@/shared/crypto/application/field-cipher.port';
+import { TAX_ID_HASHER, type TaxIdHasher } from '@/shared/crypto/application/tax-id-hasher.port';
+import { BackofficeTransaction } from '@/shared/database/backoffice-transaction';
+import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
+import { requireRecentSession } from '@/modules/access/domain/sessions/recent-session';
+import { maskTaxId, normalizeTaxId } from '@/modules/referral/domain/payout-data';
 import {
   CommissionNotBlockableError,
   CommissionNotFoundError,
@@ -22,7 +16,7 @@ import {
   ReferrerNotFoundError,
   ReferrerTaxIdInUseError,
   unblockedStatus,
-} from '../domain/referrer-admin';
+} from '@/modules/backoffice/domain/referrer-admin';
 import { REFERRER_ADMIN_STORE, type ReferrerAdminStore } from './ports/referrer-admin.store.port';
 
 const TAX_ID_CONTEXT = { table: 'referrers', column: 'tax_id_encrypted' };

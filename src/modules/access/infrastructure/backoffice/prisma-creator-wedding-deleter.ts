@@ -1,13 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import {
   OBJECT_STORAGE,
   type ObjectStorage,
-} from '../../../../shared/storage/application/object-storage.port';
+} from '@/shared/storage/application/object-storage.port';
 import type {
   CreatorWeddingDeleter,
   CreatorWeddingDeletion,
-} from '../../application/ports/creator-wedding-deletion.port';
+} from '@/modules/access/application/ports/creator-wedding-deletion.port';
 import { deleteSiteImageObjects, purgeWeddingData } from './wedding-purge';
 
 export const DELETED_BY_CREATOR_ACTION = 'wedding.deleted_by_creator';

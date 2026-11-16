@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import type {
   PushStore,
   PushType,
   StoredPushSubscription,
-} from '../../application/ports/push-store.port';
+} from '@/modules/notifications/application/ports/push-store.port';
 import { partnerNamesOf, preferenceWhere, recipientRole } from './notification-recipient';
 
 /** Pela conexão do backoffice (sem RLS): o worker atravessa as pessoas. */

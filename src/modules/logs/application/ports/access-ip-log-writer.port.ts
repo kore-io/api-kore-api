@@ -1,4 +1,4 @@
-import type { AccessIpLogEntry } from '../../domain/log-entries';
+import type { AccessIpLogEntry } from '@/modules/logs/domain/log-entries';
 
 /** Porta usada pelos outros módulos para registrar o IP real de um acesso. */
 export interface AccessIpLogWriter {

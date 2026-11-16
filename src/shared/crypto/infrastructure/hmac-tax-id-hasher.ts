@@ -1,6 +1,6 @@
 import { createHmac } from 'node:crypto';
-import type { TaxIdDigest, TaxIdHasher } from '../application/tax-id-hasher.port';
-import type { PixKeyHasher } from '../application/pix-key-hasher.port';
+import type { TaxIdDigest, TaxIdHasher } from '@/shared/crypto/application/tax-id-hasher.port';
+import type { PixKeyHasher } from '@/shared/crypto/application/pix-key-hasher.port';
 
 /** Prefixo de domínio (B2-12): o mesmo HMAC nunca serve a outro tipo de dado. */
 const DOMAIN_PREFIX = 'taxid:v1:';

@@ -1,7 +1,7 @@
-import type { PlannerProfiles } from '../../access/application/ports/planner-profiles.port';
-import { ProfileNotOwnedError } from '../../access/domain/access.errors';
+import type { PlannerProfiles } from '@/modules/access/application/ports/planner-profiles.port';
+import { ProfileNotOwnedError } from '@/modules/access/domain/access.errors';
 import type { ReferredWeddingsReader } from './ports/referred-weddings-reader.port';
-import type { CommissionRow } from '../domain/commissions';
+import type { CommissionRow } from '@/modules/planner/domain/commissions';
 import { ListReferredWeddings } from './referred-weddings.use-case';
 
 const row = (clickable: boolean) => ({

@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AppConfigService } from '../../../shared/config/app-config.service';
-import { uuidV7 } from '../../../shared/ids/uuid-v7';
-import { ProfileNotOwnedError } from '../../access/domain/access.errors';
+import { AppConfigService } from '@/shared/config/app-config.service';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
+import { ProfileNotOwnedError } from '@/modules/access/domain/access.errors';
 import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,
-} from '../../logs/application/ports/application-log-writer.port';
+} from '@/modules/logs/application/ports/application-log-writer.port';
 import {
   PayoutAmountChangedError,
   PayoutBelowMinimumError,
@@ -15,7 +15,7 @@ import {
   PayoutsDisabledError,
   PayoutTooSoonError,
   PixKeyChangePendingError,
-} from '../domain/referral.errors';
+} from '@/modules/referral/domain/referral.errors';
 import { PAYOUT_DATA_STORE, type PayoutDataStore } from './ports/payout-data-store.port';
 import { PAYOUT_STORE, type PayoutRow, type PayoutStore } from './ports/payout-store.port';
 

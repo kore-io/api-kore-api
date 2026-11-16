@@ -1,5 +1,5 @@
-import type { AppConfigService } from '../../../shared/config/app-config.service';
-import { commissionAvailableEmail } from '../infrastructure/emails/notification-email';
+import type { AppConfigService } from '@/shared/config/app-config.service';
+import { commissionAvailableEmail } from '@/modules/notifications/infrastructure/mail/templates/notification-email';
 import { CommissionEmails } from './commission-emails.use-case';
 import type {
   CommissionEmailStore,

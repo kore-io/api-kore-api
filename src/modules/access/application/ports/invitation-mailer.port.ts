@@ -1,4 +1,4 @@
-import type { AccessInvitationKind } from '../../domain/access-invitation';
+import type { AccessInvitationKind } from '@/modules/access/domain/invitations/access-invitation';
 import type { Inviter, InvitationWeddingDetails } from './access-invitation-store.port';
 
 export interface InvitationEmail {

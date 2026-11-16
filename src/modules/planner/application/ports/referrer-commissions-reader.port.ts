@@ -1,4 +1,4 @@
-import type { AdjustmentRow, CommissionRow } from '../../domain/commissions';
+import type { AdjustmentRow, CommissionRow } from '@/modules/planner/domain/commissions';
 
 /**
  * As comissões da própria pessoa indicadora pela função `referrer_commissions()`

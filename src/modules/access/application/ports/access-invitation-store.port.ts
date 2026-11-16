@@ -1,5 +1,8 @@
-import type { AccessInvitationKind, InvitationWedding } from '../../domain/access-invitation';
-import type { MembershipRole } from '../../domain/wedding-authorization';
+import type {
+  AccessInvitationKind,
+  InvitationWedding,
+} from '@/modules/access/domain/invitations/access-invitation';
+import type { MembershipRole } from '@/modules/access/domain/weddings/wedding-authorization';
 
 /** O casamento e quem convida, como o envio e os e-mails precisam ver. */
 export interface InvitationWeddingDetails extends InvitationWedding {

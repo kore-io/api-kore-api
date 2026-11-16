@@ -1,4 +1,4 @@
-import type { StaffRole } from '../../domain/staff';
+import type { StaffRole } from '@/modules/backoffice/domain/staff';
 
 /** Os status do filtro da lista (RN05; decisão 251(3)): o Bloqueado vale por cima do status. */
 export const ADMIN_WEDDING_FILTERS = [

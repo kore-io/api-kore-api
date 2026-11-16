@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { LoggerModule } from 'nestjs-pino';
-import { AppConfigService } from '../config/app-config.service';
+import { AppConfigService } from '@/shared/config/app-config.service';
 import { buildLoggerParams } from './logger.options';
 
 @Module({

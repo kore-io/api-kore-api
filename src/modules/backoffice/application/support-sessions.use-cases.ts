@@ -2,17 +2,17 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   SUPPORT_SESSION_STORE,
   type SupportSessionStore,
-} from '../../access/application/ports/support-session.store.port';
+} from '@/modules/access/application/ports/support-session.store.port';
 import {
   supportSessionExpiresAt,
   type SupportSessionRecord,
-} from '../../access/domain/support-session';
+} from '@/modules/access/domain/sessions/support-session';
 import {
   AdminWeddingNotFoundError,
   NoOwnerError,
   SupportSessionNotFoundError,
-} from '../domain/backoffice.errors';
-import type { StaffMember } from '../domain/staff';
+} from '@/modules/backoffice/domain/backoffice.errors';
+import type { StaffMember } from '@/modules/backoffice/domain/staff';
 
 export interface StartedSupportSession {
   supportSessionId: string;

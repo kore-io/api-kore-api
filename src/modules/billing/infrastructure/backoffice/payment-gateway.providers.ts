@@ -1,7 +1,10 @@
 import type { Provider } from '@nestjs/common';
-import { AppConfigService } from '../../../../shared/config/app-config.service';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
-import { PAYMENT_GATEWAY, type PaymentGateway } from '../../application/ports/payment-gateway.port';
+import { AppConfigService } from '@/shared/config/app-config.service';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import {
+  PAYMENT_GATEWAY,
+  type PaymentGateway,
+} from '@/modules/billing/application/ports/payment-gateway.port';
 import { LocalGatewayStore } from './local-gateway/local-gateway.store';
 import { LocalPaymentGateway } from './local-gateway/local-payment-gateway';
 

@@ -1,4 +1,4 @@
-import type { StaffRole } from '../../domain/staff';
+import type { StaffRole } from '@/modules/backoffice/domain/staff';
 import type { AdminWeddingRow, Page } from './admin-weddings.reader.port';
 
 /** Um mês do gráfico (AAAA-MM), no fuso de Brasília. */

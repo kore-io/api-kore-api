@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { IpHasher } from '../../logs/infrastructure/ip-hasher';
-import { GuestNotFoundForErasureError } from '../domain/backoffice.errors';
-import type { StaffMember } from '../domain/staff';
+import { IpHasher } from '@/modules/logs/infrastructure/providers/ip-hasher';
+import { GuestNotFoundForErasureError } from '@/modules/backoffice/domain/backoffice.errors';
+import type { StaffMember } from '@/modules/backoffice/domain/staff';
 import { GUEST_ERASURE, type GuestErasure, type RequestChannel } from './ports/guest-erasure.port';
 
 /** Remover a pedido do titular (Backoffice - acesso RN10): Admin e suporte, também no bloqueado. */

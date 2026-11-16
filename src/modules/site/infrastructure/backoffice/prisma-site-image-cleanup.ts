@@ -1,19 +1,19 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { Prisma } from '../../../../generated/prisma/client';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
+import type { Prisma } from '@/generated/prisma/client';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import {
   OBJECT_STORAGE,
   type ObjectStorage,
-} from '../../../../shared/storage/application/object-storage.port';
+} from '@/shared/storage/application/object-storage.port';
 import type {
   SiteImageCleanup,
   SiteImageCleanupCounts,
-} from '../../application/ports/site-image-cleanup.port';
+} from '@/modules/site/application/ports/site-image-cleanup.port';
 import {
   SITE_IMAGE_STALE_UPLOAD_MS,
   SITE_IMAGE_UNUSED_MS,
   siteImageKeys,
-} from '../../domain/site-image';
+} from '@/modules/site/domain/site-image';
 
 /** As condições da RN08: o que passou do prazo, pelo relógio de `now`. */
 function dueWhere({ now }: { now: Date }): Prisma.SiteImageWhereInput {

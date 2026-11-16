@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
-import type { SitePreviewTokenCleanup } from '../../application/ports/site-preview-token-cleanup.port';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import type { SitePreviewTokenCleanup } from '@/modules/site/application/ports/site-preview-token-cleanup.port';
 
 /** Pela conexão do backoffice (sem RLS): a rotina atravessa os casamentos. */
 @Injectable()

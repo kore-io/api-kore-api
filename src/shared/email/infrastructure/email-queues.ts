@@ -1,5 +1,5 @@
 import type { JobsOptions } from 'bullmq';
-import type { EmailPriority } from '../application/email-outbox.port';
+import type { EmailPriority } from '@/shared/email/application/email-outbox.port';
 
 export const LOGIN_EMAIL_QUEUE = 'emails-login';
 export const DEFAULT_EMAIL_QUEUE = 'emails';

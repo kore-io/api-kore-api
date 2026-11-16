@@ -1,4 +1,4 @@
-import type { ProductEvent } from '../../domain/product-event';
+import type { ProductEvent } from '@/modules/product-events/domain/product-event';
 
 /** Porta usada pelos outros módulos para registrar um evento de produto. */
 export interface ProductEventRecorder {

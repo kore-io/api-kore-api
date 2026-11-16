@@ -1,4 +1,4 @@
-import { Prisma } from '../../../../generated/prisma/client';
+import { Prisma } from '@/generated/prisma/client';
 
 type Db = Pick<Prisma.TransactionClient, '$executeRaw' | '$queryRaw'>;
 

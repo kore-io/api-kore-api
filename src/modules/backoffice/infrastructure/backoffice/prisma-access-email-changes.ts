@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '../../../../generated/prisma/client';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
-import { uuidV7 } from '../../../../shared/ids/uuid-v7';
+import type { Prisma } from '@/generated/prisma/client';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import type {
   AccessEmailChangeInput,
   AccessEmailChangeResult,
   AccessEmailChanges,
   UnlockResult,
-} from '../../application/ports/access-email-changes.port';
+} from '@/modules/backoffice/application/ports/access-email-changes.port';
 import {
   FAILED_CHECKS_WINDOW_MS,
   REPEAT_CHANGE_WINDOW_MS,
@@ -17,8 +17,8 @@ import {
   brasiliaDay,
   maskEmail,
   normalizeLast4,
-} from '../../domain/access-email-change';
-import type { StaffMember } from '../../domain/staff';
+} from '@/modules/backoffice/domain/access-email-change';
+import type { StaffMember } from '@/modules/backoffice/domain/staff';
 
 export const ACCESS_EMAIL_CHANGED_ACTION = 'user.access_email_changed';
 export const ACCESS_EMAIL_CHECKS_FAILED_ACTION = 'user.access_email_checks_failed';

@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AppConfigService } from '../../../shared/config/app-config.service';
+import { AppConfigService } from '@/shared/config/app-config.service';
 import {
   PLANNER_PROFILES,
   type PlannerProfiles,
-} from '../../access/application/ports/planner-profiles.port';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
-import { ProfileNotOwnedError } from '../../access/domain/access.errors';
+} from '@/modules/access/application/ports/planner-profiles.port';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
+import { ProfileNotOwnedError } from '@/modules/access/domain/access.errors';
 import {
   EMAIL_PREFERENCE_TYPES,
   NOTIFICATION_STORE,

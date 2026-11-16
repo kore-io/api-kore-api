@@ -1,9 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '../../../../generated/prisma/client';
-import { BackofficeTransaction } from '../../../../shared/database/backoffice-transaction';
-import { uuidV7 } from '../../../../shared/ids/uuid-v7';
-import type { PixKeyType } from '../../../referral/domain/payout-data';
-import type { LockedPayout, PayoutLedger } from '../../application/ports/payout-ledger.port';
+import type { Prisma } from '@/generated/prisma/client';
+import { BackofficeTransaction } from '@/shared/database/backoffice-transaction';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
+import type { PixKeyType } from '@/modules/referral/domain/payout-data';
+import type {
+  LockedPayout,
+  PayoutLedger,
+} from '@/modules/billing/application/ports/payout-ledger.port';
 
 /** As escritas do repasse, na transação corrente do backoffice (fora da RLS). */
 @Injectable()
