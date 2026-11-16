@@ -192,7 +192,7 @@ describe('Backoffice: Ver como o casal (Backoffice - acesso RN08; banco real)', 
     expect([mine > 0, theirs]).toEqual([true, 0]);
   });
 
-  it('RN02 e RN08 (decisão 69) - o banco garante também as colunas: do pagamento só o ciclo, de quem tem acesso só nome, e-mail e foto; do indicador só o tipo, e só os membros ativos', async () => {
+  it('RN02 e RN08 (decisão 69) - o banco garante também as colunas: do pagamento só o ciclo, de quem tem acesso só nome, e-mail e foto e só deste casamento; do indicador só o tipo, e só os membros ativos', async () => {
     const { weddingId } = await viewing();
     const prisma = app.get(PrismaService);
     const asSupport = <T>(
@@ -206,6 +206,8 @@ describe('Backoffice: Ver como o casal (Backoffice - acesso RN08; banco real)', 
 
     await asSupport((tx) => tx.$queryRaw`SELECT id, status, kind, paid_at FROM payments`);
     for (const column of [
+      'method',
+      'installments',
       'amount_cents',
       'payer_tax_id_last4',
       'payer_name',
@@ -216,6 +218,25 @@ describe('Backoffice: Ver como o casal (Backoffice - acesso RN08; banco real)', 
         asSupport((tx) => tx.$queryRawUnsafe(`SELECT ${column} FROM payments`)),
       ).rejects.toThrow(/permission denied/);
     await asSupport((tx) => tx.$queryRaw`SELECT id, name, email, avatar_key FROM users LIMIT 1`);
+    // Decisão 272(1): só quem tem vínculo com o casamento da sessão, não outro casal.
+    const other = await couple();
+    const owners = await db.membership.findMany({
+      where: { weddingId: { in: [weddingId, other.weddingId] }, role: 'owner' },
+      select: { weddingId: true, userId: true },
+    });
+    const readable = await asSupport((tx) =>
+      tx.user.findMany({
+        where: { id: { in: owners.map((owner) => owner.userId) } },
+        select: { id: true },
+      }),
+    );
+    expect(readable.map((user) => user.id).sort()).toEqual(
+      owners
+        .filter((owner) => owner.weddingId === weddingId)
+        .map((owner) => owner.userId)
+        .sort(),
+    );
+    expect(await asSupport((tx) => tx.user.count())).toBeLessThan(await db.user.count());
     for (const column of ['platform_role', 'status', 'access_email_changed_at'])
       await expect(
         asSupport((tx) => tx.$queryRawUnsafe(`SELECT ${column} FROM users LIMIT 1`)),
