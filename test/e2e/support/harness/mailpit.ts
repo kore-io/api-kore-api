@@ -11,13 +11,25 @@ export interface MailpitSummary {
   To: { Address: string }[];
 }
 
-/** Os e-mails recebidos por um endereço, do mais novo para o mais antigo. */
-export async function inbox({ to }: { to: string }): Promise<MailpitSummary[]> {
+/**
+ * Os e-mails recebidos por um endereço, do mais novo para o mais antigo. Com
+ * `subject`, só os desse assunto exato: um e-mail assíncrono de outro tipo
+ * (que chega fora de ordem) não toma o lugar do esperado.
+ */
+export async function inbox({
+  to,
+  subject,
+}: {
+  to: string;
+  subject?: string;
+}): Promise<MailpitSummary[]> {
+  const query = subject ? `to:"${to}" subject:"${subject}"` : `to:"${to}"`;
   const response = await fetch(
-    `${MAILPIT_API_URL}/api/v1/search?query=${encodeURIComponent(`to:"${to}"`)}`,
+    `${MAILPIT_API_URL}/api/v1/search?query=${encodeURIComponent(query)}`,
   );
   const { messages } = (await response.json()) as { messages: MailpitSummary[] };
-  return messages;
+  // A busca do Mailpit acha o assunto por trecho; aqui, só o exato.
+  return subject ? messages.filter((message) => message.Subject === subject) : messages;
 }
 
 /**
@@ -26,17 +38,22 @@ export async function inbox({ to }: { to: string }): Promise<MailpitSummary[]> {
  */
 export async function waitForInbox({
   to,
+  subject,
   count = 1,
 }: {
   to: string;
+  subject?: string;
   count?: number;
 }): Promise<MailpitSummary[]> {
   const deadline = Date.now() + WAIT_TIMEOUT_MS;
   for (;;) {
-    const messages = await inbox({ to });
+    const messages = await inbox({ to, subject });
     if (messages.length >= count) return messages;
     if (Date.now() > deadline) {
-      throw new Error(`Esperava ${count} e-mail(s) para ${to}, chegaram ${messages.length}.`);
+      const what = subject ? `"${subject}" ` : '';
+      throw new Error(
+        `Esperava ${count} e-mail(s) ${what}para ${to}, chegaram ${messages.length}.`,
+      );
     }
     await new Promise((resolve) => setTimeout(resolve, WAIT_INTERVAL_MS));
   }

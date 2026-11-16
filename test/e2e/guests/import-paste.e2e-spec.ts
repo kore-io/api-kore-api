@@ -1,3 +1,4 @@
+import { WeddingPseudonymizer } from '@/modules/product-events/infrastructure/providers/wedding-pseudonymizer';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
@@ -204,8 +205,13 @@ describe('Importação: Colar a lista (banco real)', () => {
         pending: 6,
         partiesPending: 2,
       });
+      // Pelo weddingRef deste casamento: o kore_test é compartilhado, e o
+      // 'importacao' mais novo podia ser o de outra suíte rodando junto.
       const event = await db.productEvent.findFirst({
-        where: { name: 'importacao' },
+        where: {
+          name: 'importacao',
+          weddingRef: app.get(WeddingPseudonymizer).weddingRef({ weddingId }),
+        },
         orderBy: { createdAt: 'desc' },
       });
       expect(event?.props).toEqual({ metodo: 'lista', linhas_erro: 2 });
