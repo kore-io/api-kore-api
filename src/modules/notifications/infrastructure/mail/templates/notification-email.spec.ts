@@ -99,7 +99,7 @@ describe('E-mail das respostas (E-mail e push RN02 a RN06)', () => {
 describe('Os e-mails da cerimonialista (Notificações da cerimonialista RN07; Pena)', () => {
   const totals = { confirmed: 96, declined: 18, pending: 28 };
 
-  it('Na hora: a contagem e o casal, sem nome de grupo nem de convidado', () => {
+  it('RN07 (decisão 274(5) e (3)) - Na hora: a contagem e o casal, sem "Hoje" (pode sair depois da meia-noite) e sem nome de grupo; o rodapé fala dos casamentos dela', () => {
     const email = plannerImmediateEmail({
       context: {
         to: 'juliana@prado.com',
@@ -114,24 +114,28 @@ describe('Os e-mails da cerimonialista (Notificações da cerimonialista RN07; P
 
     expect(email.subject).toBe('3 grupos responderam em Ana e Marcos');
     expect(email.text).toContain('Olá, Juliana.');
-    expect(email.text).toContain('Hoje, 3 grupos responderam o convite de Ana e Marcos.');
+    expect(email.text).toContain('3 grupos responderam o convite de Ana e Marcos.');
+    expect(email.text).not.toContain('Hoje');
+    expect(email.text).toContain(
+      'Você recebe este e-mail porque escolheu receber as respostas dos seus casamentos na hora. Para mudar, abra Configurações › Notificações no Kore.',
+    );
     expect(email.text).toContain(
       'No total, o casamento tem 96 confirmados, 18 recusados e 28 pendentes.',
     );
     expect(email.text).toContain('Abrir o casamento: http://app/cerimonialista/casamentos/w1');
-    expect(
-      plannerImmediateEmail({
-        context: {
-          to: 'j@x.com',
-          firstName: null,
-          partnerNames: ['Ana', 'Marcos'],
-          groupCount: 1,
-          totals,
-          weddingUrl: 'u',
-          settingsUrl: 's',
-        },
-      }).subject,
-    ).toBe('1 grupo respondeu em Ana e Marcos');
+    const one = plannerImmediateEmail({
+      context: {
+        to: 'j@x.com',
+        firstName: null,
+        partnerNames: ['Ana', 'Marcos'],
+        groupCount: 1,
+        totals,
+        weddingUrl: 'u',
+        settingsUrl: 's',
+      },
+    });
+    expect(one.subject).toBe('1 grupo respondeu em Ana e Marcos');
+    expect(one.text).toContain('Olá.\n\n1 grupo respondeu o convite de Ana e Marcos.');
   });
 
   it('Resumo agrupado: um bloco por casamento, com as respostas e o "Site publicado"', () => {
