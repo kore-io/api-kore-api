@@ -1,4 +1,15 @@
+import { randomBytes } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { parseEnv } from 'node:util';
 import { simulatorEnabled, validateEnv } from './env.schema';
+import {
+  PUBLIC_EXAMPLE_SECRET_HASHES,
+  SECRET_ENV_KEYS,
+  SECRET_URL_ENV_KEYS,
+  sha256Hex,
+  urlPassword,
+} from './public-example-secrets';
 
 const validConfig = {
   APP_ENV: 'local',
@@ -247,5 +258,87 @@ describe('validateEnv', () => {
     expect(() =>
       validateEnv({ config: { ...validConfig, GOOGLE_STAFF_DOMAIN: 'Kore com br' } }),
     ).toThrow(/GOOGLE_STAFF_DOMAIN/);
+  });
+
+  describe('decisão 265(4) - os segredos do .env.example e do .env.test são públicos', () => {
+    const envFile = (name: string) =>
+      parseEnv(readFileSync(resolve(__dirname, '../../..', name), 'utf8'));
+    const exampleFiles = ['.env.example', '.env.test'].map(envFile);
+    const publicValue = (key: string) =>
+      exampleFiles.map((file) => file[key]).find((value) => value !== undefined);
+    const fresh = () => randomBytes(32).toString('base64');
+    const errorOf = (config: Record<string, unknown>): string => {
+      try {
+        validateEnv({ config });
+        return '';
+      } catch (error) {
+        return (error as Error).message;
+      }
+    };
+    /** Os segredos de homolog todos próprios; o resto da validação de homolog segue valendo. */
+    const ownSecrets = {
+      ...validConfig,
+      APP_ENV: 'homolog',
+      DATABASE_URL: `postgresql://kore_api:${encodeURIComponent(fresh())}@db:5432/kore`,
+      DATABASE_BACKOFFICE_URL: `postgresql://kore_routines:${encodeURIComponent(fresh())}@db:5432/kore`,
+      IP_HASH_KEY: fresh(),
+      PRODUCT_EVENT_KEY: fresh(),
+      LOGIN_CODE_KEY: fresh(),
+      OAUTH_STATE_KEY: fresh(),
+      PARTY_COOKIE_KEY: fresh(),
+      PREVIEW_COOKIE_KEY: fresh(),
+      STORAGE_SECRET_ACCESS_KEY: fresh(),
+      PAYMENT_WEBHOOK_SECRET: fresh(),
+      TAX_ID_HASH_KEY_ENCRYPTED: fresh(),
+      KMS_LOCAL_MASTER_KEY: fresh(),
+      VAPID_PRIVATE_KEY: fresh(),
+    };
+
+    it('a lista de hashes é a dos dois arquivos: mudou um segredo de exemplo, atualize a lista', () => {
+      const hashes = new Set<string>();
+      for (const file of exampleFiles) {
+        for (const key of SECRET_ENV_KEYS) if (file[key]) hashes.add(sha256Hex(file[key]));
+        for (const key of SECRET_URL_ENV_KEYS) {
+          const password = file[key] ? urlPassword(file[key]) : '';
+          if (password) hashes.add(sha256Hex(password));
+        }
+      }
+      expect([...PUBLIC_EXAMPLE_SECRET_HASHES].sort()).toEqual([...hashes].sort());
+    });
+
+    it.each(['homolog', 'production'])(
+      'dado APP_ENV %s com um segredo igual ao do .env.example ou do .env.test, a API não sobe e o erro não mostra o valor',
+      (appEnv) => {
+        for (const key of SECRET_ENV_KEYS) {
+          const value = publicValue(key);
+          if (value === undefined) continue;
+          const message = errorOf({ ...ownSecrets, APP_ENV: appEnv, [key]: value });
+          expect(message).toContain(`${key}: é um valor público do .env.example ou do .env.test`);
+          expect(message).not.toContain(value);
+        }
+        for (const key of SECRET_URL_ENV_KEYS) {
+          const value = publicValue(key);
+          if (value === undefined || !urlPassword(value)) continue;
+          const message = errorOf({ ...ownSecrets, APP_ENV: appEnv, [key]: value });
+          expect(message).toContain(`${key}: a senha é um valor público`);
+          expect(message).not.toContain(urlPassword(value));
+        }
+      },
+    );
+
+    it('com os segredos próprios em homolog, nenhum é recusado como público', () => {
+      expect(errorOf(ownSecrets)).not.toContain('valor público');
+    });
+
+    it.each(['local', 'test'])(
+      'dado APP_ENV %s, os valores de exemplo seguem valendo',
+      (appEnv) => {
+        const file = appEnv === 'local' ? exampleFiles[0] : exampleFiles[1];
+        const config = { ...validConfig, APP_ENV: appEnv };
+        for (const key of [...SECRET_ENV_KEYS, ...SECRET_URL_ENV_KEYS])
+          if (file[key] !== undefined) Object.assign(config, { [key]: file[key] });
+        expect(() => validateEnv({ config })).not.toThrow();
+      },
+    );
   });
 });
