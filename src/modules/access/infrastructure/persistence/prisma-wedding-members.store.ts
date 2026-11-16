@@ -22,14 +22,16 @@ export class PrismaWeddingMembersStore implements WeddingMembersStore {
         id: true,
         userId: true,
         role: true,
+        createdAt: true,
         user: { select: { name: true, referrer: { select: { kind: true } } } },
       },
     });
-    return memberships.map(({ id, userId, role, user }) => ({
+    return memberships.map(({ id, userId, role, createdAt, user }) => ({
       id,
       userId,
       name: user.name,
       role,
+      since: createdAt,
       ...(role === 'collaborator' && user.referrer ? { kind: user.referrer.kind } : {}),
     }));
   }

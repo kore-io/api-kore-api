@@ -261,7 +261,11 @@ describe('Backoffice: trocar o e-mail de acesso (Backoffice - acesso RN09; decis
       .set('Cookie', ana.cookie)
       .set('Origin', ORIGIN)
       .expect(409);
-    expect(removal.body.error).toBe('RECENT_ACCESS_CHANGE');
+    // O contrato lista o 409 com o availableAt no DELETE (decisão 271(2)).
+    expect(removal.body).toMatchObject({
+      error: 'RECENT_ACCESS_CHANGE',
+      availableAt: new Date(changedAt.getTime() + 48 * HOUR_MS).toISOString(),
+    });
     // Depois das 48 h, vale.
     await db.user.update({
       where: { id: ana.userId },
