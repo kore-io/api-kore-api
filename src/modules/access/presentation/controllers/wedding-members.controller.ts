@@ -1,0 +1,92 @@
+import { AllowWhenBlocked } from '@/modules/access/presentation/http/decorators/allow-when-blocked.decorator';
+import {
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Req,
+} from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
+import type { Request } from 'express';
+import { ApiErrorResponses, commonErrors } from '@/shared/http/api-error-responses.decorator';
+import { ListWeddingMembers } from '@/modules/access/application/members/list-wedding-members.use-case';
+import { RemoveMembership } from '@/modules/access/application/members/remove-membership.use-case';
+import { MembershipNotFoundError } from '@/modules/access/domain/access.errors';
+import type { AuthenticatedSession } from '@/modules/access/domain/authenticated-session';
+import {
+  ActionNotAllowedErrorBody,
+  CannotRemoveOwnerErrorBody,
+  LastOwnerErrorBody,
+  WeddingHasNoOwnerErrorBody,
+  MembershipNotFoundErrorBody,
+  WeddingNotFoundErrorBody,
+} from '@/modules/access/presentation/dto/access-error.dto';
+import { toHttpError } from '@/modules/access/presentation/errors/access-http-errors';
+import { CurrentSession } from '@/modules/access/presentation/http/decorators/current-session.decorator';
+import { WeddingMembersResponse } from '@/modules/access/presentation/dto/wedding-members.dto';
+
+@ApiTags('memberships')
+@Controller('weddings/:weddingId/memberships')
+export class WeddingMembersController {
+  constructor(
+    private readonly listMembers: ListWeddingMembers,
+    private readonly removeMembership: RemoveMembership,
+  ) {}
+
+  /** Quem tem acesso e os convites pendentes, para Colaboradores (RN02, RN05 de Papéis). */
+  @Get()
+  @ApiErrorResponses(...commonErrors({ session: true }), WeddingNotFoundErrorBody)
+  async list(
+    @CurrentSession() session: AuthenticatedSession,
+    @Param('weddingId') weddingId: string,
+  ): Promise<WeddingMembersResponse> {
+    try {
+      return WeddingMembersResponse.from({
+        ...(await this.listMembers.execute({ userId: session.userId, weddingId })),
+        viewerUserId: session.userId,
+      });
+    } catch (error) {
+      throw toHttpError(error);
+    }
+  }
+
+  /** Remove o colaborador ou encerra o próprio vínculo (RN06, RN07, RN10 de Papéis). */
+  // Casamento bloqueado RN03: liberada (o caso de uso confere o resto).
+  @AllowWhenBlocked()
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiErrorResponses(
+    ...commonErrors({ session: true, write: true }),
+    ActionNotAllowedErrorBody,
+    WeddingNotFoundErrorBody,
+    MembershipNotFoundErrorBody,
+    CannotRemoveOwnerErrorBody,
+    LastOwnerErrorBody,
+    WeddingHasNoOwnerErrorBody,
+  )
+  async remove(
+    @CurrentSession() session: AuthenticatedSession,
+    @Param('weddingId') weddingId: string,
+    @Param(
+      'id',
+      new ParseUUIDPipe({ exceptionFactory: () => toHttpError(new MembershipNotFoundError()) }),
+    )
+    membershipId: string,
+    @Req() request: Request,
+  ): Promise<void> {
+    try {
+      await this.removeMembership.execute({
+        userId: session.userId,
+        weddingId,
+        membershipId,
+        ip: request.ip ?? null,
+        now: new Date(),
+      });
+    } catch (error) {
+      throw toHttpError(error);
+    }
+  }
+}

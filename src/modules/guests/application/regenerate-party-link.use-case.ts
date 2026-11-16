@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
 import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,
-} from '../../logs/application/ports/application-log-writer.port';
-import { PartyNotFoundError } from '../domain/guests.errors';
+} from '@/modules/logs/application/ports/application-log-writer.port';
+import { PartyNotFoundError } from '@/modules/guests/domain/guests.errors';
 import { PARTY_LINKS, type PartyLinks } from './ports/party-links.port';
 import { PARTY_READER, type PartyReader } from './ports/party-reader.port';
 import { PARTY_STORE, type PartyStore } from './ports/party-store.port';

@@ -1,5 +1,5 @@
-import { guestsDelta, type StatsDelta } from '../../guests/domain/wedding-stats';
-import type { RsvpGuestUpdate } from '../domain/rsvp';
+import { guestsDelta, type StatsDelta } from '@/modules/guests/domain/wedding-stats';
+import type { RsvpGuestUpdate } from '@/modules/rsvp/domain/rsvp';
 
 /** Os números pelas transições de cada convidado (Grupos RN16, evento "Responder"). */
 export function responseStatsDelta({

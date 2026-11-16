@@ -1,4 +1,4 @@
-import type { PartnerTitle, SignupSource } from '../../domain/wedding-signup';
+import type { PartnerTitle, SignupSource } from '@/modules/access/domain/wedding-signup';
 
 export interface NewWedding {
   weddingId: string;

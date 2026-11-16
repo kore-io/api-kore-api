@@ -1,15 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { Prisma } from '../../../../generated/prisma/client';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
+import type { Prisma } from '@/generated/prisma/client';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import {
   OBJECT_STORAGE,
   type ObjectStorage,
-} from '../../../../shared/storage/application/object-storage.port';
+} from '@/shared/storage/application/object-storage.port';
 import { deleteSiteImageObjects, purgeWeddingData } from './wedding-purge';
 import type {
   OwnerlessWedding,
   OwnerlessWeddings,
-} from '../../application/ports/ownerless-weddings.port';
+} from '@/modules/access/application/ports/ownerless-weddings.port';
 
 export const PURGE_NOTICE_SENT_ACTION = 'wedding.purge_notice_sent';
 export const OWNERLESS_PURGED_ACTION = 'wedding.purged';

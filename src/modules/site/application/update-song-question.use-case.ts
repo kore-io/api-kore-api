@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
-import { DEFAULT_SONG_QUESTION, SONG_TEXT_MAX } from '../domain/public-site';
-import { SiteFieldsInvalidError } from '../domain/site.errors';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
+import { DEFAULT_SONG_QUESTION, SONG_TEXT_MAX } from '@/modules/site/domain/public-site';
+import { SiteFieldsInvalidError } from '@/modules/site/domain/site.errors';
 import { SITE_STORE, type SiteStore } from './ports/site-store.port';
 
 /**

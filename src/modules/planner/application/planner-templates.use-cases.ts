@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { uuidV7 } from '../../../shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/ids/uuid-v7';
 import {
   PLANNER_PROFILES,
   type PlannerProfiles,
-} from '../../access/application/ports/planner-profiles.port';
+} from '@/modules/access/application/ports/planner-profiles.port';
 import {
   TEMPLATE_LOCALE,
   TEMPLATES_MAX,
@@ -12,7 +12,7 @@ import {
   TemplatesLimitError,
   type PlannerTemplateKind,
   type TemplateSectionType,
-} from '../domain/planner-template';
+} from '@/modules/planner/domain/planner-template';
 import {
   PLANNER_TEMPLATE_STORE,
   type PlannerTemplate,

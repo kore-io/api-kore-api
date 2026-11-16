@@ -1,4 +1,4 @@
-import { daysBetween, localDate } from '../../../shared/time/local-date';
+import { daysBetween, localDate } from '@/shared/time/local-date';
 
 /** Os status que a lista mostra (Meus casamentos RN02): os do banco, menos `purged`. */
 export const MY_WEDDING_STATUSES = [

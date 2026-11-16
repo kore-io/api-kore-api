@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '../../../../generated/prisma/client';
-import { BackofficeTransaction } from '../../../../shared/database/backoffice-transaction';
-import { uuidV7 } from '../../../../shared/ids/uuid-v7';
+import type { Prisma } from '@/generated/prisma/client';
+import { BackofficeTransaction } from '@/shared/database/backoffice-transaction';
+import { uuidV7 } from '@/shared/ids/uuid-v7';
 import type {
   LockedCommission,
   LockedReferrer,
   ReferrerAdminStore,
-} from '../../application/ports/referrer-admin.store.port';
+} from '@/modules/backoffice/application/ports/referrer-admin.store.port';
 
 /** Pelo kore_backoffice, na transação corrente (decisão 180(5)). */
 @Injectable()

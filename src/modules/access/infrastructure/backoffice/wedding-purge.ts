@@ -1,6 +1,6 @@
-import type { Prisma } from '../../../../generated/prisma/client';
-import type { ObjectStorage } from '../../../../shared/storage/application/object-storage.port';
-import { siteImageKeys } from '../../../site/domain/site-image';
+import type { Prisma } from '@/generated/prisma/client';
+import type { ObjectStorage } from '@/shared/storage/application/object-storage.port';
+import { siteImageKeys } from '@/modules/site/domain/site-image';
 
 /**
  * Apaga os dados de um casamento e deixa a lápide (Convites RN13; decisão

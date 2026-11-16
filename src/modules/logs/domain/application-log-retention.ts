@@ -1,4 +1,4 @@
-import { monthsBefore } from '../../../shared/time/months-before';
+import { monthsBefore } from '@/shared/time/months-before';
 
 /** Prazo de guarda do log da aplicação (decisão 137). */
 export const APPLICATION_LOG_RETENTION_YEARS = 5;

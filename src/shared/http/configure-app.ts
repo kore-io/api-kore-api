@@ -7,7 +7,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, type OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import type { Request } from 'express';
-import { OPENAPI_CONSTANT_SCHEMAS } from '../../openapi-constants';
+import { OPENAPI_CONSTANT_SCHEMAS } from '@/cli/openapi-export/openapi-constants';
 import { originsFor } from './origin-policy';
 import { SiteRouteRegistry } from './site-routes.registry';
 import { validationExceptionFactory } from './validation-errors';

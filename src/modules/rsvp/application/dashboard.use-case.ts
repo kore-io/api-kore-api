@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
 import {
   checklist,
   daysUntilEvent,
@@ -7,7 +7,7 @@ import {
   type ChecklistItem,
   type DeliveryCounts,
   type ReminderQueue,
-} from '../domain/dashboard';
+} from '@/modules/rsvp/domain/dashboard';
 import {
   DASHBOARD_READER,
   type ActivityRow,

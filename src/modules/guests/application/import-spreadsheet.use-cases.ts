@@ -1,24 +1,24 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
 import {
   PRODUCT_EVENT_RECORDER,
   type ProductEventRecorder,
-} from '../../product-events/application/ports/product-event-recorder.port';
-import { AFTER_COMMIT, type AfterCommit } from '../../../shared/database/after-commit.port';
-import { uuidV7 } from '../../../shared/ids/uuid-v7';
+} from '@/modules/product-events/application/ports/product-event-recorder.port';
+import { AFTER_COMMIT, type AfterCommit } from '@/shared/database/after-commit.port';
+import { uuidV7 } from '@/shared/ids/uuid-v7';
 import {
   NothingToImportError,
   SpreadsheetRefusedError,
   TagNameTakenError,
-} from '../domain/guests.errors';
+} from '@/modules/guests/domain/guests.errors';
 import {
   checkSpreadsheet,
   matchesTemplate,
   type ImportWarning,
   type SkippedRow,
   type SpreadsheetCheck,
-} from '../domain/spreadsheet-import';
-import { guestsDelta } from '../domain/wedding-stats';
+} from '@/modules/guests/domain/spreadsheet-import';
+import { guestsDelta } from '@/modules/guests/domain/wedding-stats';
 import { PARTY_LINKS, type PartyLinks } from './ports/party-links.port';
 import { PARTY_STORE, type NewParty, type PartyStore } from './ports/party-store.port';
 import { SPREADSHEET_READER, type SpreadsheetReader } from './ports/spreadsheet-reader.port';

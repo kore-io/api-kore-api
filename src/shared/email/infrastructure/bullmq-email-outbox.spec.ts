@@ -1,5 +1,5 @@
 import type { Queue } from 'bullmq';
-import type { EmailSender } from '../application/email-sender.port';
+import type { EmailSender } from '@/shared/email/application/email-sender.port';
 import { BullmqEmailOutbox } from './bullmq-email-outbox';
 import { EMAIL_JOB_OPTIONS } from './email-queues';
 

@@ -1,14 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
-import { uuidV7 } from '../../../shared/ids/uuid-v7';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
+import { uuidV7 } from '@/shared/ids/uuid-v7';
 import {
   GuestFieldsInvalidError,
   TagLimitReachedError,
   TagNameTakenError,
   TagNotFoundError,
   type FieldIssue,
-} from '../domain/guests.errors';
-import { TAGS_PER_WEDDING_MAX, type TagColor } from '../domain/party';
+} from '@/modules/guests/domain/guests.errors';
+import { TAGS_PER_WEDDING_MAX, type TagColor } from '@/modules/guests/domain/party';
 import { TAG_STORE, type TagRow, type TagStore } from './ports/tag-store.port';
 
 /** Tela Tags, escolha no Novo grupo e filtro da lista (Tags RN04, RN05). */

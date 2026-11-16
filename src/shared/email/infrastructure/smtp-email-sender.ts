@@ -1,7 +1,7 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { createTransport, Transporter } from 'nodemailer';
-import { AppConfigService } from '../../config/app-config.service';
-import { EmailMessage, EmailSender } from '../application/email-sender.port';
+import { AppConfigService } from '@/shared/config/app-config.service';
+import { EmailMessage, EmailSender } from '@/shared/email/application/email-sender.port';
 
 /** Adaptador SMTP: Mailpit no ambiente local; o SES entra com a infraestrutura. */
 @Injectable()

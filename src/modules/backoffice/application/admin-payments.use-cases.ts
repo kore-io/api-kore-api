@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { ApplicationLogWriter } from '../../logs/application/ports/application-log-writer.port';
-import { paymentsCsv } from '../domain/payments-csv';
-import type { StaffMember } from '../domain/staff';
+import type { ApplicationLogWriter } from '@/modules/logs/application/ports/application-log-writer.port';
+import { paymentsCsv } from '@/modules/backoffice/domain/payments-csv';
+import type { StaffMember } from '@/modules/backoffice/domain/staff';
 import { ADMIN_LOG_WRITER } from './admin-weddings.use-cases';
 import {
   ADMIN_PAYMENTS_READER,
@@ -11,7 +11,7 @@ import {
   type AdminPaymentsReader,
 } from './ports/admin-payments.reader.port';
 import type { Page } from './ports/admin-weddings.reader.port';
-import { PaymentNotFoundError } from '../../billing/domain/billing.errors';
+import { PaymentNotFoundError } from '@/modules/billing/domain/billing.errors';
 
 /** A Cobrança do Backoffice (RN03, RN04 e RN07): só o Admin. */
 @Injectable()

@@ -1,6 +1,6 @@
-import type { AppConfigService } from '../../../shared/config/app-config.service';
-import type { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
-import { SiteSlugMissingError } from '../domain/site.errors';
+import type { AppConfigService } from '@/shared/config/app-config.service';
+import type { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
+import { SiteSlugMissingError } from '@/modules/site/domain/site.errors';
 import type { SitePreviewStore } from './ports/site-preview-store.port';
 import { CreateSitePreview } from './site-preview.use-cases';
 

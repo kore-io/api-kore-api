@@ -1,5 +1,5 @@
-import type { SiteState } from '../../domain/public-site';
-import type { SectionContent, SiteSectionType } from '../../domain/site-sections';
+import type { SiteState } from '@/modules/site/domain/public-site';
+import type { SectionContent, SiteSectionType } from '@/modules/site/domain/site-sections';
 
 export interface PublicSiteImage {
   id: string;

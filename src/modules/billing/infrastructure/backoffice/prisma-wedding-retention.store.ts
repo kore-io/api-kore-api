@@ -1,22 +1,22 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { Prisma } from '../../../../generated/prisma/client';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
+import type { Prisma } from '@/generated/prisma/client';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import {
   OBJECT_STORAGE,
   type ObjectStorage,
-} from '../../../../shared/storage/application/object-storage.port';
-import { uuidV7 } from '../../../../shared/ids/uuid-v7';
+} from '@/shared/storage/application/object-storage.port';
+import { uuidV7 } from '@/shared/ids/uuid-v7';
 import {
   deleteSiteImageObjects,
   purgeWeddingData,
-} from '../../../access/infrastructure/backoffice/wedding-purge';
-import { addDays } from '../../domain/pricing';
-import { RETENTION_NOTICE_DAYS, type PurgeReason } from '../../domain/retention';
+} from '@/modules/access/infrastructure/backoffice/wedding-purge';
+import { addDays } from '@/modules/billing/domain/pricing';
+import { RETENTION_NOTICE_DAYS, type PurgeReason } from '@/modules/billing/domain/retention';
 import type {
   RetentionCandidate,
   RetentionNoticeTarget,
   WeddingRetentionStore,
-} from '../../application/ports/wedding-retention.port';
+} from '@/modules/billing/application/ports/wedding-retention.port';
 
 export const PURGE_NOTICE_SENT_ACTION = 'wedding.purge_notice_sent';
 export const PURGE_NOTICE_FAILED_ACTION = 'wedding.purge_notice_failed';

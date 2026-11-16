@@ -1,4 +1,4 @@
-import { monthsBefore } from '../../../shared/time/months-before';
+import { monthsBefore } from '@/shared/time/months-before';
 
 /** Retenção dos eventos de produto: 18 meses, o ciclo sazonal (Parecer; decisão 135). */
 export const PRODUCT_EVENT_RETENTION_MONTHS = 18;

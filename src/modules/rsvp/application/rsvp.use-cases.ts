@@ -1,18 +1,18 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AFTER_COMMIT, type AfterCommit } from '../../../shared/database/after-commit.port';
-import type { PartyTransactionContext } from '../../../shared/database/tenant-transaction';
-import { uuidV7 } from '../../../shared/ids/uuid-v7';
-import { RsvpWriteRateLimit } from '../../../shared/rate-limit/rsvp-write-rate-limit';
-import { daysBetween, localDate } from '../../../shared/time/local-date';
-import { deliveryStatusAfter, hasPending } from '../../guests/domain/party-rules';
+import { AFTER_COMMIT, type AfterCommit } from '@/shared/database/after-commit.port';
+import type { PartyTransactionContext } from '@/shared/database/tenant-transaction';
+import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { RsvpWriteRateLimit } from '@/shared/rate-limit/rsvp-write-rate-limit';
+import { daysBetween, localDate } from '@/shared/time/local-date';
+import { deliveryStatusAfter, hasPending } from '@/modules/guests/domain/party-rules';
 import {
   ACCESS_IP_LOG_WRITER,
   type AccessIpLogWriter,
-} from '../../logs/application/ports/access-ip-log-writer.port';
+} from '@/modules/logs/application/ports/access-ip-log-writer.port';
 import {
   PRODUCT_EVENT_RECORDER,
   type ProductEventRecorder,
-} from '../../product-events/application/ports/product-event-recorder.port';
+} from '@/modules/product-events/application/ports/product-event-recorder.port';
 import {
   RSVP_DAILY_LIMIT,
   partyCounts,
@@ -20,7 +20,7 @@ import {
   planRsvp,
   rsvpState,
   type RsvpAnswer,
-} from '../domain/rsvp';
+} from '@/modules/rsvp/domain/rsvp';
 import {
   PreviewReadOnlyError,
   RsvpChangedError,
@@ -29,12 +29,12 @@ import {
   RsvpLimitError,
   RsvpRateLimitedError,
   PartySessionInvalidError,
-} from '../domain/rsvp.errors';
+} from '@/modules/rsvp/domain/rsvp.errors';
 import { RSVP_STORE, type RsvpStore } from './ports/rsvp-store.port';
 import {
   NOTIFICATION_DISPATCHER,
   type NotificationDispatcher,
-} from '../../notifications/application/ports/notification-dispatcher.port';
+} from '@/modules/notifications/application/ports/notification-dispatcher.port';
 import { responseStatsDelta } from './response-stats';
 import { RsvpSessions } from './rsvp-sessions.service';
 import { rsvpView, type RsvpView } from './rsvp-view';

@@ -1,17 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
 import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,
-} from '../../logs/application/ports/application-log-writer.port';
-import { uuidV7 } from '../../../shared/ids/uuid-v7';
+} from '@/modules/logs/application/ports/application-log-writer.port';
+import { uuidV7 } from '@/shared/ids/uuid-v7';
 import {
   GuestFieldsInvalidError,
   PartyNotFoundError,
   PlusOnesInUseError,
   type FieldIssue,
-} from '../domain/guests.errors';
-import { canBeContact, type AgeGroup } from '../domain/party';
+} from '@/modules/guests/domain/guests.errors';
+import { canBeContact, type AgeGroup } from '@/modules/guests/domain/party';
 import {
   contactAfter,
   deliveryStatusAfter,
@@ -19,9 +19,9 @@ import {
   isEmptySlot,
   respondedAtAfter,
   sameInstant,
-} from '../domain/party-rules';
-import { parsePhone } from '../domain/phone';
-import { guestsDelta, type StatsDelta } from '../domain/wedding-stats';
+} from '@/modules/guests/domain/party-rules';
+import { parsePhone } from '@/modules/guests/domain/phone';
+import { guestsDelta, type StatsDelta } from '@/modules/guests/domain/wedding-stats';
 import { toPartyView, type PartyView } from './party-view';
 import {
   GROUP_STORE,

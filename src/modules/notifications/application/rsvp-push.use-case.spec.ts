@@ -1,4 +1,4 @@
-import type { AppConfigService } from '../../../shared/config/app-config.service';
+import type { AppConfigService } from '@/shared/config/app-config.service';
 import type { PushStore } from './ports/push-store.port';
 import { BILLING_PUSH_BODY, plannerPushBody, pushBody, RsvpPush } from './rsvp-push.use-case';
 

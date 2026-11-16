@@ -1,14 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
-import { coupleNames } from '../../site/domain/public-site';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
+import { coupleNames } from '@/modules/site/domain/public-site';
 import {
   LINK_PLACEHOLDER,
   MESSAGE_KINDS,
   defaultMessage,
   requiresLink,
   type MessageKind,
-} from '../domain/message-templates';
-import { LinkPlaceholderMissingError } from '../domain/rsvp.errors';
+} from '@/modules/rsvp/domain/message-templates';
+import { LinkPlaceholderMissingError } from '@/modules/rsvp/domain/rsvp.errors';
 import {
   MESSAGE_TEMPLATE_STORE,
   type MessageTemplateStore,

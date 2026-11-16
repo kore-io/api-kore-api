@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '../../../../generated/prisma/client';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
-import { RECENT_ACCESS_CHANGE_MS } from '../../../access/domain/recent-access-change';
-import type { StaffRole } from '../../domain/staff';
+import type { Prisma } from '@/generated/prisma/client';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import { RECENT_ACCESS_CHANGE_MS } from '@/modules/access/domain/recent-access-change';
+import type { StaffRole } from '@/modules/backoffice/domain/staff';
 import type {
   AdminReferrer,
   AdminWeddingFilter,
@@ -16,7 +16,7 @@ import type {
   AdminWeddingTombstone,
   Page,
   WeddingOrigin,
-} from '../../application/ports/admin-weddings.reader.port';
+} from '@/modules/backoffice/application/ports/admin-weddings.reader.port';
 
 export const ADMIN_PAGE_SIZE = 25;
 const LOG_PAGE_SIZE = 50;

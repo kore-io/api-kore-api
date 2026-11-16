@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
-import { PartyNotFoundError } from '../domain/guests.errors';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
+import { PartyNotFoundError } from '@/modules/guests/domain/guests.errors';
 import { toPartyView, type PartyView } from './party-view';
 import { PARTY_LINKS, type PartyLinks } from './ports/party-links.port';
 import { PARTY_READER, type PartyReader } from './ports/party-reader.port';

@@ -1,4 +1,4 @@
-import type { StaffRole } from '../../domain/staff';
+import type { StaffRole } from '@/modules/backoffice/domain/staff';
 
 /** O papel do staff, lido do banco a cada requisição, nunca guardado na sessão (RN01). */
 export interface StaffDirectory {

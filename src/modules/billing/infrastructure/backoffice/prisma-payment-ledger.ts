@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import type { AlertType, Prisma } from '../../../../generated/prisma/client';
-import { BackofficeTransaction } from '../../../../shared/database/backoffice-transaction';
-import { uuidV7 } from '../../../../shared/ids/uuid-v7';
-import { newCommission } from '../../domain/commission';
+import type { AlertType, Prisma } from '@/generated/prisma/client';
+import { BackofficeTransaction } from '@/shared/database/backoffice-transaction';
+import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { newCommission } from '@/modules/billing/domain/commission';
 import type {
   BillingRecipient,
   LedgerLogEntry,
   LedgerPayment,
   LedgerWedding,
   PaymentLedger,
-} from '../../application/ports/payment-ledger.port';
+} from '@/modules/billing/application/ports/payment-ledger.port';
 
 const day = (value: Date | null): string | null => value?.toISOString().slice(0, 10) ?? null;
 const firstName = (value: string | null | undefined): string =>

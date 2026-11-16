@@ -1,13 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { IpHasher } from '../../logs/infrastructure/ip-hasher';
+import { IpHasher } from '@/modules/logs/infrastructure/providers/ip-hasher';
 import {
   AdminWeddingNotFoundError,
   AlreadyPaidError,
   ReassignPaymentPendingError,
   ReferrerNotActiveError,
   SelfReferralError,
-} from '../domain/backoffice.errors';
-import type { StaffMember } from '../domain/staff';
+} from '@/modules/backoffice/domain/backoffice.errors';
+import type { StaffMember } from '@/modules/backoffice/domain/staff';
 import {
   REFERRER_REASSIGNMENT,
   type ReferrerReassignment,

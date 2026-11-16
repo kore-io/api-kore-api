@@ -1,12 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
 import {
   PRODUCT_EVENT_RECORDER,
   type ProductEventRecorder,
-} from '../../product-events/application/ports/product-event-recorder.port';
-import { AFTER_COMMIT, type AfterCommit } from '../../../shared/database/after-commit.port';
-import { uuidV7 } from '../../../shared/ids/uuid-v7';
-import { DuplicateGuestError, TooManyGuestsError } from '../domain/guests.errors';
+} from '@/modules/product-events/application/ports/product-event-recorder.port';
+import { AFTER_COMMIT, type AfterCommit } from '@/shared/database/after-commit.port';
+import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { DuplicateGuestError, TooManyGuestsError } from '@/modules/guests/domain/guests.errors';
 import {
   comparableName,
   findDuplicateGuest,
@@ -14,8 +14,8 @@ import {
   parsePastedList,
   pastedGuestCount,
   type PastedList,
-} from '../domain/paste-list';
-import { guestsDelta } from '../domain/wedding-stats';
+} from '@/modules/guests/domain/paste-list';
+import { guestsDelta } from '@/modules/guests/domain/wedding-stats';
 import { PARTY_LINKS, type PartyLinks } from './ports/party-links.port';
 import { PARTY_STORE, type NewParty, type PartyStore } from './ports/party-store.port';
 

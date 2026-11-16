@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
-import type { AccessIpLogRetention } from '../../application/ports/access-ip-log-retention.port';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import type { AccessIpLogRetention } from '@/modules/logs/application/ports/access-ip-log-retention.port';
 
 const DELETE_BATCH_SIZE = 5_000;
 

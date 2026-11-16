@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { BackofficeTransaction } from '../../../../shared/database/backoffice-transaction';
-import type { WeddingBlocks } from '../../application/ports/wedding-blocks.port';
+import { BackofficeTransaction } from '@/shared/database/backoffice-transaction';
+import type { WeddingBlocks } from '@/modules/billing/application/ports/wedding-blocks.port';
 
 /** Na transação corrente da BackofficeTransaction (kore_backoffice). */
 @Injectable()

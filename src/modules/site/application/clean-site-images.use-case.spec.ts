@@ -1,4 +1,4 @@
-import type { ApplicationLogWriter } from '../../logs/application/ports/application-log-writer.port';
+import type { ApplicationLogWriter } from '@/modules/logs/application/ports/application-log-writer.port';
 import { CleanSiteImages } from './clean-site-images.use-case';
 import type { SiteImageCleanup } from './ports/site-image-cleanup.port';
 

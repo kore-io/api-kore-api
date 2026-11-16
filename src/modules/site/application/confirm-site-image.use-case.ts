@@ -1,23 +1,23 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { Semaphore } from '../../../shared/concurrency/semaphore';
+import { Semaphore } from '@/shared/concurrency/semaphore';
 import {
   OBJECT_STORAGE,
   type ObjectStorage,
-} from '../../../shared/storage/application/object-storage.port';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
-import { WeddingScope } from '../../access/application/wedding-scope.service';
+} from '@/shared/storage/application/object-storage.port';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
+import { WeddingScope } from '@/modules/access/application/services/wedding-scope.service';
 import {
   SITE_IMAGE_CACHE_CONTROL,
   SITE_IMAGE_MAX_BYTES,
   detectSiteImageType,
   siteImageKeys,
-} from '../domain/site-image';
+} from '@/modules/site/domain/site-image';
 import {
   SiteImageInvalidError,
   SiteImageNotFoundError,
   SiteImageProcessingError,
   SiteImageUploadMissingError,
-} from '../domain/site.errors';
+} from '@/modules/site/domain/site.errors';
 import { SITE_IMAGE_PROCESSOR, type SiteImageProcessor } from './ports/site-image-processor.port';
 import {
   SITE_IMAGE_STORE,

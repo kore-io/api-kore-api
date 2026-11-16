@@ -1,4 +1,4 @@
-import type { FieldError } from '../../../shared/http/validation-errors';
+import type { FieldError } from '@/shared/http/validation-errors';
 import { BRAZILIAN_STATES, cleanText } from './wedding-signup';
 
 /** Limites dos Dados profissionais (Cadastro e perfil RN04). */

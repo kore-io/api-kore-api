@@ -1,14 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
-import { uuidV7 } from '../../../shared/ids/uuid-v7';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
+import { uuidV7 } from '@/shared/ids/uuid-v7';
 import {
   GuestFieldsInvalidError,
   PartyNotFoundError,
   type FieldIssue,
-} from '../domain/guests.errors';
-import { canBeContact, defaultContactIndex, type AgeGroup } from '../domain/party';
-import { parsePhone } from '../domain/phone';
-import { guestsDelta } from '../domain/wedding-stats';
+} from '@/modules/guests/domain/guests.errors';
+import { canBeContact, defaultContactIndex, type AgeGroup } from '@/modules/guests/domain/party';
+import { parsePhone } from '@/modules/guests/domain/phone';
+import { guestsDelta } from '@/modules/guests/domain/wedding-stats';
 import { toPartyView, type PartyView } from './party-view';
 import { PARTY_LINKS, type PartyLinks } from './ports/party-links.port';
 import { PARTY_READER, type PartyReader } from './ports/party-reader.port';

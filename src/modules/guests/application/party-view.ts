@@ -1,5 +1,5 @@
-import { maskEmail } from '../domain/email';
-import { maskPhone } from '../domain/phone';
+import { maskEmail } from '@/modules/guests/domain/email';
+import { maskPhone } from '@/modules/guests/domain/phone';
 import type { PartyDetailsRow, PartyGuestRow, PartyHistoryEntry } from './ports/party-reader.port';
 import type { PartyLinks } from './ports/party-links.port';
 

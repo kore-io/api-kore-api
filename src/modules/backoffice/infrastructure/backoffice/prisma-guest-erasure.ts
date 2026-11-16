@@ -1,8 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
-import { comparableName } from '../../../guests/domain/paste-list';
-import { recomputeWeddingStats } from '../../../guests/infrastructure/backoffice/wedding-stats-recompute';
-import type { GuestErasure, RequestChannel } from '../../application/ports/guest-erasure.port';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import { comparableName } from '@/modules/guests/domain/paste-list';
+import { recomputeWeddingStats } from '@/modules/guests/infrastructure/backoffice/wedding-stats-recompute';
+import type {
+  GuestErasure,
+  RequestChannel,
+} from '@/modules/backoffice/application/ports/guest-erasure.port';
 
 /** O nome que fica no grupo de uma pessoa só (decisão 253(3)). */
 export const REMOVED_PARTY_NAME = 'Grupo removido';

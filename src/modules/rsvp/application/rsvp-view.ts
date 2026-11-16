@@ -1,5 +1,5 @@
-import type { RsvpStatus } from '../../guests/domain/party';
-import { DEFAULT_SONG_QUESTION, type RsvpGuest, type RsvpState } from '../domain/rsvp';
+import type { RsvpStatus } from '@/modules/guests/domain/party';
+import { DEFAULT_SONG_QUESTION, type RsvpGuest, type RsvpState } from '@/modules/rsvp/domain/rsvp';
 import type { RsvpPartyRow, RsvpWeddingRow } from './ports/rsvp-store.port';
 
 /** O formulário do grupo (GET e PUT /v1/sites/{slug}/rsvp; RSVP RN03 e RN08). */

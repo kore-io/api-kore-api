@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { FieldCipherContext } from '../application/field-cipher.port';
+import { FieldCipherContext } from '@/shared/crypto/application/field-cipher.port';
 import { EnvelopeFieldCipher } from './envelope-field-cipher';
 
 const context: FieldCipherContext = {

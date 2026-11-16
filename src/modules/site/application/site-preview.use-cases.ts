@@ -1,23 +1,23 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { createHash, randomBytes } from 'node:crypto';
-import { AppConfigService } from '../../../shared/config/app-config.service';
-import { TenantTransaction } from '../../../shared/database/tenant-transaction';
-import { uuidV7 } from '../../../shared/ids/uuid-v7';
-import { PartyLinkFailures } from '../../../shared/rate-limit/party-link-failures';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
+import { AppConfigService } from '@/shared/config/app-config.service';
+import { TenantTransaction } from '@/shared/database/tenant-transaction';
+import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { PartyLinkFailures } from '@/shared/rate-limit/party-link-failures';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
 import {
   PREVIEW_COOKIE_TTL_MS,
   PREVIEW_PARTIES_LIMIT,
   PREVIEW_TOKEN_TTL_MS,
   type PreviewMode,
-} from '../domain/site-preview';
+} from '@/modules/site/domain/site-preview';
 import {
   PartyLinkRateLimitedError,
   PreviewInvalidError,
   PreviewRequiredError,
   SitePartyNotFoundError,
   SiteSlugMissingError,
-} from '../domain/site.errors';
+} from '@/modules/site/domain/site.errors';
 import { PREVIEW_COOKIES, type PreviewCookies } from './ports/preview-cookies.port';
 import { SITE_PREVIEW_STORE, type SitePreviewStore } from './ports/site-preview-store.port';
 import { PreviewSessions } from './preview-sessions.service';

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '../../../../generated/prisma/client';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
-import { uuidV7 } from '../../../../shared/ids/uuid-v7';
+import { Prisma } from '@/generated/prisma/client';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import { uuidV7 } from '@/shared/ids/uuid-v7';
 import type {
   AdminAlertRow,
   AdminInsightsReader,
@@ -10,9 +10,9 @@ import type {
   AdminOverview,
   AdminSearchResult,
   MonthPoint,
-} from '../../application/ports/admin-insights.reader.port';
-import type { Page } from '../../application/ports/admin-weddings.reader.port';
-import { MONEY_ALERT_TYPES, type StaffRole } from '../../domain/staff';
+} from '@/modules/backoffice/application/ports/admin-insights.reader.port';
+import type { Page } from '@/modules/backoffice/application/ports/admin-weddings.reader.port';
+import { MONEY_ALERT_TYPES, type StaffRole } from '@/modules/backoffice/domain/staff';
 import { ROW_SELECT, toRow } from './prisma-admin-weddings.reader';
 
 const TZ = 'America/Sao_Paulo';

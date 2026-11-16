@@ -1,18 +1,15 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { AppConfigService } from '../../../shared/config/app-config.service';
-import {
-  EMAIL_SENDER,
-  type EmailSender,
-} from '../../../shared/email/application/email-sender.port';
+import { AppConfigService } from '@/shared/config/app-config.service';
+import { EMAIL_SENDER, type EmailSender } from '@/shared/email/application/email-sender.port';
 import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,
-} from '../../logs/application/ports/application-log-writer.port';
+} from '@/modules/logs/application/ports/application-log-writer.port';
 import {
   commissionAvailableEmail,
   DIGEST_HOUR,
   localHour,
-} from '../infrastructure/emails/notification-email';
+} from '@/modules/notifications/infrastructure/mail/templates/notification-email';
 import {
   COMMISSION_EMAIL_STORE,
   type CommissionEmailStore,

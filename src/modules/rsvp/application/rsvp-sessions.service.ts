@@ -4,19 +4,22 @@ import {
   PartyTransactionRevokedError,
   TenantTransaction,
   type PartyTransactionContext,
-} from '../../../shared/database/tenant-transaction';
-import { requireLiveSite } from '../../site/domain/public-site';
-import { SiteExpiredError, SiteUnavailableError } from '../../site/domain/site.errors';
-import { PARTY_COOKIES, type PartyCookies } from '../../site/application/ports/party-cookies.port';
+} from '@/shared/database/tenant-transaction';
+import { requireLiveSite } from '@/modules/site/domain/public-site';
+import { SiteExpiredError, SiteUnavailableError } from '@/modules/site/domain/site.errors';
+import {
+  PARTY_COOKIES,
+  type PartyCookies,
+} from '@/modules/site/application/ports/party-cookies.port';
 import {
   PUBLIC_SITE_READER,
   type PublicSiteReader,
-} from '../../site/application/ports/public-site-reader.port';
+} from '@/modules/site/application/ports/public-site-reader.port';
 import {
   PreviewSessions,
   type PreviewContext,
-} from '../../site/application/preview-sessions.service';
-import { PartySessionInvalidError, RsvpSiteNotLiveError } from '../domain/rsvp.errors';
+} from '@/modules/site/application/preview-sessions.service';
+import { PartySessionInvalidError, RsvpSiteNotLiveError } from '@/modules/rsvp/domain/rsvp.errors';
 
 export interface RsvpPartySession {
   weddingId: string;

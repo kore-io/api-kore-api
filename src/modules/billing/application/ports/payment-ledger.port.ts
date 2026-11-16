@@ -1,5 +1,8 @@
-import type { AlertType } from '../../../../generated/prisma/client';
-import type { ConfirmingPayment, ConfirmingWedding } from '../../domain/payment-confirmation';
+import type { AlertType } from '@/generated/prisma/client';
+import type {
+  ConfirmingPayment,
+  ConfirmingWedding,
+} from '@/modules/billing/domain/payment-confirmation';
 
 export interface LedgerWedding extends ConfirmingWedding {
   id: string;

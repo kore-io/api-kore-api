@@ -1,14 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
 import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,
-} from '../../logs/application/ports/application-log-writer.port';
+} from '@/modules/logs/application/ports/application-log-writer.port';
 import {
   PRODUCT_EVENT_RECORDER,
   type ProductEventRecorder,
-} from '../../product-events/application/ports/product-event-recorder.port';
-import { AFTER_COMMIT, type AfterCommit } from '../../../shared/database/after-commit.port';
+} from '@/modules/product-events/application/ports/product-event-recorder.port';
+import { AFTER_COMMIT, type AfterCommit } from '@/shared/database/after-commit.port';
 import {
   eventLine,
   exportFileName,
@@ -19,9 +19,12 @@ import {
   type ExportColumn,
   type ExportFormat,
   type ExportWho,
-} from '../domain/export';
-import { WeddingNotFoundError } from '../../access/domain/access.errors';
-import { GuestFieldsInvalidError, NothingToExportError } from '../domain/guests.errors';
+} from '@/modules/guests/domain/export';
+import { WeddingNotFoundError } from '@/modules/access/domain/access.errors';
+import {
+  GuestFieldsInvalidError,
+  NothingToExportError,
+} from '@/modules/guests/domain/guests.errors';
 import {
   EXPORT_READER,
   EXPORT_RENDERER,

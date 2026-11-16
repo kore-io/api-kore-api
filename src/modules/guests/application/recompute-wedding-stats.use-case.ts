@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,
-} from '../../logs/application/ports/application-log-writer.port';
+} from '@/modules/logs/application/ports/application-log-writer.port';
 import {
   WEDDING_STATS_RECOMPUTE,
   type WeddingStatsRecompute,

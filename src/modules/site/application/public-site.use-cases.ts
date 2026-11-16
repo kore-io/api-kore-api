@@ -2,15 +2,19 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   OBJECT_STORAGE,
   type ObjectStorage,
-} from '../../../shared/storage/application/object-storage.port';
-import { BACKGROUND_MODES, evaluateAppearance, type BackgroundMode } from '../domain/appearance';
-import { coupleNames, requireLiveSite } from '../domain/public-site';
+} from '@/shared/storage/application/object-storage.port';
+import {
+  BACKGROUND_MODES,
+  evaluateAppearance,
+  type BackgroundMode,
+} from '@/modules/site/domain/appearance';
+import { coupleNames, requireLiveSite } from '@/modules/site/domain/public-site';
 import {
   SITE_SECTION_TYPES,
   isSectionEmpty,
   sectionImageIds,
   type SectionContent,
-} from '../domain/site-sections';
+} from '@/modules/site/domain/site-sections';
 import { PARTY_COOKIES, type PartyCookies } from './ports/party-cookies.port';
 import {
   SITE_READER,

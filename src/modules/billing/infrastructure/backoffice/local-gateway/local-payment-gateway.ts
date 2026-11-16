@@ -1,5 +1,5 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { type AppEnv, LOCAL_KEY_ENVS } from '../../../../../shared/config/env.schema';
+import { type AppEnv, LOCAL_KEY_ENVS } from '@/shared/config/env.schema';
 import {
   type ChargeResult,
   GATEWAY_EVENT_TYPES,
@@ -9,7 +9,7 @@ import {
   GatewayUnavailableError,
   type PaymentGateway,
   type WebhookVerification,
-} from '../../../application/ports/payment-gateway.port';
+} from '@/modules/billing/application/ports/payment-gateway.port';
 import type { LocalChargeRow, LocalGatewayStore, LocalTransferRow } from './local-gateway.store';
 
 /** O cabeçalho do segredo no webhook local. */

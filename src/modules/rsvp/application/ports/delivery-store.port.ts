@@ -1,6 +1,6 @@
-import type { DeliveryStatus } from '../../../guests/domain/party';
-import type { DeliveryChannel } from '../../domain/deliveries';
-import type { MessageKind } from '../../domain/message-templates';
+import type { DeliveryStatus } from '@/modules/guests/domain/party';
+import type { DeliveryChannel } from '@/modules/rsvp/domain/deliveries';
+import type { MessageKind } from '@/modules/rsvp/domain/message-templates';
 
 /** O que os envios usam do casamento (Envios RN01 e RN06). */
 export interface DeliveryWedding {

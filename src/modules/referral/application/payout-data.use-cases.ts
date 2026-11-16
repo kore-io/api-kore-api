@@ -1,32 +1,20 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AppConfigService } from '../../../shared/config/app-config.service';
-import { AFTER_COMMIT, type AfterCommit } from '../../../shared/database/after-commit.port';
-import {
-  EMAIL_OUTBOX,
-  type EmailOutbox,
-} from '../../../shared/email/application/email-outbox.port';
-import {
-  FIELD_CIPHER,
-  type FieldCipher,
-} from '../../../shared/crypto/application/field-cipher.port';
-import {
-  PIX_KEY_HASHER,
-  type PixKeyHasher,
-} from '../../../shared/crypto/application/pix-key-hasher.port';
-import {
-  TAX_ID_HASHER,
-  type TaxIdHasher,
-} from '../../../shared/crypto/application/tax-id-hasher.port';
-import { uuidV7 } from '../../../shared/ids/uuid-v7';
-import { ProfileNotOwnedError } from '../../access/domain/access.errors';
-import type { AuthenticatedSession } from '../../access/domain/authenticated-session';
-import { requireNoRecentAccessChange } from '../../access/domain/recent-access-change';
-import { requireRecentSession } from '../../access/domain/recent-session';
-import { OpaqueSessionTokens } from '../../access/infrastructure/opaque-session-tokens';
+import { AppConfigService } from '@/shared/config/app-config.service';
+import { AFTER_COMMIT, type AfterCommit } from '@/shared/database/after-commit.port';
+import { EMAIL_OUTBOX, type EmailOutbox } from '@/shared/email/application/email-outbox.port';
+import { FIELD_CIPHER, type FieldCipher } from '@/shared/crypto/application/field-cipher.port';
+import { PIX_KEY_HASHER, type PixKeyHasher } from '@/shared/crypto/application/pix-key-hasher.port';
+import { TAX_ID_HASHER, type TaxIdHasher } from '@/shared/crypto/application/tax-id-hasher.port';
+import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { ProfileNotOwnedError } from '@/modules/access/domain/access.errors';
+import type { AuthenticatedSession } from '@/modules/access/domain/authenticated-session';
+import { requireNoRecentAccessChange } from '@/modules/access/domain/recent-access-change';
+import { requireRecentSession } from '@/modules/access/domain/recent-session';
+import { OpaqueSessionTokens } from '@/modules/access/infrastructure/providers/opaque-session-tokens';
 import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,
-} from '../../logs/application/ports/application-log-writer.port';
+} from '@/modules/logs/application/ports/application-log-writer.port';
 import {
   maskPixKey,
   maskTaxId,
@@ -34,19 +22,19 @@ import {
   normalizeTaxId,
   type PixKeyType,
   type TaxIdType,
-} from '../domain/payout-data';
+} from '@/modules/referral/domain/payout-data';
 import {
   PixKeyChangePendingError,
   PixKeyLinkExpiredError,
   PixKeyNotFoundError,
   TaxIdInUseError,
   TaxIdLockedError,
-} from '../domain/referral.errors';
+} from '@/modules/referral/domain/referral.errors';
 import {
   pixKeyChangeCanceledEmail,
   pixKeyChangeConfirmedEmail,
   pixKeyConfirmEmail,
-} from '../infrastructure/emails/pix-key.email';
+} from '@/modules/referral/infrastructure/mail/templates/pix-key.email';
 import {
   PAYOUT_DATA_STORE,
   type PayoutDataStore,

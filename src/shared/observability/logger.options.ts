@@ -1,7 +1,7 @@
 import { trace } from '@opentelemetry/api';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Params } from 'nestjs-pino';
-import type { AppEnv } from '../config/env.schema';
+import type { AppEnv } from '@/shared/config/env.schema';
 
 interface RoutedRequest extends IncomingMessage {
   baseUrl?: string;

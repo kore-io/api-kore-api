@@ -1,4 +1,4 @@
-import type { ExportColumn, ExportGuest, ExportWho } from '../../domain/export';
+import type { ExportColumn, ExportGuest, ExportWho } from '@/modules/guests/domain/export';
 
 export interface ExportWedding {
   slug: string;

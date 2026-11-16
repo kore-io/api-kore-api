@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
 import {
   evaluateAppearance,
   floorRatio,
@@ -7,8 +7,8 @@ import {
   type BackgroundMode,
   type FontPairKey,
   type StarterPaletteKey,
-} from '../domain/appearance';
-import { ContrastTooLowError } from '../domain/site.errors';
+} from '@/modules/site/domain/appearance';
+import { ContrastTooLowError } from '@/modules/site/domain/site.errors';
 import { SITE_STORE, type SiteStore } from './ports/site-store.port';
 
 export interface SiteAppearanceInput {

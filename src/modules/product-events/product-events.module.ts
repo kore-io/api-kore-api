@@ -1,10 +1,10 @@
 import { Global, Module } from '@nestjs/common';
-import { AppConfigService } from '../../shared/config/app-config.service';
+import { AppConfigService } from '@/shared/config/app-config.service';
 import { PRODUCT_EVENT_RECORDER } from './application/ports/product-event-recorder.port';
-import { PrismaProductEventRecorder } from './infrastructure/prisma-product-event-recorder';
-import { SimulatorEventRateLimitGuard } from '../../shared/rate-limit/simulator-event-rate-limit.guard';
-import { SimulatorEventsController } from './presentation/simulator-events.controller';
-import { WeddingPseudonymizer } from './infrastructure/wedding-pseudonymizer';
+import { PrismaProductEventRecorder } from './infrastructure/persistence/prisma-product-event-recorder';
+import { SimulatorEventRateLimitGuard } from '@/shared/rate-limit/simulator-event-rate-limit.guard';
+import { SimulatorEventsController } from './presentation/controllers/simulator-events.controller';
+import { WeddingPseudonymizer } from './infrastructure/providers/wedding-pseudonymizer';
 
 /**
  * Eventos de produto, do lado da API. Global: qualquer módulo registra pela

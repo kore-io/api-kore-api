@@ -1,15 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AppConfigService } from '../../../shared/config/app-config.service';
-import { AFTER_COMMIT, type AfterCommit } from '../../../shared/database/after-commit.port';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
-import { PARTY_LINKS, type PartyLinks } from '../../guests/application/ports/party-links.port';
-import type { DeliveryStatus } from '../../guests/domain/party';
-import { maskEmail } from '../../guests/domain/email';
-import { maskPhone } from '../../guests/domain/phone';
+import { AppConfigService } from '@/shared/config/app-config.service';
+import { AFTER_COMMIT, type AfterCommit } from '@/shared/database/after-commit.port';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
+import { PARTY_LINKS, type PartyLinks } from '@/modules/guests/application/ports/party-links.port';
+import type { DeliveryStatus } from '@/modules/guests/domain/party';
+import { maskEmail } from '@/modules/guests/domain/email';
+import { maskPhone } from '@/modules/guests/domain/phone';
 import {
   PRODUCT_EVENT_RECORDER,
   type ProductEventRecorder,
-} from '../../product-events/application/ports/product-event-recorder.port';
+} from '@/modules/product-events/application/ports/product-event-recorder.port';
 import {
   deliveriesClosedReason,
   longDate,
@@ -17,13 +17,13 @@ import {
   renderMessage,
   whatsappUrl,
   type DeliveryChannel,
-} from '../domain/deliveries';
-import type { MessageKind } from '../domain/message-templates';
+} from '@/modules/rsvp/domain/deliveries';
+import type { MessageKind } from '@/modules/rsvp/domain/message-templates';
 import {
   DeliveriesClosedError,
   DeliveryNotAllowedError,
   DeliveryPartyNotFoundError,
-} from '../domain/rsvp.errors';
+} from '@/modules/rsvp/domain/rsvp.errors';
 import { MessageTemplates } from './message-templates.use-cases';
 import {
   DELIVERY_STORE,

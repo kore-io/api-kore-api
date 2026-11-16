@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,
-} from '../../logs/application/ports/application-log-writer.port';
+} from '@/modules/logs/application/ports/application-log-writer.port';
 import {
   SITE_IMAGE_CLEANUP,
   type SiteImageCleanup,

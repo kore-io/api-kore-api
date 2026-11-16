@@ -2,11 +2,15 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   OBJECT_STORAGE,
   type ObjectStorage,
-} from '../../../shared/storage/application/object-storage.port';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
-import { endDateRange } from '../domain/publication';
-import { DEFAULT_SONG_QUESTION } from '../domain/public-site';
-import { isSectionEmpty, sectionImageIds, type SiteSectionType } from '../domain/site-sections';
+} from '@/shared/storage/application/object-storage.port';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
+import { endDateRange } from '@/modules/site/domain/publication';
+import { DEFAULT_SONG_QUESTION } from '@/modules/site/domain/public-site';
+import {
+  isSectionEmpty,
+  sectionImageIds,
+  type SiteSectionType,
+} from '@/modules/site/domain/site-sections';
 import {
   SITE_READER,
   type ReadySiteImage,

@@ -1,26 +1,26 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { uuidV7 } from '../../../shared/ids/uuid-v7';
-import { localDate } from '../../../shared/time/local-date';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
-import { deliveryStatusAfter, hasPending } from '../../guests/domain/party-rules';
+import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { localDate } from '@/shared/time/local-date';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
+import { deliveryStatusAfter, hasPending } from '@/modules/guests/domain/party-rules';
 import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,
-} from '../../logs/application/ports/application-log-writer.port';
+} from '@/modules/logs/application/ports/application-log-writer.port';
 import {
   isAfterDeadline,
   partyCounts,
   partyRespondedAt,
   planCoupleResponse,
   type CoupleAnswer,
-} from '../domain/rsvp';
+} from '@/modules/rsvp/domain/rsvp';
 import {
   DeadlineAfterEventError,
   DeadlineInPastError,
   ResponseGuestNotFoundError,
   RsvpChangedError,
   RsvpInvalidError,
-} from '../domain/rsvp.errors';
+} from '@/modules/rsvp/domain/rsvp.errors';
 import { RSVP_STORE, type RsvpStore } from './ports/rsvp-store.port';
 import { responseStatsDelta } from './response-stats';
 

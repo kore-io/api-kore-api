@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '../../../../generated/prisma/client';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
-import { uuidV7 } from '../../../../shared/ids/uuid-v7';
-import { DEFAULT_TIMEZONE } from '../../../../shared/time/local-date';
+import { Prisma } from '@/generated/prisma/client';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { DEFAULT_TIMEZONE } from '@/shared/time/local-date';
 import type {
   DueNotice,
   WeddingLifecycleStore,
-} from '../../application/ports/wedding-lifecycle.port';
+} from '@/modules/billing/application/ports/wedding-lifecycle.port';
 
 /** Pela conexão do backoffice (sem RLS): a rotina atravessa os casamentos. */
 @Injectable()

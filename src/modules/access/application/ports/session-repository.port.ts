@@ -1,4 +1,4 @@
-import type { AuthMethod, ProfileKind } from '../../domain/authenticated-session';
+import type { AuthMethod, ProfileKind } from '@/modules/access/domain/authenticated-session';
 
 export interface SessionRecord {
   id: string;

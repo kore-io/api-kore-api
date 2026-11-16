@@ -1,6 +1,6 @@
-import type { DeliveryStatus } from '../../../guests/domain/party';
-import type { StatsDelta } from '../../../guests/domain/wedding-stats';
-import type { RsvpGuest, RsvpGuestUpdate } from '../../domain/rsvp';
+import type { DeliveryStatus } from '@/modules/guests/domain/party';
+import type { StatsDelta } from '@/modules/guests/domain/wedding-stats';
+import type { RsvpGuest, RsvpGuestUpdate } from '@/modules/rsvp/domain/rsvp';
 
 export interface RsvpPartyRow {
   id: string;

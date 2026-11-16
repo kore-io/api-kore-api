@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,
-} from '../../logs/application/ports/application-log-writer.port';
+} from '@/modules/logs/application/ports/application-log-writer.port';
 import { TRASH_PURGE, type PurgeCounts, type TrashPurge } from './ports/trash-purge.port';
 
 export const GUESTS_PURGED_ACTION = 'guests.purged';

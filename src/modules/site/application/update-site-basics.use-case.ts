@@ -1,14 +1,14 @@
 import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,
-} from '../../logs/application/ports/application-log-writer.port';
+} from '@/modules/logs/application/ports/application-log-writer.port';
 import { Inject, Injectable } from '@nestjs/common';
-import { CheckSlugAvailability } from '../../access/application/check-slug-availability.use-case';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
-import { timezoneForState, type BrazilianState } from '../../access/domain/wedding-signup';
-import { parsePhone } from '../../guests/domain/phone';
-import { imagesInUse } from '../domain/site-sections';
-import { endDateRange, isEndDateInRange } from '../domain/publication';
+import { CheckSlugAvailability } from '@/modules/access/application/weddings/check-slug-availability.use-case';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
+import { timezoneForState, type BrazilianState } from '@/modules/access/domain/wedding-signup';
+import { parsePhone } from '@/modules/guests/domain/phone';
+import { imagesInUse } from '@/modules/site/domain/site-sections';
+import { endDateRange, isEndDateInRange } from '@/modules/site/domain/publication';
 import {
   EndDateOutOfRangeError,
   SiteFieldNotAllowedError,
@@ -18,7 +18,7 @@ import {
   SiteSlugLockedError,
   SiteSlugUnavailableError,
   type SiteFieldIssue,
-} from '../domain/site.errors';
+} from '@/modules/site/domain/site.errors';
 import { SITE_IMAGE_STORE, type SiteImageStore } from './ports/site-image-store.port';
 import { SITE_READER, type SiteReader } from './ports/site-reader.port';
 import { SITE_STORE, type SiteBasicsChanges, type SiteStore } from './ports/site-store.port';

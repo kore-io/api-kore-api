@@ -1,10 +1,10 @@
-import { localDate } from '../../../shared/time/local-date';
-import { GUEST_NAME_MAX, type AgeGroup, type RsvpStatus } from '../../guests/domain/party';
+import { localDate } from '@/shared/time/local-date';
+import { GUEST_NAME_MAX, type AgeGroup, type RsvpStatus } from '@/modules/guests/domain/party';
 
 /** Restrição alimentar (RSVP RN03; decisão 189(9)) e sugestão de música (Música RN04). */
 export const DIETARY_RESTRICTION_MAX = 200;
 export const SONG_SUGGESTION_MAX = 120;
-export { DEFAULT_SONG_QUESTION } from '../../site/domain/public-site';
+export { DEFAULT_SONG_QUESTION } from '@/modules/site/domain/public-site';
 /** Teto de gravações por grupo por dia, no fuso do casamento (RSVP RN10). */
 export const RSVP_DAILY_LIMIT = 50;
 

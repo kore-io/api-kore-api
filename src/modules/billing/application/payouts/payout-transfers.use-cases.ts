@@ -1,15 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { AppConfigService } from '../../../../shared/config/app-config.service';
-import { BackofficeTransaction } from '../../../../shared/database/backoffice-transaction';
-import {
-  FIELD_CIPHER,
-  type FieldCipher,
-} from '../../../../shared/crypto/application/field-cipher.port';
-import {
-  EMAIL_OUTBOX,
-  type EmailOutbox,
-} from '../../../../shared/email/application/email-outbox.port';
-import { PLANNER_COMMISSIONS_PATH } from '../../../notifications/application/rsvp-emails.use-cases';
+import { AppConfigService } from '@/shared/config/app-config.service';
+import { BackofficeTransaction } from '@/shared/database/backoffice-transaction';
+import { FIELD_CIPHER, type FieldCipher } from '@/shared/crypto/application/field-cipher.port';
+import { EMAIL_OUTBOX, type EmailOutbox } from '@/shared/email/application/email-outbox.port';
+import { PLANNER_COMMISSIONS_PATH } from '@/modules/notifications/application/rsvp-emails.use-cases';
 import {
   PayoutAmountMismatchError,
   PayoutNotFoundError,
@@ -17,19 +11,23 @@ import {
   PayoutPixKeyChangePendingError,
   PayoutReferrerBlockedError,
   PayoutStatusConflictError,
-} from '../../domain/payout.errors';
-import { payoutPaidEmail } from '../../infrastructure/emails/payout.email';
+} from '@/modules/billing/domain/payout.errors';
+import { payoutPaidEmail } from '@/modules/billing/infrastructure/mail/templates/payout.email';
 import {
   GatewayUnavailableError,
   PAYMENT_GATEWAY,
   type GatewayTransfer,
   type PaymentGateway,
-} from '../ports/payment-gateway.port';
-import { PAYOUT_LEDGER, type LockedPayout, type PayoutLedger } from '../ports/payout-ledger.port';
+} from '@/modules/billing/application/ports/payment-gateway.port';
+import {
+  PAYOUT_LEDGER,
+  type LockedPayout,
+  type PayoutLedger,
+} from '@/modules/billing/application/ports/payout-ledger.port';
 import {
   PAYOUT_TRANSFER_QUEUE,
   type PayoutTransferQueue,
-} from '../ports/payout-transfer-queue.port';
+} from '@/modules/billing/application/ports/payout-transfer-queue.port';
 
 const logger = new Logger('PayoutTransfers');
 const PIX_KEY_CONTEXT = { table: 'referrer_pix_keys', column: 'key_encrypted' };

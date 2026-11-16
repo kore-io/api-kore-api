@@ -1,4 +1,4 @@
-import type { ApplicationLogWriter } from '../../logs/application/ports/application-log-writer.port';
+import type { ApplicationLogWriter } from '@/modules/logs/application/ports/application-log-writer.port';
 import type { ProductEventRetention } from './ports/product-event-retention.port';
 import { PurgeExpiredProductEvents } from './purge-expired-product-events.use-case';
 

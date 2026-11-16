@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { accessIpRetentionCutoff } from '../domain/access-ip-retention';
+import { accessIpRetentionCutoff } from '@/modules/logs/domain/access-ip-retention';
 import {
   ACCESS_IP_LOG_RETENTION,
   type AccessIpLogRetention,

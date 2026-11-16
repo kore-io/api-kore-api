@@ -1,4 +1,4 @@
-import { producerQueue } from '../jobs/producer-queue';
+import { producerQueue } from '@/shared/jobs/producer-queue';
 import { Global, Module } from '@nestjs/common';
 import { EMAIL_OUTBOX } from './application/email-outbox.port';
 import { EMAIL_SENDER } from './application/email-sender.port';

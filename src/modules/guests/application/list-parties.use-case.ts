@@ -1,14 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
-import { GuestFieldsInvalidError, type FieldIssue } from '../domain/guests.errors';
-import type { DeliveryStatus, RsvpStatus } from '../domain/party';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
+import { GuestFieldsInvalidError, type FieldIssue } from '@/modules/guests/domain/guests.errors';
+import type { DeliveryStatus, RsvpStatus } from '@/modules/guests/domain/party';
 import {
   decodePartyCursor,
   decodeRespondedCursor,
   encodePartyCursor,
   encodeRespondedCursor,
-} from '../domain/party-cursor';
-import { maskPhone } from '../domain/phone';
+} from '@/modules/guests/domain/party-cursor';
+import { maskPhone } from '@/modules/guests/domain/phone';
 import {
   PARTY_READER,
   type PartyListRow,

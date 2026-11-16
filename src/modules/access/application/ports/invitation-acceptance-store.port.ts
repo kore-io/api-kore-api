@@ -1,5 +1,5 @@
-import type { InvitationSnapshot } from '../../domain/invitation-acceptance';
-import type { PartnerTitle } from '../../domain/wedding-signup';
+import type { InvitationSnapshot } from '@/modules/access/domain/invitation-acceptance';
+import type { PartnerTitle } from '@/modules/access/domain/wedding-signup';
 
 export type AcceptRefusal =
   'not_pending' | 'owners_full' | 'partner_taken' | 'planner_already' | 'self_referral';

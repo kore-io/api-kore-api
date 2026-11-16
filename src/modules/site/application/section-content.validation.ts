@@ -12,14 +12,14 @@ import {
   ValidateNested,
   validate,
 } from 'class-validator';
-import { toFieldErrors, type FieldError } from '../../../shared/http/validation-errors';
-import { DATE_ONLY } from '../../access/presentation/weddings.dto';
+import { toFieldErrors, type FieldError } from '@/shared/http/validation-errors';
+import { DATE_ONLY } from '@/modules/access/presentation/dto/weddings.dto';
 import {
   SECTION_LIMITS as L,
   normalizeSiteText,
   type SectionContent,
   type SiteSectionType,
-} from '../domain/site-sections';
+} from '@/modules/site/domain/site-sections';
 
 const text = ({ value }: { value: unknown }): unknown =>
   typeof value === 'string' ? normalizeSiteText({ value }) : value;

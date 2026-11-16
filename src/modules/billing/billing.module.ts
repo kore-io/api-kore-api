@@ -1,6 +1,6 @@
-import { AdminPaymentActions } from './application/admin-payment-actions.use-cases';
-import { ExtendAsCourtesy } from './application/courtesy-extension.use-case';
-import { AdminRefund } from './application/admin-refund.use-case';
+import { AdminPaymentActions } from './application/payments/admin-payment-actions.use-cases';
+import { ExtendAsCourtesy } from './application/wedding-lifecycle/courtesy-extension.use-case';
+import { AdminRefund } from './application/refunds/admin-refund.use-case';
 import { PAYOUT_ADMIN_STORE } from './application/ports/payout-admin.store.port';
 import {
   ListPayoutQueue,
@@ -9,58 +9,61 @@ import {
 } from './application/payouts/payout-admin.use-cases';
 import { PayPayout, RetryPayout } from './application/payouts/payout-transfers.use-cases';
 import { PrismaPayoutAdminStore } from './infrastructure/backoffice/prisma-payout-admin.store';
-import { PAYOUT_TRANSFERS_QUEUE } from './infrastructure/payout-transfers.queue';
-import { producerQueue } from '../../shared/jobs/producer-queue';
+import { PAYOUT_TRANSFERS_QUEUE } from './infrastructure/jobs/payout-transfers.queue';
+import { producerQueue } from '@/shared/jobs/producer-queue';
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
-import { BlockWedding } from './application/block-wedding.use-case';
+import { BlockWedding } from './application/wedding-lifecycle/block-wedding.use-case';
 import { WEDDING_BLOCKS } from './application/ports/wedding-blocks.port';
 import { PrismaWeddingBlocks } from './infrastructure/backoffice/prisma-wedding-blocks';
-import { NOTIFICATIONS_QUEUE } from '../notifications/infrastructure/notifications-queue';
-import { PaymentWebhookRateLimitGuard } from '../../shared/rate-limit/payment-webhook-rate-limit.guard';
+import { NOTIFICATIONS_QUEUE } from '@/modules/notifications/infrastructure/jobs/notifications-queue';
+import { PaymentWebhookRateLimitGuard } from '@/shared/rate-limit/payment-webhook-rate-limit.guard';
 import { GATEWAY_EVENT_QUEUE } from './application/ports/gateway-event.queue.port';
 import { GATEWAY_EVENT_STORE } from './application/ports/gateway-event.store.port';
 import { PAYMENT_GATEWAY } from './application/ports/payment-gateway.port';
-import { ProcessGatewayEvent } from './application/process-gateway-event.use-case';
-import { ReceiveGatewayWebhook } from './application/receive-gateway-webhook.use-case';
+import { ProcessGatewayEvent } from './application/payments/process-gateway-event.use-case';
+import { ReceiveGatewayWebhook } from './application/payments/receive-gateway-webhook.use-case';
 import { PrismaGatewayEventStore } from './infrastructure/backoffice/prisma-gateway-event.store';
 import {
   BullmqGatewayEventQueue,
   GATEWAY_EVENTS_QUEUE,
-} from './infrastructure/gateway-events.queue';
+} from './infrastructure/jobs/gateway-events.queue';
 import { LocalGatewayStore } from './infrastructure/backoffice/local-gateway/local-gateway.store';
 import { PAYMENT_GATEWAY_PROVIDERS } from './infrastructure/backoffice/payment-gateway.providers';
-import { PaymentWebhooksController } from './presentation/payment-webhooks.controller';
-import { BillingQuoteController, PricingController } from './presentation/pricing.controller';
-import { AccessModule } from '../access/access.module';
+import { PaymentWebhooksController } from './presentation/controllers/payment-webhooks.controller';
+import {
+  BillingQuoteController,
+  PricingController,
+} from './presentation/controllers/pricing.controller';
+import { AccessModule } from '@/modules/access/access.module';
 import { QUOTE_TARGET_READER } from './application/ports/quote-target.reader.port';
-import { QuoteBilling } from './application/quote-billing.use-case';
-import { PrismaQuoteTargetReader } from './infrastructure/prisma-quote-target.reader';
-import { PrismaPublicPricingReader } from './infrastructure/prisma-public-pricing.reader';
-import { PAYMENT_PROCESSING_PROVIDERS } from './infrastructure/payment-processing.providers';
-import { CreatePayment } from './application/create-payment.use-case';
-import { GetBilling } from './application/get-billing.use-case';
+import { QuoteBilling } from './application/payments/quote-billing.use-case';
+import { PrismaQuoteTargetReader } from './infrastructure/persistence/prisma-quote-target.reader';
+import { PrismaPublicPricingReader } from './infrastructure/persistence/prisma-public-pricing.reader';
+import { PAYMENT_PROCESSING_PROVIDERS } from './infrastructure/providers/payment-processing.providers';
+import { CreatePayment } from './application/payments/create-payment.use-case';
+import { GetBilling } from './application/payments/get-billing.use-case';
 import {
   GATEWAY_CUSTOMERS,
   PAYMENT_REQUEST_STORE,
 } from './application/ports/payment-request.store.port';
 import { BILLING_VIEW_READER } from './application/ports/billing-view.reader.port';
-import { PrismaPaymentRequestStore } from './infrastructure/prisma-payment-request.store';
+import { PrismaPaymentRequestStore } from './infrastructure/persistence/prisma-payment-request.store';
 import { PrismaGatewayCustomers } from './infrastructure/backoffice/prisma-gateway-customers';
-import { PrismaBillingViewReader } from './infrastructure/prisma-billing-view.reader';
-import { PaymentsController } from './presentation/payments.controller';
+import { PrismaBillingViewReader } from './infrastructure/persistence/prisma-billing-view.reader';
+import { PaymentsController } from './presentation/controllers/payments.controller';
 import { REFUND_REQUEST_STORE } from './application/ports/refund-request.store.port';
-import { RequestRefund } from './application/request-refund.use-case';
+import { RequestRefund } from './application/refunds/request-refund.use-case';
 import { WEDDING_DELETION_STORE } from './application/ports/wedding-deletion.store.port';
 import {
   CancelWeddingDeletion,
   RequestWeddingDeletion,
-} from './application/wedding-deletion.use-cases';
+} from './application/wedding-lifecycle/wedding-deletion.use-cases';
 import { PrismaWeddingDeletionStore } from './infrastructure/backoffice/prisma-wedding-deletion.store';
-import { WeddingDeletionController } from './presentation/wedding-deletion.controller';
-import { ChangeEndDate } from './application/change-end-date.use-case';
-import { PrismaRefundRequestStore } from './infrastructure/prisma-refund-request.store';
-import { PAYMENT_REFUNDS_QUEUE } from './infrastructure/refunds.queue';
+import { WeddingDeletionController } from './presentation/controllers/wedding-deletion.controller';
+import { ChangeEndDate } from './application/wedding-lifecycle/change-end-date.use-case';
+import { PrismaRefundRequestStore } from './infrastructure/persistence/prisma-refund-request.store';
+import { PAYMENT_REFUNDS_QUEUE } from './infrastructure/jobs/refunds.queue';
 
 /**
  * Cobrança e publicação (F3), do lado da API: a porta do gateway, o webhook, o

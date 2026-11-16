@@ -1,15 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
 import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,
-} from '../../logs/application/ports/application-log-writer.port';
+} from '@/modules/logs/application/ports/application-log-writer.port';
 import {
   EmptyPlusOneError,
   GuestFieldsInvalidError,
   GuestNotFoundError,
   LastGuestError,
-} from '../domain/guests.errors';
+} from '@/modules/guests/domain/guests.errors';
 import {
   contactAfter,
   deliveryStatusAfter,
@@ -18,8 +18,8 @@ import {
   hasPending,
   isEmptySlot,
   type GroupMember,
-} from '../domain/party-rules';
-import { canBeContact } from '../domain/party';
+} from '@/modules/guests/domain/party-rules';
+import { canBeContact } from '@/modules/guests/domain/party';
 import {
   GROUP_STORE,
   type GroupRow,

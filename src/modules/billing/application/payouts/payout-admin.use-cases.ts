@@ -1,10 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AppConfigService } from '../../../../shared/config/app-config.service';
-import { BackofficeTransaction } from '../../../../shared/database/backoffice-transaction';
-import {
-  EMAIL_OUTBOX,
-  type EmailOutbox,
-} from '../../../../shared/email/application/email-outbox.port';
+import { AppConfigService } from '@/shared/config/app-config.service';
+import { BackofficeTransaction } from '@/shared/database/backoffice-transaction';
+import { EMAIL_OUTBOX, type EmailOutbox } from '@/shared/email/application/email-outbox.port';
 import {
   PayoutBelowMinimumError,
   PayoutNotFoundError,
@@ -12,16 +9,19 @@ import {
   PayoutReferrerBlockedError,
   PayoutStatusConflictError,
   PayoutStillHeldError,
-} from '../../domain/payout.errors';
-import { PLANNER_COMMISSIONS_PATH } from '../../../notifications/application/rsvp-emails.use-cases';
-import { payoutRejectedEmail } from '../../infrastructure/emails/payout.email';
+} from '@/modules/billing/domain/payout.errors';
+import { PLANNER_COMMISSIONS_PATH } from '@/modules/notifications/application/rsvp-emails.use-cases';
+import { payoutRejectedEmail } from '@/modules/billing/infrastructure/mail/templates/payout.email';
 import {
   PAYOUT_ADMIN_STORE,
   type PayoutAdminStore,
   type PayoutQueueRow,
   type PayoutQueueTab,
-} from '../ports/payout-admin.store.port';
-import { PAYOUT_LEDGER, type PayoutLedger } from '../ports/payout-ledger.port';
+} from '@/modules/billing/application/ports/payout-admin.store.port';
+import {
+  PAYOUT_LEDGER,
+  type PayoutLedger,
+} from '@/modules/billing/application/ports/payout-ledger.port';
 
 /**
  * A fila de Repasses do Admin (Backoffice - cobrança RN09): Solicitados (com

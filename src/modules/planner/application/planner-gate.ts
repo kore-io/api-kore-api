@@ -1,5 +1,5 @@
-import type { PlannerProfiles } from '../../access/application/ports/planner-profiles.port';
-import { ProfileNotOwnedError } from '../../access/domain/access.errors';
+import type { PlannerProfiles } from '@/modules/access/application/ports/planner-profiles.port';
+import { ProfileNotOwnedError } from '@/modules/access/domain/access.errors';
 
 /**
  * As rotas da cerimonialista exigem ter o perfil (Referrer planner ativo), não

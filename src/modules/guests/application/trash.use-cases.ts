@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
 import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,
-} from '../../logs/application/ports/application-log-writer.port';
-import { uuidV7 } from '../../../shared/ids/uuid-v7';
+} from '@/modules/logs/application/ports/application-log-writer.port';
+import { uuidV7 } from '@/shared/ids/uuid-v7';
 import {
   AlreadyRespondedError,
   EmptyPlusOneError,
@@ -17,8 +17,8 @@ import {
   TagNotFoundError,
   TrashItemNotFoundError,
   type FieldIssue,
-} from '../domain/guests.errors';
-import { canBeContact, TAGS_PER_WEDDING_MAX } from '../domain/party';
+} from '@/modules/guests/domain/guests.errors';
+import { canBeContact, TAGS_PER_WEDDING_MAX } from '@/modules/guests/domain/party';
 import {
   contactAfter,
   deliveryStatusAfter,
@@ -27,9 +27,9 @@ import {
   respondedAtAfter,
   sameInstant,
   type GroupMember,
-} from '../domain/party-rules';
-import { purgeAt } from '../domain/trash';
-import { guestsDelta } from '../domain/wedding-stats';
+} from '@/modules/guests/domain/party-rules';
+import { purgeAt } from '@/modules/guests/domain/trash';
+import { guestsDelta } from '@/modules/guests/domain/wedding-stats';
 import {
   GROUP_STORE,
   type GroupRow,

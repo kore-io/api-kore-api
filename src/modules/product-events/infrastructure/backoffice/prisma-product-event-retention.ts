@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
-import type { ProductEventRetention } from '../../application/ports/product-event-retention.port';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import type { ProductEventRetention } from '@/modules/product-events/application/ports/product-event-retention.port';
 
 const DELETE_BATCH_SIZE = 5_000;
 

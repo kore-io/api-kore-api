@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import type {
   LockedPlannerDigest,
   PlannerDigestChange,
   PlannerDigestStore,
   PlannerDigestWedding,
-} from '../../application/ports/planner-digest-store.port';
+} from '@/modules/notifications/application/ports/planner-digest-store.port';
 import { partnerNamesOf, recipientRole } from './notification-recipient';
 
 /** O envio cabe na transação (o SMTP aceita em segundos). */

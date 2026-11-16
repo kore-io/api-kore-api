@@ -1,4 +1,4 @@
-import type { AccessInvitationKind } from '../../domain/access-invitation';
+import type { AccessInvitationKind } from '@/modules/access/domain/access-invitation';
 
 export interface DeclineNotice {
   kind: AccessInvitationKind;

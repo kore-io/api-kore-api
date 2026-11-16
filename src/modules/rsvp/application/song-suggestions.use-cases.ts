@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { DEFAULT_TIMEZONE } from '../../../shared/time/local-date';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
+import { DEFAULT_TIMEZONE } from '@/shared/time/local-date';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
 import {
   NoSongsToExportError,
   SongCursorInvalidError,
   SongQuestionDisabledError,
-} from '../domain/rsvp.errors';
+} from '@/modules/rsvp/domain/rsvp.errors';
 import {
   SONG_SUGGESTIONS_FILE,
   type SongSuggestionsFile,

@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { SendAccessEmailChanged } from '../../access/application/send-access-email-changed.use-case';
-import { IpHasher } from '../../logs/infrastructure/ip-hasher';
-import { maskEmail } from '../domain/access-email-change';
+import { SendAccessEmailChanged } from '@/modules/access/application/invitations/send-access-email-changed.use-case';
+import { IpHasher } from '@/modules/logs/infrastructure/providers/ip-hasher';
+import { maskEmail } from '@/modules/backoffice/domain/access-email-change';
 import {
   AccessChangeRateLimitedError,
   AccessEmailLockedError,
@@ -13,8 +13,8 @@ import {
   NotAnOwnerError,
   NotLockedError,
   UnlockTooSoonError,
-} from '../domain/backoffice.errors';
-import type { StaffMember } from '../domain/staff';
+} from '@/modules/backoffice/domain/backoffice.errors';
+import type { StaffMember } from '@/modules/backoffice/domain/staff';
 import { ACCESS_EMAIL_CHANGES, type AccessEmailChanges } from './ports/access-email-changes.port';
 
 const logger = new Logger('ChangeAccessEmail');

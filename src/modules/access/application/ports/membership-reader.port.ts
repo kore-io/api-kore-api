@@ -1,4 +1,4 @@
-import type { MembershipRole } from '../../domain/wedding-authorization';
+import type { MembershipRole } from '@/modules/access/domain/wedding-authorization';
 
 /** Lê o vínculo ativo da pessoa no casamento, dentro da transação com RLS. */
 export interface MembershipReader {

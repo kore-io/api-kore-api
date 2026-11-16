@@ -1,6 +1,6 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
-import { BackofficePrismaService } from '../../shared/database/backoffice-prisma.service';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import { ACCESS_IP_LOG_RETENTION } from './application/ports/access-ip-log-retention.port';
 import { APPLICATION_LOG_RETENTION } from './application/ports/application-log-retention.port';
 import { APPLICATION_LOG_WRITER } from './application/ports/application-log-writer.port';
@@ -10,17 +10,17 @@ import {
   ACCESS_IP_RETENTION_QUEUE,
   AccessIpRetentionProcessor,
   AccessIpRetentionScheduler,
-} from './infrastructure/access-ip-retention.job';
+} from './infrastructure/jobs/access-ip-retention.job';
 import {
   APPLICATION_LOG_RETENTION_QUEUE,
   ApplicationLogRetentionProcessor,
   ApplicationLogRetentionScheduler,
-} from './infrastructure/application-log-retention.job';
+} from './infrastructure/jobs/application-log-retention.job';
 import { PrismaAccessIpLogRetention } from './infrastructure/backoffice/prisma-access-ip-log-retention';
 import { PrismaApplicationLogRetention } from './infrastructure/backoffice/prisma-application-log-retention';
-import { IpHasher } from './infrastructure/ip-hasher';
-import { ipHasherProvider } from './infrastructure/ip-hasher.provider';
-import { PrismaApplicationLogWriter } from './infrastructure/prisma-application-log-writer';
+import { IpHasher } from './infrastructure/providers/ip-hasher';
+import { ipHasherProvider } from './infrastructure/providers/ip-hasher.provider';
+import { PrismaApplicationLogWriter } from './infrastructure/persistence/prisma-application-log-writer';
 
 /**
  * Rotinas diárias de retenção, do lado do worker: IP real em 6 meses (decisão

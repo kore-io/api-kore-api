@@ -2,8 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,
-} from '../../logs/application/ports/application-log-writer.port';
-import { PREVIEW_TOKEN_RETENTION_MS } from '../domain/site-preview';
+} from '@/modules/logs/application/ports/application-log-writer.port';
+import { PREVIEW_TOKEN_RETENTION_MS } from '@/modules/site/domain/site-preview';
 import {
   SITE_PREVIEW_TOKEN_CLEANUP,
   type SitePreviewTokenCleanup,

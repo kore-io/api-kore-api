@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { PartyLinkFailures } from '../../../shared/rate-limit/party-link-failures';
-import { DRAFT_SITE_STATUSES } from '../domain/public-site';
+import { PartyLinkFailures } from '@/shared/rate-limit/party-link-failures';
+import { DRAFT_SITE_STATUSES } from '@/modules/site/domain/public-site';
 import {
   PartyLinkRateLimitedError,
   SiteDraftError,
@@ -8,7 +8,7 @@ import {
   SiteLinkInvalidError,
   SiteNotFoundError,
   SiteUnavailableError,
-} from '../domain/site.errors';
+} from '@/modules/site/domain/site.errors';
 import { PARTY_COOKIES, type PartyCookies } from './ports/party-cookies.port';
 import { PARTY_VISITS, type PartyVisits } from './ports/party-visits.port';
 import { PUBLIC_SITE_READER, type PublicSiteReader } from './ports/public-site-reader.port';

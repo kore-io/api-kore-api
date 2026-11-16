@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { TenantTransaction } from '../../../shared/database/tenant-transaction';
-import { SITE_PREVIEW_COOKIE_PREFIX } from '../../../shared/http/session-cookie-name';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
-import type { MembershipRole } from '../../access/domain/wedding-authorization';
+import { TenantTransaction } from '@/shared/database/tenant-transaction';
+import { SITE_PREVIEW_COOKIE_PREFIX } from '@/shared/http/session-cookie-name';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
+import type { MembershipRole } from '@/modules/access/domain/wedding-authorization';
 import {
   PREVIEW_COOKIES,
   type PreviewCookieClaims,

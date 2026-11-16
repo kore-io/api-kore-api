@@ -2,14 +2,14 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   PLANNER_PROFILES,
   type PlannerProfiles,
-} from '../../access/application/ports/planner-profiles.port';
+} from '@/modules/access/application/ports/planner-profiles.port';
 import {
   commissionBalances,
   commissionsByWedding,
   type CommissionBalances,
   type CommissionRow,
   type WeddingCommissions,
-} from '../domain/commissions';
+} from '@/modules/planner/domain/commissions';
 import { requirePlannerProfile } from './planner-gate';
 import {
   REFERRER_COMMISSIONS_READER,

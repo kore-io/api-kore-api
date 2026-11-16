@@ -1,6 +1,6 @@
 import type { PayoutRow } from './ports/payout-store.port';
-import type { AppConfigService } from '../../../shared/config/app-config.service';
-import { PayoutsDisabledError } from '../domain/referral.errors';
+import type { AppConfigService } from '@/shared/config/app-config.service';
+import { PayoutsDisabledError } from '@/modules/referral/domain/referral.errors';
 import type { PayoutDataStore } from './ports/payout-data-store.port';
 import type { PayoutStore } from './ports/payout-store.port';
 import { nextRequestAt, PayoutsUseCases } from './payouts.use-cases';

@@ -1,4 +1,4 @@
-import { Prisma } from '../../generated/prisma/client';
+import { Prisma } from '@/generated/prisma/client';
 import { postgresErrorCode } from './postgres-error';
 
 const prismaError = (meta: Record<string, unknown>) =>

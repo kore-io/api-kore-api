@@ -5,7 +5,7 @@ import {
   PIX_KEY_ACTIVATION_QUEUE,
   PixKeyActivationProcessor,
   PixKeyActivationScheduler,
-} from './infrastructure/pix-key-activation.job';
+} from './infrastructure/jobs/pix-key-activation.job';
 import { PrismaPixKeyActivation } from './infrastructure/backoffice/prisma-pix-key-activation';
 
 /** Rotinas do indicador, do lado do worker: a ativação das trocas da chave Pix. */

@@ -1,4 +1,4 @@
-import type { PlatformRole } from '../../domain/authenticated-session';
+import type { PlatformRole } from '@/modules/access/domain/authenticated-session';
 
 export interface UserProfile {
   id: string;

@@ -1,4 +1,4 @@
-import type { SectionContent, SiteSectionType } from '../../domain/site-sections';
+import type { SectionContent, SiteSectionType } from '@/modules/site/domain/site-sections';
 
 export interface SiteSnapshot {
   status: string;

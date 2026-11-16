@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
-import { uuidV7 } from '../../../../shared/ids/uuid-v7';
-import { DEFAULT_TIMEZONE } from '../../../../shared/time/local-date';
-import type { PostEventTransition } from '../../application/ports/post-event-transition.port';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import { uuidV7 } from '@/shared/ids/uuid-v7';
+import { DEFAULT_TIMEZONE } from '@/shared/time/local-date';
+import type { PostEventTransition } from '@/modules/site/application/ports/post-event-transition.port';
 
 /** Pela conexão do backoffice (sem RLS): a rotina atravessa os casamentos. */
 @Injectable()

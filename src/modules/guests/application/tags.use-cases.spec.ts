@@ -1,5 +1,5 @@
-import type { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
-import { TagLimitReachedError, TagNameTakenError } from '../domain/guests.errors';
+import type { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
+import { TagLimitReachedError, TagNameTakenError } from '@/modules/guests/domain/guests.errors';
 import type { TagStore } from './ports/tag-store.port';
 import { CreateTag } from './tags.use-cases';
 

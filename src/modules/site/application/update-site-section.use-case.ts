@@ -1,17 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
 import {
   SECTION_LIMITS,
   imagesInUse,
   normalizeSiteText,
   sectionImageIds,
   type SiteSectionType,
-} from '../domain/site-sections';
+} from '@/modules/site/domain/site-sections';
 import {
   SiteFieldsInvalidError,
   SiteImageNotFoundError,
   type SiteFieldIssue,
-} from '../domain/site.errors';
+} from '@/modules/site/domain/site.errors';
 import { SITE_IMAGE_STORE, type SiteImageStore } from './ports/site-image-store.port';
 import { SITE_READER, type SiteReader } from './ports/site-reader.port';
 import { SITE_STORE, type SiteStore } from './ports/site-store.port';

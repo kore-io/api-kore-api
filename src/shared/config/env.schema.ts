@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { OTEL_EXPORTERS } from '../observability/otel-exporters';
+import { OTEL_EXPORTERS } from '@/shared/observability/otel-exporters';
 
 export const APP_ENVS = ['local', 'test', 'homolog', 'production'] as const;
 export type AppEnv = (typeof APP_ENVS)[number];

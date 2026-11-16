@@ -1,5 +1,5 @@
-import { AlertType } from '../../../generated/prisma/enums';
-import type { IpHasher } from '../../logs/infrastructure/ip-hasher';
+import { AlertType } from '@/generated/prisma/enums';
+import type { IpHasher } from '@/modules/logs/infrastructure/providers/ip-hasher';
 import { ALERT_TYPES, AdminInsights, OVERVIEW_CACHE_MS } from './admin-insights.use-cases';
 
 const ipHasher = { hash: jest.fn().mockReturnValue('h') } as unknown as IpHasher;

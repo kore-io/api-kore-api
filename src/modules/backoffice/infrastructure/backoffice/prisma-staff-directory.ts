@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
-import type { StaffRole } from '../../domain/staff';
-import type { StaffDirectory } from '../../application/ports/staff-directory.port';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import type { StaffRole } from '@/modules/backoffice/domain/staff';
+import type { StaffDirectory } from '@/modules/backoffice/application/ports/staff-directory.port';
 
 /** Pela conexão do backoffice (decisão 180(5)): as rotas /v1/admin leem fora da RLS. */
 @Injectable()

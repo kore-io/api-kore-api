@@ -1,6 +1,6 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
-import { LogsWorkerModule } from '../logs/logs-worker.module';
+import { LogsWorkerModule } from '@/modules/logs/logs-worker.module';
 import { WEDDING_STATS_RECOMPUTE } from './application/ports/wedding-stats-recompute.port';
 import { RecomputeWeddingStats } from './application/recompute-wedding-stats.use-case';
 import { TRASH_PURGE } from './application/ports/trash-purge.port';
@@ -10,13 +10,13 @@ import {
   TRASH_PURGE_QUEUE,
   TrashPurgeProcessor,
   TrashPurgeScheduler,
-} from './infrastructure/trash-purge.job';
+} from './infrastructure/jobs/trash-purge.job';
 import { PrismaWeddingStatsRecompute } from './infrastructure/backoffice/prisma-wedding-stats-recompute';
 import {
   WEDDING_STATS_RECOMPUTE_QUEUE,
   WeddingStatsRecomputeProcessor,
   WeddingStatsRecomputeScheduler,
-} from './infrastructure/wedding-stats-recompute.job';
+} from './infrastructure/jobs/wedding-stats-recompute.job';
 
 /** Rotinas do contexto Convidados, do lado do worker. */
 @Module({

@@ -1,6 +1,6 @@
 import type { Job } from 'bullmq';
-import { EmailDeliveryFailures } from '../application/email-delivery-failures';
-import type { EmailSender } from '../application/email-sender.port';
+import { EmailDeliveryFailures } from '@/shared/email/application/email-delivery-failures';
+import type { EmailSender } from '@/shared/email/application/email-sender.port';
 import { DefaultEmailProcessor, LoginEmailProcessor } from './email-delivery.processors';
 
 const tag = { kind: 'purge_notice', data: { weddingId: 'w1' } };

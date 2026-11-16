@@ -1,11 +1,11 @@
 import { randomBytes } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
-import { uuidV7 } from '../../../shared/ids/uuid-v7';
+import { uuidV7 } from '@/shared/ids/uuid-v7';
 import {
   OBJECT_STORAGE,
   type ObjectStorage,
-} from '../../../shared/storage/application/object-storage.port';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
+} from '@/shared/storage/application/object-storage.port';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
 import {
   SITE_IMAGE_UPLOAD_SECONDS,
   SITE_IMAGES_PER_WEDDING_MAX,
@@ -13,8 +13,8 @@ import {
   SITE_IMAGE_KEY_TOKEN_BYTES,
   siteImageKeys,
   type SiteImageUploadContentType,
-} from '../domain/site-image';
-import { SiteImageLimitReachedError } from '../domain/site.errors';
+} from '@/modules/site/domain/site-image';
+import { SiteImageLimitReachedError } from '@/modules/site/domain/site.errors';
 import { SITE_IMAGE_STORE, type SiteImageStore } from './ports/site-image-store.port';
 
 export interface SiteImageUploadAuthorization {

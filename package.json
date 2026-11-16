@@ -19,7 +19,7 @@
     "typecheck": "tsc --noEmit",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --passWithNoTests",
     "test:cov": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
-    "test:e2e": "NODE_OPTIONS=--experimental-vm-modules jest --config test/jest-e2e.config.ts",
+    "test:e2e": "NODE_OPTIONS=--experimental-vm-modules jest --config test/e2e/jest-e2e.config.ts",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev --create-only",
@@ -27,12 +27,12 @@
     "db:setup": "pnpm db:migrate && pnpm db:users",
     "storage:setup": "node scripts/storage/setup-local-buckets.mts",
     "crypto:new-data-key": "node scripts/crypto/new-data-key.mts",
-    "db:seed": "nest build && node dist/seed",
+    "db:seed": "nest build && node dist/cli/seed/main",
     "start:worker": "nest start --entryFile worker",
     "start:worker:dev": "nest start --watch --entryFile worker",
     "start:worker:prod": "node dist/worker",
-    "openapi:export": "nest build && node --env-file=.env.example dist/openapi-export",
-    "openapi:check": "nest build && node --env-file=.env.example dist/openapi-export --check"
+    "openapi:export": "nest build && node --env-file=.env.example dist/cli/openapi-export/main",
+    "openapi:check": "nest build && node --env-file=.env.example dist/cli/openapi-export/main --check"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1166.0",

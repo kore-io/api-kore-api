@@ -1,18 +1,18 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { WeddingActionForbiddenError } from '../../access/domain/access.errors';
-import { BlockWedding } from '../../billing/application/block-wedding.use-case';
+import { WeddingActionForbiddenError } from '@/modules/access/domain/access.errors';
+import { BlockWedding } from '@/modules/billing/application/wedding-lifecycle/block-wedding.use-case';
 import {
   ADMIN_PAYMENTS_READER,
   type AdminPaymentsReader,
 } from './ports/admin-payments.reader.port';
-import { IpHasher } from '../../logs/infrastructure/ip-hasher';
-import type { ApplicationLogWriter } from '../../logs/application/ports/application-log-writer.port';
+import { IpHasher } from '@/modules/logs/infrastructure/providers/ip-hasher';
+import type { ApplicationLogWriter } from '@/modules/logs/application/ports/application-log-writer.port';
 import {
   AlreadyBlockedError,
   NotBlockedError,
   AdminWeddingNotFoundError,
-} from '../domain/backoffice.errors';
-import { withoutMoney, type StaffMember } from '../domain/staff';
+} from '@/modules/backoffice/domain/backoffice.errors';
+import { withoutMoney, type StaffMember } from '@/modules/backoffice/domain/staff';
 import {
   ADMIN_WEDDINGS_READER,
   type AdminWeddingGeneral,

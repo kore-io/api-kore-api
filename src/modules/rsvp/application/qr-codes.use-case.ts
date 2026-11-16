@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { PARTY_LINKS, type PartyLinks } from '../../guests/application/ports/party-links.port';
-import { RsvpInvalidError } from '../domain/rsvp.errors';
+import { PARTY_LINKS, type PartyLinks } from '@/modules/guests/application/ports/party-links.port';
+import { RsvpInvalidError } from '@/modules/rsvp/domain/rsvp.errors';
 import { DeliveryGuard, DeliveryMarker } from './deliveries.use-cases';
 import { QR_RENDERER, type QrRenderer } from './ports/qr-renderer.port';
 

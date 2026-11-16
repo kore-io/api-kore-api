@@ -36,6 +36,44 @@ Os e2e usam o banco `kore_test` no mesmo Postgres do compose (`.env.test`): o
 de teste ligam `--experimental-vm-modules` porque o runtime do Prisma 7 carrega o
 query compiler (wasm) por import dinâmico.
 
+## Estrutura de pastas
+
+Monolito modular em camadas (hexagonal: portas e adaptadores). Cada pasta de
+`src/modules/` é um contexto de negócio; `src/shared/` tem o que é comum a todos.
+
+```
+src/
+  main.ts, worker.ts         # pontos de entrada da API e do worker
+  app/                       # módulos raiz (AppModule, WorkerModule)
+  cli/                       # comandos fora da API: seed, openapi-export
+  shared/                    # banco, filas, e-mail, http, config, observabilidade…
+  modules/<modulo>/
+    <modulo>.module.ts, <modulo>-worker.module.ts
+    domain/                  # regras puras, sem Nest nem Prisma
+    application/
+      ports/                 # interfaces que a infraestrutura implementa
+      <feature>/             # casos de uso agrupados por assunto (módulos grandes)
+    infrastructure/
+      persistence/           # prisma-*.store / reader / repository
+      backoffice/            # acesso BYPASSRLS — só aqui (regra do ESLint)
+      jobs/                  # *.job, *.queue, processors, bullmq-*
+      mail/                  # outbox-*-mailer e templates/ dos e-mails
+      providers/             # demais adaptadores (OIDC, hashers, renderizadores…)
+    presentation/
+      controllers/  dto/  errors/
+      http/                  # guards, decorators, interceptors, cookies
+test/e2e/
+  <modulo>/*.e2e-spec.ts
+  setup/                     # globalSetup e setupFiles do Jest
+  support/harness/           # app e worker de teste, sessões, Mailpit
+  support/factories/         # criação de dados (casamentos, convites, pagamentos…)
+```
+
+- Testes unitários (`*.spec.ts`) ficam ao lado do arquivo testado.
+- Imports de `src/` usam o alias `@/` (`@/modules/<modulo>/…`, `@/shared/…`,
+  `tsconfig.json`); só arquivos da mesma pasta usam `./`.
+- Subpasta só quando a pasta passa de ~10 arquivos; módulos pequenos ficam planos.
+
 ## Configuração e banco
 
 As variáveis ficam em `.env` (copie de `.env.example`) e são validadas na subida:

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
-import type { PurgeCounts, TrashPurge } from '../../application/ports/trash-purge.port';
-import { DEFAULT_TIMEZONE, TRASH_RETENTION_DAYS } from '../../domain/trash';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import type { PurgeCounts, TrashPurge } from '@/modules/guests/application/ports/trash-purge.port';
+import { DEFAULT_TIMEZONE, TRASH_RETENTION_DAYS } from '@/modules/guests/domain/trash';
 
 /**
  * Pela conexão do backoffice (sem RLS), numa transação. A regra de data é a

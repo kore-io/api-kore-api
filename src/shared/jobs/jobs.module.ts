@@ -1,6 +1,6 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Global, Module } from '@nestjs/common';
-import { AppConfigService } from '../config/app-config.service';
+import { AppConfigService } from '@/shared/config/app-config.service';
 
 /**
  * Filas e rotinas agendadas com BullMQ, no mesmo Redis da API. O prefixo
