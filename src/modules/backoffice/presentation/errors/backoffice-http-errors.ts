@@ -36,6 +36,8 @@ import {
   AlertAlreadyResolvedError,
   AlertNotFoundError,
   AdminWeddingNotFoundError,
+  IntegrationNotConfiguredError,
+  InvalidReferralSettingsError,
   AlreadyBlockedError,
   NotBlockedError,
 } from '@/modules/backoffice/domain/backoffice.errors';
@@ -114,6 +116,19 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 404,
       error: 'GUEST_NOT_FOUND',
       message: 'Guest not found.',
+    });
+  if (error instanceof InvalidReferralSettingsError)
+    return new UnprocessableEntityException({
+      statusCode: 422,
+      error: 'REFERRAL_SETTINGS_OUT_OF_RANGE',
+      message: error.errors.map((field) => `${field.path}: ${field.code}`),
+      errors: error.errors,
+    });
+  if (error instanceof IntegrationNotConfiguredError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'INTEGRATION_NOT_CONFIGURED',
+      message: 'This integration is not configured yet.',
     });
   if (error instanceof ChecksRequiredError)
     return new UnprocessableEntityException({

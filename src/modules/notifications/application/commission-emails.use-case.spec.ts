@@ -26,7 +26,7 @@ function setup(state: Partial<LockedCommissionEmail> = {}) {
     },
   };
   const send = jest.fn().mockResolvedValue(undefined);
-  const useCase = new CommissionEmails(store, { send }, { record: jest.fn() }, {
+  const useCase = new CommissionEmails(store, { send, ping: jest.fn() }, { record: jest.fn() }, {
     get: () => 'http://localhost:5173/',
   } as unknown as AppConfigService);
   return { useCase, send, cursors };

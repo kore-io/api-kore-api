@@ -10,7 +10,7 @@ function build({ add }: { add: jest.Mock }) {
   const defaultAdd = jest.fn().mockResolvedValue({});
   const defaultQueue = { add: defaultAdd } as unknown as Queue;
   const send = jest.fn().mockResolvedValue(undefined);
-  const sender: EmailSender = { send };
+  const sender: EmailSender = { send, ping: jest.fn() };
   return { outbox: new BullmqEmailOutbox(loginQueue, defaultQueue, sender), send, defaultAdd };
 }
 
