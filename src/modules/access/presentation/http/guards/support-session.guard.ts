@@ -67,7 +67,8 @@ export class SupportSessionGuard implements CanActivate {
       auth.staffDomain === this.config.staffDomain &&
       (await this.store.staffRoleOf({ userId: auth.userId })) !== null;
     if (!staff) {
-      await this.store.end({ id: session.id, reason: 'exit', now });
+      // Motivo próprio na auditoria: não foi o Sair (revisão do Crivo no 11c).
+      await this.store.end({ id: session.id, reason: 'role_revoked', now });
       throw new ForbiddenException({
         statusCode: 403,
         error: 'STAFF_ONLY',
