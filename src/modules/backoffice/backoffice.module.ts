@@ -35,6 +35,10 @@ import { PrismaAdminWeddingsReader } from './infrastructure/backoffice/prisma-ad
 import { PrismaStaffDirectory } from './infrastructure/backoffice/prisma-staff-directory';
 import { AdminWeddingsController } from './presentation/controllers/admin-weddings.controller';
 import { StaffGuard } from './presentation/http/guards/staff.guard';
+import { AdminReferrers } from './application/admin-referrers.use-cases';
+import { ADMIN_REFERRERS_READER } from './application/ports/admin-referrers.reader.port';
+import { PrismaAdminReferrersReader } from './infrastructure/backoffice/prisma-admin-referrers.reader';
+import { AdminReferrersReadController } from './presentation/controllers/admin-referrers-read.controller';
 
 /**
  * O Backoffice da equipe do Kore (/v1/admin; Backoffice - acesso), pela
@@ -49,6 +53,7 @@ import { StaffGuard } from './presentation/http/guards/staff.guard';
     AdminWeddingsController,
     AdminInsightsController,
     SupportSessionsController,
+    AdminReferrersReadController,
   ],
   providers: [
     { provide: STAFF_DIRECTORY, useClass: PrismaStaffDirectory },
@@ -71,6 +76,8 @@ import { StaffGuard } from './presentation/http/guards/staff.guard';
     { provide: ADMIN_INSIGHTS_READER, useClass: PrismaAdminInsightsReader },
     { provide: SEARCH_TERM_HASHER, useClass: HmacSearchTermHasher },
     AdminInsights,
+    { provide: ADMIN_REFERRERS_READER, useClass: PrismaAdminReferrersReader },
+    AdminReferrers,
   ],
 })
 export class BackofficeModule {}
