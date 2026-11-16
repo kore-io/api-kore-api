@@ -214,14 +214,16 @@ export function plannerImmediateEmail({ context }: { context: PlannerEmailContex
       kind: 'paragraph',
       text:
         context.groupCount === 1
-          ? `Hoje, 1 grupo respondeu o convite de ${couple}.`
-          : `Hoje, ${context.groupCount} grupos responderam o convite de ${couple}.`,
+          ? `1 grupo respondeu o convite de ${couple}.`
+          : `${context.groupCount} grupos responderam o convite de ${couple}.`,
     },
     { kind: 'paragraph', text: totalsLine(context.totals) },
     { kind: 'button', text: 'Abrir o casamento', href: context.weddingUrl },
   ];
-  // O pré-cabeçalho e o rodapé do "Na hora" do casal, que já falam com você.
-  const footer = `Você recebe este e-mail porque escolheu receber as respostas na hora. Para mudar, abra Configurações › Notificações no Kore. ${context.settingsUrl}`;
+  // Sem "Hoje,": o agrupado de 15 minutos pode sair depois da meia-noite
+  // (decisão 274(5)). O pré-cabeçalho é o do casal; o rodapé diz "dos seus
+  // casamentos", porque a preferência dela vale para todos (decisão 274(3)).
+  const footer = `Você recebe este e-mail porque escolheu receber as respostas dos seus casamentos na hora. Para mudar, abra Configurações › Notificações no Kore. ${context.settingsUrl}`;
   return {
     to: context.to,
     subject: oneLine(`${groupsPhrase(context.groupCount)} em ${couple}`),

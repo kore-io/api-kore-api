@@ -121,7 +121,10 @@ describe('Envio das notificações da cerimonialista (worker)', () => {
     expect(message.Subject).toBe('1 grupo respondeu em Ana e Marcos');
     const text = await textOf(message.ID);
     expect(text).toContain('Olá, Juliana.');
-    expect(text).toContain('Hoje, 1 grupo respondeu o convite de Ana e Marcos.');
+    // Sem "Hoje" (decisão 274(5)); o rodapé fala dos casamentos dela (274(3)).
+    expect(text).toContain('1 grupo respondeu o convite de Ana e Marcos.');
+    expect(text).not.toContain('Hoje');
+    expect(text).toContain('escolheu receber as respostas dos seus casamentos na hora');
     expect(text).toContain(`/cerimonialista/casamentos/${weddingId}`);
     expect(text).not.toContain('Família Moreira');
   });
