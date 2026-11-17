@@ -192,6 +192,24 @@ describe('Backoffice: Ver como o casal (Backoffice - acesso RN08; banco real)', 
     expect([mine > 0, theirs]).toEqual([true, 0]);
   });
 
+  it('RN08 (decisão 275) - a wedding_partner_names, no papel do suporte, só devolve os nomes do casamento da sessão', async () => {
+    const { weddingId } = await viewing();
+    const other = await couple();
+    const prisma = app.get(PrismaService);
+    const namesAs = async (wedding: string) =>
+      prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT set_config('app.wedding_id', ${weddingId}, true)`;
+        await tx.$executeRaw`SET LOCAL ROLE kore_support`;
+        const [row] = await tx.$queryRaw<{ names: string[] }[]>`
+          SELECT wedding_partner_names(${wedding}::uuid) AS names`;
+        return row.names;
+      });
+    expect((await namesAs(weddingId)).length).toBeGreaterThan(0);
+    expect(await namesAs(other.weddingId)).toEqual([]);
+    // Fora do papel do suporte a função segue igual: os e2e da notificação
+    // wedding_published (planner-notifications) conferem o partnerNames.
+  });
+
   it('RN02 e RN08 (decisão 69) - o banco garante também as colunas: do pagamento só o ciclo, de quem tem acesso só nome, e-mail e foto e só deste casamento; do indicador só o tipo, e só os membros ativos', async () => {
     const { weddingId } = await viewing();
     const prisma = app.get(PrismaService);
