@@ -321,6 +321,93 @@ describe('Dados para receber: CPF ou CNPJ e chave Pix (Repasse RN02 e RN03; banc
     ]);
   });
 
+  it('RN06 (b) - vencidas as 48 h, o repasse retido pela troca volta sozinho a solicitado', async () => {
+    const person = await juliana();
+    await withActiveKey(person);
+    const active = await db.referrerPixKey.findFirstOrThrow({
+      where: { referrerId: person.referrerId, status: 'active' },
+    });
+    const payout = await db.payout.create({
+      data: {
+        id: uuidV7(),
+        referrerId: person.referrerId,
+        amountCents: 15_804,
+        pixKeyId: active.id,
+        pixKeyMasked: active.keyMasked,
+        externalRef: `payout-${uuidV7()}`,
+        idempotencyKey: uuidV7(),
+        requestedAt: new Date(),
+      },
+    });
+    await requestKey(person.cookie, { keyType: 'phone', key: '(19) 99876-3310' }).expect(201);
+    const { token } = await linkFromEmail(person.email, 'Confirme a troca da chave Pix');
+    const confirmed = await confirmKey(person.cookie, token!).expect(200);
+    expect((await db.payout.findUniqueOrThrow({ where: { id: payout.id } })).status).toBe('held');
+
+    await worker.get(ActivatePixKeys).execute({
+      now: new Date(new Date(confirmed.body.activeFrom).getTime() + 60_000),
+      referrerId: person.referrerId,
+    });
+    expect(await db.payout.findUniqueOrThrow({ where: { id: payout.id } })).toMatchObject({
+      status: 'requested',
+      holdReason: null,
+    });
+  });
+
+  it('RN03 - o Cancelar da troca também pede sessão recente', async () => {
+    const person = await juliana();
+    await withActiveKey(person);
+    await requestKey(person.cookie, { keyType: 'phone', key: '(19) 99876-3310' }).expect(201);
+    const { token } = await linkFromEmail(person.email, 'Confirme a troca da chave Pix');
+    const confirmed = await confirmKey(person.cookie, token!).expect(200);
+    await db.session.updateMany({
+      where: { userId: person.userId },
+      data: { authenticatedAt: new Date(Date.now() - 2 * HOUR) },
+    });
+    expect((await cancelKey(person.cookie, confirmed.body.id).expect(403)).body.error).toBe(
+      'REAUTH_REQUIRED',
+    );
+    expect(
+      (await db.referrerPixKey.findUniqueOrThrow({ where: { id: confirmed.body.id } })).status,
+    ).toBe('pending_activation');
+  });
+
+  it('RN02 e RN03 - o CPF e a chave ficam cifrados no banco, nunca o valor aberto', async () => {
+    const person = await juliana();
+    const cpf = randomCpf();
+    await setTaxId(person.cookie, { taxIdType: 'cpf', taxId: cpf }).expect(200);
+    await withActiveKey(person);
+    const referrer = await db.referrer.findUniqueOrThrow({ where: { id: person.referrerId } });
+    expect(referrer.taxIdEncrypted).toEqual(expect.any(String));
+    expect(referrer.taxIdEncrypted).not.toContain(cpf);
+    expect(referrer.taxIdHash).not.toContain(cpf);
+    const key = await db.referrerPixKey.findFirstOrThrow({
+      where: { referrerId: person.referrerId, status: 'active' },
+    });
+    expect(key.keyEncrypted.toLowerCase()).not.toContain('pradoassessoria');
+    expect(key.keyHash.toLowerCase()).not.toContain('pradoassessoria');
+  });
+
+  it('isolamento - a chave de outra indicadora: confirmar com o token dela e cancelar pelo id dela dão 404, e nada muda', async () => {
+    const owner = await juliana();
+    await withActiveKey(owner);
+    await requestKey(owner.cookie, { keyType: 'phone', key: '(19) 99876-3310' }).expect(201);
+    const { token } = await linkFromEmail(owner.email, 'Confirme a troca da chave Pix');
+    const intruder = await juliana();
+    await confirmKey(intruder.cookie, token!).expect(404);
+    const pending = await db.referrerPixKey.findFirstOrThrow({
+      where: { referrerId: owner.referrerId, status: 'pending_confirmation' },
+    });
+    await cancelKey(intruder.cookie, pending.id).expect(404);
+    expect((await db.referrerPixKey.findUniqueOrThrow({ where: { id: pending.id } })).status).toBe(
+      'pending_confirmation',
+    );
+    // A dona ainda confirma com o mesmo token.
+    expect((await confirmKey(owner.cookie, token!).expect(200)).body.status).toBe(
+      'pending_activation',
+    );
+  });
+
   it('RN03 (decisão 244(5)) - a 3ª troca confirmada em 24 h abre o alerta pix_key_churn', async () => {
     const person = await juliana();
     await withActiveKey(person);
