@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@/generated/prisma/client';
 import { BACKOFFICE_DB_ROLE } from '@/shared/database/backoffice-prisma.service';
@@ -7,7 +6,9 @@ import { changePlatformRole, parsePlatformRoleArgs } from './change-platform-rol
 /**
  * pnpm staff:role: dá ou tira o papel do staff (Backoffice - acesso RN01;
  * decisão 275), pela conexão do backoffice, com a linha no log da aplicação.
- * Roda em qualquer ambiente: é assim que nasce o primeiro Admin.
+ * Roda em qualquer ambiente: é assim que nasce o primeiro Admin. Sem o
+ * dotenv (devDependency, fora da imagem de produção): as variáveis vêm do
+ * host; em local, `node --env-file=.env` (o `pnpm staff:role`).
  */
 async function main(): Promise<void> {
   const input = parsePlatformRoleArgs({ argv: process.argv.slice(2) });

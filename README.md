@@ -105,6 +105,14 @@ pnpm staff:role --email renata@kore.com.br --role admin --by ops@kore.com.br --r
 pnpm staff:role --email renata@kore.com.br --role none --by ops@kore.com.br --reason "Saiu da equipe"
 ```
 
+Em homolog e produção não há `pnpm` nem `.env` na imagem (`pnpm prune --prod`): o
+script roda do `dist`, com as variáveis do host (só a `DATABASE_BACKOFFICE_URL`),
+dentro do container da API:
+
+```bash
+node dist/cli/platform-role/main --email renata@kore.com.br --role admin --by ops@kore.com.br --reason "Entrada na equipe"
+```
+
 A API conecta como `kore_api`, membro do papel `kore_app` (sujeito à RLS). As
 migrations rodam com o dono do schema (`DATABASE_MIGRATION_URL`).
 

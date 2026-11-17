@@ -28,7 +28,7 @@
     "storage:setup": "node scripts/storage/setup-local-buckets.mts",
     "crypto:new-data-key": "node scripts/crypto/new-data-key.mts",
     "db:seed": "nest build && node dist/cli/seed/main",
-    "staff:role": "nest build && node dist/cli/platform-role/main",
+    "staff:role": "nest build && node --env-file=.env dist/cli/platform-role/main",
     "start:worker": "nest start --entryFile worker",
     "start:worker:dev": "nest start --watch --entryFile worker",
     "start:worker:prod": "node dist/worker",
