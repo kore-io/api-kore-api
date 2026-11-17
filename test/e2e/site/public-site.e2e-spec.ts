@@ -231,6 +231,30 @@ describe('Site público do casal: visitante e prévia do link (banco real)', () 
     expect(body).toMatchObject({ viewer: { kind: 'visitor' }, contact: null });
   });
 
+  it('Casamento bloqueado RN05 e Data de saída RN08 (decisão 275) - a prévia do link do site fora do ar: 423 no bloqueado, 410 no expirado e com a exclusão agendada, sem dado do casal e no-store', async () => {
+    const cases = [
+      { data: { blockedAt: new Date() }, status: 423, error: 'SITE_UNAVAILABLE' },
+      { data: { status: 'expired' as const }, status: 410, error: 'SITE_EXPIRED' },
+      {
+        data: { deletionScheduledFor: new Date(Date.now() + 7 * 86_400_000) },
+        status: 410,
+        error: 'SITE_EXPIRED',
+      },
+    ];
+    for (const { data, status, error } of cases) {
+      const { slug, weddingId } = await publishedWedding();
+      // Publicado, a prévia é cacheada por 5 minutos (Site público RN03).
+      expect((await linkPreview(slug).expect(200)).headers['cache-control']).toBe(
+        'public, max-age=300',
+      );
+      await db.wedding.update({ where: { id: weddingId }, data });
+      const response = await linkPreview(slug).expect(status);
+      expect(response.body.error).toBe(error);
+      expect(response.headers['cache-control']).toBe('no-store');
+      expect(JSON.stringify(response.body)).not.toMatch(/Ana|Marcos|og\.jpg/);
+    }
+  });
+
   it('RN09 - a prévia do link: publicado com a og.jpg da capa; rascunho e endereço inexistente iguais e genéricos', async () => {
     const published = await publishedWedding();
     const draft = await publishedWedding({ status: 'draft' });

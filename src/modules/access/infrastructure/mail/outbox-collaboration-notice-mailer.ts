@@ -9,10 +9,11 @@ import type {
 import { coupleAcceptedEmail, plannerLeftEmail } from './templates/collaboration-notices.email';
 
 /**
- * Colaboradores fica na Área do Casal (decisão 136(3), como o aviso de
- * recusa); o detalhe do casamento, na Área da cerimonialista.
+ * Colaboradores fica na Área do Casal, na tela própria (decisão 136(3), D5b
+ * da F6, como o aviso de recusa); o detalhe do casamento, na Área da
+ * cerimonialista.
  */
-const COUPLE_AREA_PATH = '/app';
+const COUPLE_COLLABORATORS_PATH = '/app/colaboradores';
 const plannerWeddingPath = (weddingId: string) =>
   `/cerimonialista/casamentos/${encodeURIComponent(weddingId)}`;
 
@@ -28,7 +29,7 @@ export class OutboxCollaborationNoticeMailer implements CollaborationNoticeMaile
   }
 
   async plannerLeft({ notice }: { notice: PlannerLeftNotice }): Promise<void> {
-    const url = new URL(COUPLE_AREA_PATH, this.appUrl).toString();
+    const url = new URL(COUPLE_COLLABORATORS_PATH, this.appUrl).toString();
     await this.outbox.enqueue({ message: plannerLeftEmail({ notice, url }), priority: 'default' });
   }
 

@@ -7,8 +7,11 @@ import type {
 } from '@/modules/access/application/ports/decline-notice-mailer.port';
 import { declineNoticeEmail } from './templates/decline-notice.email';
 
-/** Dono → Área do Casal; indicador → Seleção de perfil (decisões 146 e 172). */
-const OWNER_PATH = '/app';
+/**
+ * Dono → Colaboradores na Área do Casal (decisão 136(3); a tela do D5b da F6);
+ * indicador → Seleção de perfil (decisões 146 e 172).
+ */
+const OWNER_PATH = '/app/colaboradores';
 const REFERRER_PATH = '/perfis';
 
 @Injectable()

@@ -170,7 +170,13 @@ export class PublicSiteController {
    * pode guardar a resposta: a de um grupo não pode chegar a um visitante (RN03).
    */
   @Get()
-  @ApiErrorResponses(...commonErrors({}), SiteNotFoundErrorBody, SiteDraftErrorBody)
+  @ApiErrorResponses(
+    ...commonErrors({}),
+    SiteNotFoundErrorBody,
+    SiteDraftErrorBody,
+    SiteExpiredErrorBody,
+    SiteUnavailableErrorBody,
+  )
   async get(
     @Param('slug') slug: string,
     @Req() request: Request,
@@ -238,18 +244,30 @@ export class SiteLinkPreviewController {
 
   /** Cacheada 5 minutos, sem purga na F2 (decisão 207, item 10); sem dado de grupo. */
   @Get('preview')
-  @ApiErrorResponses(...commonErrors({ validated: true }))
+  @ApiErrorResponses(
+    ...commonErrors({ validated: true }),
+    SiteExpiredErrorBody,
+    SiteUnavailableErrorBody,
+  )
   async preview(
     @Param('slug') slug: string,
     @Res({ passthrough: true }) response: Response,
   ): Promise<SiteLinkPreviewResponse> {
     response.setHeader('X-Robots-Tag', NO_INDEX);
+    // O erro (o site fora do ar) não fica em cache nenhum (decisão 275); só a
+    // prévia respondida é cacheada (Site público RN03).
+    response.setHeader('Cache-Control', 'no-store');
     const normalized = slug.toLowerCase();
     if (!isValidSlugFormat({ slug: normalized }))
       throw validationError({
         errors: [{ path: 'slug', code: 'SLUG_INVALID_FORMAT', params: {} }],
       });
-    response.setHeader('Cache-Control', 'public, max-age=300');
-    return this.getPreview.execute({ slug: normalized });
+    try {
+      const preview = await this.getPreview.execute({ slug: normalized });
+      response.setHeader('Cache-Control', 'public, max-age=300');
+      return preview;
+    } catch (error) {
+      throw toHttpError(error);
+    }
   }
 }

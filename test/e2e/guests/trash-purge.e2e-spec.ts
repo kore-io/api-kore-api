@@ -103,6 +103,61 @@ describe('Expurgo da lixeira (worker)', () => {
     expect(log).toMatchObject({ actorKind: 'system', data: expect.objectContaining(counts) });
   });
 
+  it('RN10 e Casamento bloqueado RN06 - no casamento bloqueado a lixeira para; os vencidos saem quando o bloqueio sai', async () => {
+    const weddingId = await wedding();
+    const partyId = (await db.party.create({ data: { weddingId, name: 'A', linkToken: token() } }))
+      .id;
+    const expired = await db.guest.create({
+      data: { weddingId, partyId, name: 'Vencido', deletedAt: daysAgo(40) },
+    });
+    await db.wedding.update({ where: { id: weddingId }, data: { blockedAt: new Date() } });
+
+    await worker.get(TrashPurgeProcessor).process();
+    expect(await db.guest.findUnique({ where: { id: expired.id } })).not.toBeNull();
+
+    await db.wedding.update({ where: { id: weddingId }, data: { blockedAt: null } });
+    await worker.get(TrashPurgeProcessor).process();
+    expect(await db.guest.findUnique({ where: { id: expired.id } })).toBeNull();
+  });
+
+  it('Retenção RN04 - a rotina trava os números do casamento antes de apagar: com um restaurar segurando-os, ela espera', async () => {
+    const weddingId = await wedding();
+    const partyId = (await db.party.create({ data: { weddingId, name: 'A', linkToken: token() } }))
+      .id;
+    const expired = await db.guest.create({
+      data: { weddingId, partyId, name: 'Vencido', deletedAt: daysAgo(40) },
+    });
+    let release!: () => void;
+    let locked!: () => void;
+    const released = new Promise<void>((resolve) => (release = resolve));
+    const isLocked = new Promise<void>((resolve) => (locked = resolve));
+    // Como o restaurar: trava a linha dos números do casamento.
+    const holder = db.$transaction(
+      async (tx) => {
+        await tx.$queryRaw`SELECT 1 FROM wedding_stats WHERE wedding_id = ${weddingId}::uuid FOR UPDATE`;
+        locked();
+        await released;
+      },
+      { timeout: 15_000 },
+    );
+    await isLocked;
+    let stillLocked = true;
+    let finishedWhileLocked = false;
+    const purge = worker
+      .get(TrashPurgeProcessor)
+      .process()
+      .then(() => {
+        finishedWhileLocked = stillLocked;
+      });
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    stillLocked = false;
+    release();
+    await holder;
+    await purge;
+    expect(finishedWhileLocked).toBe(false);
+    expect(await db.guest.findUnique({ where: { id: expired.id } })).toBeNull();
+  });
+
   it('RN10 - a data é a do fuso do casamento: no dia purgeAt ainda fica; no seguinte, sai', async () => {
     const weddingId = await wedding();
     const partyId = (await db.party.create({ data: { weddingId, name: 'A', linkToken: token() } }))

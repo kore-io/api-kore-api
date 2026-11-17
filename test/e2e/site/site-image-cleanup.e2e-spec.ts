@@ -200,6 +200,33 @@ describe('Imagens do site: limpeza diária (worker)', () => {
     expect(log.data).toMatchObject({ now: now.toISOString() });
   });
 
+  it('RN08 e Casamento bloqueado RN06 - no casamento bloqueado a limpeza para; no desbloqueio, a foto fora de uso sai', async () => {
+    const weddingId = await wedding();
+    const now = testNow();
+    const id = await image({
+      weddingId,
+      status: 'ready',
+      updatedAt: new Date(now.getTime() - 30 * HOUR_MS),
+      unusedSince: new Date(now.getTime() - 25 * HOUR_MS),
+    });
+    await db.wedding.update({ where: { id: weddingId }, data: { blockedAt: new Date() } });
+    const cleanup = worker.get<SiteImageCleanup>(SITE_IMAGE_CLEANUP);
+    expect(await cleanup.weddingsWithCandidates({ now })).not.toContain(weddingId);
+
+    let only = onlyWedding(weddingId);
+    await clean.execute({ now });
+    only.mockRestore();
+    expect(await exists(id)).toBe(true);
+    expect(await files(id)).toBe(3);
+
+    await db.wedding.update({ where: { id: weddingId }, data: { blockedAt: null } });
+    only = onlyWedding(weddingId);
+    await clean.execute({ now });
+    only.mockRestore();
+    expect(await exists(id)).toBe(false);
+    expect(await files(id)).toBe(0);
+  });
+
   it('RN08 - a foto que voltou a ser usada antes da rodada não é apagada (reconferido na transação)', async () => {
     const weddingId = await wedding();
     const now = testNow();

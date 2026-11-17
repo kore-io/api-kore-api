@@ -3,6 +3,7 @@ import type { TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { addDays, addMonths } from '@/modules/billing/domain/payments/pricing';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import { PrismaService } from '@/shared/database/prisma.service';
 import { localDate } from '@/shared/kernel/time/local-date';
 import { createTestApp } from '../support/harness/create-test-app';
 import { createTestWorker } from '../support/harness/create-test-worker';
@@ -326,6 +327,7 @@ describe('Extensão e data de saída do ar (Data de saída do ar RN04 e RN05; ba
       endDate: addMonths({ day: endDate, months: 1 }),
     });
     expect(blockedPay.status).toBe(403);
+    expect(blockedPay.body).toMatchObject({ error: 'WEDDING_BLOCKED' });
     await db.wedding.update({
       where: { id: weddingId },
       data: { blockedAt: null, deletionScheduledFor: day(addDays({ day: today, days: 7 })) },
@@ -334,6 +336,15 @@ describe('Extensão e data de saída do ar (Data de saída do ar RN04 e RN05; ba
       (await patchEndDate(ana.cookie, weddingId, addDays({ day: endDate, days: -1 })).expect(409))
         .body,
     ).toMatchObject({ error: 'WEDDING_DELETION_SCHEDULED' });
+    // Retenção RN05: com a exclusão agendada, a extensão também não é paga.
+    const scheduledPay = await payForExtension({
+      app,
+      cookie: ana.cookie,
+      weddingId,
+      endDate: addMonths({ day: endDate, months: 1 }),
+    });
+    expect(scheduledPay.status).toBe(409);
+    expect(scheduledPay.body).toMatchObject({ error: 'WEDDING_DELETION_SCHEDULED' });
 
     const draft = await signedInUser({ app });
     const { weddingId: draftId } = await seedWedding({ db, ownerId: draft.userId });
@@ -341,5 +352,68 @@ describe('Extensão e data de saída do ar (Data de saída do ar RN04 e RN05; ba
       (await patchEndDate(draft.cookie, draftId, addDays({ day: today, days: 30 })).expect(409))
         .body,
     ).toMatchObject({ error: 'NOT_PUBLISHED' });
+  });
+
+  it('RN05 - o 422 também antes do casamento por vir; o publicado por Cortesia (sem paidThrough) só antecipa, até a endDate dele', async () => {
+    const { ana, weddingId } = await published();
+    const eventDate = addMonths({ day: today, months: 1 });
+    await db.wedding.update({
+      where: { id: weddingId },
+      data: {
+        status: 'published',
+        eventDate: day(eventDate),
+        endDate: day(addMonths({ day: eventDate, months: 2 })),
+        paidThrough: day(addMonths({ day: eventDate, months: 2 })),
+      },
+    });
+    const before = await patchEndDate(ana.cookie, weddingId, eventDate).expect(422);
+    expect(before.body).toMatchObject({ error: 'END_DATE_OUT_OF_RANGE' });
+
+    const courtesy = await published();
+    const current = (await wedding(courtesy.weddingId)).endDate!.toISOString().slice(0, 10);
+    await db.wedding.update({
+      where: { id: courtesy.weddingId },
+      data: { publicationSource: 'courtesy', paidThrough: null },
+    });
+    const beyond = await patchEndDate(
+      courtesy.ana.cookie,
+      courtesy.weddingId,
+      addDays({ day: current, days: 1 }),
+    ).expect(422);
+    expect(beyond.body).toMatchObject({ error: 'END_DATE_BEYOND_PAID' });
+    const earlier = addDays({ day: current, days: -3 });
+    await patchEndDate(courtesy.ana.cookie, courtesy.weddingId, earlier).expect(200);
+    expect(await wedding(courtesy.weddingId)).toMatchObject({
+      endDate: day(earlier),
+      paidThrough: null,
+    });
+  });
+
+  it('RN05 e RN10 (isolamento) - a dona de outro casamento: 404 e nada muda; a set_wedding_end_date no kore_app não muda o casamento de outra pessoa nem passa dos limites', async () => {
+    const { ana, weddingId } = await published();
+    const other = await published();
+    const before = await wedding(weddingId);
+    const target = addDays({ day: before.endDate!.toISOString().slice(0, 10), days: -2 });
+    const refused = await patchEndDate(other.ana.cookie, weddingId, target).expect(404);
+    expect(refused.body).toMatchObject({ error: 'WEDDING_NOT_FOUND' });
+    expect((await wedding(weddingId)).endDate).toEqual(before.endDate);
+
+    // A função, direto no papel do app: só a dona, e só entre amanhã e o paidThrough.
+    const prisma = app.get(PrismaService);
+    const call = (userId: string, endDate: string) =>
+      prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT set_config('app.user_id', ${userId}, true)`;
+        const [row] = await tx.$queryRaw<{ status: string | null }[]>`
+          SELECT set_wedding_end_date(${weddingId}::uuid, ${endDate}::date, ${today}::date, now())
+            AS status`;
+        return row.status;
+      });
+    const paidThrough = before.paidThrough!.toISOString().slice(0, 10);
+    expect(await call(other.ana.userId, target)).toBeNull();
+    expect(await call(ana.userId, addDays({ day: paidThrough, days: 1 }))).toBeNull();
+    expect(await call(ana.userId, today)).toBeNull();
+    expect((await wedding(weddingId)).endDate).toEqual(before.endDate);
+    expect(await call(ana.userId, target)).toBe('post_event');
+    expect((await wedding(weddingId)).endDate).toEqual(day(target));
   });
 });

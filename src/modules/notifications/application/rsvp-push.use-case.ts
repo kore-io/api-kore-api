@@ -95,6 +95,8 @@ export class RsvpPush {
     if (!this.sender.enabled()) return { sent: 0 };
     const recipient = await this.store.recipient({ userId, weddingId, type, now });
     if (!recipient.member || !recipient.push || !recipient.notification) return { sent: 0 };
+    // Casamento bloqueado RN06: o push das respostas para (o RSVP já está fechado).
+    if (type === 'rsvp' && recipient.weddingBlocked) return { sent: 0 };
 
     const stale = recipient.subscriptions.filter(
       (subscription) =>

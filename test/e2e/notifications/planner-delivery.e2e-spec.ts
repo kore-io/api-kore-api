@@ -267,6 +267,24 @@ describe('Envio das notificações da cerimonialista (worker)', () => {
     expect(await inbox({ to: juliana.email })).toHaveLength(1);
   });
 
+  it('Casamento bloqueado RN06 - o casamento bloqueado fica fora do Resumo dela, e o cursor dele não anda', async () => {
+    const juliana = await planner();
+    const collaborating = await collaboration(juliana);
+    await db.wedding.update({
+      where: { id: collaborating.weddingId },
+      data: { blockedAt: new Date() },
+    });
+    const now = evening(3);
+
+    expect(await digest.send({ userId: juliana.userId, now })).toBe(false);
+    expect(await inbox({ to: juliana.email })).toHaveLength(0);
+    expect(
+      await db.notificationEmailState.findUnique({
+        where: { userId_weddingId: { userId: juliana.userId, weddingId: collaborating.weddingId } },
+      }),
+    ).toBeNull();
+  });
+
   it('RN07 e D18 - antes das 20h nada sai; a colaboração encerrada e o casamento de que é dona ficam fora', async () => {
     const juliana = await planner();
     const { weddingId } = await collaboration(juliana);

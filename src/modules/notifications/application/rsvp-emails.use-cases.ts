@@ -97,7 +97,8 @@ export class RsvpEmails {
       userId,
       weddingId,
       work: async (state) => {
-        if (!state.member) return null;
+        // Casamento bloqueado RN06: nada sai, e o cursor não anda (retoma no desbloqueio).
+        if (!state.member || state.blocked) return null;
         const groups = pendingGroups({
           payloads: state.payloads,
           emailedThrough: state.emailedThrough,

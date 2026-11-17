@@ -97,7 +97,7 @@ describe('E-mails da RN09 de Notificações da cerimonialista (banco real e Mail
       expect(text).toContain(
         'Juliana Prado (Prado Assessoria) saiu do casamento de Ana e Marcos no Kore.',
       );
-      expect(text).toContain('Abrir Colaboradores: http://localhost:5173/app');
+      expect(text).toContain('Abrir Colaboradores: http://localhost:5173/app/colaboradores');
     }
     expect(await textOf((await inbox({ to: ana.email }))[0].ID)).toContain('Olá, Ana.');
     expect(await textOf((await inbox({ to: marcos.email }))[0].ID)).toContain('Olá, Marcos.');
@@ -107,6 +107,21 @@ describe('E-mails da RN09 de Notificações da cerimonialista (banco real e Mail
         where: { weddingId, userId: { in: [ana.userId, marcos.userId] } },
       }),
     ).toBe(0);
+  });
+
+  it('Casamento bloqueado RN03 e RN06 - Juliana sai do casamento bloqueado: sai, mas o e-mail às donas não', async () => {
+    const { ana, marcos, juliana, weddingId } = await anaAndMarcos();
+    await db.wedding.update({ where: { id: weddingId }, data: { blockedAt: new Date() } });
+
+    await removeMembership(juliana.cookie, weddingId, juliana.membershipId).expect(204);
+
+    expect(
+      (await db.membership.findUniqueOrThrow({ where: { id: juliana.membershipId } })).removedAt,
+    ).not.toBeNull();
+    // O e-mail sai depois do commit: um tempo para ele chegar, se saísse.
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    expect(await inbox({ to: ana.email })).toHaveLength(0);
+    expect(await inbox({ to: marcos.email })).toHaveLength(0);
   });
 
   it('RN09 - com o nome da assessoria igual ao dela, os parênteses saem', async () => {
