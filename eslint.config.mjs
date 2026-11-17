@@ -33,6 +33,8 @@ export default tseslint.config(
       'src/**/*-worker.module.ts',
       // O seed dos dados de exemplo (pnpm db:seed) atravessa os casamentos, como as rotinas.
       'src/cli/seed/**',
+      // O script de operação do platformRole (pnpm staff:role; Backoffice - acesso RN01).
+      'src/cli/platform-role/**',
     ],
     rules: {
       'no-restricted-imports': [
@@ -42,7 +44,7 @@ export default tseslint.config(
             {
               group: ['**/backoffice-prisma.service'],
               message:
-                'BackofficePrismaService (BYPASSRLS) só em infrastructure/backoffice/, nos módulos do worker e no seed.',
+                'BackofficePrismaService (BYPASSRLS) só em infrastructure/backoffice/, nos módulos do worker, no seed e no staff:role.',
             },
           ],
         },
