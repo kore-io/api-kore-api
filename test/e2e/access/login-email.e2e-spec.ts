@@ -6,7 +6,7 @@ import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.ser
 import { PrismaService } from '@/shared/database/prisma.service';
 import { createTestApp } from '../support/harness/create-test-app';
 import { createTestWorker } from '../support/harness/create-test-worker';
-import { latestLoginEmail, waitForInbox } from '../support/harness/mailpit';
+import { latestLoginEmail, loginEmailCodes, waitForInbox } from '../support/harness/mailpit';
 
 // Cada caso usa um IP próprio (X-Forwarded-For): o limite de auth é por IP.
 const uniqueIp = () => `10.${randomInt(255)}.${randomInt(255)}.${randomInt(1, 255)}`;
@@ -176,9 +176,11 @@ describe('Login sem senha por e-mail (Login sem senha e sessão)', () => {
       const locked = await verify({ ip, body: { email, code: wrong } }).expect(410);
 
       expect(locked.body).toMatchObject({ error: 'CHALLENGE_LOCKED', newCodeSent: true });
-      expect(await waitForInbox({ to: email, count: 2 })).toHaveLength(2);
-      const fresh = await latestLoginEmail({ to: email, count: 2 });
-      await verify({ ip: uniqueIp(), body: { email, code: fresh.code } }).expect(200);
+      // O código novo é o que não é o primeiro: a ordem do Mailpit no mesmo segundo varia.
+      const codes = await loginEmailCodes({ to: email, count: 2 });
+      expect(codes).toHaveLength(2);
+      const fresh = codes.find((item) => item !== code)!;
+      await verify({ ip: uniqueIp(), body: { email, code: fresh } }).expect(200);
     });
   });
 
