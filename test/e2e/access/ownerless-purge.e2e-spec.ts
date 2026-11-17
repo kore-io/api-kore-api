@@ -424,6 +424,55 @@ describe('Expurgo do casamento sem dono (RN13 de Convites; decisões 136 e 180; 
     expect(await stored(otherKeys)).toBe(4);
   });
 
+  it('Casamento bloqueado RN06 e decisão 86 - o sem dono bloqueado não recebe o aviso nem é expurgado; desbloqueado, volta à rotina', async () => {
+    const admin = (await db.user.create({ data: { email: `${randomUUID()}@kore.local` } })).id;
+    const quiet = await ownerlessWedding({ lastActivityAt: new Date('2013-01-10T12:00:00Z') });
+    await db.wedding.update({
+      where: { id: quiet.weddingId },
+      data: { blockedAt: new Date('2013-02-01T12:00:00Z'), blockedByUserId: admin },
+    });
+    const noticed = await ownerlessWedding({ lastActivityAt: new Date('2012-01-10T12:00:00Z') });
+    await db.wedding.update({
+      where: { id: noticed.weddingId },
+      data: {
+        blockedAt: new Date('2012-06-10T12:00:00Z'),
+        blockedByUserId: admin,
+        purgeNoticeSentAt: new Date('2012-06-10T12:00:00Z'),
+      },
+    });
+
+    await purge.execute({
+      now: new Date(new Date('2013-07-10T12:00:00Z').getTime() - 30 * day),
+    });
+    await purge.execute({ now: new Date('2012-08-01T12:00:00Z') });
+
+    expect(await db.wedding.findUniqueOrThrow({ where: { id: quiet.weddingId } })).toMatchObject({
+      status: 'awaiting_couple',
+      purgeNoticeSentAt: null,
+    });
+    expect((await db.wedding.findUniqueOrThrow({ where: { id: noticed.weddingId } })).status).toBe(
+      'awaiting_couple',
+    );
+    expect(
+      await db.applicationLog.count({
+        where: {
+          weddingId: { in: [quiet.weddingId, noticed.weddingId] },
+          action: { in: ['wedding.purge_notice_sent', 'wedding.purged'] },
+        },
+      }),
+    ).toBe(0);
+
+    // RN08: desbloquear devolve o casamento à rotina na rodada seguinte.
+    await db.wedding.update({
+      where: { id: noticed.weddingId },
+      data: { blockedAt: null, blockedByUserId: null },
+    });
+    await purge.execute({ now: new Date('2012-08-02T12:00:00Z') });
+    expect((await db.wedding.findUniqueOrThrow({ where: { id: noticed.weddingId } })).status).toBe(
+      'purged',
+    );
+  });
+
   it('RN13 - casamento com dono nunca entra, mesmo parado', async () => {
     const ana = (await db.user.create({ data: { email: `${randomUUID()}@kore.local` } })).id;
     const { weddingId } = await seedWedding({ db, ownerId: ana });
