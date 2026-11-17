@@ -6327,6 +6327,26 @@
             },
             "description": ""
           },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteUnavailableErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
           "429": {
             "content": {
               "application/json": {
@@ -6484,6 +6504,26 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteUnavailableErrorBody"
                 }
               }
             },
@@ -21144,6 +21184,56 @@
           "message"
         ]
       },
+      "SiteExpiredErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              410
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SITE_EXPIRED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SiteUnavailableErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              423
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SITE_UNAVAILABLE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
       "PublicAppearanceResponse": {
         "type": "object",
         "properties": {
@@ -21425,56 +21515,6 @@
             "type": "string",
             "enum": [
               "LINK_INVALID"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
-        ]
-      },
-      "SiteExpiredErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              410
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "SITE_EXPIRED"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
-        ]
-      },
-      "SiteUnavailableErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              423
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "SITE_UNAVAILABLE"
             ]
           },
           "message": {

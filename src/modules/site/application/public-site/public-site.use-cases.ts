@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { SiteExpiredError, SiteUnavailableError } from '@/modules/site/domain/site.errors';
 import {
   OBJECT_STORAGE,
   type ObjectStorage,
@@ -314,7 +315,10 @@ export type SiteLinkPreview =
 /**
  * GET /v1/public/sites/{slug}/preview (Site público RN09): a prévia do link
  * (Open Graph). Nunca local, horário nem data; rascunho e endereço que não
- * existe saem iguais, a prévia genérica do Kore.
+ * existe saem iguais, a prévia genérica do Kore. O site fora do ar responde
+ * como o site (decisão 275): bloqueado, 423 SITE_UNAVAILABLE (Casamento
+ * bloqueado RN05); expirado ou com a exclusão agendada, 410 SITE_EXPIRED
+ * (Data de saída do ar RN08), sem dado do casal.
  */
 @Injectable()
 export class GetSiteLinkPreview {
@@ -325,6 +329,8 @@ export class GetSiteLinkPreview {
 
   async execute({ slug }: { slug: string }): Promise<SiteLinkPreview> {
     const site = await this.reader.bySlug({ slug });
+    if (site && !site.live && site.siteState === 'unavailable') throw new SiteUnavailableError();
+    if (site && !site.live && site.siteState === 'expired') throw new SiteExpiredError();
     if (!site?.live) return { state: 'generic', title: null, description: null, image: null };
     const names = coupleNames({ partners: site.partners });
     const cover = site.images.find((image) => image.id === site.coverImageId);
