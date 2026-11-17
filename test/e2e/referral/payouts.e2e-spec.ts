@@ -120,6 +120,16 @@ describe('Repasse: o pedido e as retenções (Repasse RN04 e RN06; decisão 247;
 
     const key = randomUUID();
     const created = await ask(person.cookie, person.commission.amountCents, key).expect(201);
+    // O log (Mudanças no modelo de dados): payout.requested, pela cerimonialista.
+    expect(
+      await db.applicationLog.findFirstOrThrow({
+        where: { action: 'payout.requested', entityId: created.body.id },
+      }),
+    ).toMatchObject({
+      actorKind: 'user',
+      actorUserId: person.userId,
+      data: { amountCents: person.commission.amountCents },
+    });
     expect(created.body).toMatchObject({
       amountCents: person.commission.amountCents,
       status: 'requested',

@@ -75,3 +75,10 @@ export async function latestLoginEmail({
   if (!code || !token) throw new Error('E-mail sem código ou token.');
   return { subject: latest.Subject, code: `${code[1]}${code[2]}`, token: token[1], text: Text };
 }
+
+/** O texto puro de um e-mail do Mailpit. */
+export async function messageText({ id }: { id: string }): Promise<string> {
+  const response = await fetch(`${MAILPIT_API_URL}/api/v1/message/${id}`);
+  const { Text } = (await response.json()) as { Text: string };
+  return Text;
+}

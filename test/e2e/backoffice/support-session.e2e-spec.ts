@@ -192,6 +192,79 @@ describe('Backoffice: Ver como o casal (Backoffice - acesso RN08; banco real)', 
     expect([mine > 0, theirs]).toEqual([true, 0]);
   });
 
+  it('RN08 e RN02 (decisão 272(2)) - pela API, a Cobrança no Ver como o casal vem como a da colaboradora: só o status e as datas', async () => {
+    const { support, ana, weddingId } = await viewing();
+    const asOwner = await http()
+      .get(`/v1/weddings/${weddingId}/billing`)
+      .set('Cookie', ana.cookie)
+      .expect(200);
+    expect(asOwner.body.payments).toEqual(expect.any(Array));
+
+    const asSupport = await http()
+      .get(`/v1/weddings/${weddingId}/billing`)
+      .set('Cookie', support.cookie)
+      .expect(200);
+    expect(Object.keys(asSupport.body as object).sort()).toEqual(
+      [
+        'awaitingPayment',
+        'endDate',
+        'expiredAt',
+        'graceUntil',
+        'paidThrough',
+        'publicationSource',
+        'publishedAt',
+        'purgeAt',
+        'status',
+      ].sort(),
+    );
+    expect(asSupport.body.status).toBe(asOwner.body.status);
+    const body = JSON.stringify(asSupport.body);
+    for (const hidden of ['Cents', 'method', 'installments', 'payerTaxIdLast4', 'pixCopyPaste'])
+      expect(body).not.toContain(hidden);
+  });
+
+  it('RN08 e Casos de borda - o Ver como o casal abre no casamento bloqueado e no expirado (retenção); bloquear com a sessão aberta mantém a leitura', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const support = await staffUser({ app, role: 'support', name: 'Bruno Tavares' });
+    const read = (cookie: string, weddingId: string) =>
+      http().get(`/v1/weddings/${weddingId}/parties`).set('Cookie', cookie);
+
+    const blocked = await couple();
+    await db.wedding.update({
+      where: { id: blocked.weddingId },
+      data: { blockedAt: new Date() },
+    });
+    await start(support.cookie, blocked.weddingId).expect(201);
+    expect(
+      JSON.stringify((await read(support.cookie, blocked.weddingId).expect(200)).body),
+    ).toContain('Família Moreira');
+
+    const expired = await couple();
+    await db.wedding.update({ where: { id: expired.weddingId }, data: { status: 'expired' } });
+    await start(admin.cookie, expired.weddingId).expect(201);
+    await read(admin.cookie, expired.weddingId).expect(200);
+
+    // O Admin bloqueia o casamento que o suporte está vendo: a sessão segue, só de leitura.
+    const open = await viewing();
+    await http()
+      .post(`/v1/admin/weddings/${open.weddingId}/block`)
+      .set('Cookie', admin.cookie)
+      .set('Origin', ORIGIN)
+      .send({ reason: 'Conteúdo denunciado.' })
+      .expect(200);
+    await read(open.support.cookie, open.weddingId).expect(200);
+    const write = await http()
+      .post(`/v1/weddings/${open.weddingId}/parties`)
+      .set('Cookie', open.support.cookie)
+      .set('Origin', ORIGIN)
+      .send({ name: 'Intrusos', guests: [{ name: 'X', ageGroup: 'adult' }] })
+      .expect(403);
+    expect(write.body.error).toBe('SUPPORT_READ_ONLY');
+    expect(
+      await db.supportSession.findUniqueOrThrow({ where: { id: open.supportSessionId } }),
+    ).toMatchObject({ endedAt: null });
+  });
+
   it('RN08 (decisão 275) - a wedding_partner_names, no papel do suporte, só devolve os nomes do casamento da sessão', async () => {
     const { weddingId } = await viewing();
     const other = await couple();

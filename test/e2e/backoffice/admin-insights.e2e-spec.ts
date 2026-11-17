@@ -1,8 +1,15 @@
 import { INestApplication } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
+import { randomInt, randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import { addMonths } from '@/modules/billing/domain/payments/pricing';
+import {
+  ADMIN_INSIGHTS_READER,
+  type AdminInsightsReader,
+} from '@/modules/backoffice/application/ports/admin-insights.reader.port';
+import { localDate } from '@/shared/kernel/time/local-date';
 import { createTestApp } from '../support/harness/create-test-app';
+import { devPaymentEvent, expectStatus, payForPublication } from '../support/factories/payments';
 import { seedReferrer } from '../support/factories/referrers';
 import { signedInUser, staffUser } from '../support/harness/sessions';
 import { seedWedding } from '../support/factories/weddings';
@@ -109,6 +116,77 @@ describe('Backoffice: visão geral, busca, log e alertas (Backoffice - acesso RN
       };
       expect([wild.weddings.length, wild.referrers.length]).toEqual([0, 0]);
     }
+  });
+
+  it('RN04 - os valores da Visão geral: o mês em Brasília, a Ativação, e a Receita sem os juros do cartão e só com o pagamento aplicado no mês', async () => {
+    // Um mês antigo e sorteado: o kore_test é compartilhado, então o caso mede
+    // a diferença antes e depois das próprias linhas (pelo reader, sem o cache).
+    const year = 1980 + randomInt(30);
+    // De maio a setembro: o antigo horário de verão de Brasília não chega lá (-03 o mês todo).
+    const month = String(5 + randomInt(5)).padStart(2, '0');
+    const monthStart = new Date(`${year}-${month}-01T03:00:00.000Z`); // 00:00 em Brasília
+    const midMonth = new Date(`${year}-${month}-15T15:00:00.000Z`);
+    const reader = app.get<AdminInsightsReader>(ADMIN_INSIGHTS_READER);
+    const before = await reader.overview({ role: 'admin', now: midMonth });
+    expect(before.month).toBe(`${year}-${month}`);
+
+    const ana = await signedInUser({ app });
+    // No primeiro minuto do mês em Brasília: conta. Um milissegundo antes: é do mês anterior.
+    const inside = await seedWedding({ db, ownerId: ana.userId });
+    await db.wedding.update({ where: { id: inside.weddingId }, data: { createdAt: monthStart } });
+    const outside = await seedWedding({ db, ownerId: ana.userId });
+    await db.wedding.update({
+      where: { id: outside.weddingId },
+      data: { createdAt: new Date(monthStart.getTime() - 1) },
+    });
+    // Publicado no cartão em 12x (com juros) e aplicado no meio do mês.
+    const today = localDate({ at: new Date(), timezone: 'America/Sao_Paulo' });
+    const eventDate = addMonths({ day: today, months: 2 });
+    const paid = await seedWedding({ db, ownerId: ana.userId });
+    await db.wedding.update({
+      where: { id: paid.weddingId },
+      data: { eventDate: new Date(`${eventDate}T00:00:00Z`) },
+    });
+    const created = expectStatus(
+      await payForPublication({
+        app,
+        cookie: ana.cookie,
+        weddingId: paid.weddingId,
+        endDate: addMonths({ day: eventDate, months: 3 }),
+        installments: 12,
+      }),
+      201,
+    );
+    const paymentId = created.body.paymentId as string;
+    expectStatus(await devPaymentEvent({ app, paymentId, event: 'confirm' }), 200);
+    await db.wedding.update({
+      where: { id: paid.weddingId },
+      data: { createdAt: midMonth, publishedAt: midMonth },
+    });
+    const payment = await db.payment.update({
+      where: { id: paymentId },
+      data: { paidAt: midMonth, appliedAt: midMonth },
+    });
+    expect(payment.installmentInterestCents).toBeGreaterThan(0);
+
+    const after = await reader.overview({ role: 'admin', now: midMonth });
+    expect(after.weddingsCreated - before.weddingsCreated).toBe(2);
+    expect(after.weddingsPublished - before.weddingsPublished).toBe(1);
+    expect(after.activationPercent).toBe(
+      Math.round((after.weddingsPublished / after.weddingsCreated) * 1000) / 10,
+    );
+    expect(after.revenue!.publicationsCents - before.revenue!.publicationsCents).toBe(
+      payment.amountCents - payment.installmentInterestCents,
+    );
+    expect(after.revenue!.extensionsCents).toBe(before.revenue!.extensionsCents);
+    const point = (overview: typeof after, chart: 'created' | 'revenueCents', at: number) =>
+      overview.charts[chart]!.at(at)!.value;
+    expect(point(after, 'created', -1) - point(before, 'created', -1)).toBe(2);
+    // O de um milissegundo antes ficou no mês anterior do gráfico.
+    expect(point(after, 'created', -2) - point(before, 'created', -2)).toBe(1);
+    expect(point(after, 'revenueCents', -1) - point(before, 'revenueCents', -1)).toBe(
+      payment.amountCents - payment.installmentInterestCents,
+    );
   });
 
   it('RN11 - o Log da aplicação filtra por casamento e ação e fica nos últimos 30 dias sem período', async () => {
