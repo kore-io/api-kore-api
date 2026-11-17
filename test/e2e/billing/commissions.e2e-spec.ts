@@ -144,9 +144,10 @@ describe('Comissões do indicador (Comissões RN01 a RN06; banco real)', () => {
       status: 'blocked',
       blockReason: 'self_referral',
     });
-    expect(await logActionsOf(self.paymentId)).toEqual([
-      'commission.created',
+    // As duas linhas nascem na mesma transação e no mesmo milissegundo: sem ordem entre elas.
+    expect((await logActionsOf(self.paymentId)).sort()).toEqual([
       'commission.blocked',
+      'commission.created',
     ]);
     expect(await commissionOf((await published({ referrer: 'blocked' })).paymentId)).toMatchObject({
       status: 'blocked',

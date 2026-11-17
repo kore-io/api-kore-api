@@ -14,7 +14,7 @@ describe('E-mails da troca do e-mail de acesso (Backoffice - acesso RN09)', () =
       'A pedido do casal, a equipe do Kore trocou o e-mail de acesso da sua conta para este endereço.',
     );
     expect(email.text).toContain(`Entrar no Kore: ${url}`);
-    expect(email.html).toContain(`href="${url.replace('&', '&amp;')}"`);
+    expect(email.html).toContain(`href="${url.replaceAll('&', '&amp;')}"`);
     expect(email.text).toContain(
       'O botão vale por 15 minutos e só uma vez. Depois, entre com este e-mail para receber um código.',
     );
