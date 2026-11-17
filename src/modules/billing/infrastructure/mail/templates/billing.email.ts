@@ -263,23 +263,31 @@ export function deletionScheduledEmail({
   notice: DeletionScheduledNotice;
   url: string;
 }): EmailMessage {
+  // O pré-cabeçalho, curto, sem o ano; o corpo, com o ano (decisão 264(A)).
   const until = formatShortDay(notice.deletionScheduledFor);
+  const day = formatDay(notice.deletionScheduledFor);
+  const body = notice.isRequester
+    ? [
+        `Você pediu para excluir o casamento no Kore. O site já saiu do ar. Os convidados, as respostas e o site serão apagados em ${day}.`,
+        'Se mudar de ideia, cancele a exclusão até lá.',
+      ]
+    : [
+        `${notice.requesterFirstName} pediu para excluir o casamento no Kore. O site saiu do ar, e os convidados, as respostas e o site serão apagados em ${day}.`,
+        'Se mudarem de ideia, cancelem a exclusão até lá.',
+      ];
   return message({
     to: notice.to,
     subject: 'O casamento será apagado em 7 dias',
     preheader: `Até ${until}, dá para cancelar.`,
     blocks: [
-      { kind: 'paragraph', text: `Olá, ${notice.firstName}!` },
-      {
-        kind: 'paragraph',
-        text: `${notice.isRequester ? 'Você' : notice.requesterFirstName} pediu para excluir o casamento no Kore. O site saiu do ar, e os convidados, as respostas e o site serão apagados em ${until}`,
-      },
-      { kind: 'paragraph', text: 'Se mudarem de ideia, cancelem a exclusão até lá.' },
+      { kind: 'paragraph', text: `Olá, ${notice.firstName}.` },
+      { kind: 'paragraph', text: body[0] },
+      { kind: 'paragraph', text: body[1] },
       { kind: 'button', text: 'Cancelar a exclusão', href: url },
       {
         kind: 'paragraph',
         text: notice.isRequester
-          ? 'Se não foi você, cancele agora e escreva para suporte@kore.com.br.'
+          ? 'Se não foi você, cancele a exclusão agora e escreva para suporte@kore.com.br.'
           : 'Se ninguém do casal pediu, cancele agora e escreva para suporte@kore.com.br.',
       },
     ],
