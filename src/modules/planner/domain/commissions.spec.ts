@@ -15,6 +15,7 @@ const row = (overrides: Partial<CommissionRow>): CommissionRow => ({
   paidAt: null,
   createdAt: new Date('2026-08-10T12:00:00Z'),
   payoutId: null,
+  blockReason: null,
   ...overrides,
 });
 
@@ -63,8 +64,22 @@ describe('Os saldos e a soma por casamento (Comissões do indicador RN02, RN07 e
   it('RN02 (B6-2) - o Disponível soma os ajustes sem repasse; o do repasse vai em "em repasse"', () => {
     expect(
       commissionBalances(rows, [
-        { amountCents: -1_000, payoutId: null, payoutStatus: null },
-        { amountCents: -500, payoutId: 'p1', payoutStatus: 'requested' },
+        {
+          id: 'a',
+          reason: 'manual',
+          createdAt: new Date(),
+          amountCents: -1_000,
+          payoutId: null,
+          payoutStatus: null,
+        },
+        {
+          id: 'a',
+          reason: 'manual',
+          createdAt: new Date(),
+          amountCents: -500,
+          payoutId: 'p1',
+          payoutStatus: 'requested',
+        },
       ]),
     ).toMatchObject({ availableCents: 6_242, inPayoutCents: 2_500 });
   });
@@ -73,8 +88,22 @@ describe('Os saldos e a soma por casamento (Comissões do indicador RN02, RN07 e
     const base = commissionBalances(rows);
     expect(
       commissionBalances(rows, [
-        { amountCents: -1_000, payoutId: 'p0', payoutStatus: 'paid' },
-        { amountCents: -500, payoutId: 'p1', payoutStatus: 'processing' },
+        {
+          id: 'a',
+          reason: 'manual',
+          createdAt: new Date(),
+          amountCents: -1_000,
+          payoutId: 'p0',
+          payoutStatus: 'paid',
+        },
+        {
+          id: 'a',
+          reason: 'manual',
+          createdAt: new Date(),
+          amountCents: -500,
+          payoutId: 'p1',
+          payoutStatus: 'processing',
+        },
       ]),
     ).toEqual({
       ...base,

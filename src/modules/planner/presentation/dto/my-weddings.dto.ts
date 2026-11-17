@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { IsIn, IsOptional } from 'class-validator';
 import type {
   CoupleInvitationView,
   MyWeddingDetail,
@@ -6,12 +7,22 @@ import type {
   MyWeddingsView,
 } from '@/modules/planner/application/my-weddings.use-cases';
 import {
+  MY_WEDDING_FILTERS,
   MY_WEDDING_STATUSES,
+  type MyWeddingFilter,
   type MyWeddingStatus,
   type WeddingOrigin,
 } from '@/modules/planner/domain/my-weddings';
 
 const ORIGINS: WeddingOrigin[] = ['created_by_me', 'referral_link', 'couple_invite'];
+
+/** GET /v1/me/weddings?status=: o filtro da lista (com o Aguardando pagamento; Comissões RN08). */
+export class MyWeddingsQuery {
+  @ApiProperty({ enum: MY_WEDDING_FILTERS, required: false })
+  @IsOptional()
+  @IsIn(MY_WEDDING_FILTERS)
+  status?: MyWeddingFilter;
+}
 
 class MyWeddingsSummaryResponse {
   /** Todos menos pós-evento e expirado (RN03). */

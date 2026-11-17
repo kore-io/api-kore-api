@@ -4,6 +4,7 @@ import request from 'supertest';
 import { ReleaseCommissions } from '@/modules/billing/application/payouts/release-commissions.use-case';
 import { addMonths } from '@/modules/billing/domain/payments/pricing';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import { localDate } from '@/shared/kernel/time/local-date';
 import { createTestApp } from '../support/harness/create-test-app';
 import { createTestWorker } from '../support/harness/create-test-worker';
@@ -81,26 +82,48 @@ describe('Comissões: a leitura da indicadora (Comissões RN07, RN08 e RN10; ban
       receivedCents: 0,
       inPayoutCents: 0,
     });
+    // Contrato de API (decisão 275): view=payment por padrão, paginado.
+    expect(before.body).toMatchObject({ view: 'payment', page: 1, pageSize: 50, total: 1 });
     expect(before.body.items).toEqual([
-      expect.objectContaining({
+      {
+        kind: 'commission',
+        commissionId: commission.id,
         weddingId,
-        partnerNames: ['Ana', 'Marcos'],
+        coupleNames: 'Ana & Marcos',
+        weddingPurged: false,
         clickable: true,
         paymentKind: 'publication',
         baseAmountCents: commission.baseAmountCents,
         amountCents: commission.amountCents,
         ratePercent: 20,
         status: 'pending',
-      }),
+        blockReason: null,
+        availableAt: commission.availableAt.toISOString(),
+        paidAt: null,
+        createdAt: commission.createdAt.toISOString(),
+      },
     ]);
     expect(JSON.stringify(before.body)).not.toMatch(/payer|taxId|Beatriz/i);
-    expect(before.body.byWedding).toEqual([
-      expect.objectContaining({
+    const byWedding = await http()
+      .get('/v1/me/referrer/commissions')
+      .query({ view: 'wedding' })
+      .set('Cookie', juliana.cookie)
+      .expect(200);
+    expect(byWedding.body).toMatchObject({ view: 'wedding', total: 1 });
+    expect(byWedding.body.items).toEqual([
+      {
         weddingId,
+        coupleNames: 'Ana & Marcos',
+        weddingPurged: false,
+        clickable: true,
         pendingCents: commission.amountCents,
         availableCents: 0,
-      }),
+        releaseDates: [commission.availableAt.toISOString()],
+      },
     ]);
+    // O resumo da indicadora traz o percentual e os mesmos saldos.
+    const me = await http().get('/v1/me/referrer').set('Cookie', juliana.cookie).expect(200);
+    expect(me.body).toMatchObject({ ratePercent: 20, balances: before.body.balances });
 
     await worker.get(ReleaseCommissions).execute({
       now: new Date(commission.availableAt.getTime() + 60_000),
@@ -127,7 +150,7 @@ describe('Comissões: a leitura da indicadora (Comissões RN07, RN08 e RN10; ban
     expect(closed.body.items[0]).toMatchObject({
       weddingId: null,
       clickable: false,
-      partnerNames: ['Ana', 'Marcos'],
+      coupleNames: 'Ana & Marcos',
     });
 
     await db.wedding.update({
@@ -146,7 +169,7 @@ describe('Comissões: a leitura da indicadora (Comissões RN07, RN08 e RN10; ban
       .expect(200);
     expect(purged.body.items[0]).toMatchObject({
       weddingPurged: true,
-      partnerNames: null,
+      coupleNames: null,
       weddingId: null,
     });
   });
@@ -170,6 +193,27 @@ describe('Comissões: a leitura da indicadora (Comissões RN07, RN08 e RN10; ban
       .set('Cookie', juliana.cookie)
       .expect(200);
     expect(detail.body.awaitingPayment).toBe(true);
+    // O filtro aceita awaiting_payment (Contrato de API; decisão 275): só a lista muda.
+    const filtered = await http()
+      .get('/v1/me/weddings')
+      .query({ status: 'awaiting_payment' })
+      .set('Cookie', juliana.cookie)
+      .expect(200);
+    expect(
+      (filtered.body.weddings as { weddingId: string }[]).map((item) => item.weddingId),
+    ).toEqual([weddingId]);
+    expect(filtered.body.summary).toEqual(mine.body.summary);
+    const published = await http()
+      .get('/v1/me/weddings')
+      .query({ status: 'published' })
+      .set('Cookie', juliana.cookie)
+      .expect(200);
+    expect(published.body.weddings).toEqual([]);
+    await http()
+      .get('/v1/me/weddings')
+      .query({ status: 'unknown' })
+      .set('Cookie', juliana.cookie)
+      .expect(400);
   });
 
   it('RN08 - a coluna Comissão do Link de indicação: a soma por estado; sem pagamento, nula', async () => {
@@ -195,9 +239,56 @@ describe('Comissões: a leitura da indicadora (Comissões RN07, RN08 e RN10; ban
       ]),
     );
     expect(byId.get(paid.weddingId)).toEqual({
-      availableCents: 0,
-      pendingCents: commission.amountCents,
+      totalCents: commission.amountCents,
+      byStatus: [{ status: 'pending', amountCents: commission.amountCents }],
     });
     expect(byId.get(unpaid.weddingId)).toBeNull();
+  });
+
+  it('RN07 (decisão 275) - os ajustes saem na aba Por pagamento, em linha própria, com o repasse em que entraram; o bloqueio traz o motivo; a página', async () => {
+    const juliana = await planner();
+    const { ana, weddingId, referrerId } = await referred(juliana);
+    const { paymentId } = await publishByPayment({ app, cookie: ana.cookie, weddingId, endDate });
+    const commission = await db.commission.update({
+      where: { paymentId },
+      data: { status: 'blocked', blockReason: 'admin' },
+    });
+    const adjustment = await db.commissionAdjustment.create({
+      data: { id: uuidV7(), referrerId, amountCents: -1_000, reason: 'manual', note: 'Teste' },
+    });
+
+    const list = await http()
+      .get('/v1/me/referrer/commissions')
+      .set('Cookie', juliana.cookie)
+      .expect(200);
+    expect(list.body.total).toBe(2);
+    // O mais novo primeiro: o ajuste, depois a comissão.
+    expect(list.body.items).toEqual([
+      {
+        kind: 'adjustment',
+        adjustmentId: adjustment.id,
+        amountCents: -1_000,
+        reason: 'manual',
+        createdAt: adjustment.createdAt.toISOString(),
+        payoutStatus: null,
+      },
+      expect.objectContaining({
+        kind: 'commission',
+        commissionId: commission.id,
+        status: 'blocked',
+        blockReason: 'admin',
+      }),
+    ]);
+    const second = await http()
+      .get('/v1/me/referrer/commissions')
+      .query({ page: 2 })
+      .set('Cookie', juliana.cookie)
+      .expect(200);
+    expect(second.body).toMatchObject({ page: 2, total: 2, items: [] });
+    await http()
+      .get('/v1/me/referrer/commissions')
+      .query({ view: 'other' })
+      .set('Cookie', juliana.cookie)
+      .expect(400);
   });
 });

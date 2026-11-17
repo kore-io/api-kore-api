@@ -17,6 +17,7 @@ import {
   originOf,
   summaryOf,
   type CollaborationRow,
+  type MyWeddingFilter,
   type MyWeddingStatus,
   type WeddingOrigin,
 } from '@/modules/planner/domain/my-weddings';
@@ -124,7 +125,16 @@ export class ListMyWeddings {
     @Inject(REFERRER_COMMISSIONS_READER) private readonly commissions: ReferrerCommissionsReader,
   ) {}
 
-  async execute({ userId, now }: { userId: string; now: Date }): Promise<MyWeddingsView> {
+  async execute({
+    userId,
+    now,
+    status,
+  }: {
+    userId: string;
+    now: Date;
+    /** Filtra só a lista; o Resumo e os alertas contam todos (RN02 e RN07). */
+    status?: MyWeddingFilter;
+  }): Promise<MyWeddingsView> {
     await requirePlannerProfile({ profiles: this.profiles, userId });
     const rows = (await this.reader.listCollaborations({ userId })).sort(compareWeddings);
 
@@ -166,9 +176,15 @@ export class ListMyWeddings {
             eventDate: row.eventDate ?? '',
           })),
       },
-      weddings: rows.map((row) =>
-        itemOf({ row, userId, awaitingPayment: awaiting.has(row.weddingId) }),
-      ),
+      weddings: rows
+        .filter((row) =>
+          !status
+            ? true
+            : status === 'awaiting_payment'
+              ? awaiting.has(row.weddingId)
+              : row.status === status,
+        )
+        .map((row) => itemOf({ row, userId, awaitingPayment: awaiting.has(row.weddingId) })),
     };
   }
 }

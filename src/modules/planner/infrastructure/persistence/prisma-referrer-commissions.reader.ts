@@ -25,6 +25,7 @@ export class PrismaReferrerCommissionsReader implements ReferrerCommissionsReade
         paid_at: Date | null;
         created_at: Date;
         payout_id: string | null;
+        block_reason: CommissionRow['blockReason'];
       }[]
     >`SELECT * FROM referrer_commissions()`;
     return rows.map((row) => ({
@@ -42,12 +43,21 @@ export class PrismaReferrerCommissionsReader implements ReferrerCommissionsReade
       paidAt: row.paid_at,
       createdAt: row.created_at,
       payoutId: row.payout_id,
+      blockReason: row.block_reason,
     }));
   }
 
   async adjustments(): Promise<AdjustmentRow[]> {
     const adjustments = await this.tenant.client().commissionAdjustment.findMany({
-      select: { amountCents: true, payoutId: true, payout: { select: { status: true } } },
+      select: {
+        id: true,
+        reason: true,
+        createdAt: true,
+        amountCents: true,
+        payoutId: true,
+        payout: { select: { status: true } },
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     });
     return adjustments.map(({ payout, ...adjustment }) => ({
       ...adjustment,

@@ -11,6 +11,14 @@ export const MY_WEDDING_STATUSES = [
 ] as const;
 export type MyWeddingStatus = (typeof MY_WEDDING_STATUSES)[number];
 
+/**
+ * O filtro de status da lista (Comissões RN08; Contrato de API, decisão 275):
+ * os status do banco mais o derivado Aguardando pagamento (rascunho com Pix
+ * pendente, Publicar e pagar RN06).
+ */
+export const MY_WEDDING_FILTERS = [...MY_WEDDING_STATUSES, 'awaiting_payment'] as const;
+export type MyWeddingFilter = (typeof MY_WEDDING_FILTERS)[number];
+
 export type WeddingOrigin = 'created_by_me' | 'referral_link' | 'couple_invite';
 
 /** Um casamento em que ela colabora, como o banco devolve (RN01). */

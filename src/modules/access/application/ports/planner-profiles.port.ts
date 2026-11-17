@@ -3,6 +3,8 @@ export interface PlannerProfileRecord {
   referrerId: string;
   referralCode: string;
   referralDiscountEnabled: boolean;
+  /** O percentual da comissão (a API devolve; a tela não mostra, decisão 230, D3). */
+  ratePercent: number;
   creditName: string;
   phone: string | null;
   whatsapp: string | null;

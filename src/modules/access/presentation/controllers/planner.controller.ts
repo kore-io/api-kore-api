@@ -1,4 +1,3 @@
-import { PayoutDataUseCases } from '@/modules/referral/application/payout-data.use-cases';
 import {
   Body,
   Controller,
@@ -17,7 +16,6 @@ import type { Response } from 'express';
 import { ApiErrorResponses, commonErrors } from '@/shared/http/api-error-responses.decorator';
 import {
   CreatePlannerProfile,
-  GetMyReferrer,
   GetPlannerProfile,
   UpdatePlannerProfile,
 } from '@/modules/access/application/profiles/planner-profile.use-cases';
@@ -41,7 +39,6 @@ import {
   CreatePlannerWeddingResponse,
   CreatePlannerProfileBody,
   CreatePlannerProfileResponse,
-  MyReferrerResponse,
   PlannerProfileResponse,
   UpdatePlannerProfileBody,
 } from '@/modules/access/presentation/dto/planner.dto';
@@ -54,9 +51,7 @@ export class PlannerController {
     private readonly createProfile: CreatePlannerProfile,
     private readonly getProfile: GetPlannerProfile,
     private readonly updateProfile: UpdatePlannerProfile,
-    private readonly getReferrer: GetMyReferrer,
     private readonly createWedding: CreatePlannerWedding,
-    private readonly payoutData: PayoutDataUseCases,
   ) {}
 
   /**
@@ -161,25 +156,6 @@ export class PlannerController {
           now: new Date(),
         }),
       });
-    } catch (error) {
-      throw toHttpError(error);
-    }
-  }
-
-  /** O link de indicação e o desconto do casal (Link de indicação RN01 e RN02). */
-  @Get('referrer')
-  @ApiErrorResponses(...commonErrors({ session: true }), ProfileNotOwnedErrorBody)
-  async referrer(@CurrentSession() session: AuthenticatedSession): Promise<MyReferrerResponse> {
-    try {
-      const referrer = await this.getReferrer.execute({ userId: session.userId });
-      // Os dados para receber, mascarados (Repasse, Contrato; decisão 244(2)).
-      const payout = await this.payoutData.summary();
-      return {
-        ...referrer,
-        taxIdMasked: payout?.taxIdMasked ?? null,
-        pixKeyMasked: payout?.pixKeyMasked ?? null,
-        payoutDataComplete: payout?.payoutDataComplete ?? false,
-      };
     } catch (error) {
       throw toHttpError(error);
     }

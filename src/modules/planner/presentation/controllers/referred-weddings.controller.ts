@@ -8,9 +8,16 @@ import { CurrentSession } from '@/modules/access/presentation/http/decorators/cu
 import { ListReferredWeddings } from '@/modules/planner/application/referred-weddings.use-case';
 import { MY_WEDDING_STATUSES, type MyWeddingStatus } from '@/modules/planner/domain/my-weddings';
 
+class ReferredWeddingCommissionStatusResponse {
+  @ApiProperty({ enum: ['available', 'pending', 'paid'] }) status: 'available' | 'pending' | 'paid';
+  @ApiProperty({ example: 6742 }) amountCents: number;
+}
+
+/** A soma e os estados (Contrato de API); Estornada, Bloqueada e Retida não entram. */
 class ReferredWeddingCommissionResponse {
-  @ApiProperty({ example: 6742 }) availableCents: number;
-  @ApiProperty({ example: 1740 }) pendingCents: number;
+  @ApiProperty({ example: 8482 }) totalCents: number;
+  @ApiProperty({ type: [ReferredWeddingCommissionStatusResponse] })
+  byStatus: ReferredWeddingCommissionStatusResponse[];
 }
 
 export class ReferredWeddingResponse {

@@ -115,22 +115,6 @@ export class PlannerProfileResponse {
   }
 }
 
-/** GET /v1/me/referrer (Link de indicação RN01 e RN02). */
-export class MyReferrerResponse {
-  @ApiProperty({ example: 'juliana-prado' }) referralCode: string;
-  @ApiProperty({ example: 'https://kore.com.br/i/juliana-prado' }) link: string;
-  /** Nulo com o desconto de indicação desligado. Sem o percentual da comissão (D4). */
-  @ApiProperty({ type: Number, nullable: true, example: 10 }) discountPercent: number | null;
-  /** "***.982.247-**"; nulo antes do primeiro recebimento (Repasse RN02). */
-  @ApiProperty({ type: String, nullable: true, example: '***.982.247-**' })
-  taxIdMasked: string | null;
-  /** A chave ativa mascarada; nula sem chave confirmada (Repasse RN03). */
-  @ApiProperty({ type: String, nullable: true, example: 'jul***@pradoassessoria.com.br' })
-  pixKeyMasked: string | null;
-  /** CPF ou CNPJ e chave ativa: pode receber ("Cadastre seu CPF ou CNPJ e sua chave Pix…"). */
-  payoutDataComplete: boolean;
-}
-
 /** POST /v1/me/weddings: o passo 1 e a Aparência do passo 2 (Novo casamento RN02 a RN04). */
 export class CreatePlannerWeddingBody {
   /** A pessoa 1 do casal; o título é escolhido no aceite (decisão 172). */
