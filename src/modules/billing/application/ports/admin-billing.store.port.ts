@@ -38,13 +38,16 @@ export interface AdminBillingStore {
     now: Date;
   }): Promise<AdminRefundOutcome>;
 
-  /** Tira a desistência do estorno e grava `payment.refund_retried`. */
+  /**
+   * Tira a desistência do estorno, zera a contagem das tentativas (Pagamentos
+   * RN05) e grava `payment.refund_retried` com as tentativas da série anterior.
+   */
   clearRefundFailure(input: {
     paymentId: string;
     weddingId: string;
     adminUserId: string;
     reason: string;
-    attempt: number;
+    previousAttempts: number;
     now: Date;
   }): Promise<void>;
 

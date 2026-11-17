@@ -24,16 +24,18 @@ export class BullmqRefundQueue implements RefundQueue {
     paymentId,
     attempt,
     delayMs,
+    series,
   }: {
     paymentId: string;
     attempt: number;
     delayMs: number;
+    series?: string;
   }): Promise<void> {
     const data: RefundJob = { paymentId, attempt };
     // O id fixo por pagamento e tentativa (RN04): o repetido não entra. O job
     // concluído sai, e a tentativa seguinte tem outro id.
     await this.queue.add('refund', data, {
-      jobId: `refund-${paymentId}-${attempt}`,
+      jobId: series ? `refund-${paymentId}-${series}-${attempt}` : `refund-${paymentId}-${attempt}`,
       delay: delayMs,
       removeOnComplete: true,
       removeOnFail: 100,

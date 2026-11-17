@@ -1,9 +1,12 @@
 import { INestApplication } from '@nestjs/common';
+import { getQueueToken } from '@nestjs/bullmq';
 import type { TestingModule } from '@nestjs/testing';
+import type { Queue } from 'bullmq';
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { ProcessRefund } from '@/modules/billing/application/refunds/process-refund.use-case';
 import { addMonths } from '@/modules/billing/domain/payments/pricing';
+import { PAYMENT_REFUNDS_QUEUE } from '@/modules/billing/infrastructure/jobs/refunds.queue';
 import { LocalGatewayStore } from '@/modules/billing/infrastructure/backoffice/local-gateway/local-gateway.store';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import { localDate } from '@/shared/kernel/time/local-date';
@@ -16,7 +19,7 @@ import {
   publishByPayment,
   seedPaidExtension,
 } from '../support/factories/payments';
-import { signedInUser } from '../support/harness/sessions';
+import { signedInUser, staffUser } from '../support/harness/sessions';
 import { seedWedding } from '../support/factories/weddings';
 
 const ORIGIN = process.env.ALLOWED_ORIGINS?.split(',')[0] ?? 'http://localhost:5173';
@@ -306,6 +309,35 @@ describe('Pagamentos e arrependimento (RN02 a RN08; banco real)', () => {
         where: { entityId: paymentId, action: 'payment.refund_failed' },
       }),
     ).toBe(4);
+
+    // RN05 (decisão 275): o Tentar o estorno de novo do Admin zera a contagem e
+    // recomeça a série. As tentativas acima foram à mão; os jobs atrasados da
+    // série antiga, que na vida real já rodaram, saem da fila.
+    const queue = app.get<Queue>(getQueueToken(PAYMENT_REFUNDS_QUEUE));
+    for (const attempt of [2, 3, 4])
+      await (await queue.getJob(`refund-${paymentId}-${attempt}`))?.remove();
+    const admin = await staffUser({ app, role: 'admin' });
+    const retriedAt = Date.now();
+    await request(app.getHttpServer())
+      .post(`/v1/admin/payments/${paymentId}/refund/retry`)
+      .set('Cookie', admin.cookie)
+      .set('Origin', ORIGIN)
+      .send({ reason: 'O Asaas voltou.' })
+      .expect(202);
+    await attempted(paymentId, 1);
+    expect((await payment(paymentId)).refundAttempts).toBe(1);
+    expectStatus(await devPaymentEvent({ app, paymentId, event: 'refund-failed' }), 200);
+    expect(await payment(paymentId)).toMatchObject({
+      refundAttempts: 1,
+      refundFailedAt: null,
+      refundLastError: 'refund_refused',
+    });
+    // A falha da 1ª tentativa da série nova agenda a 2ª em 1 h (RN05), não desiste.
+    const next = await queue.getJob(`refund-${paymentId}-2`);
+    expect(next).toBeDefined();
+    expect(next!.timestamp).toBeGreaterThanOrEqual(retriedAt);
+    expect(next!.delay).toBe(60 * 60_000);
+    await next!.remove();
   });
 
   it('RN04 - a chamada sem resposta: a tentativa seguinte consulta antes e aplica o estorno que o gateway já fez', async () => {

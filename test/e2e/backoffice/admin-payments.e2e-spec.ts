@@ -416,6 +416,12 @@ describe('Backoffice: Cobrança (Backoffice - cobrança RN02 a RN07 e RN11; banc
     await post(admin.cookie, `/payments/${failed.paymentId}/refund/retry`, {
       reason: 'O Asaas voltou.',
     }).expect(202);
+    // Pagamentos RN05 (decisão 275): zera a contagem; o job faz a tentativa 1 da série nova.
+    const retried = await until(
+      () => db.payment.findUniqueOrThrow({ where: { id: failed.paymentId } }),
+      (row) => row.refundAttempts === 1,
+    );
+    expect(retried).toMatchObject({ refundFailedAt: null, status: 'refund_requested' });
     // Já sem a falha: 409 REFUND_NOT_FAILED.
     expect(
       (
@@ -424,9 +430,13 @@ describe('Backoffice: Cobrança (Backoffice - cobrança RN02 a RN07 e RN11; banc
         }).expect(409)
       ).body.error,
     ).toBe('REFUND_NOT_FAILED');
-    await db.applicationLog.findFirstOrThrow({
-      where: { action: 'payment.refund_retried', entityId: failed.paymentId },
-    });
+    expect(
+      (
+        await db.applicationLog.findFirstOrThrow({
+          where: { action: 'payment.refund_retried', entityId: failed.paymentId },
+        })
+      ).data,
+    ).toEqual({ reason: 'O Asaas voltou.', previousAttempts: 4 });
 
     // Reembolso feito por fora: refunded, origem manual, com o comprovante, sem gateway.
     const outside = await paid();

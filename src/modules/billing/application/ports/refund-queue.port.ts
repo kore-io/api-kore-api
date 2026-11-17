@@ -4,7 +4,16 @@
  * chama a porta duas vezes.
  */
 export interface RefundQueue {
-  enqueue(input: { paymentId: string; attempt: number; delayMs: number }): Promise<void>;
+  /**
+   * `series`: o Tentar o estorno de novo do Admin recomeça a contagem
+   * (Pagamentos RN05), e a tentativa 1 da série nova tem um id próprio.
+   */
+  enqueue(input: {
+    paymentId: string;
+    attempt: number;
+    delayMs: number;
+    series?: string;
+  }): Promise<void>;
   /**
    * O cancelamento do pendente pela porta, depois do commit do bloqueio
    * (Casamento bloqueado RN06; G1 e B8-5) ou da exclusão pedida (Retenção
