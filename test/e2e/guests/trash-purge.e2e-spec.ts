@@ -103,6 +103,23 @@ describe('Expurgo da lixeira (worker)', () => {
     expect(log).toMatchObject({ actorKind: 'system', data: expect.objectContaining(counts) });
   });
 
+  it('RN10 e Casamento bloqueado RN06 - no casamento bloqueado a lixeira para; os vencidos saem quando o bloqueio sai', async () => {
+    const weddingId = await wedding();
+    const partyId = (await db.party.create({ data: { weddingId, name: 'A', linkToken: token() } }))
+      .id;
+    const expired = await db.guest.create({
+      data: { weddingId, partyId, name: 'Vencido', deletedAt: daysAgo(40) },
+    });
+    await db.wedding.update({ where: { id: weddingId }, data: { blockedAt: new Date() } });
+
+    await worker.get(TrashPurgeProcessor).process();
+    expect(await db.guest.findUnique({ where: { id: expired.id } })).not.toBeNull();
+
+    await db.wedding.update({ where: { id: weddingId }, data: { blockedAt: null } });
+    await worker.get(TrashPurgeProcessor).process();
+    expect(await db.guest.findUnique({ where: { id: expired.id } })).toBeNull();
+  });
+
   it('RN10 - a data é a do fuso do casamento: no dia purgeAt ainda fica; no seguinte, sai', async () => {
     const weddingId = await wedding();
     const partyId = (await db.party.create({ data: { weddingId, name: 'A', linkToken: token() } }))

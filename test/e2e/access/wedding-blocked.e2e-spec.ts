@@ -166,6 +166,19 @@ describe('Casamento bloqueado (Casamento bloqueado RN01 a RN08; banco real)', ()
     );
   });
 
+  it('RN03 - a Pré-visualização continua no bloqueado (é leitura): o casal e a colaboradora abrem a prévia', async () => {
+    const { ana, juliana, weddingId } = await blocked();
+    for (const cookie of [ana.cookie, juliana.cookie]) {
+      const created = await http()
+        .post(`/v1/weddings/${weddingId}/site-previews`)
+        .set('Cookie', cookie)
+        .set('Origin', ORIGIN)
+        .send({ mode: 'visitor' })
+        .expect(201);
+      expect(created.body).toMatchObject({ url: expect.any(String) });
+    }
+  });
+
   it('RN02 - quem não tem vínculo recebe 404, sem saber do bloqueio', async () => {
     const { weddingId } = await blocked();
     const stranger = await signedInUser({ app });

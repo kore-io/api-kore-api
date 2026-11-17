@@ -182,6 +182,27 @@ describe('O site no ar pela wedding_site_state (Data de saída do ar RN07 e RN08
     });
   });
 
+  it('Casamento bloqueado RN02 e RN05 - o RSVP público no bloqueado: o formulário e a resposta dão 423 SITE_UNAVAILABLE, e nada é gravado', async () => {
+    const { weddingId, slug, party, cookie, from } = await scenario();
+    const body = await answer(slug, cookie);
+    await db.wedding.update({ where: { id: weddingId }, data: { blockedAt: new Date() } });
+
+    const form = await http()
+      .get(`/v1/sites/${slug}/rsvp`)
+      .set('Origin', SITE_ORIGIN)
+      .set('Cookie', cookie)
+      .expect(423);
+    expect(form.body.error).toBe('SITE_UNAVAILABLE');
+    expect(form.headers['cache-control']).toBe('no-store');
+    const refused = await rsvp(slug, cookie, from, body).expect(423);
+    expect(refused.body.error).toBe('SITE_UNAVAILABLE');
+    expect(await db.party.findUniqueOrThrow({ where: { id: party.id } })).toMatchObject({
+      version: 1,
+      lastResponseActor: null,
+    });
+    expect(await db.guestResponse.count({ where: { weddingId } })).toBe(0);
+  });
+
   it('RN07 - envios no expirado: 409 SITE_EXPIRED; na carência, fechados como no pós-evento', async () => {
     const { ana, weddingId, party } = await scenario();
     const queue = () =>
