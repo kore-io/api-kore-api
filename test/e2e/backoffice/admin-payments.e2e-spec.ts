@@ -433,6 +433,53 @@ describe('Backoffice: Cobrança (Backoffice - cobrança RN02 a RN07 e RN11; banc
     );
   });
 
+  it('RN02 e RN07 (DoD) - o pagamento não aplicado: applied false na lista, no detalhe e na aba Cobrança, e "nao" no CSV', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const orphan = await paid({ paidDaysAgo: 1 });
+    // Pago sem destino (Publicar e pagar RN08): o casamento não ganhou o ciclo.
+    await db.wedding.update({
+      where: { id: orphan.weddingId },
+      data: { status: 'draft', endDate: null, paidThrough: null, publicationSource: null },
+    });
+    await db.commission.deleteMany({ where: { paymentId: orphan.paymentId } });
+    const stored = await db.payment.update({
+      where: { id: orphan.paymentId },
+      data: { appliedAt: null },
+    });
+    const code = `P-${String(stored.shortCode).padStart(4, '0')}`;
+
+    const list = await get(admin.cookie, '/payments', {
+      status: 'paid',
+      from: new Date(stored.createdAt.getTime() - 1000).toISOString(),
+      to: new Date(stored.createdAt.getTime() + 1000).toISOString(),
+    }).expect(200);
+    const row = (list.body.items as { id: string }[]).find((item) => item.id === stored.id);
+    expect(row).toMatchObject({ code, status: 'paid', applied: false });
+
+    const detail = (await get(admin.cookie, `/payments/${stored.id}`).expect(200)).body;
+    expect(detail).toMatchObject({ applied: false, appliedAt: null, commission: null });
+
+    const tab = await get(admin.cookie, `/weddings/${orphan.weddingId}`, {
+      tab: 'billing',
+    }).expect(200);
+    expect(
+      (tab.body.billing.payments as { id: string }[]).find((item) => item.id === stored.id),
+    ).toMatchObject({ code, status: 'paid', applied: false, commission: null });
+
+    const response = await get(admin.cookie, '/payments/export', {
+      from: new Date(Date.now() - 2 * DAY_MS).toISOString(),
+      to: new Date(Date.now() + 60_000).toISOString(),
+    }).expect(200);
+    const lines = (response.text ?? Buffer.from(response.body as Buffer).toString('utf8'))
+      .split('\r\n')
+      .filter((line) => line.split(',')[1] === code);
+    expect(lines).toHaveLength(1);
+    // …, status, aplicado
+    expect(lines[0].split(',').slice(0, 1)).toEqual(['pagamento']);
+    expect(lines[0].split(',')[12]).toBe('paid');
+    expect(lines[0].split(',')[13]).toBe('nao');
+  });
+
   it('RN07 - o CSV do período: o pagamento, o código e o log da exportação', async () => {
     const admin = await staffUser({ app, role: 'admin' });
     const { paymentId } = await paid({ paidDaysAgo: 1 });

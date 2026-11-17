@@ -145,7 +145,7 @@ describe('Dados para receber: CPF ou CNPJ e chave Pix (Repasse RN02 e RN03; banc
     ).toBe('RATE_LIMITED');
   });
 
-  it('RN02 e Comissões RN03 - cadastrar o CPF roda de novo a autoindicação nas comissões dela', async () => {
+  it('RN02 e Comissões RN03 - cadastrar o CPF roda de novo a autoindicação nas comissões dela, com o log commission.blocked', async () => {
     const person = await juliana();
     const cpf = randomCpf();
     const ana = await signedInUser({ app });
@@ -174,10 +174,18 @@ describe('Dados para receber: CPF ou CNPJ e chave Pix (Repasse RN02 e RN03; banc
 
     await setTaxId(person.cookie, { taxIdType: 'cpf', taxId: cpf }).expect(200);
 
-    expect(await db.commission.findUniqueOrThrow({ where: { paymentId } })).toMatchObject({
-      status: 'blocked',
-      blockReason: 'self_referral',
+    const commission = await db.commission.findUniqueOrThrow({ where: { paymentId } });
+    expect(commission).toMatchObject({ status: 'blocked', blockReason: 'self_referral' });
+    // Comissões, log: a checagem do CPF grava o commission.blocked (sonda do DoD).
+    const lines = await db.applicationLog.findMany({
+      where: { entityType: 'commission', entityId: commission.id, action: 'commission.blocked' },
     });
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toMatchObject({
+      actorKind: 'system',
+      data: expect.objectContaining({ previousStatus: 'pending', blockReason: 'self_referral' }),
+    });
+    expect(JSON.stringify(lines[0])).not.toContain(cpf.replace(/\D/g, '').slice(3, 9));
   });
 
   it('RN03 - a primeira chave: sessão recente, link por e-mail, vale na confirmação', async () => {

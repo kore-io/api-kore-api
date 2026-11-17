@@ -8,6 +8,7 @@ import {
   type AdminInsightsReader,
 } from '@/modules/backoffice/application/ports/admin-insights.reader.port';
 import { localDate } from '@/shared/kernel/time/local-date';
+import { PrismaAdminInsightsReader } from '@/modules/backoffice/infrastructure/backoffice/prisma-admin-insights.reader';
 import { createTestApp } from '../support/harness/create-test-app';
 import { devPaymentEvent, expectStatus, payForPublication } from '../support/factories/payments';
 import { seedReferrer } from '../support/factories/referrers';
@@ -118,7 +119,7 @@ describe('Backoffice: visão geral, busca, log e alertas (Backoffice - acesso RN
     }
   });
 
-  it('RN04 - os valores da Visão geral: o mês em Brasília, a Ativação, e a Receita sem os juros do cartão e só com o pagamento aplicado no mês', async () => {
+  it('RN04 - os valores da Visão geral: o mês em Brasília, a Ativação, e a Receita sem os juros do cartão e só com o pagamento aplicado no mês (pelo appliedAt, não pelo paidAt)', async () => {
     // Um mês antigo e sorteado: o kore_test é compartilhado, então o caso mede
     // a diferença antes e depois das próprias linhas (pelo reader, sem o cache).
     const year = 1980 + randomInt(30);
@@ -163,11 +164,44 @@ describe('Backoffice: visão geral, busca, log e alertas (Backoffice - acesso RN
       where: { id: paid.weddingId },
       data: { createdAt: midMonth, publishedAt: midMonth },
     });
+    // Pago no mês anterior e aplicado neste: a Receita conta pelo appliedAt.
     const payment = await db.payment.update({
       where: { id: paymentId },
-      data: { paidAt: midMonth, appliedAt: midMonth },
+      data: { paidAt: new Date(monthStart.getTime() - 5 * DAY_MS), appliedAt: midMonth },
     });
     expect(payment.installmentInterestCents).toBeGreaterThan(0);
+    // Pago neste mês e não aplicado (sem destino): fica fora da Receita.
+    const orphan = await seedWedding({ db, ownerId: ana.userId });
+    await db.wedding.update({
+      where: { id: orphan.weddingId },
+      data: { eventDate: new Date(`${eventDate}T00:00:00Z`) },
+    });
+    const orphanPayment = expectStatus(
+      await payForPublication({
+        app,
+        cookie: ana.cookie,
+        weddingId: orphan.weddingId,
+        endDate: addMonths({ day: eventDate, months: 3 }),
+      }),
+      201,
+    ).body.paymentId as string;
+    expectStatus(await devPaymentEvent({ app, paymentId: orphanPayment, event: 'confirm' }), 200);
+    await db.wedding.update({
+      where: { id: orphan.weddingId },
+      data: {
+        status: 'draft',
+        endDate: null,
+        paidThrough: null,
+        publicationSource: null,
+        publishedAt: null,
+        createdAt: new Date(monthStart.getTime() - 40 * DAY_MS),
+      },
+    });
+    await db.commission.deleteMany({ where: { paymentId: orphanPayment } });
+    await db.payment.update({
+      where: { id: orphanPayment },
+      data: { paidAt: midMonth, appliedAt: null },
+    });
 
     const after = await reader.overview({ role: 'admin', now: midMonth });
     // Os números do mês contam do início dele em diante (o "agora" de verdade é
@@ -186,6 +220,8 @@ describe('Backoffice: visão geral, busca, log e alertas (Backoffice - acesso RN
     expect(point(after, 'revenueCents', -1) - point(before, 'revenueCents', -1)).toBe(
       payment.amountCents - payment.installmentInterestCents,
     );
+    // Nem o mês do paidAt do aplicado nem o não aplicado mudam a Receita.
+    expect(point(after, 'revenueCents', -2) - point(before, 'revenueCents', -2)).toBe(0);
     expect(
       after.revenue!.publicationsCents - before.revenue!.publicationsCents,
     ).toBeGreaterThanOrEqual(payment.amountCents - payment.installmentInterestCents);
@@ -193,6 +229,58 @@ describe('Backoffice: visão geral, busca, log e alertas (Backoffice - acesso RN
     expect(after.activationPercent).toBe(
       Math.round((after.weddingsPublished / after.weddingsCreated) * 1000) / 10,
     );
+  });
+
+  it('RN04 - a taxa de resposta média: só os casamentos no ar (publicado, pós-evento e carência), com convidados e não bloqueados, com uma casa', async () => {
+    // O kore_test é compartilhado e a média é de todos os casamentos: o caso roda
+    // o reader numa transação que esconde as tabelas reais atrás de tabelas
+    // temporárias (o pg_temp vem antes do public na busca) e desfaz tudo no fim.
+    const rollback = new Error('rollback');
+    let average: number | null | undefined;
+    await db
+      .$transaction(async (tx) => {
+        await tx.$executeRawUnsafe(
+          `CREATE TEMP TABLE weddings (id uuid, status wedding_status, blocked_at timestamptz,
+             created_at timestamptz, published_at timestamptz) ON COMMIT DROP`,
+        );
+        await tx.$executeRawUnsafe(
+          `CREATE TEMP TABLE wedding_stats (wedding_id uuid, guests_total int,
+             rsvp_percent numeric(5,2)) ON COMMIT DROP`,
+        );
+        const rows: [string, string | null, number, string][] = [
+          ['published', null, 10, '80.00'],
+          ['post_event', null, 10, '60.00'],
+          ['grace', null, 10, '33.33'],
+          // Fora da média: bloqueado, sem convidados, rascunho e expirado.
+          ['published', '2026-01-01T00:00:00Z', 10, '100.00'],
+          ['published', null, 0, '0.00'],
+          ['draft', null, 10, '100.00'],
+          ['expired', null, 10, '100.00'],
+        ];
+        for (const [status, blockedAt, guests, percent] of rows) {
+          const id = randomUUID();
+          await tx.$executeRawUnsafe(
+            `INSERT INTO weddings (id, status, blocked_at) VALUES ($1::uuid, $2::wedding_status, $3::timestamptz)`,
+            id,
+            status,
+            blockedAt,
+          );
+          await tx.$executeRawUnsafe(
+            `INSERT INTO wedding_stats VALUES ($1::uuid, $2, $3::numeric)`,
+            id,
+            guests,
+            percent,
+          );
+        }
+        const reader = new PrismaAdminInsightsReader(tx as unknown as BackofficePrismaService);
+        average = (await reader.overview({ role: 'support', now: new Date() })).rsvpAveragePercent;
+        throw rollback;
+      })
+      .catch((error: unknown) => {
+        if (error !== rollback) throw error;
+      });
+    // (80 + 60 + 33,33) / 3 = 57,776…
+    expect(average).toBe(57.8);
   });
 
   it('RN11 - o Log da aplicação filtra por casamento e ação e fica nos últimos 30 dias sem período', async () => {
