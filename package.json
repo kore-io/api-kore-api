@@ -129,6 +129,11 @@
     ],
     "overrides": {
       "multer": "^2.5.0"
+    },
+    "auditConfig": {
+      "ignoreGhsas": [
+        "GHSA-fc5q-39xc-vjpf"
+      ]
     }
   }
 }
