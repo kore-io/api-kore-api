@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   InvalidLoginCodeError,
   LoginChallengeExpiredError,
@@ -31,6 +31,8 @@ import {
   issueLoginChallengeIfAllowed,
   type IssuedChallenge,
 } from './request-login-challenge.use-case';
+
+const logger = new Logger('VerifyLoginChallenge');
 
 export type LoginCredentials = { email: string; code: string } | { token: string };
 
@@ -151,8 +153,11 @@ export class VerifyLoginChallenge {
     });
 
     // O código errado conta para o alerta login_abuse (Backoffice - acesso RN12).
+    // Uma falha do monitor não troca a resposta do login (o 401 ou o 410) por 500.
     if (check.outcome === 'wrong' || check.outcome === 'locked')
-      await this.abuse.recordFailure({ email, ip, now });
+      await this.abuse.recordFailure({ email, ip, now }).catch((error: unknown) => {
+        logger.warn(`login_abuse sem registro: ${(error as Error).name}`);
+      });
 
     switch (check.outcome) {
       case 'ok':

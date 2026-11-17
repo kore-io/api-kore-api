@@ -21,12 +21,6 @@ export function brasiliaDay({ now }: { now: Date }): { start: Date; next: Date }
   return { start, next: new Date(start.getTime() + 24 * 60 * 60_000) };
 }
 
-/** "ana***@gmail.com" (Backoffice - acesso RN09, o aviso ao endereço antigo; a máscara da 244). */
-export function maskEmail(email: string): string {
-  const [local = '', domain = ''] = email.split('@');
-  return `${local.slice(0, 3)}***@${domain}`;
-}
-
 /** Os 4 dígitos que o casal informou, comparados só como dígitos. */
 export function normalizeLast4(value: string): string {
   return value.replace(/\D/g, '');

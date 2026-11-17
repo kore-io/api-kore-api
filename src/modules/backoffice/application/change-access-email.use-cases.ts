@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { SendAccessEmailChanged } from '@/modules/access/application/invitations/send-access-email-changed.use-case';
 import { IpHasher } from '@/modules/logs/infrastructure/providers/ip-hasher';
-import { maskEmail } from '@/modules/backoffice/domain/access-email-change';
+import { maskEmail } from '@/shared/kernel/text/mask-email';
 import {
   AccessChangeRateLimitedError,
   AccessEmailLockedError,

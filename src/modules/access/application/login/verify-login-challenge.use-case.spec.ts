@@ -123,6 +123,14 @@ describe('VerifyLoginChallenge', () => {
     );
   });
 
+  it('Backoffice - acesso RN12 - se o registro do login_abuse falhar, o código errado segue com o 401 de sempre', async () => {
+    const { useCase, recordFailure } = build({ attemptsAfterFailure: 1 });
+    recordFailure.mockRejectedValueOnce(new Error('backoffice fora'));
+    await expect(useCase.execute(byCode('000000'))).rejects.toEqual(
+      new InvalidLoginCodeError({ attemptsLeft: 4 }),
+    );
+  });
+
   it('Backoffice - acesso RN12 - o código errado (também o quinto) conta para o login_abuse; o certo e o vencido, não', async () => {
     const wrong = build({ attemptsAfterFailure: 1 });
     await expect(wrong.useCase.execute(byCode('000000'))).rejects.toThrow(InvalidLoginCodeError);

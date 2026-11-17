@@ -5,7 +5,7 @@ import {
   LOGIN_ABUSE_WINDOW_MS,
 } from '@/modules/access/domain/login/login-challenge-rules';
 import type { LoginAbuseMonitor } from '@/modules/access/application/ports/login-abuse-monitor.port';
-import { maskEmail } from '@/modules/backoffice/domain/access-email-change';
+import { maskEmail } from '@/shared/kernel/text/mask-email';
 import { IpHasher } from '@/modules/logs/infrastructure/providers/ip-hasher';
 import { AppConfigService } from '@/shared/config/app-config.service';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
