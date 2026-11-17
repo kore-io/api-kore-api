@@ -84,4 +84,31 @@ describe('REDACTED_PATHS', () => {
     expect(output).not.toContain('bia@kore.com.br');
     expect(output).toContain('[Redacted]');
   });
+
+  it('Publicar e pagar RN02 - o corpo do pagamento (payer.taxId e cardToken) sai como [Redacted]', () => {
+    const lines: string[] = [];
+    const stream = new Writable({
+      write(chunk: Buffer, _encoding, callback) {
+        lines.push(chunk.toString());
+        callback();
+      },
+    });
+    const logger = pino({ redact: { paths: REDACTED_PATHS } }, stream);
+
+    logger.info(
+      {
+        body: {
+          payer: { name: 'Ana Beatriz Moreira', taxId: '529.982.247-25' },
+          cardToken: 'tok_local_4242',
+        },
+      },
+      'x',
+    );
+
+    const output = lines.join('');
+    expect(output).not.toContain('529.982.247-25');
+    expect(output).not.toContain('52998224725');
+    expect(output).not.toContain('tok_local_4242');
+    expect(output).not.toContain('Ana Beatriz');
+  });
 });
