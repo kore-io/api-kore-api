@@ -6,6 +6,12 @@ export const LOGIN_CHALLENGE_MAX_ATTEMPTS = 5;
 export const LOGIN_REQUEST_INTERVAL_MS = 60 * 1000;
 export const LOGIN_REQUESTS_PER_HOUR = 5;
 export const LOGIN_REQUEST_WINDOW_MS = 60 * 60 * 1000;
+/**
+ * Backoffice - acesso RN12 (decisão 275): mais de 10 códigos errados em 1 h,
+ * para o mesmo e-mail ou o mesmo IP, abrem o alerta `login_abuse`.
+ */
+export const LOGIN_ABUSE_MAX_FAILURES = 10;
+export const LOGIN_ABUSE_WINDOW_MS = 60 * 60 * 1000;
 
 export type LoginRequestQuota =
   | { allowed: true }

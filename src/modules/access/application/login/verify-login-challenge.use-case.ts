@@ -20,6 +20,10 @@ import {
   type LoginChallengeStore,
 } from '@/modules/access/application/ports/login-challenge-store.port';
 import {
+  LOGIN_ABUSE_MONITOR,
+  type LoginAbuseMonitor,
+} from '@/modules/access/application/ports/login-abuse-monitor.port';
+import {
   LOGIN_CODE_MAILER,
   type LoginCodeMailer,
 } from '@/modules/access/application/ports/login-code-mailer.port';
@@ -47,6 +51,7 @@ export class VerifyLoginChallenge {
     @Inject(LOGIN_CHALLENGE_STORE) private readonly store: LoginChallengeStore,
     @Inject(LOGIN_CHALLENGE_SECRETS) private readonly secrets: LoginChallengeSecrets,
     @Inject(LOGIN_CODE_MAILER) private readonly mailer: LoginCodeMailer,
+    @Inject(LOGIN_ABUSE_MONITOR) private readonly abuse: LoginAbuseMonitor,
     private readonly completeLogin: CompleteLogin,
   ) {}
 
@@ -144,6 +149,10 @@ export class VerifyLoginChallenge {
         return { outcome: 'locked', reissued: null, retryAfterMinutes };
       },
     });
+
+    // O código errado conta para o alerta login_abuse (Backoffice - acesso RN12).
+    if (check.outcome === 'wrong' || check.outcome === 'locked')
+      await this.abuse.recordFailure({ email, ip, now });
 
     switch (check.outcome) {
       case 'ok':
