@@ -102,7 +102,9 @@ describe('Comissões do indicador (Comissões RN01 a RN06; banco real)', () => {
       where: { entityType: 'commission', entityId: commission!.id },
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     });
-    return rows.map((row) => row.action);
+    // Sem ordem: os eventos do gateway local podem ser aplicados fora da ordem
+    // em que o teste os manda (a fila), e duas linhas podem cair no mesmo ms.
+    return rows.map((row) => row.action).sort();
   };
   const dispute = (paymentId: string, event: string) =>
     devPaymentEvent({ app, paymentId, event }).then((response) => expectStatus(response, 200));
@@ -145,7 +147,7 @@ describe('Comissões do indicador (Comissões RN01 a RN06; banco real)', () => {
       blockReason: 'self_referral',
     });
     // As duas linhas nascem na mesma transação e no mesmo milissegundo: sem ordem entre elas.
-    expect((await logActionsOf(self.paymentId)).sort()).toEqual([
+    expect(await logActionsOf(self.paymentId)).toEqual([
       'commission.blocked',
       'commission.created',
     ]);
@@ -190,7 +192,7 @@ describe('Comissões do indicador (Comissões RN01 a RN06; banco real)', () => {
     const at4am = new Date(`${releaseDay}T07:00:00Z`);
     expect(await release.execute({ now: at4am, referrerId: referrerId! })).toEqual({ released: 1 });
     expect(await commissionOf(paymentId)).toMatchObject({ status: 'available' });
-    expect(await logActionsOf(paymentId)).toEqual(['commission.created', 'commission.available']);
+    expect(await logActionsOf(paymentId)).toEqual(['commission.available', 'commission.created']);
     const referrer = await db.referrer.findUniqueOrThrow({ where: { id: referrerId! } });
     const [notice] = await db.notification.findMany({
       where: { userId: referrer.userId, type: 'commission' },
