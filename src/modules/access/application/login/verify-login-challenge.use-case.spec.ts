@@ -64,8 +64,10 @@ function build({
   const mailer: LoginCodeMailer = { send };
   const execute = jest.fn().mockResolvedValue({ user: { id: 'u1' }, next: 'choose_profile' });
   const completeLogin = { execute } as unknown as CompleteLogin;
+  const recordFailure = jest.fn().mockResolvedValue(undefined);
   return {
-    useCase: new VerifyLoginChallenge(store, secrets, mailer, completeLogin),
+    useCase: new VerifyLoginChallenge(store, secrets, mailer, { recordFailure }, completeLogin),
+    recordFailure,
     transaction,
     send,
     completeLogin: execute,
@@ -119,6 +121,38 @@ describe('VerifyLoginChallenge', () => {
     await expect(useCase.execute(byCode('000000'))).rejects.toEqual(
       new InvalidLoginCodeError({ attemptsLeft: 4 }),
     );
+  });
+
+  it('Backoffice - acesso RN12 - se o registro do login_abuse falhar, o código errado segue com o 401 de sempre', async () => {
+    const { useCase, recordFailure } = build({ attemptsAfterFailure: 1 });
+    recordFailure.mockRejectedValueOnce(new Error('backoffice fora'));
+    await expect(useCase.execute(byCode('000000'))).rejects.toEqual(
+      new InvalidLoginCodeError({ attemptsLeft: 4 }),
+    );
+  });
+
+  it('Backoffice - acesso RN12 - o código errado (também o quinto) conta para o login_abuse; o certo e o vencido, não', async () => {
+    const wrong = build({ attemptsAfterFailure: 1 });
+    await expect(wrong.useCase.execute(byCode('000000'))).rejects.toThrow(InvalidLoginCodeError);
+    expect(wrong.recordFailure).toHaveBeenCalledWith({
+      email: 'ana@kore.local',
+      ip: '1.2.3.4',
+      now,
+    });
+
+    const fifth = build({ attemptsAfterFailure: 5 });
+    await expect(fifth.useCase.execute(byCode('000000'))).rejects.toThrow();
+    expect(fifth.recordFailure).toHaveBeenCalledTimes(1);
+
+    const right = build();
+    await right.useCase.execute(byCode('123456'));
+    const expired = build({ open: challenge({ expiresAt: minutesAgo(1) }) });
+    await expect(expired.useCase.execute(byCode('000000'))).rejects.toThrow(
+      LoginChallengeExpiredError,
+    );
+    expect([right.recordFailure, expired.recordFailure].map((fn) => fn.mock.calls.length)).toEqual([
+      0, 0,
+    ]);
   });
 
   it('RN05 - dados 4 erros, quando erra a quinta vez com espaço na RN04, então invalida e envia um código novo', async () => {

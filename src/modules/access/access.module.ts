@@ -46,6 +46,9 @@ import { WEDDING_SIGNUP_STORE } from './application/ports/wedding-signup-store.p
 import { PROFILE_DIRECTORY } from './application/ports/profile-directory.port';
 import { USER_ACCOUNTS } from './application/ports/user-accounts.port';
 import { RequestLoginChallenge } from './application/login/request-login-challenge.use-case';
+import { ipHasherProvider } from '@/modules/logs/infrastructure/providers/ip-hasher.provider';
+import { LOGIN_ABUSE_MONITOR } from './application/ports/login-abuse-monitor.port';
+import { PrismaLoginAbuseMonitor } from './infrastructure/backoffice/prisma-login-abuse-monitor';
 import { VerifyLoginChallenge } from './application/login/verify-login-challenge.use-case';
 import { EndAllSessions } from './application/sessions/end-all-sessions.use-case';
 import { EndSession } from './application/sessions/end-session.use-case';
@@ -145,6 +148,8 @@ import { TenantTransactionInterceptor } from './presentation/http/interceptors/t
     WeddingAuthorization,
     WeddingScope,
     { provide: LOGIN_CHALLENGE_STORE, useClass: PrismaLoginChallengeStore },
+    { provide: LOGIN_ABUSE_MONITOR, useClass: PrismaLoginAbuseMonitor },
+    ipHasherProvider,
     {
       provide: LOGIN_CHALLENGE_SECRETS,
       inject: [AppConfigService],

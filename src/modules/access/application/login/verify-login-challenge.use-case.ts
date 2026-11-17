@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   InvalidLoginCodeError,
   LoginChallengeExpiredError,
@@ -20,6 +20,10 @@ import {
   type LoginChallengeStore,
 } from '@/modules/access/application/ports/login-challenge-store.port';
 import {
+  LOGIN_ABUSE_MONITOR,
+  type LoginAbuseMonitor,
+} from '@/modules/access/application/ports/login-abuse-monitor.port';
+import {
   LOGIN_CODE_MAILER,
   type LoginCodeMailer,
 } from '@/modules/access/application/ports/login-code-mailer.port';
@@ -27,6 +31,8 @@ import {
   issueLoginChallengeIfAllowed,
   type IssuedChallenge,
 } from './request-login-challenge.use-case';
+
+const logger = new Logger('VerifyLoginChallenge');
 
 export type LoginCredentials = { email: string; code: string } | { token: string };
 
@@ -47,6 +53,7 @@ export class VerifyLoginChallenge {
     @Inject(LOGIN_CHALLENGE_STORE) private readonly store: LoginChallengeStore,
     @Inject(LOGIN_CHALLENGE_SECRETS) private readonly secrets: LoginChallengeSecrets,
     @Inject(LOGIN_CODE_MAILER) private readonly mailer: LoginCodeMailer,
+    @Inject(LOGIN_ABUSE_MONITOR) private readonly abuse: LoginAbuseMonitor,
     private readonly completeLogin: CompleteLogin,
   ) {}
 
@@ -144,6 +151,13 @@ export class VerifyLoginChallenge {
         return { outcome: 'locked', reissued: null, retryAfterMinutes };
       },
     });
+
+    // O código errado conta para o alerta login_abuse (Backoffice - acesso RN12).
+    // Uma falha do monitor não troca a resposta do login (o 401 ou o 410) por 500.
+    if (check.outcome === 'wrong' || check.outcome === 'locked')
+      await this.abuse.recordFailure({ email, ip, now }).catch((error: unknown) => {
+        logger.warn(`login_abuse sem registro: ${(error as Error).name}`);
+      });
 
     switch (check.outcome) {
       case 'ok':

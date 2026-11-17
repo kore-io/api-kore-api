@@ -95,6 +95,24 @@ O `db:seed` é idempotente e imprime os links dos convites de acesso pendentes
 para o E2E do app. Em local e test os tokens são fixos (`/convite/seed-…`); em
 homologação, novos a cada execução. Todo e-mail é `@exemplo.kore.local`.
 
+O papel do staff no Backoffice (`platformRole`) só muda por script de operação,
+com a linha `user.platform_role_changed` no log da aplicação (Backoffice -
+acesso RN01). A conta precisa existir (a pessoa entra uma vez pelo Google da
+empresa); o papel vale na próxima requisição:
+
+```bash
+pnpm staff:role --email renata@kore.com.br --role admin --by ops@kore.com.br --reason "Entrada na equipe"
+pnpm staff:role --email renata@kore.com.br --role none --by ops@kore.com.br --reason "Saiu da equipe"
+```
+
+Em homolog e produção não há `pnpm` nem `.env` na imagem (`pnpm prune --prod`): o
+script roda do `dist`, com as variáveis do host (só a `DATABASE_BACKOFFICE_URL`),
+dentro do container da API:
+
+```bash
+node dist/cli/platform-role/main --email renata@kore.com.br --role admin --by ops@kore.com.br --reason "Entrada na equipe"
+```
+
 A API conecta como `kore_api`, membro do papel `kore_app` (sujeito à RLS). As
 migrations rodam com o dono do schema (`DATABASE_MIGRATION_URL`).
 

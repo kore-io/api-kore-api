@@ -12,7 +12,11 @@ import {
   NotBlockedError,
   AdminWeddingNotFoundError,
 } from '@/modules/backoffice/domain/backoffice.errors';
-import { withoutMoney, type StaffMember } from '@/modules/backoffice/domain/staff';
+import {
+  hiddenLogActionPrefixes,
+  withoutMoney,
+  type StaffMember,
+} from '@/modules/backoffice/domain/staff';
 import {
   ADMIN_WEDDINGS_READER,
   type AdminWeddingGeneral,
@@ -109,7 +113,11 @@ export class AdminWeddings {
         return { tab, billing };
       }
       case 'log': {
-        const log = await this.reader.log({ weddingId, page });
+        const log = await this.reader.log({
+          weddingId,
+          page,
+          hiddenActionPrefixes: hiddenLogActionPrefixes({ role: staff.role }),
+        });
         if (!log) throw new AdminWeddingNotFoundError();
         await this.record({
           staff,
@@ -118,11 +126,10 @@ export class AdminWeddings {
           ip,
           data: { tab, page },
         });
-        if (staff.role === 'support')
-          log.items = log.items.map((item) => ({
-            ...item,
-            data: withoutMoney({ data: item.data, role: staff.role }),
-          }));
+        log.items = log.items.map((item) => ({
+          ...item,
+          data: withoutMoney({ data: item.data, role: staff.role }),
+        }));
         return { tab, log };
       }
     }

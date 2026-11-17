@@ -7,7 +7,7 @@ import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.ser
 import { localDate } from '@/shared/kernel/time/local-date';
 import { createTestApp } from '../support/harness/create-test-app';
 import { createTestWorker } from '../support/harness/create-test-worker';
-import { waitForInbox } from '../support/harness/mailpit';
+import { messageText, waitForInbox } from '../support/harness/mailpit';
 import { publishByPayment } from '../support/factories/payments';
 import { seedReferrer } from '../support/factories/referrers';
 import { openSession, signedInUser, staffUser } from '../support/harness/sessions';
@@ -113,6 +113,55 @@ describe('Backoffice: trocar o e-mail de acesso (Backoffice - acesso RN09; decis
     expect(toNew.Subject).toBe('Seu novo e-mail de acesso ao Kore');
     const [toOld] = await waitForInbox({ to: ana.email });
     expect(toOld.Subject).toBe('O e-mail de acesso da sua conta mudou');
+
+    // Os corpos (RN09): o botão Entrar no Kore entra uma vez só com o endereço
+    // novo; o aviso ao antigo traz o novo só mascarado.
+    const newText = await messageText({ id: toNew.ID });
+    const token = /Entrar no Kore: \S+token=([\w-]+)/.exec(newText)?.[1];
+    expect(token).toEqual(expect.any(String));
+    const verify = () =>
+      http()
+        .post('/v1/auth/login-challenges/verify')
+        .set('X-Forwarded-For', '10.9.9.9')
+        .send({ token });
+    await verify().expect(200);
+    await verify().expect(410);
+    const oldText = await messageText({ id: toOld.ID });
+    expect(oldText).toContain(
+      `trocou o e-mail de acesso da sua conta para ${target.slice(0, 3)}***@gmail.com.`,
+    );
+    expect(oldText).not.toContain(target);
+  });
+
+  it('RN09 - sem pagamento, a terceira confirmação some: a troca vale sem os 4 dígitos', async () => {
+    const support = await staffUser({ app, role: 'support' });
+    const ana = await signedInUser({ app });
+    const { weddingId } = await seedWedding({ db, ownerId: ana.userId });
+    const target = newEmail();
+
+    expect(
+      (
+        await change(support.cookie, weddingId, { userId: ana.userId, newEmail: target }).expect(
+          200,
+        )
+      ).body,
+    ).toEqual({ status: 'changed' });
+    expect((await db.user.findUniqueOrThrow({ where: { id: ana.userId } })).email).toBe(target);
+  });
+
+  it('RN09 - nunca de quem tem platformRole: 403 ACTION_NOT_ALLOWED, sem mudar nada', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const owner = await staffUser({ app, role: 'support', name: 'Bruno Tavares' });
+    const { weddingId } = await seedWedding({ db, ownerId: owner.userId });
+
+    const refused = await change(admin.cookie, weddingId, {
+      userId: owner.userId,
+      newEmail: newEmail(),
+    }).expect(403);
+    expect(refused.body.error).toBe('ACTION_NOT_ALLOWED');
+    expect((await db.user.findUniqueOrThrow({ where: { id: owner.userId } })).email).toBe(
+      owner.email,
+    );
   });
 
   it('RN09 - as recusas: confirmação faltando, dígitos faltando ou errados, colaboradora, e-mail em uso', async () => {

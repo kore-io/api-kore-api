@@ -1,8 +1,15 @@
 import { INestApplication } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
+import { randomInt, randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import { addMonths } from '@/modules/billing/domain/payments/pricing';
+import {
+  ADMIN_INSIGHTS_READER,
+  type AdminInsightsReader,
+} from '@/modules/backoffice/application/ports/admin-insights.reader.port';
+import { localDate } from '@/shared/kernel/time/local-date';
 import { createTestApp } from '../support/harness/create-test-app';
+import { devPaymentEvent, expectStatus, payForPublication } from '../support/factories/payments';
 import { seedReferrer } from '../support/factories/referrers';
 import { signedInUser, staffUser } from '../support/harness/sessions';
 import { seedWedding } from '../support/factories/weddings';
@@ -111,9 +118,85 @@ describe('Backoffice: visão geral, busca, log e alertas (Backoffice - acesso RN
     }
   });
 
-  it('RN11 - o Log da aplicação filtra por casamento e ação, fica nos últimos 30 dias sem período e tira os centavos do suporte', async () => {
+  it('RN04 - os valores da Visão geral: o mês em Brasília, a Ativação, e a Receita sem os juros do cartão e só com o pagamento aplicado no mês', async () => {
+    // Um mês antigo e sorteado: o kore_test é compartilhado, então o caso mede
+    // a diferença antes e depois das próprias linhas (pelo reader, sem o cache).
+    const year = 1980 + randomInt(30);
+    // De maio a setembro: o antigo horário de verão de Brasília não chega lá (-03 o mês todo).
+    const month = String(5 + randomInt(5)).padStart(2, '0');
+    const monthStart = new Date(`${year}-${month}-01T03:00:00.000Z`); // 00:00 em Brasília
+    const midMonth = new Date(`${year}-${month}-15T15:00:00.000Z`);
+    const reader = app.get<AdminInsightsReader>(ADMIN_INSIGHTS_READER);
+    const before = await reader.overview({ role: 'admin', now: midMonth });
+    expect(before.month).toBe(`${year}-${month}`);
+
+    const ana = await signedInUser({ app });
+    // No primeiro minuto do mês em Brasília: conta. Um milissegundo antes: é do mês anterior.
+    const inside = await seedWedding({ db, ownerId: ana.userId });
+    await db.wedding.update({ where: { id: inside.weddingId }, data: { createdAt: monthStart } });
+    const outside = await seedWedding({ db, ownerId: ana.userId });
+    await db.wedding.update({
+      where: { id: outside.weddingId },
+      data: { createdAt: new Date(monthStart.getTime() - 1) },
+    });
+    // Publicado no cartão em 12x (com juros) e aplicado no meio do mês.
+    const today = localDate({ at: new Date(), timezone: 'America/Sao_Paulo' });
+    const eventDate = addMonths({ day: today, months: 2 });
+    const paid = await seedWedding({ db, ownerId: ana.userId });
+    await db.wedding.update({
+      where: { id: paid.weddingId },
+      data: { eventDate: new Date(`${eventDate}T00:00:00Z`) },
+    });
+    const created = expectStatus(
+      await payForPublication({
+        app,
+        cookie: ana.cookie,
+        weddingId: paid.weddingId,
+        endDate: addMonths({ day: eventDate, months: 3 }),
+        installments: 12,
+      }),
+      201,
+    );
+    const paymentId = created.body.paymentId as string;
+    expectStatus(await devPaymentEvent({ app, paymentId, event: 'confirm' }), 200);
+    await db.wedding.update({
+      where: { id: paid.weddingId },
+      data: { createdAt: midMonth, publishedAt: midMonth },
+    });
+    const payment = await db.payment.update({
+      where: { id: paymentId },
+      data: { paidAt: midMonth, appliedAt: midMonth },
+    });
+    expect(payment.installmentInterestCents).toBeGreaterThan(0);
+
+    const after = await reader.overview({ role: 'admin', now: midMonth });
+    // Os números do mês contam do início dele em diante (o "agora" de verdade é
+    // o mês corrente): com o mês antigo, entram as linhas que as outras suítes
+    // gravam em paralelo. O gráfico é o mês fechado: é por ele que se mede.
+    const point = (
+      overview: typeof after,
+      chart: 'created' | 'published' | 'revenueCents',
+      at: number,
+    ) => overview.charts[chart]!.at(at)!.value;
+    expect(point(after, 'created', -1) - point(before, 'created', -1)).toBe(2);
+    // O de um milissegundo antes ficou no mês anterior.
+    expect(point(after, 'created', -2) - point(before, 'created', -2)).toBe(1);
+    expect(point(after, 'published', -1) - point(before, 'published', -1)).toBe(1);
+    // A Receita sem os juros do cartão.
+    expect(point(after, 'revenueCents', -1) - point(before, 'revenueCents', -1)).toBe(
+      payment.amountCents - payment.installmentInterestCents,
+    );
+    expect(
+      after.revenue!.publicationsCents - before.revenue!.publicationsCents,
+    ).toBeGreaterThanOrEqual(payment.amountCents - payment.installmentInterestCents);
+    // A Ativação é publicados sobre criados do mês, com uma casa.
+    expect(after.activationPercent).toBe(
+      Math.round((after.weddingsPublished / after.weddingsCreated) * 1000) / 10,
+    );
+  });
+
+  it('RN11 - o Log da aplicação filtra por casamento e ação e fica nos últimos 30 dias sem período', async () => {
     const admin = await staffUser({ app, role: 'admin' });
-    const support = await staffUser({ app, role: 'support' });
     const weddingId = randomUUID();
     await db.applicationLog.createMany({
       data: [
@@ -140,14 +223,125 @@ describe('Backoffice: visão geral, busca, log e alertas (Backoffice - acesso RN
     expect(asAdmin.body).toMatchObject({ total: 1, page: 1, pageSize: 50 });
     expect(asAdmin.body.items[0].data).toEqual({ amountCents: 33710, kind: 'publication' });
 
-    const asSupport = await get(support.cookie, '/logs', { weddingId }).expect(200);
-    expect(asSupport.body.items[0].data).toEqual({ kind: 'publication' });
-
     const withPeriod = await get(admin.cookie, '/logs', {
       weddingId,
       from: new Date(Date.now() - 60 * DAY_MS).toISOString(),
     }).expect(200);
     expect(withPeriod.body.total).toBe(2);
+  });
+
+  it('RN02 e RN11 (decisões 69 e 275) - o suporte não lê dinheiro no log: sem as ações de Cobrança, Repasses, chave Pix e Configurações, e sem centavos em nenhum nível do JSON', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const support = await staffUser({ app, role: 'support' });
+    const ana = await signedInUser({ app });
+    const { weddingId } = await seedWedding({ db, ownerId: ana.userId });
+    const nested = {
+      reason: 'Ajuste combinado',
+      amountCents: 1500,
+      detail: { totalCentsBefore: 3000, items: [{ valueCents: 10, label: 'a' }] },
+    };
+    await db.applicationLog.createMany({
+      data: [
+        { action: 'commission.adjusted', actorKind: 'system', weddingId, data: nested },
+        {
+          action: 'payout.released',
+          actorKind: 'system',
+          weddingId,
+          data: { amountCentsBefore: 5000, amountCentsAfter: 4000 },
+        },
+        {
+          action: 'settings.referral_updated',
+          actorKind: 'system',
+          weddingId,
+          data: { before: { payoutMinCents: 5000 }, after: { payoutMinCents: 6000 } },
+        },
+        { action: 'payment.refunded', actorKind: 'system', weddingId, data: { kind: 'x' } },
+        { action: 'payments.exported', actorKind: 'system', weddingId, data: {} },
+        { action: 'pix_key.changed', actorKind: 'system', weddingId, data: {} },
+        { action: 'integration.tested', actorKind: 'system', weddingId, data: {} },
+      ],
+    });
+
+    const asAdmin = await get(admin.cookie, '/logs', { weddingId }).expect(200);
+    const adminPage = asAdmin.body as { total: number; items: { action: string; data: unknown }[] };
+    expect(adminPage.total).toBe(7);
+    const adminAdjusted = adminPage.items.find((item) => item.action === 'commission.adjusted');
+    expect(adminAdjusted?.data).toEqual(nested);
+
+    for (const path of ['/logs', `/weddings/${weddingId}`]) {
+      const res = await get(
+        support.cookie,
+        path,
+        path === '/logs' ? { weddingId } : { tab: 'log' },
+      ).expect(200);
+      const page = (path === '/logs' ? res.body : res.body.log) as {
+        total: number;
+        items: { action: string; data: unknown }[];
+      };
+      // A leitura da aba grava a própria linha (admin.wedding_viewed), que não é de dinheiro.
+      const own = page.items.filter((item) => !item.action.startsWith('admin.'));
+      expect(own.map((item) => item.action)).toEqual(['commission.adjusted']);
+      expect(own[0].data).toEqual({
+        reason: 'Ajuste combinado',
+        detail: { items: [{ label: 'a' }] },
+      });
+      expect(JSON.stringify(page.items).toLowerCase()).not.toContain('cents');
+    }
+    const filtered = await get(support.cookie, '/logs', {
+      weddingId,
+      action: 'payout.released',
+    }).expect(200);
+    expect(filtered.body.total).toBe(0);
+  });
+
+  it('RN02 e RN11 (decisão 275, regressão do DoD) - o suporte não lê nenhum valor do payout.released nem do settings.referral_updated, com os valores aninhados', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const support = await staffUser({ app, role: 'support' });
+    const weddingId = randomUUID();
+    // Os formatos que o código grava (prisma-payout-admin.store e admin-settings.use-cases).
+    const settingsBefore = {
+      defaultRatePercent: 20,
+      referralDiscountPercent: 10,
+      commissionHoldDays: 30,
+      payoutMinCents: 5123,
+    };
+    const settingsAfter = { ...settingsBefore, payoutMinCents: 6123 };
+    await db.applicationLog.createMany({
+      data: [
+        {
+          action: 'payout.released',
+          actorKind: 'system',
+          weddingId,
+          entityType: 'payout',
+          entityId: randomUUID(),
+          data: { amountCentsBefore: 5123, amountCentsAfter: 4123 },
+        },
+        {
+          action: 'settings.referral_updated',
+          actorKind: 'system',
+          weddingId,
+          data: {
+            before: settingsBefore,
+            after: settingsAfter,
+            changes: { payoutMinCents: { from: 5123, to: 6123 } },
+            plannersUpdated: 0,
+          },
+        },
+      ],
+    });
+
+    const asAdmin = await get(admin.cookie, '/logs', { weddingId }).expect(200);
+    expect(JSON.stringify(asAdmin.body.items)).toContain('6123');
+
+    for (const action of [undefined, 'payout.released', 'settings.referral_updated']) {
+      const asSupport = await get(support.cookie, '/logs', {
+        weddingId,
+        ...(action ? { action } : {}),
+      }).expect(200);
+      const body = JSON.stringify(asSupport.body.items);
+      for (const value of ['5123', '4123', '6123', 'Cents', 'cents'])
+        expect(body).not.toContain(value);
+    }
   });
 
   it('RN12 - os alertas de dinheiro só para o Admin; resolver grava quem resolveu e o log; o suporte não resolve o de dinheiro', async () => {

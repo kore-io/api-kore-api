@@ -95,6 +95,15 @@ describe('Comissões do indicador (Comissões RN01 a RN06; banco real)', () => {
   }
 
   const commissionOf = (paymentId: string) => db.commission.findUnique({ where: { paymentId } });
+  /** As ações do log da comissão, na ordem (Mudanças no modelo de dados; decisão 275). */
+  const logActionsOf = async (paymentId: string) => {
+    const commission = await commissionOf(paymentId);
+    const rows = await db.applicationLog.findMany({
+      where: { entityType: 'commission', entityId: commission!.id },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    });
+    return rows.map((row) => row.action);
+  };
   const dispute = (paymentId: string, event: string) =>
     devPaymentEvent({ app, paymentId, event }).then((response) => expectStatus(response, 200));
 
@@ -112,6 +121,16 @@ describe('Comissões do indicador (Comissões RN01 a RN06; banco real)', () => {
       payoutId: null,
     });
     expect(commission!.availableAt.getTime() - payment.paidAt!.getTime()).toBe(30 * DAY);
+    // O log (decisão 275): commission.created, pelo sistema, com o casamento.
+    const [created] = await db.applicationLog.findMany({
+      where: { entityType: 'commission', entityId: commission!.id },
+    });
+    expect(created).toMatchObject({
+      action: 'commission.created',
+      actorKind: 'system',
+      weddingId: payment.weddingId,
+      data: expect.objectContaining({ amountCents: commission!.amountCents, status: 'pending' }),
+    });
   });
 
   it('RN01 - sem indicador, ou com 0%, não nasce', async () => {
@@ -120,10 +139,16 @@ describe('Comissões do indicador (Comissões RN01 a RN06; banco real)', () => {
   });
 
   it('RN03 e RN04 - autoindicação e indicador bloqueado: nasce bloqueada', async () => {
-    expect(await commissionOf((await published({ selfReferral: true })).paymentId)).toMatchObject({
+    const self = await published({ selfReferral: true });
+    expect(await commissionOf(self.paymentId)).toMatchObject({
       status: 'blocked',
       blockReason: 'self_referral',
     });
+    // As duas linhas nascem na mesma transação e no mesmo milissegundo: sem ordem entre elas.
+    expect((await logActionsOf(self.paymentId)).sort()).toEqual([
+      'commission.blocked',
+      'commission.created',
+    ]);
     expect(await commissionOf((await published({ referrer: 'blocked' })).paymentId)).toMatchObject({
       status: 'blocked',
       blockReason: 'referrer_blocked',
@@ -165,6 +190,7 @@ describe('Comissões do indicador (Comissões RN01 a RN06; banco real)', () => {
     const at4am = new Date(`${releaseDay}T07:00:00Z`);
     expect(await release.execute({ now: at4am, referrerId: referrerId! })).toEqual({ released: 1 });
     expect(await commissionOf(paymentId)).toMatchObject({ status: 'available' });
+    expect(await logActionsOf(paymentId)).toEqual(['commission.created', 'commission.available']);
     const referrer = await db.referrer.findUniqueOrThrow({ where: { id: referrerId! } });
     const [notice] = await db.notification.findMany({
       where: { userId: referrer.userId, type: 'commission' },
@@ -198,6 +224,11 @@ describe('Comissões do indicador (Comissões RN01 a RN06; banco real)', () => {
     const reversed = await commissionOf(paymentId);
     expect(reversed).toMatchObject({ status: 'reversed' });
     expect(reversed!.reversedAt).not.toBeNull();
+    expect(await logActionsOf(paymentId)).toEqual([
+      'commission.created',
+      'commission.held',
+      'commission.reversed',
+    ]);
   });
 
   it('RN06 - a contestação retém; ganha, volta a aguardar; perdida, estorna', async () => {
@@ -211,6 +242,11 @@ describe('Comissões do indicador (Comissões RN01 a RN06; banco real)', () => {
     await dispute(lost.paymentId, 'dispute');
     await dispute(lost.paymentId, 'dispute-lost');
     expect(await commissionOf(lost.paymentId)).toMatchObject({ status: 'reversed' });
+    expect(await logActionsOf(lost.paymentId)).toEqual([
+      'commission.created',
+      'commission.held',
+      'commission.reversed',
+    ]);
   });
 
   it('RN06 - a comissão bloqueada continua bloqueada na contestação', async () => {

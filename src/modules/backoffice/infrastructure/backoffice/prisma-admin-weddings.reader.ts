@@ -296,12 +296,19 @@ export class PrismaAdminWeddingsReader implements AdminWeddingsReader {
   async log({
     weddingId,
     page,
+    hiddenActionPrefixes = [],
   }: {
     weddingId: string;
     page: number;
+    hiddenActionPrefixes?: string[];
   }): Promise<Page<AdminWeddingLogEntry> | null> {
     if (!(await this.exists(weddingId))) return null;
-    const where: Prisma.ApplicationLogWhereInput = { weddingId };
+    const where: Prisma.ApplicationLogWhereInput = {
+      weddingId,
+      ...(hiddenActionPrefixes.length
+        ? { NOT: hiddenActionPrefixes.map((prefix) => ({ action: { startsWith: prefix } })) }
+        : {}),
+    };
     const [total, rows] = await Promise.all([
       this.db.applicationLog.count({ where }),
       this.db.applicationLog.findMany({

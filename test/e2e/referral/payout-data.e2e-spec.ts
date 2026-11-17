@@ -111,6 +111,12 @@ describe('Dados para receber: CPF ou CNPJ e chave Pix (Repasse RN02 e RN03; banc
       payoutDataComplete: false,
     });
     expect(JSON.stringify(me.body)).not.toContain(cpf);
+    // O log (Mudanças no modelo de dados): referrer.tax_id_set, sem o número.
+    const taxLog = await db.applicationLog.findFirstOrThrow({
+      where: { action: 'referrer.tax_id_set', actorUserId: person.userId },
+    });
+    expect(taxLog).toMatchObject({ actorKind: 'user', data: { taxIdType: 'cpf' } });
+    expect(JSON.stringify(taxLog)).not.toContain(cpf.slice(3, 9));
 
     expect(
       (await setTaxId(person.cookie, { taxIdType: 'cpf', taxId: randomCpf() }).expect(409)).body
@@ -205,6 +211,16 @@ describe('Dados para receber: CPF ou CNPJ e chave Pix (Repasse RN02 e RN03; banc
     const confirmed = await confirmKey(person.cookie, email.token!).expect(200);
     expect(confirmed.body.status).toBe('active');
     expect(Date.now() - new Date(confirmed.body.activeFrom).getTime()).toBeLessThan(60_000);
+    // O log (Mudanças no modelo de dados): pix_key.changed, sem a chave.
+    const keyLog = await db.applicationLog.findFirstOrThrow({
+      where: { action: 'pix_key.changed', actorUserId: person.userId },
+    });
+    expect(keyLog).toMatchObject({
+      actorKind: 'user',
+      entityType: 'referrer_pix_key',
+      data: { status: 'active', activeFrom: confirmed.body.activeFrom },
+    });
+    expect(JSON.stringify(keyLog).toLowerCase()).not.toContain('pradoassessoria');
     await confirmKey(person.cookie, email.token!).expect(404);
 
     await setTaxId(person.cookie, { taxIdType: 'cpf', taxId: randomCpf() }).expect(200);

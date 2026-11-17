@@ -149,7 +149,12 @@ export interface AdminWeddingsReader {
   }): Promise<AdminWeddingGeneral | AdminWeddingTombstone | null>;
   numbers(input: { weddingId: string }): Promise<AdminWeddingNumbers | null>;
   guests(input: { weddingId: string; page: number }): Promise<Page<AdminWeddingGuest> | null>;
-  log(input: { weddingId: string; page: number }): Promise<Page<AdminWeddingLogEntry> | null>;
+  /** A aba Log; `hiddenActionPrefixes`: as ações que o papel não lê (decisão 69). */
+  log(input: {
+    weddingId: string;
+    page: number;
+    hiddenActionPrefixes?: string[];
+  }): Promise<Page<AdminWeddingLogEntry> | null>;
 }
 
 export const ADMIN_WEDDINGS_READER = Symbol('AdminWeddingsReader');

@@ -191,6 +191,19 @@ describe('Repasse: o Pix de saída (Repasse RN05 e RN08; banco real)', () => {
     ).toMatchObject({
       status: 'paid',
     });
+    // O log (Mudanças no modelo de dados; decisão 275): payout.paid, pelo sistema.
+    expect(
+      await db.applicationLog.findFirst({
+        where: { action: 'payout.paid', entityType: 'payout', entityId: person.payoutId },
+      }),
+    ).toMatchObject({
+      actorKind: 'system',
+      data: expect.objectContaining({
+        amountCents: person.commission.amountCents,
+        previousStatus: 'processing',
+        gatewayTransferId: transfer!.id,
+      }),
+    });
     const [mail] = await waitForInbox({ to: person.email });
     expect(mail.Subject).toBe('Repasse pago');
     const balances = await http()
@@ -259,6 +272,14 @@ describe('Repasse: o Pix de saída (Repasse RN05 e RN08; banco real)', () => {
       status: 'requested',
       lastError: 'pix_key_not_found',
       paidAt: null,
+    });
+    expect(
+      await db.applicationLog.findFirst({
+        where: { action: 'payout.failed', entityType: 'payout', entityId: person.payoutId },
+      }),
+    ).toMatchObject({
+      actorKind: 'system',
+      data: expect.objectContaining({ previousStatus: 'processing', error: 'pix_key_not_found' }),
     });
     expect(
       await db.alert.count({

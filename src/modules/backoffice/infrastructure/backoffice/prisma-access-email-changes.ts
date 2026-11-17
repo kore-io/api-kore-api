@@ -15,9 +15,9 @@ import {
   UNLOCK_INTERVAL_MS,
   WEDDING_FAILED_CHECKS_LIMIT,
   brasiliaDay,
-  maskEmail,
   normalizeLast4,
 } from '@/modules/backoffice/domain/access-email-change';
+import { maskEmail } from '@/shared/kernel/text/mask-email';
 import type { StaffMember } from '@/modules/backoffice/domain/staff';
 
 export const ACCESS_EMAIL_CHANGED_ACTION = 'user.access_email_changed';
