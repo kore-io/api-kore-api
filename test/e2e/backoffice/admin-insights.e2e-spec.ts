@@ -170,22 +170,28 @@ describe('Backoffice: visão geral, busca, log e alertas (Backoffice - acesso RN
     expect(payment.installmentInterestCents).toBeGreaterThan(0);
 
     const after = await reader.overview({ role: 'admin', now: midMonth });
-    expect(after.weddingsCreated - before.weddingsCreated).toBe(2);
-    expect(after.weddingsPublished - before.weddingsPublished).toBe(1);
-    expect(after.activationPercent).toBe(
-      Math.round((after.weddingsPublished / after.weddingsCreated) * 1000) / 10,
-    );
-    expect(after.revenue!.publicationsCents - before.revenue!.publicationsCents).toBe(
-      payment.amountCents - payment.installmentInterestCents,
-    );
-    expect(after.revenue!.extensionsCents).toBe(before.revenue!.extensionsCents);
-    const point = (overview: typeof after, chart: 'created' | 'revenueCents', at: number) =>
-      overview.charts[chart]!.at(at)!.value;
+    // Os números do mês contam do início dele em diante (o "agora" de verdade é
+    // o mês corrente): com o mês antigo, entram as linhas que as outras suítes
+    // gravam em paralelo. O gráfico é o mês fechado: é por ele que se mede.
+    const point = (
+      overview: typeof after,
+      chart: 'created' | 'published' | 'revenueCents',
+      at: number,
+    ) => overview.charts[chart]!.at(at)!.value;
     expect(point(after, 'created', -1) - point(before, 'created', -1)).toBe(2);
-    // O de um milissegundo antes ficou no mês anterior do gráfico.
+    // O de um milissegundo antes ficou no mês anterior.
     expect(point(after, 'created', -2) - point(before, 'created', -2)).toBe(1);
+    expect(point(after, 'published', -1) - point(before, 'published', -1)).toBe(1);
+    // A Receita sem os juros do cartão.
     expect(point(after, 'revenueCents', -1) - point(before, 'revenueCents', -1)).toBe(
       payment.amountCents - payment.installmentInterestCents,
+    );
+    expect(
+      after.revenue!.publicationsCents - before.revenue!.publicationsCents,
+    ).toBeGreaterThanOrEqual(payment.amountCents - payment.installmentInterestCents);
+    // A Ativação é publicados sobre criados do mês, com uma casa.
+    expect(after.activationPercent).toBe(
+      Math.round((after.weddingsPublished / after.weddingsCreated) * 1000) / 10,
     );
   });
 
@@ -286,6 +292,56 @@ describe('Backoffice: visão geral, busca, log e alertas (Backoffice - acesso RN
       action: 'payout.released',
     }).expect(200);
     expect(filtered.body.total).toBe(0);
+  });
+
+  it('RN02 e RN11 (decisão 275, regressão do DoD) - o suporte não lê nenhum valor do payout.released nem do settings.referral_updated, com os valores aninhados', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const support = await staffUser({ app, role: 'support' });
+    const weddingId = randomUUID();
+    // Os formatos que o código grava (prisma-payout-admin.store e admin-settings.use-cases).
+    const settingsBefore = {
+      defaultRatePercent: 20,
+      referralDiscountPercent: 10,
+      commissionHoldDays: 30,
+      payoutMinCents: 5123,
+    };
+    const settingsAfter = { ...settingsBefore, payoutMinCents: 6123 };
+    await db.applicationLog.createMany({
+      data: [
+        {
+          action: 'payout.released',
+          actorKind: 'system',
+          weddingId,
+          entityType: 'payout',
+          entityId: randomUUID(),
+          data: { amountCentsBefore: 5123, amountCentsAfter: 4123 },
+        },
+        {
+          action: 'settings.referral_updated',
+          actorKind: 'system',
+          weddingId,
+          data: {
+            before: settingsBefore,
+            after: settingsAfter,
+            changes: { payoutMinCents: { from: 5123, to: 6123 } },
+            plannersUpdated: 0,
+          },
+        },
+      ],
+    });
+
+    const asAdmin = await get(admin.cookie, '/logs', { weddingId }).expect(200);
+    expect(JSON.stringify(asAdmin.body.items)).toContain('6123');
+
+    for (const action of [undefined, 'payout.released', 'settings.referral_updated']) {
+      const asSupport = await get(support.cookie, '/logs', {
+        weddingId,
+        ...(action ? { action } : {}),
+      }).expect(200);
+      const body = JSON.stringify(asSupport.body.items);
+      for (const value of ['5123', '4123', '6123', 'Cents', 'cents'])
+        expect(body).not.toContain(value);
+    }
   });
 
   it('RN12 - os alertas de dinheiro só para o Admin; resolver grava quem resolveu e o log; o suporte não resolve o de dinheiro', async () => {
