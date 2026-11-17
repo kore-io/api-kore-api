@@ -276,6 +276,81 @@ describe('Backoffice: Cobrança (Backoffice - cobrança RN02 a RN07 e RN11; banc
     });
   });
 
+  it('RN11 (decisão 275) - Reembolsar o valor recebido menor: só o pagamento não aplicado, sem mexer no casamento, e fecha o alerta', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const mismatch = await paid();
+    await db.wedding.update({
+      where: { id: mismatch.weddingId },
+      data: { status: 'draft', endDate: null, paidThrough: null, publicationSource: null },
+    });
+    await db.commission.deleteMany({ where: { paymentId: mismatch.paymentId } });
+    await db.payment.update({ where: { id: mismatch.paymentId }, data: { appliedAt: null } });
+    // Sem o alerta, o pago e não aplicado segue recusado.
+    expect(
+      (await post(admin.cookie, `/payments/${mismatch.paymentId}/refund`).expect(409)).body.error,
+    ).toBe('PAYMENT_NOT_PAID');
+    await db.alert.create({
+      data: {
+        type: 'gateway_amount_mismatch',
+        weddingId: mismatch.weddingId,
+        entityType: 'payment',
+        entityId: mismatch.paymentId,
+        data: { chargedCents: 30000 },
+      },
+    });
+    const before = await db.wedding.findUniqueOrThrow({ where: { id: mismatch.weddingId } });
+
+    const response = await post(admin.cookie, `/payments/${mismatch.paymentId}/refund`, {
+      reason: 'O casal pagou a menos; devolver.',
+    }).expect(202);
+    expect(response.body).toMatchObject({
+      status: 'refund_requested',
+      refundsPaymentIds: [mismatch.paymentId],
+    });
+    expect(await db.payment.findUniqueOrThrow({ where: { id: mismatch.paymentId } })).toMatchObject(
+      { status: 'refund_requested', refundOrigin: 'admin', appliedAt: null },
+    );
+    expect(await db.wedding.findUniqueOrThrow({ where: { id: mismatch.weddingId } })).toEqual(
+      before,
+    );
+    expect(
+      await db.alert.findFirstOrThrow({
+        where: { type: 'gateway_amount_mismatch', entityId: mismatch.paymentId },
+      }),
+    ).toMatchObject({ status: 'resolved', resolvedByUserId: admin.userId });
+    expect(
+      await db.alert.count({ where: { type: 'repeated_refund', weddingId: mismatch.weddingId } }),
+    ).toBe(0);
+    // O estorno segue pelo job, como qualquer reembolso (RN05).
+    expectStatus(
+      await devPaymentEvent({ app, paymentId: mismatch.paymentId, event: 'refund' }),
+      200,
+    );
+    expect((await db.payment.findUniqueOrThrow({ where: { id: mismatch.paymentId } })).status).toBe(
+      'refunded',
+    );
+  });
+
+  it('RN11 (decisão 275) - o Reembolsar do pagamento aplicado com valor maior também fecha o gateway_amount_mismatch', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const over = await paid();
+    await db.alert.create({
+      data: {
+        type: 'gateway_amount_mismatch',
+        weddingId: over.weddingId,
+        entityType: 'payment',
+        entityId: over.paymentId,
+        data: { applied: true },
+      },
+    });
+    await post(admin.cookie, `/payments/${over.paymentId}/refund`).expect(202);
+    expect(
+      await db.alert.count({
+        where: { type: 'gateway_amount_mismatch', entityId: over.paymentId, status: 'open' },
+      }),
+    ).toBe(0);
+  });
+
   it('RN11 - Aplicar mesmo assim, Tentar o estorno de novo e Registrar reembolso feito por fora', async () => {
     const admin = await staffUser({ app, role: 'admin' });
     // O valor menor no gateway: pago e não aplicado, com o alerta.

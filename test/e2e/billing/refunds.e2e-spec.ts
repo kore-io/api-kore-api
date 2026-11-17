@@ -392,6 +392,11 @@ describe('Pagamentos e arrependimento (RN02 a RN08; banco real)', () => {
       }),
     ).toBe(1);
     expect((await wedding(weddingId)).status).toBe('published');
+
+    // RN08 (decisão 275): o estorno automático não é reembolso de publicação;
+    // a desistência seguinte é a 1ª e não abre o repeated_refund.
+    expectStatus(await refund(ana.cookie, weddingId, applied.id), 202);
+    expect(await db.alert.count({ where: { type: 'repeated_refund', weddingId } })).toBe(0);
   });
 
   it('RN02 a RN04 (isolamento) - o pagamento de outro casamento da mesma dona, pela URL de um rascunho: 404, e o outro fica intocado', async () => {

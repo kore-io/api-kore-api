@@ -515,7 +515,28 @@ export class PrismaPaymentLedger implements PaymentLedger {
     });
   }
 
+  /**
+   * A ordem única das travas (Publicar e pagar RN18, G2; decisão 275): quem
+   * chama já travou o Wedding e o Payment (o `lock`); antes de mexer na
+   * comissão, o Referrer, o Payout e a Commission, como no Pagar, no Recusar e
+   * no Liberar. Sem isso, o estorno e a contestação cruzavam com eles
+   * (deadlock), e o Pagar podia somar uma comissão que estava sendo estornada.
+   */
+  private async lockCommissionChain({ paymentId }: { paymentId: string }): Promise<void> {
+    await this.db().$queryRaw`
+      SELECT 1 FROM referrers r
+      WHERE r.id IN (SELECT c.referrer_id FROM commissions c WHERE c.payment_id = ${paymentId}::uuid)
+      ORDER BY r.id FOR UPDATE`;
+    await this.db().$queryRaw`
+      SELECT 1 FROM payouts po
+      WHERE po.id IN (SELECT c.payout_id FROM commissions c WHERE c.payment_id = ${paymentId}::uuid)
+      ORDER BY po.id FOR UPDATE`;
+    await this.db().$queryRaw`
+      SELECT 1 FROM commissions c WHERE c.payment_id = ${paymentId}::uuid ORDER BY c.id FOR UPDATE`;
+  }
+
   async holdCommission({ paymentId }: { paymentId: string; now: Date }): Promise<void> {
+    await this.lockCommissionChain({ paymentId });
     await this.db().commission.updateMany({
       where: { paymentId, status: { in: ['pending', 'available'] } },
       data: { status: 'held' },
@@ -523,6 +544,7 @@ export class PrismaPaymentLedger implements PaymentLedger {
   }
 
   async releaseCommission({ paymentId, now }: { paymentId: string; now: Date }): Promise<void> {
+    await this.lockCommissionChain({ paymentId });
     // Volta pelo availableAt (RN06): a data no fuso de São Paulo, como a liberação.
     await this.db().$executeRaw`
       UPDATE commissions
@@ -544,6 +566,7 @@ export class PrismaPaymentLedger implements PaymentLedger {
     now: Date;
     reason: 'refund' | 'chargeback';
   }): Promise<void> {
+    await this.lockCommissionChain({ paymentId });
     // Fora de repasse ou num repasse pedido ou retido (RN05): reversed; o
     // trigger payout_follows_commission retém o repasse (Repasse RN06 (a)).
     await this.db().$executeRaw`
