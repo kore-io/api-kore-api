@@ -50,6 +50,8 @@ export interface AdminLogQuery {
   from: Date;
   to: Date;
   page: number;
+  /** As ações que o papel não lê (decisão 69): nenhuma linha que comece assim. */
+  hiddenActionPrefixes?: string[];
 }
 
 export interface AdminLogRow {

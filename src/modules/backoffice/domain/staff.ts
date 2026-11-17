@@ -57,10 +57,39 @@ export function visibleAlertTypes({
   return all.filter((type) => !(MONEY_ALERT_TYPES as readonly string[]).includes(type));
 }
 
-/** Os valores em centavos ficam fora do que o suporte lê (RN02; decisão 69). */
+/**
+ * As ações do log que são de dinheiro fora do que o suporte vê (RN02 e RN11;
+ * decisões 69 e 275): Cobrança, fila de Repasses, chave Pix e Configurações.
+ * O suporte não recebe essas linhas; as de comissão ficam, sem os valores.
+ */
+export const MONEY_LOG_ACTION_PREFIXES = [
+  'payment.',
+  'payments.',
+  'payout.',
+  'pix_key.',
+  'settings.',
+  'integration.',
+] as const;
+
+export function hiddenLogActionPrefixes({ role }: { role: StaffRole }): string[] {
+  return role === 'admin' ? [] : [...MONEY_LOG_ACTION_PREFIXES];
+}
+
+/**
+ * Os valores em centavos ficam fora do que o suporte lê, em qualquer nível do
+ * JSON (RN02; decisões 69 e 275): sai toda chave cujo nome contém `cents`.
+ */
 export function withoutMoney({ data, role }: { data: unknown; role: StaffRole }): unknown {
-  if (role === 'admin' || !data || typeof data !== 'object' || Array.isArray(data)) return data;
+  if (role === 'admin') return data;
+  return stripCents(data);
+}
+
+function stripCents(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(stripCents);
+  if (!value || typeof value !== 'object') return value;
   return Object.fromEntries(
-    Object.entries(data as Record<string, unknown>).filter(([key]) => !/cents$/i.test(key)),
+    Object.entries(value as Record<string, unknown>)
+      .filter(([key]) => !/cents/i.test(key))
+      .map(([key, inner]) => [key, stripCents(inner)]),
   );
 }

@@ -6,6 +6,7 @@ import {
 } from '@/modules/backoffice/domain/backoffice.errors';
 import {
   MONEY_ALERT_TYPES,
+  hiddenLogActionPrefixes,
   visibleAlertTypes,
   withoutMoney,
   type StaffMember,
@@ -110,6 +111,7 @@ export class AdminInsights {
       ...query,
       from: query.from ?? new Date(now.getTime() - DEFAULT_LOG_DAYS * 86_400_000),
       to: query.to ?? now,
+      hiddenActionPrefixes: hiddenLogActionPrefixes({ role: staff.role }),
     });
     return {
       ...page,

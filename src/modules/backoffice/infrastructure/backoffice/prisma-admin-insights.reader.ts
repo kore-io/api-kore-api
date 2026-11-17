@@ -185,6 +185,9 @@ export class PrismaAdminInsightsReader implements AdminInsightsReader {
       ...(query.action ? { action: query.action } : {}),
       ...(query.userId ? { actorUserId: query.userId } : {}),
       ...(query.weddingId ? { weddingId: query.weddingId } : {}),
+      ...(query.hiddenActionPrefixes?.length
+        ? { NOT: query.hiddenActionPrefixes.map((prefix) => ({ action: { startsWith: prefix } })) }
+        : {}),
     };
     const [total, rows] = await Promise.all([
       this.db.applicationLog.count({ where }),
