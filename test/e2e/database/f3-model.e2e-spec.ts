@@ -439,10 +439,21 @@ describe('Migration da F3 (banco real, usuário kore_api; decisões 230 e 231)',
     it('RN10 - cada indicador lê só as próprias comissões, sem gravar', async () => {
       // A API lê pela própria conexão: os dados precisam estar confirmados.
       const { commissionId, paymentId, pixKeyId } = await seedReferrerData(owner);
+      // Um repasse de Juliana (Repasse RN04): a mesma policy por current_referrer_id().
+      const payoutId = uuidV7();
+      await owner.query(
+        `INSERT INTO payouts (id, updated_at, referrer_id, amount_cents, pix_key_id,
+           pix_key_masked, external_ref, idempotency_key, requested_at)
+         VALUES ($1, now(), $2, 6742, $3, 'jul***@prado.com.br', $4, $5, now())`,
+        [payoutId, juliana.referrerId, pixKeyId, `payout-${payoutId}`, uuidV7()],
+      );
       try {
         await as(juliana.userId, async () => {
           expect(
             (await api.query('SELECT 1 FROM commissions WHERE id = $1', [commissionId])).rowCount,
+          ).toBe(1);
+          expect(
+            (await api.query('SELECT 1 FROM payouts WHERE id = $1', [payoutId])).rowCount,
           ).toBe(1);
           await rejects(
             api,
@@ -461,8 +472,10 @@ describe('Migration da F3 (banco real, usuário kore_api; decisões 230 e 231)',
         await as(clara.userId, async () => {
           expect((await api.query('SELECT 1 FROM commissions')).rowCount).toBe(0);
           expect((await api.query('SELECT 1 FROM referrer_pix_keys')).rowCount).toBe(0);
+          expect((await api.query('SELECT 1 FROM payouts')).rowCount).toBe(0);
         });
       } finally {
+        await owner.query('DELETE FROM payouts WHERE id = $1', [payoutId]);
         await owner.query('DELETE FROM commissions WHERE id = $1', [commissionId]);
         await owner.query('DELETE FROM referrer_pix_keys WHERE id = $1', [pixKeyId]);
         await owner.query('DELETE FROM payments WHERE id = $1', [paymentId]);

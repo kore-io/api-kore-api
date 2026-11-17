@@ -233,6 +233,55 @@ describe('Backoffice: fila de Repasses (Backoffice - cobrança RN09; banco real)
     });
   });
 
+  it('RN09 e Repasse RN05 - as conferências do Pagar pela rota: valor diferente da soma, repasse retido e troca da chave em curso, sem Pix', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const pay = async (payoutId: string) =>
+      (await post(admin.cookie, `/${payoutId}/pay`, {}, randomUUID()).expect(409)).body as Record<
+        string,
+        unknown
+      >;
+
+    // O Admin liberou sem recalcular: a soma não bate com o pedido.
+    const mismatch = await fabiana();
+    await db.commission.update({
+      where: { id: mismatch.commissions[0].id },
+      data: { status: 'reversed', reversedAt: new Date() },
+    });
+    await db.payout.update({
+      where: { id: mismatch.payoutId },
+      data: { status: 'requested', holdReason: null },
+    });
+    expect(await pay(mismatch.payoutId)).toMatchObject({ error: 'PAYOUT_AMOUNT_MISMATCH' });
+
+    const held = await fabiana();
+    await db.payout.update({
+      where: { id: held.payoutId },
+      data: { status: 'held', holdReason: 'refund' },
+    });
+    expect(await pay(held.payoutId)).toMatchObject({ error: 'PAYOUT_HELD', status: 'held' });
+
+    const changing = await fabiana();
+    await db.referrerPixKey.create({
+      data: {
+        id: uuidV7(),
+        referrerId: changing.referrerId,
+        keyType: 'email',
+        keyEncrypted: 'cifrado',
+        keyHash: `hash-${randomUUID()}`,
+        keyMasked: 'nov***@soares.com.br',
+        status: 'pending_activation',
+        confirmedAt: new Date(),
+        activeFrom: new Date(Date.now() + 48 * 60 * 60_000),
+      },
+    });
+    expect(await pay(changing.payoutId)).toMatchObject({ error: 'PIX_KEY_CHANGE_PENDING' });
+
+    for (const { payoutId } of [mismatch, held, changing])
+      expect((await db.payout.findUniqueOrThrow({ where: { id: payoutId } })).status).not.toBe(
+        'processing',
+      );
+  });
+
   it('RN09 - Recusar com motivo: as comissões voltam ao saldo, o pedido não conta para os 30 dias e sai o e-mail', async () => {
     const admin = await staffUser({ app, role: 'admin' });
     const person = await fabiana();

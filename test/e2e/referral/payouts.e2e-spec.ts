@@ -231,6 +231,50 @@ describe('Repasse: o pedido e as retenções (Repasse RN04 e RN06; decisão 247;
     });
   });
 
+  it('RN04 - exatamente R$ 50,00 já pede', async () => {
+    const person = await juliana();
+    const extra = person.commission.amountCents - 5_000;
+    expect(extra).toBeGreaterThan(0);
+    await db.commissionAdjustment.create({
+      data: {
+        id: uuidV7(),
+        referrerId: person.referrerId,
+        amountCents: -extra,
+        reason: 'manual',
+        note: 'Teste',
+      },
+    });
+    expect((await ask(person.cookie, 5_000).expect(201)).body).toMatchObject({
+      amountCents: 5_000,
+      status: 'requested',
+    });
+  });
+
+  it('RN04 - cada comissão entra em um repasse só: dois pedidos em paralelo dão um 201 e um 409 PAYOUT_OPEN', async () => {
+    const person = await juliana();
+    const [first, second] = await Promise.all([
+      ask(person.cookie, person.commission.amountCents),
+      ask(person.cookie, person.commission.amountCents),
+    ]);
+    expect([first.status, second.status].sort()).toEqual([201, 409]);
+    expect((first.status === 409 ? first : second).body.error).toBe('PAYOUT_OPEN');
+    expect(await db.payout.count({ where: { referrerId: person.referrerId } })).toBe(1);
+    const created = (first.status === 201 ? first : second).body as { id: string };
+    expect(
+      (await db.commission.findUniqueOrThrow({ where: { id: person.commission.id } })).payoutId,
+    ).toBe(created.id);
+  });
+
+  it('isolamento - a lista de repasses de outra indicadora não traz o pedido de Juliana', async () => {
+    const person = await juliana();
+    const created = await ask(person.cookie, person.commission.amountCents).expect(201);
+    const other = await juliana();
+    const listed = await list(other.cookie);
+    expect((listed.body.items as { id: string }[]).map((item) => item.id)).not.toContain(
+      created.body.id,
+    );
+  });
+
   it('RN03 - com uma troca da chave que ainda não vale: PIX_KEY_CHANGE_PENDING com a data', async () => {
     const person = await juliana();
     const activeFrom = new Date(Date.now() + 48 * 60 * 60_000);

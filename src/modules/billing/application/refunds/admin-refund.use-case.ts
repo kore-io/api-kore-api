@@ -50,9 +50,19 @@ export class AdminRefund {
     reason: string | null;
     now: Date;
   }): Promise<{ refundsPaymentIds: string[]; pastGatewayWindow: boolean }> {
-    const outcome = await this.transaction.run(() =>
-      this.store.requestRefund({ paymentId, adminUserId, reason, now }),
-    );
+    const outcome = await this.transaction.run(async () => {
+      const result = await this.store.requestRefund({ paymentId, adminUserId, reason, now });
+      // Backoffice - cobrança RN11: o Reembolsar fecha o gateway_amount_mismatch
+      // (o do valor menor, não aplicado, e o do maior, já aplicado).
+      if (result.result === 'requested')
+        await this.store.resolveAlerts({
+          paymentId,
+          types: ['gateway_amount_mismatch'],
+          adminUserId,
+          now,
+        });
+      return result;
+    });
     switch (outcome.result) {
       case 'requested':
         break;

@@ -1,9 +1,13 @@
 import { INestApplication } from '@nestjs/common';
+import { getQueueToken } from '@nestjs/bullmq';
 import type { TestingModule } from '@nestjs/testing';
+import type { Queue } from 'bullmq';
 import { randomUUID } from 'node:crypto';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import request from 'supertest';
 import { ProcessRefund } from '@/modules/billing/application/refunds/process-refund.use-case';
 import { addMonths } from '@/modules/billing/domain/payments/pricing';
+import { PAYMENT_REFUNDS_QUEUE } from '@/modules/billing/infrastructure/jobs/refunds.queue';
 import { LocalGatewayStore } from '@/modules/billing/infrastructure/backoffice/local-gateway/local-gateway.store';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import { localDate } from '@/shared/kernel/time/local-date';
@@ -13,10 +17,11 @@ import { waitForInbox } from '../support/harness/mailpit';
 import {
   devPaymentEvent,
   expectStatus,
+  payForExtension,
   publishByPayment,
   seedPaidExtension,
 } from '../support/factories/payments';
-import { signedInUser } from '../support/harness/sessions';
+import { signedInUser, staffUser } from '../support/harness/sessions';
 import { seedWedding } from '../support/factories/weddings';
 
 const ORIGIN = process.env.ALLOWED_ORIGINS?.split(',')[0] ?? 'http://localhost:5173';
@@ -125,17 +130,28 @@ describe('Pagamentos e arrependimento (RN02 a RN08; banco real)', () => {
       refundRequestedByUserId: ana.userId,
       refundReason: 'Decidimos adiar o casamento.',
     });
-    expect(
-      await db.applicationLog.count({
-        where: { entityId: paymentId, action: 'payment.refund_requested' },
-      }),
-    ).toBe(1);
+    const requestedLog = await db.applicationLog.findMany({
+      where: { entityId: paymentId, action: 'payment.refund_requested' },
+    });
+    expect(requestedLog).toHaveLength(1);
+    const paidAmount = (await payment(paymentId)).amountCents;
+    expect(requestedLog[0]).toMatchObject({
+      actorKind: 'user',
+      actorUserId: ana.userId,
+      data: expect.objectContaining({ refundOrigin: 'couple', amountCents: paidAmount }),
+    });
 
     await attempted(paymentId);
     expectStatus(await devPaymentEvent({ app, paymentId, event: 'refund' }), 200);
     const refunded = await payment(paymentId);
     expect(refunded.status).toBe('refunded');
     expect(refunded.refundedAt).not.toBeNull();
+    // RN09: o log payment.refunded, com a origem e o valor.
+    expect(
+      await db.applicationLog.findFirstOrThrow({
+        where: { entityId: paymentId, action: 'payment.refunded' },
+      }),
+    ).toMatchObject({ data: { refundOrigin: 'couple', amountCents: paidAmount } });
     const notice = await db.notification.findFirstOrThrow({
       where: { weddingId, userId: ana.userId, groupKey: `billing:${paymentId}:refund` },
     });
@@ -260,6 +276,163 @@ describe('Pagamentos e arrependimento (RN02 a RN08; banco real)', () => {
     expect(courtesy.body).toMatchObject({ error: 'REFUND_NOT_LAST_EXTENSION' });
   });
 
+  it('RN03 - desistir da publicação cancela o Pix de extensão em aberto', async () => {
+    const { ana, weddingId, paymentId } = await published();
+    const pix = expectStatus(
+      await payForExtension({
+        app,
+        cookie: ana.cookie,
+        weddingId,
+        endDate: addMonths({ day: endDate, months: 1 }),
+        method: 'pix',
+      }),
+      201,
+    );
+    const pendingId = pix.body.paymentId as string;
+    expect((await payment(pendingId)).status).toBe('pending');
+
+    expectStatus(await refund(ana.cookie, weddingId, paymentId), 202);
+    const canceled = await (async () => {
+      const deadline = Date.now() + 10_000;
+      for (;;) {
+        const row = await payment(pendingId);
+        if (row.status !== 'pending' || Date.now() > deadline) return row;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+    })();
+    expect(canceled.status).toBe('canceled');
+  });
+
+  it('RN03 (B3-3) - o refund_failed cita os pagamentos do mesmo pedido: a extensão estornou, a publicação desistiu', async () => {
+    const { ana, weddingId, paymentId } = await published();
+    const extensionId = await seedExtension({
+      weddingId,
+      ownerId: ana.userId,
+      periodStart: endDate,
+      periodEnd: addMonths({ day: endDate, months: 3 }),
+    });
+    expectStatus(await refund(ana.cookie, weddingId, paymentId), 202);
+    await attempted(paymentId);
+    await attempted(extensionId);
+    expectStatus(await devPaymentEvent({ app, paymentId: extensionId, event: 'refund' }), 200);
+    const process = worker.get(ProcessRefund);
+    expectStatus(await devPaymentEvent({ app, paymentId, event: 'refund-failed' }), 200);
+    for (let attempt = 2; attempt <= 4; attempt++) {
+      await process.execute({ paymentId, now: new Date() });
+      expectStatus(await devPaymentEvent({ app, paymentId, event: 'refund-failed' }), 200);
+    }
+    expect(await process.execute({ paymentId, now: new Date() })).toBe('given_up');
+    const alert = await db.alert.findFirstOrThrow({
+      where: { type: 'refund_failed', entityId: paymentId, status: 'open' },
+    });
+    const codes = [(await payment(paymentId)).shortCode, (await payment(extensionId)).shortCode];
+    expect([...(alert.data as { sameRequest: string[] }).sameRequest].sort()).toEqual(codes.sort());
+    const queue = app.get<Queue>(getQueueToken(PAYMENT_REFUNDS_QUEUE));
+    for (const attempt of [2, 3, 4])
+      await (await queue.getJob(`refund-${paymentId}-${attempt}`))?.remove();
+  });
+
+  it('RN02 - o fim do 7º dia no pedido, pela função, no fuso do casamento: o último instante aceita, o seguinte recusa; 23h30 em Manaus (00h30 em São Paulo) aceita', async () => {
+    const { ana, weddingId, paymentId } = await published();
+    // A função recebe o instante do pedido: cada caso numa transação desfeita.
+    const ask = async ({ paidAt, requestedAt }: { paidAt: string; requestedAt: string }) => {
+      let result = '';
+      await db
+        .$transaction(async (tx) => {
+          await tx.payment.update({ where: { id: paymentId }, data: { paidAt: new Date(paidAt) } });
+          await tx.$queryRaw`SELECT set_config('app.user_id', ${ana.userId}, true)`;
+          const [row] = await tx.$queryRaw<{ result: string }[]>`
+            SELECT result FROM apply_payment_refund(${weddingId}::uuid, ${paymentId}::uuid, NULL,
+              ${new Date(requestedAt)}::timestamptz, ${uuidV7()}::uuid, 'couple'::refund_origin,
+              ${ana.userId}::uuid, true)`;
+          result = row.result;
+          throw new Error('desfaz');
+        })
+        .catch((error: Error) => {
+          if (error.message !== 'desfaz') throw error;
+        });
+      return result;
+    };
+    // Pago em 10/08 às 15h de São Paulo: vale até 17/08 às 23h59.
+    const paidSp = '2026-08-10T18:00:00Z';
+    expect(await ask({ paidAt: paidSp, requestedAt: '2026-08-18T02:00:00Z' })).toBe('requested');
+    expect(await ask({ paidAt: paidSp, requestedAt: '2026-08-18T02:59:59.999Z' })).toBe(
+      'requested',
+    );
+    expect(await ask({ paidAt: paidSp, requestedAt: '2026-08-18T03:00:00Z' })).toBe(
+      'window_closed',
+    );
+    // Em Manaus (UTC−4): pago em 10/08 às 15h, o pedido de 17/08 às 23h30 de lá.
+    await db.wedding.update({
+      where: { id: weddingId },
+      data: { state: 'AM', timezone: 'America/Manaus' },
+    });
+    const paidAm = '2026-08-10T19:00:00Z';
+    expect(await ask({ paidAt: paidAm, requestedAt: '2026-08-18T03:30:00Z' })).toBe('requested');
+    expect(await ask({ paidAt: paidAm, requestedAt: '2026-08-18T04:00:00Z' })).toBe(
+      'window_closed',
+    );
+    expect((await wedding(weddingId)).status).toBe('published');
+  });
+
+  it('RN03 (B3-5) - a extensão desistida volta à menor entre a data atual e a anterior; com a cortesia antes, volta ao fim da cortesia', async () => {
+    const { ana, weddingId } = await published();
+    const extensionEnd = addMonths({ day: endDate, months: 3 });
+    const extensionId = await seedExtension({
+      weddingId,
+      ownerId: ana.userId,
+      periodStart: endDate,
+      periodEnd: extensionEnd,
+    });
+    // O casal antecipou a data de saída do ar depois de pagar a extensão.
+    const earlier = addMonths({ day: endDate, months: -1 });
+    await db.wedding.update({ where: { id: weddingId }, data: { endDate: day(earlier) } });
+    expectStatus(await refund(ana.cookie, weddingId, extensionId), 202);
+    expect(await wedding(weddingId)).toMatchObject({
+      endDate: day(earlier),
+      paidThrough: day(endDate),
+    });
+
+    // A cortesia até o fim dela e a extensão por cima: desistir volta ao fim da cortesia.
+    const other = await published();
+    const courtesyEnd = addMonths({ day: endDate, months: 1 });
+    await db.courtesyExtension.create({
+      data: {
+        weddingId: other.weddingId,
+        months: 1,
+        reason: 'Cortesia de teste',
+        previousEndDate: day(endDate),
+        newEndDate: day(courtesyEnd),
+        periodStart: day(endDate),
+        periodEnd: day(courtesyEnd),
+      },
+    });
+    await db.wedding.update({
+      where: { id: other.weddingId },
+      data: { endDate: day(courtesyEnd), paidThrough: day(courtesyEnd) },
+    });
+    const onTop = await seedExtension({
+      weddingId: other.weddingId,
+      ownerId: other.ana.userId,
+      periodStart: courtesyEnd,
+      periodEnd: addMonths({ day: courtesyEnd, months: 3 }),
+    });
+    expectStatus(await refund(other.ana.cookie, other.weddingId, onTop), 202);
+    expect((await wedding(other.weddingId)).endDate).toEqual(day(courtesyEnd));
+  });
+
+  it('RN06 (decisão 273(8)) - a contestação perdida com o estorno já pedido abre o dispute_lost', async () => {
+    const { ana, weddingId, paymentId } = await published();
+    expectStatus(await refund(ana.cookie, weddingId, paymentId), 202);
+    expectStatus(await devPaymentEvent({ app, paymentId, event: 'dispute-lost' }), 200);
+    expect(await payment(paymentId)).toMatchObject({ status: 'refunded' });
+    expect(
+      await db.alert.findFirstOrThrow({
+        where: { type: 'dispute_lost', entityId: paymentId, status: 'open' },
+      }),
+    ).toMatchObject({ weddingId });
+  });
+
   it('RN04 - dois donos pedem juntos: um segue, o outro REFUND_ALREADY_REQUESTED, e o gateway recebe um estorno só', async () => {
     const { ana, marcos, weddingId, paymentId } = await published();
     const [first, second] = await Promise.all([
@@ -306,6 +479,35 @@ describe('Pagamentos e arrependimento (RN02 a RN08; banco real)', () => {
         where: { entityId: paymentId, action: 'payment.refund_failed' },
       }),
     ).toBe(4);
+
+    // RN05 (decisão 275): o Tentar o estorno de novo do Admin zera a contagem e
+    // recomeça a série. As tentativas acima foram à mão; os jobs atrasados da
+    // série antiga, que na vida real já rodaram, saem da fila.
+    const queue = app.get<Queue>(getQueueToken(PAYMENT_REFUNDS_QUEUE));
+    for (const attempt of [2, 3, 4])
+      await (await queue.getJob(`refund-${paymentId}-${attempt}`))?.remove();
+    const admin = await staffUser({ app, role: 'admin' });
+    const retriedAt = Date.now();
+    await request(app.getHttpServer())
+      .post(`/v1/admin/payments/${paymentId}/refund/retry`)
+      .set('Cookie', admin.cookie)
+      .set('Origin', ORIGIN)
+      .send({ reason: 'O Asaas voltou.' })
+      .expect(202);
+    await attempted(paymentId, 1);
+    expect((await payment(paymentId)).refundAttempts).toBe(1);
+    expectStatus(await devPaymentEvent({ app, paymentId, event: 'refund-failed' }), 200);
+    expect(await payment(paymentId)).toMatchObject({
+      refundAttempts: 1,
+      refundFailedAt: null,
+      refundLastError: 'refund_refused',
+    });
+    // A falha da 1ª tentativa da série nova agenda a 2ª em 1 h (RN05), não desiste.
+    const next = await queue.getJob(`refund-${paymentId}-2`);
+    expect(next).toBeDefined();
+    expect(next!.timestamp).toBeGreaterThanOrEqual(retriedAt);
+    expect(next!.delay).toBe(60 * 60_000);
+    await next!.remove();
   });
 
   it('RN04 - a chamada sem resposta: a tentativa seguinte consulta antes e aplica o estorno que o gateway já fez', async () => {
@@ -392,6 +594,11 @@ describe('Pagamentos e arrependimento (RN02 a RN08; banco real)', () => {
       }),
     ).toBe(1);
     expect((await wedding(weddingId)).status).toBe('published');
+
+    // RN08 (decisão 275): o estorno automático não é reembolso de publicação;
+    // a desistência seguinte é a 1ª e não abre o repeated_refund.
+    expectStatus(await refund(ana.cookie, weddingId, applied.id), 202);
+    expect(await db.alert.count({ where: { type: 'repeated_refund', weddingId } })).toBe(0);
   });
 
   it('RN02 a RN04 (isolamento) - o pagamento de outro casamento da mesma dona, pela URL de um rascunho: 404, e o outro fica intocado', async () => {

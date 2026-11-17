@@ -15,6 +15,7 @@ import {
   publishByPayment,
 } from '../support/factories/payments';
 import { signedInUser, staffUser } from '../support/harness/sessions';
+import { seedReferrer } from '../support/factories/referrers';
 import { seedWedding } from '../support/factories/weddings';
 
 const ORIGIN = process.env.ALLOWED_ORIGINS?.split(',')[0] ?? 'http://localhost:5173';
@@ -118,6 +119,178 @@ describe('Backoffice: Cobrança (Backoffice - cobrança RN02 a RN07 e RN11; banc
     expect((await post(admin.cookie, `/payments/${paymentId}/refund`).expect(409)).body.error).toBe(
       'REFUND_ALREADY_REQUESTED',
     );
+  });
+
+  it('RN03 e RN02 - a lista: a linha com os campos, os filtros de status, tipo, forma e período; o suporte recebe 403', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const support = await staffUser({ app, role: 'support' });
+    const since = new Date(Date.now() - 1000).toISOString();
+    const { paymentId, weddingId } = await paid();
+    const until = new Date(Date.now() + 1000).toISOString();
+    const pages = async (query: Record<string, string>) => {
+      const items: Record<string, unknown>[] = [];
+      for (let page = 1; page <= 20; page++) {
+        const body = (
+          await get(admin.cookie, '/payments', { ...query, page: String(page) }).expect(200)
+        ).body as { items: Record<string, unknown>[]; pageSize: number };
+        items.push(...body.items);
+        if (body.items.length < body.pageSize) break;
+      }
+      return items;
+    };
+    const period = { from: since, to: until };
+    const [row] = (
+      await pages({ ...period, status: 'paid', kind: 'publication', method: 'card' })
+    ).filter((item) => item.id === paymentId);
+    const stored = await db.payment.findUniqueOrThrow({ where: { id: paymentId } });
+    expect(row).toEqual({
+      id: paymentId,
+      code: `P-${String(stored.shortCode).padStart(4, '0')}`,
+      weddingId,
+      coupleNames: expect.any(String),
+      kind: 'publication',
+      amountCents: stored.amountCents,
+      method: 'card',
+      status: 'paid',
+      applied: true,
+      refundOrigin: null,
+      createdAt: stored.createdAt.toISOString(),
+      paidAt: stored.paidAt!.toISOString(),
+    });
+    const filters: Record<string, string>[] = [
+      { method: 'pix' },
+      { kind: 'extension' },
+      { status: 'refunded' },
+    ];
+    for (const filter of filters)
+      expect((await pages({ ...period, ...filter })).map((item) => item.id)).not.toContain(
+        paymentId,
+      );
+    // O período é pela criação do pagamento.
+    expect(
+      (await pages({ from: new Date(Date.now() - 60 * DAY_MS).toISOString(), to: since })).map(
+        (item) => item.id,
+      ),
+    ).not.toContain(paymentId);
+    expect((await get(support.cookie, '/payments').expect(403)).body.error).toBe(
+      'ACTION_NOT_ALLOWED',
+    );
+  });
+
+  it('RN04 - o detalhe: a taxa, o líquido, os juros, a comissão com o percentual, o indicador, o id do gateway, o prazo da contestação e as tentativas do estorno; a aba Cobrança com a comissão', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const seeded = await seedReferrer({ db, kind: 'planner', name: 'Juliana Prado' });
+    const referrer = await db.referrer.findUniqueOrThrow({ where: { userId: seeded.userId } });
+    const ana = await signedInUser({ app });
+    const { weddingId } = await seedWedding({ db, ownerId: ana.userId });
+    await db.wedding.update({
+      where: { id: weddingId },
+      data: { eventDate: day(eventDate), referrerId: referrer.id, referralSource: 'referral_link' },
+    });
+    const { paymentId } = await publishByPayment({ app, cookie: ana.cookie, weddingId, endDate });
+    await db.payment.update({
+      where: { id: paymentId },
+      data: {
+        gatewayFeeCents: 1234,
+        netCents: 1000,
+        refundAttempts: 2,
+        refundLastError: 'refused',
+      },
+    });
+    const stored = await db.payment.findUniqueOrThrow({ where: { id: paymentId } });
+    const commission = await db.commission.findUniqueOrThrow({ where: { paymentId } });
+
+    const detail = (await get(admin.cookie, `/payments/${paymentId}`).expect(200)).body;
+    expect(detail).toMatchObject({
+      installmentInterestCents: stored.installmentInterestCents,
+      gatewayFeeCents: 1234,
+      netCents: 1000,
+      gatewayPaymentId: stored.gatewayPaymentId,
+      appliedAt: stored.appliedAt!.toISOString(),
+      referrer: { id: referrer.id, name: expect.any(String) },
+      commission: {
+        amountCents: commission.amountCents,
+        ratePercent: commission.ratePercent,
+        status: 'pending',
+      },
+      refund: { attempts: 2, lastError: 'refused' },
+      dispute: { disputedAt: null, deadline: null },
+    });
+    await db.payment.update({
+      where: { id: paymentId },
+      data: { status: 'disputed', disputedAt: new Date(), disputeDeadline: day(eventDate) },
+    });
+    expect((await get(admin.cookie, `/payments/${paymentId}`).expect(200)).body.dispute).toEqual({
+      disputedAt: expect.any(String),
+      deadline: eventDate,
+    });
+
+    const tab = await get(admin.cookie, `/weddings/${weddingId}`, { tab: 'billing' }).expect(200);
+    const line = (tab.body.billing.payments as { id: string; commission: unknown }[]).find(
+      (item) => item.id === paymentId,
+    );
+    expect(line?.commission).toEqual({
+      amountCents: commission.amountCents,
+      status: 'pending',
+      referrerName: expect.any(String),
+    });
+  });
+
+  it('RN07 - o CSV traz a linha de estorno com os valores negativos e sem a taxa, e a coluna aplicado', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const { paymentId } = await paid({ paidDaysAgo: 1 });
+    await db.payment.update({ where: { id: paymentId }, data: { gatewayFeeCents: 500 } });
+    await post(admin.cookie, `/payments/${paymentId}/refund`).expect(202);
+    expectStatus(await devPaymentEvent({ app, paymentId, event: 'refund' }), 200);
+    const stored = await db.payment.findUniqueOrThrow({ where: { id: paymentId } });
+    const code = `P-${String(stored.shortCode).padStart(4, '0')}`;
+    const csv = async (from: Date, to: Date) => {
+      const response = await get(admin.cookie, '/payments/export', {
+        from: from.toISOString(),
+        to: to.toISOString(),
+      }).expect(200);
+      return (response.text ?? Buffer.from(response.body as Buffer).toString('utf8'))
+        .split('\r\n')
+        .filter((line) => line.split(',')[1] === code);
+    };
+    const reais = (cents: number) => (cents / 100).toFixed(2);
+    const without = stored.amountCents - stored.installmentInterestCents;
+    const both = await csv(new Date(Date.now() - 2 * DAY_MS), new Date(Date.now() + 60_000));
+    expect(both.map((line) => line.split(',')[0]).sort()).toEqual(['estorno', 'pagamento']);
+    const refundLine = both.find((line) => line.startsWith('estorno,'))!.split(',');
+    // valor_sem_juros, juros, taxa_gateway, liquido, …, aplicado
+    expect(refundLine.slice(6, 10)).toEqual([
+      reais(-without),
+      reais(-stored.installmentInterestCents),
+      '',
+      reais(-stored.amountCents),
+    ]);
+    expect(refundLine[13]).toBe('sim');
+    // Só o estorno cai num período depois do pagamento.
+    const onlyRefund = await csv(
+      new Date(stored.paidAt!.getTime() + 1),
+      new Date(Date.now() + 60_000),
+    );
+    expect(onlyRefund.map((line) => line.split(',')[0])).toEqual(['estorno']);
+  });
+
+  it('RN11 - o comprovante maior que o limite ou de outro tipo é 400 pela rota', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const failed = await paid();
+    await db.payment.update({
+      where: { id: failed.paymentId },
+      data: {
+        status: 'refund_requested',
+        refundOrigin: 'couple',
+        refundRequestedAt: new Date(),
+        refundFailedAt: new Date(),
+      },
+    });
+    const upload = (body: Record<string, unknown>) =>
+      post(admin.cookie, `/payments/${failed.paymentId}/refund/receipt-upload`, body);
+    await upload({ contentType: 'application/pdf', sizeBytes: 12 * 1024 * 1024 }).expect(400);
+    await upload({ contentType: 'image/gif', sizeBytes: 100 }).expect(400);
+    await upload({ contentType: 'application/pdf', sizeBytes: 100 }).expect(201);
   });
 
   it('RN05 - em contestação, o Reembolsar é recusado', async () => {
@@ -276,6 +449,81 @@ describe('Backoffice: Cobrança (Backoffice - cobrança RN02 a RN07 e RN11; banc
     });
   });
 
+  it('RN11 (decisão 275) - Reembolsar o valor recebido menor: só o pagamento não aplicado, sem mexer no casamento, e fecha o alerta', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const mismatch = await paid();
+    await db.wedding.update({
+      where: { id: mismatch.weddingId },
+      data: { status: 'draft', endDate: null, paidThrough: null, publicationSource: null },
+    });
+    await db.commission.deleteMany({ where: { paymentId: mismatch.paymentId } });
+    await db.payment.update({ where: { id: mismatch.paymentId }, data: { appliedAt: null } });
+    // Sem o alerta, o pago e não aplicado segue recusado.
+    expect(
+      (await post(admin.cookie, `/payments/${mismatch.paymentId}/refund`).expect(409)).body.error,
+    ).toBe('PAYMENT_NOT_PAID');
+    await db.alert.create({
+      data: {
+        type: 'gateway_amount_mismatch',
+        weddingId: mismatch.weddingId,
+        entityType: 'payment',
+        entityId: mismatch.paymentId,
+        data: { chargedCents: 30000 },
+      },
+    });
+    const before = await db.wedding.findUniqueOrThrow({ where: { id: mismatch.weddingId } });
+
+    const response = await post(admin.cookie, `/payments/${mismatch.paymentId}/refund`, {
+      reason: 'O casal pagou a menos; devolver.',
+    }).expect(202);
+    expect(response.body).toMatchObject({
+      status: 'refund_requested',
+      refundsPaymentIds: [mismatch.paymentId],
+    });
+    expect(await db.payment.findUniqueOrThrow({ where: { id: mismatch.paymentId } })).toMatchObject(
+      { status: 'refund_requested', refundOrigin: 'admin', appliedAt: null },
+    );
+    expect(await db.wedding.findUniqueOrThrow({ where: { id: mismatch.weddingId } })).toEqual(
+      before,
+    );
+    expect(
+      await db.alert.findFirstOrThrow({
+        where: { type: 'gateway_amount_mismatch', entityId: mismatch.paymentId },
+      }),
+    ).toMatchObject({ status: 'resolved', resolvedByUserId: admin.userId });
+    expect(
+      await db.alert.count({ where: { type: 'repeated_refund', weddingId: mismatch.weddingId } }),
+    ).toBe(0);
+    // O estorno segue pelo job, como qualquer reembolso (RN05).
+    expectStatus(
+      await devPaymentEvent({ app, paymentId: mismatch.paymentId, event: 'refund' }),
+      200,
+    );
+    expect((await db.payment.findUniqueOrThrow({ where: { id: mismatch.paymentId } })).status).toBe(
+      'refunded',
+    );
+  });
+
+  it('RN11 (decisão 275) - o Reembolsar do pagamento aplicado com valor maior também fecha o gateway_amount_mismatch', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const over = await paid();
+    await db.alert.create({
+      data: {
+        type: 'gateway_amount_mismatch',
+        weddingId: over.weddingId,
+        entityType: 'payment',
+        entityId: over.paymentId,
+        data: { applied: true },
+      },
+    });
+    await post(admin.cookie, `/payments/${over.paymentId}/refund`).expect(202);
+    expect(
+      await db.alert.count({
+        where: { type: 'gateway_amount_mismatch', entityId: over.paymentId, status: 'open' },
+      }),
+    ).toBe(0);
+  });
+
   it('RN11 - Aplicar mesmo assim, Tentar o estorno de novo e Registrar reembolso feito por fora', async () => {
     const admin = await staffUser({ app, role: 'admin' });
     // O valor menor no gateway: pago e não aplicado, com o alerta.
@@ -341,6 +589,12 @@ describe('Backoffice: Cobrança (Backoffice - cobrança RN02 a RN07 e RN11; banc
     await post(admin.cookie, `/payments/${failed.paymentId}/refund/retry`, {
       reason: 'O Asaas voltou.',
     }).expect(202);
+    // Pagamentos RN05 (decisão 275): zera a contagem; o job faz a tentativa 1 da série nova.
+    const retried = await until(
+      () => db.payment.findUniqueOrThrow({ where: { id: failed.paymentId } }),
+      (row) => row.refundAttempts === 1,
+    );
+    expect(retried).toMatchObject({ refundFailedAt: null, status: 'refund_requested' });
     // Já sem a falha: 409 REFUND_NOT_FAILED.
     expect(
       (
@@ -349,9 +603,13 @@ describe('Backoffice: Cobrança (Backoffice - cobrança RN02 a RN07 e RN11; banc
         }).expect(409)
       ).body.error,
     ).toBe('REFUND_NOT_FAILED');
-    await db.applicationLog.findFirstOrThrow({
-      where: { action: 'payment.refund_retried', entityId: failed.paymentId },
-    });
+    expect(
+      (
+        await db.applicationLog.findFirstOrThrow({
+          where: { action: 'payment.refund_retried', entityId: failed.paymentId },
+        })
+      ).data,
+    ).toEqual({ reason: 'O Asaas voltou.', previousAttempts: 4 });
 
     // Reembolso feito por fora: refunded, origem manual, com o comprovante, sem gateway.
     const outside = await paid();

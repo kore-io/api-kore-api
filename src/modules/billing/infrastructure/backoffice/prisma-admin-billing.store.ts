@@ -92,20 +92,20 @@ export class PrismaAdminBillingStore implements AdminBillingStore {
     weddingId,
     adminUserId,
     reason,
-    attempt,
+    previousAttempts,
     now,
   }: {
     paymentId: string;
     weddingId: string;
     adminUserId: string;
     reason: string;
-    attempt: number;
+    previousAttempts: number;
     now: Date;
   }): Promise<void> {
     const tx = this.db();
     await tx.payment.update({
       where: { id: paymentId },
-      data: { refundFailedAt: null, refundLastError: null },
+      data: { refundFailedAt: null, refundLastError: null, refundAttempts: 0 },
     });
     await tx.applicationLog.create({
       data: {
@@ -116,7 +116,7 @@ export class PrismaAdminBillingStore implements AdminBillingStore {
         weddingId,
         entityType: 'payment',
         entityId: paymentId,
-        data: { reason, attempt },
+        data: { reason, previousAttempts },
       },
     });
   }
