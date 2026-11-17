@@ -328,6 +328,41 @@ describe('Repasse: o Pix de saída (Repasse RN05 e RN08; banco real)', () => {
     ).toBe('pending');
   });
 
+  it('Comissões RN05 (B6-4) - estornada durante o Pix que falha: a comissão vira estornada e o repasse fica retido, sem ajuste', async () => {
+    const person = await requested();
+    await worker.get(PayPayout).execute({
+      payoutId: person.payoutId,
+      adminUserId: await admin(),
+      idempotencyKey: randomUUID(),
+      now: new Date(),
+    });
+    const { externalRef } = await payout(person.payoutId);
+    await until(
+      () => app.get(LocalGatewayStore).transferByReference({ externalReference: externalRef }),
+      (value) => value !== null,
+    );
+    await http()
+      .post(`/v1/weddings/${person.weddingId}/payments/${person.paymentId}/refund-request`)
+      .set('Cookie', person.ana.cookie)
+      .set('Origin', APP_ORIGIN)
+      .send({})
+      .expect(202);
+    expectStatus(await devPaymentEvent({ app, paymentId: person.paymentId, event: 'refund' }), 200);
+
+    expectStatus(
+      await devPaymentEvent({ app, paymentId: externalRef, event: 'payout-failed' }),
+      200,
+    );
+
+    expect(
+      await db.commission.findUniqueOrThrow({ where: { id: person.commission.id } }),
+    ).toMatchObject({ status: 'reversed' });
+    expect(await payout(person.payoutId)).toMatchObject({ status: 'held', holdReason: 'refund' });
+    expect(
+      await db.commissionAdjustment.count({ where: { commissionId: person.commission.id } }),
+    ).toBe(0);
+  });
+
   it('Comissões RN05 (B6-4) - estornada durante o Pix: o repasse pago leva o ajuste negativo', async () => {
     const person = await requested();
     await worker.get(PayPayout).execute({
