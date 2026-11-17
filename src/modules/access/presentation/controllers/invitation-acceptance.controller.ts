@@ -1,6 +1,10 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Req } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ApiErrorResponses, commonErrors } from '@/shared/http/api-error-responses.decorator';
+import {
+  WeddingBlockedErrorBody,
+  WeddingDeletionScheduledErrorBody,
+} from '@/modules/billing/presentation/dto/billing-error.dto';
 import { OptionalSession, Public } from '@/shared/http/public.decorator';
 import { AcceptAccessInvitation } from '@/modules/access/application/invitations/accept-access-invitation.use-case';
 import { DeclineAccessInvitation } from '@/modules/access/application/invitations/decline-access-invitation.use-case';
@@ -71,6 +75,9 @@ export class InvitationAcceptanceController {
     SelfReferralErrorBody,
     PlannerProfileExistsErrorBody,
     InvitationInvalidErrorBody,
+    // Casamento bloqueado RN02 e Retenção RN05: aceitar é escrita do casamento.
+    WeddingBlockedErrorBody,
+    WeddingDeletionScheduledErrorBody,
   )
   async accept(
     @CurrentSession() session: AuthenticatedSession,

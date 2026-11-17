@@ -9,7 +9,7 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { ApiErrorResponses, commonErrors } from '@/shared/http/api-error-responses.decorator';
 import { validationError } from '@/shared/http/validation-errors';
 import type { AuthenticatedSession } from '@/modules/access/domain/sessions/authenticated-session';
@@ -156,7 +156,7 @@ export class AdminReferrersController {
   @Post('referrers/:id/adjustments')
   @OwnTransactions()
   @HttpCode(HttpStatus.CREATED)
-  @ApiOkResponse({ type: AdjustmentResponse })
+  @ApiCreatedResponse({ type: AdjustmentResponse })
   @ApiErrorResponses(
     ...commonErrors({ validated: true, session: true, write: true }),
     StaffOnlyErrorBody,

@@ -18,6 +18,7 @@ import type { AuthenticatedSession } from '@/modules/access/domain/sessions/auth
 import {
   ProfileNotOwnedErrorBody,
   ReauthRequiredErrorBody,
+  RecentAccessChangeErrorBody,
 } from '@/modules/access/presentation/dto/access-error.dto';
 import { CurrentSession } from '@/modules/access/presentation/http/decorators/current-session.decorator';
 import { PixKeyNotFoundError } from '@/modules/referral/domain/referral.errors';
@@ -100,6 +101,8 @@ export class PayoutDataController {
     ProfileNotOwnedErrorBody,
     ReauthRequiredErrorBody,
     PixKeyChangePendingErrorBody,
+    // Decisão 253(2): 48 h depois da troca do e-mail de acesso, com o availableAt.
+    RecentAccessChangeErrorBody,
   )
   async requestPixKey(
     @CurrentSession() session: AuthenticatedSession,
