@@ -52,7 +52,7 @@ export class PrismaNotificationEmailStore implements NotificationEmailStore {
           }),
           await tx.wedding.findUniqueOrThrow({
             where: { id: weddingId },
-            select: { timezone: true },
+            select: { timezone: true, blockedAt: true },
           }),
           role
             ? await tx.notificationPreference.findFirst({
@@ -76,6 +76,7 @@ export class PrismaNotificationEmailStore implements NotificationEmailStore {
         ];
         const change = await work({
           member: role !== null,
+          blocked: wedding.blockedAt !== null,
           role,
           // Só os textos da cerimonialista levam o casal.
           partnerNames: role === 'planner' ? await partnerNamesOf({ db: tx, weddingId }) : ['', ''],
@@ -145,6 +146,7 @@ export class PrismaNotificationEmailStore implements NotificationEmailStore {
       FROM notifications n
       JOIN memberships m
         ON m.user_id = n.user_id AND m.wedding_id = n.wedding_id AND m.removed_at IS NULL
+      JOIN weddings w ON w.id = n.wedding_id AND w.blocked_at IS NULL
       LEFT JOIN notification_email_states s
         ON s.user_id = n.user_id AND s.wedding_id = n.wedding_id
       WHERE n.type = 'rsvp' ${only}

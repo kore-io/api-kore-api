@@ -109,6 +109,21 @@ describe('E-mails da RN09 de Notificações da cerimonialista (banco real e Mail
     ).toBe(0);
   });
 
+  it('Casamento bloqueado RN03 e RN06 - Juliana sai do casamento bloqueado: sai, mas o e-mail às donas não', async () => {
+    const { ana, marcos, juliana, weddingId } = await anaAndMarcos();
+    await db.wedding.update({ where: { id: weddingId }, data: { blockedAt: new Date() } });
+
+    await removeMembership(juliana.cookie, weddingId, juliana.membershipId).expect(204);
+
+    expect(
+      (await db.membership.findUniqueOrThrow({ where: { id: juliana.membershipId } })).removedAt,
+    ).not.toBeNull();
+    // O e-mail sai depois do commit: um tempo para ele chegar, se saísse.
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    expect(await inbox({ to: ana.email })).toHaveLength(0);
+    expect(await inbox({ to: marcos.email })).toHaveLength(0);
+  });
+
   it('RN09 - com o nome da assessoria igual ao dela, os parênteses saem', async () => {
     const { ana, juliana, weddingId } = await anaAndMarcos({ creditName: 'Juliana Prado' });
 

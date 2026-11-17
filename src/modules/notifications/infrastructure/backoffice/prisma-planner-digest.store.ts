@@ -31,6 +31,8 @@ export class PrismaPlannerDigestStore implements PlannerDigestStore {
       LEFT JOIN notification_email_states s
         ON s.user_id = n.user_id AND s.wedding_id = n.wedding_id
       WHERE n.type IN ('rsvp', 'wedding_published')
+        AND NOT EXISTS (
+          SELECT 1 FROM weddings wb WHERE wb.id = n.wedding_id AND wb.blocked_at IS NOT NULL)
         AND (s.emailed_through IS NULL OR n.updated_at > s.emailed_through)
         AND COALESCE((
           SELECT np.email::text FROM notification_preferences np
@@ -90,6 +92,10 @@ export class PrismaPlannerDigestStore implements PlannerDigestStore {
             (n) => n.weddingId === weddingId && (!emailedThrough || n.updatedAt > emailedThrough),
           );
           if (fresh.length === 0) continue;
+          // Casamento bloqueado RN06: o casamento fica fora do Resumo e o cursor
+          // dele não anda; retoma no desbloqueio.
+          if ((await tx.wedding.count({ where: { id: weddingId, blockedAt: { not: null } } })) > 0)
+            continue;
           // D18: na hora de mandar, a colaboração ativa (respostas e publicação)
           // ou a indicação (só a publicação). O casamento de que é dona fica de fora.
           const role = await recipientRole({ db: tx, userId, weddingId });

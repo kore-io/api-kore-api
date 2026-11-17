@@ -331,6 +331,54 @@ describe('E-mails das respostas (worker)', () => {
     expect(await inbox({ to: removed.email })).toHaveLength(0);
   });
 
+  it('Casamento bloqueado RN06 - com o bloqueio, nem o "Na hora" nem o Resumo saem e o casamento sai da rotina; no desbloqueio, o que esperava sai', async () => {
+    const immediate = await scenario({ frequency: 'immediate' });
+    const daily = await scenario({ frequency: 'daily' });
+    const store = worker.get<NotificationEmailStore>(NOTIFICATION_EMAIL_STORE);
+    for (const item of [immediate, daily]) {
+      await item.notify([item.entry(item.moreira.id, 'Família Moreira', new Date())]);
+      await db.wedding.update({ where: { id: item.weddingId }, data: { blockedAt: new Date() } });
+      expect(await store.candidates({ weddingId: item.weddingId })).toEqual([]);
+    }
+    const now = new Date();
+    expect(
+      await emails.send({
+        userId: immediate.userId,
+        weddingId: immediate.weddingId,
+        mode: 'immediate',
+        now,
+      }),
+    ).toEqual({ kind: 'skipped' });
+    expect(
+      await emails.send({
+        userId: daily.userId,
+        weddingId: daily.weddingId,
+        mode: 'digest',
+        now: dayAt({ hour: 21, minute: 0 }),
+      }),
+    ).toEqual({ kind: 'skipped' });
+    expect(await state(immediate.userId, immediate.weddingId)).toMatchObject({
+      emailedThrough: null,
+    });
+    expect(await inbox({ to: immediate.email })).toHaveLength(0);
+    expect(await inbox({ to: daily.email })).toHaveLength(0);
+
+    // Desbloqueado (RN08): volta à rotina, e o que esperava sai.
+    await db.wedding.update({ where: { id: immediate.weddingId }, data: { blockedAt: null } });
+    expect(await store.candidates({ weddingId: immediate.weddingId })).toEqual([
+      { userId: immediate.userId, weddingId: immediate.weddingId },
+    ]);
+    expect(
+      await emails.send({
+        userId: immediate.userId,
+        weddingId: immediate.weddingId,
+        mode: 'immediate',
+        now: new Date(),
+      }),
+    ).toEqual({ kind: 'sent' });
+    await waitForInbox({ to: immediate.email, subject: 'Família Moreira respondeu o convite' });
+  });
+
   it('RN06 - o envio recusado não avança o cursor e grava notification.email_failed; o próximo leva o que faltou', async () => {
     const { userId, weddingId, moreira, entry, notify } = await scenario({});
     await notify([entry(moreira.id, 'Família Moreira', new Date(Date.now() - 20 * MINUTE))]);

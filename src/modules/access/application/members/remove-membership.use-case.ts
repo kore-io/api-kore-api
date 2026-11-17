@@ -95,8 +95,11 @@ export class RemoveMembership {
     }
     // Lido antes da remoção: depois, a RLS já não mostra o casamento a ela.
     // Só a cerimonialista com Planner; o vendedor não sai por conta própria.
+    // Casamento bloqueado RN06: com o bloqueio, o e-mail "a cerimonialista saiu" não sai.
     const notices =
-      leaving && target.role === 'collaborator'
+      leaving &&
+      target.role === 'collaborator' &&
+      (await this.writeState.blockOf({ userId, weddingId })) !== 'blocked'
         ? await this.store.plannerLeftNotices({ weddingId, userId })
         : [];
     await this.store.remove({ membershipId, removedByUserId: userId, now });

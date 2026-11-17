@@ -5,6 +5,11 @@ export interface LockedEmailState {
   /** O vínculo ativo: perder o vínculo para os envios (RN09; D18). */
   member: boolean;
   /**
+   * O casamento bloqueado (Casamento bloqueado RN06): o envio para e retoma no
+   * desbloqueio, sem perder o que esperava (como a lixeira).
+   */
+  blocked: boolean;
+  /**
    * Quem recebe, conferido na hora de mandar: o dono (os textos e a
    * preferência do casamento) ou a cerimonialista colaboradora com Planner
    * (os textos dela e a preferência geral; Notificações da cerimonialista RN06

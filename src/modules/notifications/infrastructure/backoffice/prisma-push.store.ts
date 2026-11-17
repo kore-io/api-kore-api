@@ -33,7 +33,7 @@ export class PrismaPushStore implements PushStore {
         : await recipientRole({ db: this.prisma, userId, weddingId });
     // A cobrança é só das pessoas donas (Publicar e pagar RN13).
     const role = type === 'billing' && found !== 'owner' ? null : found;
-    const [preference, subscriptions, notification] = await Promise.all([
+    const [preference, subscriptions, notification, blocked] = await Promise.all([
       role
         ? this.prisma.notificationPreference.findFirst({
             where: preferenceWhere({ role, userId, weddingId, type }),
@@ -55,12 +55,14 @@ export class PrismaPushStore implements PushStore {
         orderBy: { updatedAt: 'desc' },
         select: { groupKey: true, count: true, payload: true },
       }),
+      this.prisma.wedding.count({ where: { id: weddingId, blockedAt: { not: null } } }),
     ]);
     const first = Array.isArray(notification?.payload)
       ? (notification.payload as { name?: string; partnerNames?: [string, string] }[])[0]
       : undefined;
     return {
       member: role !== null,
+      weddingBlocked: blocked > 0,
       role,
       partnerNames:
         type === 'commission'
