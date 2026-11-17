@@ -12,7 +12,7 @@ import { TenantTransaction } from '@/shared/database/tenant-transaction';
 import { createTestApp } from '../support/harness/create-test-app';
 import { createTestWorker } from '../support/harness/create-test-worker';
 import { seedInvitation } from '../support/factories/invitations';
-import { waitForInbox } from '../support/harness/mailpit';
+import { messageText, waitForInbox } from '../support/harness/mailpit';
 import { seedReferrer } from '../support/factories/referrers';
 import { SESSION_COOKIE } from '@/modules/access/presentation/http/cookies/session-cookie';
 import { openSession, signedInUser } from '../support/harness/sessions';
@@ -637,6 +637,10 @@ describe('Convites de acesso: ler, aceitar e recusar (banco real; decisões 168 
       expect((await read(token).expect(410)).body.reason).toBe('used');
       const [message] = await waitForInbox({ to: anaEmail });
       expect(message?.Subject).toBe('Marcos recusou o convite');
+      // O botão leva a Colaboradores, na Área do Casal (decisão 136(3); D5b da F6).
+      expect(await messageText({ id: message.ID })).toContain(
+        'Abrir o Kore: http://localhost:5173/app/colaboradores',
+      );
     });
 
     it('RN11 - no convite do casal, o aviso usa o e-mail convidado', async () => {

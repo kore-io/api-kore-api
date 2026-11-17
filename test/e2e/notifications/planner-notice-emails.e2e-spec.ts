@@ -97,7 +97,7 @@ describe('E-mails da RN09 de Notificações da cerimonialista (banco real e Mail
       expect(text).toContain(
         'Juliana Prado (Prado Assessoria) saiu do casamento de Ana e Marcos no Kore.',
       );
-      expect(text).toContain('Abrir Colaboradores: http://localhost:5173/app');
+      expect(text).toContain('Abrir Colaboradores: http://localhost:5173/app/colaboradores');
     }
     expect(await textOf((await inbox({ to: ana.email }))[0].ID)).toContain('Olá, Ana.');
     expect(await textOf((await inbox({ to: marcos.email }))[0].ID)).toContain('Olá, Marcos.');
