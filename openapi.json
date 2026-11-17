@@ -1218,6 +1218,12 @@
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
                     },
                     {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
+                    },
+                    {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
@@ -1520,6 +1526,12 @@
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
                     },
                     {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
+                    },
+                    {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
@@ -1633,6 +1645,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
                     },
                     {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
@@ -1813,7 +1831,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OriginNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingBlockedErrorBody"
+                    }
+                  ]
                 }
               }
             },
@@ -1847,6 +1872,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/PlannerProfileExistsErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WeddingDeletionScheduledErrorBody"
                     }
                   ]
                 }
@@ -1979,6 +2007,16 @@
             },
             "description": ""
           },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                }
+              }
+            }
+          },
           "404": {
             "content": {
               "application/json": {
@@ -2051,6 +2089,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
                     },
                     {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
@@ -2336,7 +2380,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PixKeyChangePendingErrorBody"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PixKeyChangePendingErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RecentAccessChangeErrorBody"
+                    }
+                  ]
                 }
               }
             },
@@ -2785,6 +2836,12 @@
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
                     },
                     {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
+                    },
+                    {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
@@ -2887,6 +2944,12 @@
                       "$ref": "#/components/schemas/AlreadyRespondedErrorBody"
                     },
                     {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
+                    },
+                    {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
@@ -2978,6 +3041,16 @@
               }
             },
             "description": ""
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                }
+              }
+            }
           },
           "404": {
             "content": {
@@ -3083,6 +3156,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
                     },
                     {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
@@ -3294,6 +3373,16 @@
             },
             "description": ""
           },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                }
+              }
+            }
+          },
           "404": {
             "content": {
               "application/json": {
@@ -3383,6 +3472,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
                     },
                     {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
@@ -3482,6 +3577,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
                     },
                     {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
@@ -3591,6 +3692,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/AlreadyRespondedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
                     },
                     {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
@@ -3729,6 +3836,12 @@
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
                     },
                     {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
+                    },
+                    {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
@@ -3843,6 +3956,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
                     },
                     {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
@@ -3969,6 +4088,12 @@
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
                     },
                     {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
+                    },
+                    {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
@@ -4062,6 +4187,16 @@
             },
             "description": ""
           },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                }
+              }
+            }
+          },
           "404": {
             "content": {
               "application/json": {
@@ -4151,6 +4286,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
                     },
                     {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
@@ -4282,6 +4423,12 @@
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
                     },
                     {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
+                    },
+                    {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
@@ -4367,6 +4514,16 @@
               }
             },
             "description": ""
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                }
+              }
+            }
           },
           "404": {
             "content": {
@@ -4459,6 +4616,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
                     },
                     {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
@@ -4587,6 +4750,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
                     },
                     {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
@@ -4718,6 +4887,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
                     },
                     {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
@@ -4858,6 +5033,12 @@
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
                     },
                     {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
+                    },
+                    {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
@@ -4977,6 +5158,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
                     },
                     {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
@@ -5139,6 +5326,16 @@
             },
             "description": ""
           },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                }
+              }
+            }
+          },
           "404": {
             "content": {
               "application/json": {
@@ -5250,6 +5447,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
                     },
                     {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
@@ -5390,6 +5593,12 @@
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
                     },
                     {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
+                    },
+                    {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
@@ -5506,6 +5715,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
                     },
                     {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
@@ -5635,6 +5850,12 @@
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
                     },
                     {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
+                    },
+                    {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
@@ -5753,6 +5974,12 @@
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
                     },
                     {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
+                    },
+                    {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
@@ -5846,7 +6073,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    }
+                  ]
                 }
               }
             },
@@ -5944,6 +6178,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/SiteFieldNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
                     },
                     {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
@@ -6586,6 +6826,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
                     }
                   ]
                 }
@@ -6941,6 +7187,12 @@
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
                     },
                     {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
+                    },
+                    {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
@@ -7077,6 +7329,12 @@
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
                     },
                     {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
+                    },
+                    {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
@@ -7174,7 +7432,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    }
+                  ]
                 }
               }
             },
@@ -7284,6 +7549,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
                     },
                     {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
@@ -7413,7 +7684,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    }
+                  ]
                 }
               }
             },
@@ -7527,6 +7805,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
                     },
                     {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
@@ -7674,6 +7958,12 @@
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
                     },
                     {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
+                    },
+                    {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
                     }
                   ]
@@ -7794,7 +8084,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    }
+                  ]
                 }
               }
             },
@@ -7873,7 +8170,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    }
+                  ]
                 }
               }
             },
@@ -7956,6 +8260,16 @@
               }
             },
             "description": ""
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                }
+              }
+            }
           },
           "404": {
             "content": {
@@ -9493,7 +9807,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    }
+                  ]
                 }
               }
             },
@@ -9625,6 +9946,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
                     }
                   ]
                 }
@@ -9768,6 +10095,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
                     }
                   ]
                 }
@@ -9924,6 +10257,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/WeddingBlockedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
                     }
                   ]
                 }
@@ -10057,6 +10396,16 @@
             },
             "description": ""
           },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                }
+              }
+            }
+          },
           "404": {
             "content": {
               "application/json": {
@@ -10154,6 +10503,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
                     }
                   ]
                 }
@@ -10268,6 +10623,12 @@
                     },
                     {
                       "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportSessionEndedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SupportReadOnlyErrorBody"
                     }
                   ]
                 }
@@ -10657,7 +11018,7 @@
           }
         },
         "responses": {
-          "200": {
+          "202": {
             "description": "",
             "content": {
               "application/json": {
@@ -10892,7 +11253,7 @@
           }
         },
         "responses": {
-          "200": {
+          "202": {
             "description": "",
             "content": {
               "application/json": {
@@ -11131,7 +11492,7 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "",
             "content": {
               "application/json": {
@@ -11673,7 +12034,7 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "",
             "content": {
               "application/json": {
@@ -12733,7 +13094,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/StaffOnlyErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ActionNotAllowedErrorBody"
+                    }
+                  ]
                 }
               }
             },
@@ -16927,6 +17295,56 @@
             "type": "string",
             "enum": [
               "ALREADY_MEMBER"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "WeddingBlockedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              403
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "WEDDING_BLOCKED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "WeddingDeletionScheduledErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "WEDDING_DELETION_SCHEDULED"
             ]
           },
           "message": {
@@ -24874,56 +25292,6 @@
           "cannotExtendReason"
         ]
       },
-      "WeddingBlockedErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              403
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "WEDDING_BLOCKED"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
-        ]
-      },
-      "WeddingDeletionScheduledErrorBody": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "enum": [
-              409
-            ]
-          },
-          "error": {
-            "type": "string",
-            "enum": [
-              "WEDDING_DELETION_SCHEDULED"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
-        ]
-      },
       "EndDateBeyondPaidErrorBody": {
         "type": "object",
         "properties": {
@@ -30094,6 +30462,64 @@
           "42cd6ed77302f384ab3ab3d8c92c4d0ef1c0f7441831f3ce31b4f37fad57601b"
         ],
         "description": "O sha256 (hex) da appearance-contrast.fixture.json da API. A cópia do web precisa ter o mesmo (Aparência RN01)."
+      },
+      "SupportReadOnlyErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              403
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SUPPORT_READ_ONLY"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "SupportSessionEndedErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              403
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "SUPPORT_SESSION_ENDED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "idle",
+              "max_duration"
+            ]
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "reason"
+        ]
       }
     }
   }

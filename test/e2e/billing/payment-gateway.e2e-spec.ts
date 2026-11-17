@@ -1,7 +1,13 @@
 import { INestApplication } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'node:crypto';
+import { getStorageToken, type ThrottlerStorage } from '@nestjs/throttler';
 import request from 'supertest';
+import {
+  PAYMENT_WEBHOOK_PER_MINUTE,
+  PAYMENT_WEBHOOK_THROTTLER,
+  RATE_LIMIT_WINDOW_MS,
+} from '@/shared/rate-limit/rate-limits';
 import { GATEWAY_EVENT_STORE } from '@/modules/billing/application/ports/gateway-event.store.port';
 import {
   GatewayUnavailableError,
@@ -125,6 +131,29 @@ describe('Gateway de pagamento e webhook (Publicar e pagar RN09, RN14 e RN15; ba
   });
 
   describe('Webhook (RN09)', () => {
+    it('RN09 - o webhook tem o limite próprio por IP (600 por minuto): no 601º, 429, e outro IP segue', async () => {
+      const storage = app.get<ThrottlerStorage>(getStorageToken());
+      const ip = `10.${[1, 2, 3].map(() => Math.floor(Math.random() * 250)).join('.')}`;
+      for (let index = 0; index < PAYMENT_WEBHOOK_PER_MINUTE; index++)
+        await storage.increment(
+          `${PAYMENT_WEBHOOK_THROTTLER}:${ip}`,
+          RATE_LIMIT_WINDOW_MS,
+          PAYMENT_WEBHOOK_PER_MINUTE,
+          0,
+          PAYMENT_WEBHOOK_THROTTLER,
+        );
+      const from = (address: string) =>
+        request(app.getHttpServer())
+          .post('/v1/webhooks/payments/local')
+          .set('content-type', 'application/json')
+          .set('X-Forwarded-For', address)
+          .set(LOCAL_WEBHOOK_TOKEN_HEADER, 'segredo-errado')
+          .send(JSON.stringify(eventBody()));
+      expect((await from(ip).expect(429)).body.error).toBe('RATE_LIMITED');
+      // Outro IP passa do limite e chega à assinatura (401).
+      await from(`10.250.${Math.floor(Math.random() * 250)}.9`).expect(401);
+    });
+
     it('RN09 - assinatura inválida ou ausente: 401 e nada é gravado', async () => {
       const body = eventBody();
       const wrong = await webhook(body, 'segredo-errado').expect(401);

@@ -14,7 +14,13 @@ import {
   StreamableFile,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiProduces, ApiTags } from '@nestjs/swagger';
+import {
+  ApiAcceptedResponse,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiProduces,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { ApiErrorResponses, commonErrors } from '@/shared/http/api-error-responses.decorator';
 import { validationError } from '@/shared/http/validation-errors';
@@ -144,7 +150,7 @@ export class AdminPaymentsController {
   @Post(':id/refund')
   @OwnTransactions()
   @HttpCode(HttpStatus.ACCEPTED)
-  @ApiOkResponse({ type: AdminRefundResponse })
+  @ApiAcceptedResponse({ type: AdminRefundResponse })
   @ApiErrorResponses(
     ...commonErrors({ validated: true, session: true, write: true }),
     StaffOnlyErrorBody,
@@ -207,7 +213,7 @@ export class AdminPaymentsController {
   @Post(':id/refund/retry')
   @OwnTransactions()
   @HttpCode(HttpStatus.ACCEPTED)
-  @ApiOkResponse({ type: AdminPaymentActionResponse })
+  @ApiAcceptedResponse({ type: AdminPaymentActionResponse })
   @ApiErrorResponses(
     ...commonErrors({ validated: true, session: true, write: true }),
     StaffOnlyErrorBody,
@@ -270,7 +276,7 @@ export class AdminPaymentsController {
   @Post(':id/refund/receipt-upload')
   @OwnTransactions()
   @HttpCode(HttpStatus.CREATED)
-  @ApiOkResponse({ type: RefundReceiptUploadResponse })
+  @ApiCreatedResponse({ type: RefundReceiptUploadResponse })
   @ApiErrorResponses(
     ...commonErrors({ validated: true, session: true, write: true }),
     StaffOnlyErrorBody,

@@ -253,6 +253,17 @@ describe('Preço e cotação (Preço e cotação RN01 a RN07; banco real)', () =
     });
   });
 
+  it('RN04 - pela rota: sem a data do casamento, 409 EVENT_DATE_MISSING (o endereço nulo o banco não deixa existir: chk_weddings_tombstone)', async () => {
+    const { ana, weddingId } = await scenario();
+    await db.wedding.update({ where: { id: weddingId }, data: { eventDate: null } });
+    const refused = await quote(ana.cookie, weddingId, {
+      kind: 'publication',
+      endDate,
+      method: 'pix',
+    }).expect(409);
+    expect(refused.body.error).toBe('EVENT_DATE_MISSING');
+  });
+
   it('validação - parâmetros fora do formato: 400', async () => {
     const { ana, weddingId } = await scenario();
     await quote(ana.cookie, weddingId, { kind: 'renewal', method: 'pix' }).expect(400);

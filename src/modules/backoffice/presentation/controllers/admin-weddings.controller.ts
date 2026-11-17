@@ -109,6 +109,8 @@ export class AdminWeddingsController {
   @ApiErrorResponses(
     ...commonErrors({ validated: true, session: true }),
     StaffOnlyErrorBody,
+    // tab=billing é só do Admin (Backoffice - cobrança RN01 e RN02).
+    ActionNotAllowedErrorBody,
     WeddingNotFoundErrorBody,
   )
   async detail(

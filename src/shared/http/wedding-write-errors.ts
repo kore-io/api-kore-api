@@ -21,6 +21,27 @@ const SCHEMAS: Record<string, SchemaObject> = {
     },
     required: ['statusCode', 'error', 'message'],
   },
+  // Ver como o casal (Backoffice - acesso RN08): a escrita na sessão de suporte.
+  SupportReadOnlyErrorBody: {
+    type: 'object',
+    properties: {
+      statusCode: { type: 'number', enum: [403] },
+      error: { type: 'string', enum: ['SUPPORT_READ_ONLY'] },
+      message: { type: 'string' },
+    },
+    required: ['statusCode', 'error', 'message'],
+  },
+  // A sessão de suporte que acabou: o Toast diz qual (30 minutos sem uso ou o limite de 2 horas).
+  SupportSessionEndedErrorBody: {
+    type: 'object',
+    properties: {
+      statusCode: { type: 'number', enum: [403] },
+      error: { type: 'string', enum: ['SUPPORT_SESSION_ENDED'] },
+      message: { type: 'string' },
+      reason: { type: 'string', enum: ['idle', 'max_duration'] },
+    },
+    required: ['statusCode', 'error', 'message', 'reason'],
+  },
   WeddingDeletionScheduledErrorBody: {
     type: 'object',
     properties: {
@@ -66,7 +87,9 @@ function addError({
 /**
  * Toda rota de escrita com `{weddingId}` responde `403 WEDDING_BLOCKED` e `409
  * WEDDING_DELETION_SCHEDULED` (Casamento bloqueado RN02, "Contrato de API"),
- * pelo `WeddingWriteGuard`: documentado aqui, num ponto só, com a mesma regra.
+ * pelo `WeddingWriteGuard`, e `403 SUPPORT_READ_ONLY` pelo `SupportSessionGuard`;
+ * toda rota com `{weddingId}`, `403 SUPPORT_SESSION_ENDED` (Backoffice -
+ * acesso RN08; decisão 275). Documentado aqui, num ponto só, com a mesma regra.
  */
 export function addWeddingWriteErrors(document: OpenAPIObject): OpenAPIObject {
   document.components = {
@@ -75,8 +98,27 @@ export function addWeddingWriteErrors(document: OpenAPIObject): OpenAPIObject {
   };
   for (const [path, item] of Object.entries(document.paths)) {
     if (!path.includes('{weddingId}')) continue;
+    const operations = item as Record<string, { responses?: Responses } | undefined>;
+    // Ver como o casal (RN08): toda rota do casal pode encontrar a sessão de
+    // suporte encerrada; toda escrita, a sessão só de leitura.
+    for (const method of ['get', ...WRITE_METHODS] as const) {
+      const operation = operations[method];
+      if (!operation) continue;
+      const responses = (operation.responses ??= {});
+      addError({
+        responses,
+        status: '403',
+        ref: '#/components/schemas/SupportSessionEndedErrorBody',
+      });
+      if (method !== 'get')
+        addError({
+          responses,
+          status: '403',
+          ref: '#/components/schemas/SupportReadOnlyErrorBody',
+        });
+    }
     for (const method of WRITE_METHODS) {
-      const operation = (item as Record<string, { responses?: Responses } | undefined>)[method];
+      const operation = operations[method];
       if (!operation || ALLOWED_WHEN_BLOCKED.has(`${method} ${path}`)) continue;
       const responses = (operation.responses ??= {});
       addError({ responses, status: '403', ref: '#/components/schemas/WeddingBlockedErrorBody' });

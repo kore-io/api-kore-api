@@ -379,6 +379,34 @@ describe('E-mails das respostas (worker)', () => {
     await waitForInbox({ to: immediate.email, subject: 'Família Moreira respondeu o convite' });
   });
 
+  it('Casamento bloqueado RN06 - o Resumo do bloqueado não fecha o dia: desbloqueado às 21h, ele sai no mesmo dia', async () => {
+    const daily = await scenario({ frequency: 'daily' });
+    await daily.notify([
+      daily.entry(daily.moreira.id, 'Família Moreira', dayAt({ hour: 14, minute: 0 })),
+    ]);
+    await db.wedding.update({
+      where: { id: daily.weddingId },
+      data: { status: 'published', blockedAt: new Date() },
+    });
+    const store = worker.get<NotificationEmailStore>(NOTIFICATION_EMAIL_STORE);
+    await store.closeQuietDigests({
+      now: dayAt({ hour: 20, minute: 15 }),
+      skip: [],
+      weddingId: daily.weddingId,
+    });
+    expect((await state(daily.userId, daily.weddingId))?.lastDigestDate ?? null).toBeNull();
+
+    await db.wedding.update({ where: { id: daily.weddingId }, data: { blockedAt: null } });
+    expect(
+      await emails.send({
+        userId: daily.userId,
+        weddingId: daily.weddingId,
+        mode: 'digest',
+        now: dayAt({ hour: 21, minute: 0 }),
+      }),
+    ).toEqual({ kind: 'sent' });
+  });
+
   it('RN06 - o envio recusado não avança o cursor e grava notification.email_failed; o próximo leva o que faltou', async () => {
     const { userId, weddingId, moreira, entry, notify } = await scenario({});
     await notify([entry(moreira.id, 'Família Moreira', new Date(Date.now() - 20 * MINUTE))]);

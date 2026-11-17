@@ -85,12 +85,15 @@ describe('Pagamentos e arrependimento (RN02 a RN08; banco real)', () => {
   const payment = (id: string) => db.payment.findUniqueOrThrow({ where: { id } });
   const wedding = (id: string) => db.wedding.findUniqueOrThrow({ where: { id } });
 
-  /** O job de estorno roda no worker: espera a tentativa. */
-  async function attempted(paymentId: string, attempts = 1) {
+  /**
+   * O job de estorno roda no worker: espera a tentativa. Com `failed`, espera
+   * também o erro dela, gravado depois da contagem (a intermitência do RN04).
+   */
+  async function attempted(paymentId: string, attempts = 1, { failed = false } = {}) {
     const deadline = Date.now() + 10_000;
     for (;;) {
       const row = await payment(paymentId);
-      if (row.refundAttempts >= attempts) return row;
+      if (row.refundAttempts >= attempts && (!failed || row.refundLastError !== null)) return row;
       if (Date.now() > deadline) throw new Error(`Sem a tentativa ${attempts} de ${paymentId}.`);
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
@@ -508,6 +511,15 @@ describe('Pagamentos e arrependimento (RN02 a RN08; banco real)', () => {
     expect(next!.timestamp).toBeGreaterThanOrEqual(retriedAt);
     expect(next!.delay).toBe(60 * 60_000);
     await next!.remove();
+    // A 2ª tentativa da série nova (a que o job de 1 h faria): falhando, a 3ª em 6 h.
+    expect(await process.execute({ paymentId, now: new Date() })).toBe('requested');
+    expect((await payment(paymentId)).refundAttempts).toBe(2);
+    expectStatus(await devPaymentEvent({ app, paymentId, event: 'refund-failed' }), 200);
+    const third = await queue.getJob(`refund-${paymentId}-3`);
+    expect(third!.timestamp).toBeGreaterThanOrEqual(retriedAt);
+    expect(third!.delay).toBe(6 * 60 * 60_000);
+    await third!.remove();
+    expect((await payment(paymentId)).refundFailedAt).toBeNull();
   });
 
   it('RN04 - a chamada sem resposta: a tentativa seguinte consulta antes e aplica o estorno que o gateway já fez', async () => {
@@ -515,7 +527,7 @@ describe('Pagamentos e arrependimento (RN02 a RN08; banco real)', () => {
     // A falha programada só desta cobrança (as suítes em paralelo não a consomem).
     await gateway.failNextCalls({ count: 1, scope: paymentId });
     expectStatus(await refund(ana.cookie, weddingId, paymentId), 202);
-    const first = await attempted(paymentId);
+    const first = await attempted(paymentId, 1, { failed: true });
     expect(first.refundLastError).toBe('gateway_unavailable');
 
     const charge = await gateway.chargeByReference({ externalReference: paymentId });

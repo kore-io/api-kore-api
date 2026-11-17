@@ -185,6 +185,10 @@ export class PrismaNotificationEmailStore implements NotificationEmailStore {
       JOIN weddings w ON w.id = m.wedding_id
       WHERE m.role = 'owner' AND m.removed_at IS NULL ${only}
         AND w.status IN ('published', 'post_event', 'grace')
+        -- O bloqueado fica de fora (Casamento bloqueado RN06): sem isso, o dia
+        -- dele fecharia com as respostas esperando, e o desbloqueio depois das
+        -- 20h só mandaria o Resumo no dia seguinte (revisão do Crivo no PR (C)).
+        AND w.blocked_at IS NULL
         AND extract(hour FROM ${now}::timestamptz AT TIME ZONE COALESCE(w.timezone, 'America/Sao_Paulo')) >= 20
         AND COALESCE((
           SELECT p.email::text FROM notification_preferences p

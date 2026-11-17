@@ -439,6 +439,13 @@ describe('Migration da F3 (banco real, usuário kore_api; decisões 230 e 231)',
     it('RN10 - cada indicador lê só as próprias comissões, sem gravar', async () => {
       // A API lê pela própria conexão: os dados precisam estar confirmados.
       const { commissionId, paymentId, pixKeyId } = await seedReferrerData(owner);
+      // Um ajuste de Juliana (Comissões RN02; sonda do Crivo no PR (D)): a RLS por referrer_id.
+      const adjustmentId = uuidV7();
+      await owner.query(
+        `INSERT INTO commission_adjustments (id, referrer_id, amount_cents, reason, note)
+         VALUES ($1, $2, -100, 'manual', 'sonda')`,
+        [adjustmentId, juliana.referrerId],
+      );
       // Um repasse de Juliana (Repasse RN04): a mesma policy por current_referrer_id().
       const payoutId = uuidV7();
       await owner.query(
@@ -454,6 +461,10 @@ describe('Migration da F3 (banco real, usuário kore_api; decisões 230 e 231)',
           ).toBe(1);
           expect(
             (await api.query('SELECT 1 FROM payouts WHERE id = $1', [payoutId])).rowCount,
+          ).toBe(1);
+          expect(
+            (await api.query('SELECT 1 FROM commission_adjustments WHERE id = $1', [adjustmentId]))
+              .rowCount,
           ).toBe(1);
           await rejects(
             api,
@@ -473,9 +484,11 @@ describe('Migration da F3 (banco real, usuário kore_api; decisões 230 e 231)',
           expect((await api.query('SELECT 1 FROM commissions')).rowCount).toBe(0);
           expect((await api.query('SELECT 1 FROM referrer_pix_keys')).rowCount).toBe(0);
           expect((await api.query('SELECT 1 FROM payouts')).rowCount).toBe(0);
+          expect((await api.query('SELECT 1 FROM commission_adjustments')).rowCount).toBe(0);
         });
       } finally {
         await owner.query('DELETE FROM payouts WHERE id = $1', [payoutId]);
+        await owner.query('DELETE FROM commission_adjustments WHERE id = $1', [adjustmentId]);
         await owner.query('DELETE FROM commissions WHERE id = $1', [commissionId]);
         await owner.query('DELETE FROM referrer_pix_keys WHERE id = $1', [pixKeyId]);
         await owner.query('DELETE FROM payments WHERE id = $1', [paymentId]);

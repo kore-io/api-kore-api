@@ -34,8 +34,16 @@ export class BullmqRefundQueue implements RefundQueue {
     const data: RefundJob = { paymentId, attempt };
     // O id fixo por pagamento e tentativa (RN04): o repetido não entra. O job
     // concluído sai, e a tentativa seguinte tem outro id.
+    const jobId = series
+      ? `refund-${paymentId}-${series}-${attempt}`
+      : `refund-${paymentId}-${attempt}`;
+    // O job que lançou erro fica guardado (removeOnFail) e barraria a mesma
+    // tentativa de uma série nova (o Tentar o estorno de novo zera a contagem,
+    // Pagamentos RN05): o falho sai antes. O que espera ou roda continua barrando.
+    const existing = await this.queue.getJob(jobId);
+    if (existing && (await existing.isFailed())) await existing.remove();
     await this.queue.add('refund', data, {
-      jobId: series ? `refund-${paymentId}-${series}-${attempt}` : `refund-${paymentId}-${attempt}`,
+      jobId,
       delay: delayMs,
       removeOnComplete: true,
       removeOnFail: 100,

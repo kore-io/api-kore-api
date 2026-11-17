@@ -9,6 +9,7 @@ import {
 import { addMonths } from '@/modules/billing/domain/payments/pricing';
 import { LOCAL_WEBHOOK_TOKEN_HEADER } from '@/modules/billing/infrastructure/backoffice/local-gateway/local-payment-gateway';
 import { LocalGatewayStore } from '@/modules/billing/infrastructure/backoffice/local-gateway/local-gateway.store';
+import { WeddingPseudonymizer } from '@/modules/product-events/infrastructure/providers/wedding-pseudonymizer';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import { localDate } from '@/shared/kernel/time/local-date';
 import { createTestApp } from '../support/harness/create-test-app';
@@ -490,6 +491,130 @@ describe('Publicar e pagar (Publicar e pagar RN01 a RN12; banco real)', () => {
     );
     expect(await db.commission.count({ where: { paymentId: applied.id } })).toBe(1);
     expect(await db.commission.count({ where: { paymentId: pixId } })).toBe(0);
+  });
+
+  it('RN05 - a primeira publicação grava o evento de produto publicado, com os dias até o casamento; a segunda, não', async () => {
+    const { ana, weddingId } = await scenario();
+    const created = await pay({ cookie: ana.cookie, weddingId }).expect(201);
+    await dev(created.body.paymentId as string, 'confirm').expect(200);
+    const weddingRef = app.get(WeddingPseudonymizer).weddingRef({ weddingId });
+    const published = async () => {
+      const deadline = Date.now() + 10_000;
+      for (;;) {
+        const rows = await db.productEvent.findMany({ where: { name: 'publicado', weddingRef } });
+        if (rows.length > 0 || Date.now() > deadline) return rows;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+    };
+    const [event] = await published();
+    const days = Math.round(
+      (Date.parse(`${eventDate}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000,
+    );
+    expect(event.props).toEqual({ dias_ate_casamento: days });
+    expect(JSON.stringify(event)).not.toContain(weddingId);
+  });
+
+  it('RN10 - o cartão recusado depois, pelo evento do gateway: o pendente vira failed, com o log, e o casamento segue em rascunho', async () => {
+    const { ana, weddingId } = await scenario();
+    const created = await pay({ cookie: ana.cookie, weddingId }).expect(201);
+    const paymentId = created.body.paymentId as string;
+    await dev(paymentId, 'fail').expect(200);
+    expect(await db.payment.findUniqueOrThrow({ where: { id: paymentId } })).toMatchObject({
+      status: 'failed',
+      appliedAt: null,
+    });
+    await db.applicationLog.findFirstOrThrow({
+      where: { action: 'payment.failed', entityId: paymentId },
+    });
+    expect((await db.wedding.findUniqueOrThrow({ where: { id: weddingId } })).status).toBe('draft');
+  });
+
+  it('RN03 - um cliente no gateway por pagador: o mesmo CPF reusa, outro pagador no casamento cria outro', async () => {
+    const { ana, weddingId } = await scenario();
+    const first = await pay({ cookie: ana.cookie, weddingId }).expect(201);
+    await dev(first.body.paymentId as string, 'fail').expect(200);
+    const second = await pay({ cookie: ana.cookie, weddingId }).expect(201);
+    await dev(second.body.paymentId as string, 'fail').expect(200);
+    expect(await db.gatewayCustomer.count({ where: { weddingId } })).toBe(1);
+    await pay({
+      cookie: ana.cookie,
+      weddingId,
+      overrides: { payer: { name: 'Marcos Lima', taxId: '111.444.777-35' } },
+    }).expect(201);
+    expect(await db.gatewayCustomer.count({ where: { weddingId } })).toBe(2);
+  });
+
+  it('RN01 - pela rota do pagamento: sem a data do casamento e já publicado são recusados, sem Payment', async () => {
+    const { ana, weddingId } = await scenario();
+    const quoted = await quote(ana.cookie, weddingId, 'pix');
+    const post = () =>
+      request(app.getHttpServer())
+        .post(`/v1/weddings/${weddingId}/payments`)
+        .set('Cookie', ana.cookie)
+        .set('Origin', ORIGIN)
+        .set('Idempotency-Key', randomUUID())
+        .send({
+          kind: 'publication',
+          endDate,
+          method: 'pix',
+          installments: 1,
+          payer: { name: 'Ana Beatriz Moreira', taxId: CPF },
+          priceVersion: quoted.priceVersion,
+          expectedTotalCents: quoted.totalCents,
+        });
+    const original = await db.wedding.findUniqueOrThrow({ where: { id: weddingId } });
+
+    // O endereço nulo o banco não deixa existir (chk_weddings_tombstone): o
+    // SITE_SLUG_MISSING é a defesa do domínio, provada no unitário da cotação.
+    await db.wedding.update({ where: { id: weddingId }, data: { eventDate: null } });
+    expect((await post().expect(409)).body.error).toBe('EVENT_DATE_MISSING');
+    await db.wedding.update({
+      where: { id: weddingId },
+      data: {
+        eventDate: original.eventDate,
+        status: 'published',
+        publishedAt: new Date(),
+        endDate: new Date(`${endDate}T00:00:00Z`),
+        publicationSource: 'courtesy',
+      },
+    });
+    expect((await post().expect(409)).body.error).toBe('NOT_DRAFT');
+    expect(await db.payment.count({ where: { weddingId } })).toBe(0);
+  });
+
+  it('Preço RN05 - o total muda entre a cotação e o pagamento (o desconto do indicador desligado): 409 PRICE_CHANGED e nenhum Payment; o priceVersion diferente também', async () => {
+    const { ana, weddingId } = await scenario();
+    const quoted = await quote(ana.cookie, weddingId, 'pix');
+    const wedding = await db.wedding.findUniqueOrThrow({ where: { id: weddingId } });
+    await db.referrer.update({
+      where: { id: wedding.referrerId! },
+      data: { referralDiscountEnabled: false },
+    });
+    const post = (body: Record<string, unknown>) =>
+      request(app.getHttpServer())
+        .post(`/v1/weddings/${weddingId}/payments`)
+        .set('Cookie', ana.cookie)
+        .set('Origin', ORIGIN)
+        .set('Idempotency-Key', randomUUID())
+        .send({
+          kind: 'publication',
+          endDate,
+          method: 'pix',
+          installments: 1,
+          payer: { name: 'Ana Beatriz Moreira', taxId: CPF },
+          priceVersion: quoted.priceVersion,
+          expectedTotalCents: quoted.totalCents,
+          ...body,
+        });
+    expect((await post({}).expect(409)).body.error).toBe('PRICE_CHANGED');
+    // O total certo de agora, com a versão de preço de outra tabela.
+    const current = await quote(ana.cookie, weddingId, 'pix');
+    expect(current.totalCents).toBeGreaterThan(quoted.totalCents);
+    expect(
+      (await post({ expectedTotalCents: current.totalCents, priceVersion: '2000-01' }).expect(409))
+        .body.error,
+    ).toBe('PRICE_CHANGED');
+    expect(await db.payment.count({ where: { weddingId } })).toBe(0);
   });
 
   it('RN07 - dois donos pagando ao mesmo tempo: um pagamento, o outro PAYMENT_PENDING', async () => {
