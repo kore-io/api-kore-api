@@ -179,6 +179,43 @@ describe('Casamento bloqueado (Casamento bloqueado RN01 a RN08; banco real)', ()
     }
   });
 
+  it('Retenção RN05 - com a exclusão agendada, a colaboradora ainda sai do casamento, e o convite de acesso é recusado com 409', async () => {
+    const { ana, juliana, weddingId } = await blocked({ block: false });
+    await db.wedding.update({
+      where: { id: weddingId },
+      data: { deletionScheduledFor: day(addMonths({ day: today, months: 0 })) },
+    });
+    const marcos = await signedInUser({ app, name: 'Marcos' });
+    const email = (await db.user.findUniqueOrThrow({ where: { id: marcos.userId } })).email;
+    const { token } = await seedInvitation({
+      db,
+      weddingId,
+      kind: 'partner',
+      email,
+      invitedByUserId: ana.userId,
+    });
+    const refused = await http()
+      .post(`/v1/access-invitations/${token}/accept`)
+      .set('Cookie', marcos.cookie)
+      .set('Origin', ORIGIN)
+      .send({ myTitle: 'groom' })
+      .expect(409);
+    expect(refused.body.error).toBe('WEDDING_DELETION_SCHEDULED');
+    expect(await db.membership.count({ where: { weddingId, userId: marcos.userId } })).toBe(0);
+
+    const membership = await db.membership.findFirstOrThrow({
+      where: { weddingId, userId: juliana.userId },
+    });
+    await http()
+      .delete(`/v1/weddings/${weddingId}/memberships/${membership.id}`)
+      .set('Cookie', juliana.cookie)
+      .set('Origin', ORIGIN)
+      .expect(204);
+    expect(
+      (await db.membership.findUniqueOrThrow({ where: { id: membership.id } })).removedAt,
+    ).not.toBeNull();
+  });
+
   it('RN02 - quem não tem vínculo recebe 404, sem saber do bloqueio', async () => {
     const { weddingId } = await blocked();
     const stranger = await signedInUser({ app });
