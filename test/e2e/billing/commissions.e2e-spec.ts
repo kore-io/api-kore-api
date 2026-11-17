@@ -102,7 +102,9 @@ describe('Comissões do indicador (Comissões RN01 a RN06; banco real)', () => {
       where: { entityType: 'commission', entityId: commission!.id },
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     });
-    return rows.map((row) => row.action);
+    // Sem ordem: os eventos do gateway local podem ser aplicados fora da ordem
+    // em que o teste os manda (a fila), e duas linhas podem cair no mesmo ms.
+    return rows.map((row) => row.action).sort();
   };
   const dispute = (paymentId: string, event: string) =>
     devPaymentEvent({ app, paymentId, event }).then((response) => expectStatus(response, 200));
@@ -145,7 +147,7 @@ describe('Comissões do indicador (Comissões RN01 a RN06; banco real)', () => {
       blockReason: 'self_referral',
     });
     // As duas linhas nascem na mesma transação e no mesmo milissegundo: sem ordem entre elas.
-    expect((await logActionsOf(self.paymentId)).sort()).toEqual([
+    expect(await logActionsOf(self.paymentId)).toEqual([
       'commission.blocked',
       'commission.created',
     ]);
@@ -190,7 +192,7 @@ describe('Comissões do indicador (Comissões RN01 a RN06; banco real)', () => {
     const at4am = new Date(`${releaseDay}T07:00:00Z`);
     expect(await release.execute({ now: at4am, referrerId: referrerId! })).toEqual({ released: 1 });
     expect(await commissionOf(paymentId)).toMatchObject({ status: 'available' });
-    expect(await logActionsOf(paymentId)).toEqual(['commission.created', 'commission.available']);
+    expect(await logActionsOf(paymentId)).toEqual(['commission.available', 'commission.created']);
     const referrer = await db.referrer.findUniqueOrThrow({ where: { id: referrerId! } });
     const [notice] = await db.notification.findMany({
       where: { userId: referrer.userId, type: 'commission' },
@@ -249,9 +251,45 @@ describe('Comissões do indicador (Comissões RN01 a RN06; banco real)', () => {
     ]);
   });
 
-  it('RN06 - a comissão bloqueada continua bloqueada na contestação', async () => {
+  it('RN06 - a comissão bloqueada continua bloqueada na contestação, e também depois de ganha', async () => {
     const { paymentId } = await published({ referrer: 'blocked' });
     await dispute(paymentId, 'dispute');
     expect(await commissionOf(paymentId)).toMatchObject({ status: 'blocked' });
+    await dispute(paymentId, 'dispute-won');
+    expect(await commissionOf(paymentId)).toMatchObject({
+      status: 'blocked',
+      blockReason: 'referrer_blocked',
+    });
+  });
+
+  it('RN06 - a contestação ganha depois da data de liberação devolve a comissão a disponível', async () => {
+    const { paymentId } = await published();
+    await db.commission.update({
+      where: { paymentId },
+      data: { availableAt: new Date(Date.now() - 2 * DAY) },
+    });
+    await dispute(paymentId, 'dispute');
+    expect(await commissionOf(paymentId)).toMatchObject({ status: 'held' });
+    await dispute(paymentId, 'dispute-won');
+    expect(await commissionOf(paymentId)).toMatchObject({ status: 'available' });
+  });
+
+  it('RN05 - a comissão bloqueada vira estornada no reembolso confirmado', async () => {
+    const { ana, weddingId, paymentId } = await published({ referrer: 'blocked' });
+    await request(app.getHttpServer())
+      .post(`/v1/weddings/${weddingId}/payments/${paymentId}/refund-request`)
+      .set('Cookie', ana.cookie)
+      .set('Origin', ORIGIN)
+      .send({})
+      .expect(202);
+    // O pedido não retém a bloqueada: ela continua bloqueada até o estorno.
+    expect(await commissionOf(paymentId)).toMatchObject({ status: 'blocked' });
+    const deadline = Date.now() + 10_000;
+    while ((await db.payment.findUniqueOrThrow({ where: { id: paymentId } })).refundAttempts < 1) {
+      if (Date.now() > deadline) throw new Error('Sem a tentativa de estorno.');
+      await new Promise((done) => setTimeout(done, 100));
+    }
+    await dispute(paymentId, 'refund');
+    expect(await commissionOf(paymentId)).toMatchObject({ status: 'reversed' });
   });
 });

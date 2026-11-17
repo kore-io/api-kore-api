@@ -235,6 +235,7 @@ import { TenantTransactionInterceptor } from './presentation/http/interceptors/t
     WeddingScope,
     CheckSlugAvailability,
     PLANNER_PROFILES,
+    GetMyReferrer,
   ],
 })
 export class AccessModule {}

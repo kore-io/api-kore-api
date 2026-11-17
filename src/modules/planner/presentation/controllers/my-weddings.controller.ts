@@ -1,4 +1,4 @@
-import { Controller, Get, Header, Param, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Header, Param, ParseUUIDPipe, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ApiErrorResponses, commonErrors } from '@/shared/http/api-error-responses.decorator';
 import { WeddingNotFoundError } from '@/modules/access/domain/access.errors';
@@ -12,6 +12,7 @@ import { CurrentSession } from '@/modules/access/presentation/http/decorators/cu
 import { GetMyWedding, ListMyWeddings } from '@/modules/planner/application/my-weddings.use-cases';
 import {
   MyWeddingDetailResponse,
+  MyWeddingsQuery,
   MyWeddingsResponse,
 } from '@/modules/planner/presentation/dto/my-weddings.dto';
 
@@ -29,11 +30,18 @@ export class MyWeddingsController {
   ) {}
 
   @Get()
-  @ApiErrorResponses(...commonErrors({ session: true }), ProfileNotOwnedErrorBody)
-  async list(@CurrentSession() session: AuthenticatedSession): Promise<MyWeddingsResponse> {
+  @ApiErrorResponses(...commonErrors({ session: true, validated: true }), ProfileNotOwnedErrorBody)
+  async list(
+    @CurrentSession() session: AuthenticatedSession,
+    @Query() query: MyWeddingsQuery,
+  ): Promise<MyWeddingsResponse> {
     try {
       return MyWeddingsResponse.from({
-        view: await this.listWeddings.execute({ userId: session.userId, now: new Date() }),
+        view: await this.listWeddings.execute({
+          userId: session.userId,
+          now: new Date(),
+          ...(query.status ? { status: query.status } : {}),
+        }),
       });
     } catch (error) {
       throw toHttpError(error);

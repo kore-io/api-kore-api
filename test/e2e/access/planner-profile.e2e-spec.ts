@@ -404,7 +404,7 @@ describe('Cadastro e perfil do cerimonialista (banco real; decisões 223 e 224)'
   );
 
   describe('GET /v1/me/referrer (Link de indicação RN01 e RN02)', () => {
-    it('o link e o desconto do casal, sem o percentual da comissão', async () => {
+    it('o link, o desconto do casal, o percentual (a tela não mostra; Comissões, Contrato de API) e os saldos', async () => {
       const juliana = await person();
       const created = await signup(juliana.cookie, profile()).expect(201);
 
@@ -414,6 +414,8 @@ describe('Cadastro e perfil do cerimonialista (banco real; decisões 223 e 224)'
         referralCode: created.body.referralCode,
         link: `https://kore.com.br/i/${created.body.referralCode}`,
         discountPercent: 10,
+        ratePercent: 20,
+        balances: { availableCents: 0, pendingCents: 0, receivedCents: 0, inPayoutCents: 0 },
         // Repasse, Contrato: sem dados para receber ainda.
         taxIdMasked: null,
         pixKeyMasked: null,

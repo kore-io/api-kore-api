@@ -246,11 +246,12 @@ export class GetMyReferrer {
     @Inject(REFERRAL_DIRECTORY) private readonly referrals: ReferralDirectory,
   ) {}
 
-  async execute({
-    userId,
-  }: {
-    userId: string;
-  }): Promise<{ referralCode: string; link: string; discountPercent: number | null }> {
+  async execute({ userId }: { userId: string }): Promise<{
+    referralCode: string;
+    link: string;
+    discountPercent: number | null;
+    ratePercent: number;
+  }> {
     const profile = await this.profiles.findOwn({ userId });
     // Rota da cerimonialista: sem o perfil, o código que já existe (decisão 224(3)).
     if (!profile) throw new ProfileNotOwnedError();
@@ -262,6 +263,7 @@ export class GetMyReferrer {
       discountPercent: profile.referralDiscountEnabled
         ? await this.referrals.referralDiscountPercent()
         : null,
+      ratePercent: profile.ratePercent,
     };
   }
 }

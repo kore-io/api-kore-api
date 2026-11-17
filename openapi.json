@@ -817,7 +817,25 @@
       },
       "get": {
         "operationId": "MyWeddingsController_list_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "awaiting_couple",
+                "draft",
+                "published",
+                "post_event",
+                "grace",
+                "expired",
+                "awaiting_payment"
+              ]
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -828,6 +846,16 @@
                 }
               }
             }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
           },
           "401": {
             "content": {
@@ -1095,58 +1123,6 @@
           }
         },
         "summary": "Salva o Meu perfil, com as validações do cadastro (RN09 e RN10).",
-        "tags": [
-          "me"
-        ]
-      }
-    },
-    "/v1/me/referrer": {
-      "get": {
-        "operationId": "PlannerController_referrer_v1",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MyReferrerResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
-                }
-              }
-            },
-            "description": ""
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
-                }
-              }
-            },
-            "description": ""
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RateLimitedErrorBody"
-                }
-              }
-            },
-            "description": ""
-          }
-        },
-        "summary": "O link de indicação e o desconto do casal (Link de indicação RN01 e RN02).",
         "tags": [
           "me"
         ]
@@ -8692,6 +8668,57 @@
         ]
       }
     },
+    "/v1/me/referrer": {
+      "get": {
+        "operationId": "MyReferrerController_referrer_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyReferrerResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionExpiredErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileNotOwnedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "planner"
+        ]
+      }
+    },
     "/v1/me/weddings/{id}": {
       "get": {
         "operationId": "MyWeddingsController_detail_v1",
@@ -9182,7 +9209,31 @@
     "/v1/me/referrer/commissions": {
       "get": {
         "operationId": "ReferrerCommissionsController_list_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "view",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "payment",
+              "type": "string",
+              "enum": [
+                "payment",
+                "wedding"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -9193,6 +9244,16 @@
                 }
               }
             }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorBody"
+                }
+              }
+            },
+            "description": ""
           },
           "401": {
             "content": {
@@ -9225,7 +9286,7 @@
             "description": ""
           }
         },
-        "summary": "A tela Comissões (Comissões do indicador RN02, RN07 e RN10).",
+        "summary": "A tela Comissões (Comissões do indicador RN02, RN07 e RN10; Contrato de API).",
         "tags": [
           "planner"
         ]
@@ -16022,49 +16083,6 @@
             "example": "2026-09"
           }
         }
-      },
-      "MyReferrerResponse": {
-        "type": "object",
-        "properties": {
-          "referralCode": {
-            "type": "string",
-            "example": "juliana-prado"
-          },
-          "link": {
-            "type": "string",
-            "example": "https://kore.com.br/i/juliana-prado"
-          },
-          "discountPercent": {
-            "type": "number",
-            "nullable": true,
-            "description": "Nulo com o desconto de indicação desligado. Sem o percentual da comissão (D4).",
-            "example": 10
-          },
-          "taxIdMasked": {
-            "type": "string",
-            "nullable": true,
-            "description": "\"***.982.247-**\"; nulo antes do primeiro recebimento (Repasse RN02).",
-            "example": "***.982.247-**"
-          },
-          "pixKeyMasked": {
-            "type": "string",
-            "nullable": true,
-            "description": "A chave ativa mascarada; nula sem chave confirmada (Repasse RN03).",
-            "example": "jul***@pradoassessoria.com.br"
-          },
-          "payoutDataComplete": {
-            "type": "boolean",
-            "description": "CPF ou CNPJ e chave ativa: pode receber (\"Cadastre seu CPF ou CNPJ e sua chave Pix…\")."
-          }
-        },
-        "required": [
-          "referralCode",
-          "link",
-          "discountPercent",
-          "taxIdMasked",
-          "pixKeyMasked",
-          "payoutDataComplete"
-        ]
       },
       "ReferralNotFoundErrorBody": {
         "type": "object",
@@ -23462,6 +23480,81 @@
           "endpoint"
         ]
       },
+      "MyReferrerBalancesResponse": {
+        "type": "object",
+        "properties": {
+          "availableCents": {
+            "type": "number",
+            "example": 6742
+          },
+          "pendingCents": {
+            "type": "number",
+            "example": 1740
+          },
+          "receivedCents": {
+            "type": "number",
+            "example": 0
+          },
+          "inPayoutCents": {
+            "type": "number",
+            "example": 0
+          }
+        },
+        "required": [
+          "availableCents",
+          "pendingCents",
+          "receivedCents",
+          "inPayoutCents"
+        ]
+      },
+      "MyReferrerResponse": {
+        "type": "object",
+        "properties": {
+          "referralCode": {
+            "type": "string",
+            "example": "juliana-prado"
+          },
+          "link": {
+            "type": "string",
+            "example": "https://kore.com.br/i/juliana-prado"
+          },
+          "discountPercent": {
+            "type": "number",
+            "nullable": true,
+            "example": 10
+          },
+          "ratePercent": {
+            "type": "number",
+            "example": 20
+          },
+          "balances": {
+            "$ref": "#/components/schemas/MyReferrerBalancesResponse"
+          },
+          "taxIdMasked": {
+            "type": "string",
+            "nullable": true,
+            "example": "***.982.247-**"
+          },
+          "pixKeyMasked": {
+            "type": "string",
+            "nullable": true,
+            "example": "jul***@pradoassessoria.com.br"
+          },
+          "payoutDataComplete": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "referralCode",
+          "link",
+          "discountPercent",
+          "ratePercent",
+          "balances",
+          "taxIdMasked",
+          "pixKeyMasked",
+          "payoutDataComplete"
+        ]
+      },
       "MyWeddingsSummaryResponse": {
         "type": "object",
         "properties": {
@@ -23844,21 +23937,44 @@
           "awaitingPayment"
         ]
       },
-      "ReferredWeddingCommissionResponse": {
+      "ReferredWeddingCommissionStatusResponse": {
         "type": "object",
         "properties": {
-          "availableCents": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "available",
+              "pending",
+              "paid"
+            ]
+          },
+          "amountCents": {
             "type": "number",
             "example": 6742
-          },
-          "pendingCents": {
-            "type": "number",
-            "example": 1740
           }
         },
         "required": [
-          "availableCents",
-          "pendingCents"
+          "status",
+          "amountCents"
+        ]
+      },
+      "ReferredWeddingCommissionResponse": {
+        "type": "object",
+        "properties": {
+          "totalCents": {
+            "type": "number",
+            "example": 8482
+          },
+          "byStatus": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReferredWeddingCommissionStatusResponse"
+            }
+          }
+        },
+        "required": [
+          "totalCents",
+          "byStatus"
         ]
       },
       "ReferredWeddingResponse": {
@@ -24062,37 +24178,16 @@
           }
         }
       },
-      "CommissionBalancesResponse": {
+      "CommissionLineResponse": {
         "type": "object",
         "properties": {
-          "availableCents": {
-            "type": "number",
-            "example": 6742
+          "kind": {
+            "type": "string",
+            "enum": [
+              "commission"
+            ]
           },
-          "pendingCents": {
-            "type": "number",
-            "example": 1740
-          },
-          "receivedCents": {
-            "type": "number",
-            "example": 0
-          },
-          "inPayoutCents": {
-            "type": "number",
-            "example": 0
-          }
-        },
-        "required": [
-          "availableCents",
-          "pendingCents",
-          "receivedCents",
-          "inPayoutCents"
-        ]
-      },
-      "CommissionItemResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
+          "commissionId": {
             "type": "string",
             "format": "uuid"
           },
@@ -24100,16 +24195,16 @@
             "type": "string",
             "nullable": true
           },
-          "partnerNames": {
+          "coupleNames": {
+            "type": "string",
             "nullable": true,
-            "example": [
-              "Ana",
-              "Marcos"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "example": "Ana & Marcos"
+          },
+          "weddingPurged": {
+            "type": "boolean"
+          },
+          "clickable": {
+            "type": "boolean"
           },
           "paymentKind": {
             "type": "string",
@@ -24141,6 +24236,15 @@
               "held"
             ]
           },
+          "blockReason": {
+            "type": "string",
+            "enum": [
+              "self_referral",
+              "referrer_blocked",
+              "admin"
+            ],
+            "nullable": true
+          },
           "availableAt": {
             "type": "string",
             "format": "date-time"
@@ -24156,17 +24260,71 @@
           }
         },
         "required": [
-          "id",
+          "kind",
+          "commissionId",
           "weddingId",
-          "partnerNames",
+          "coupleNames",
+          "weddingPurged",
+          "clickable",
           "paymentKind",
           "baseAmountCents",
           "amountCents",
           "ratePercent",
           "status",
+          "blockReason",
           "availableAt",
           "paidAt",
           "createdAt"
+        ]
+      },
+      "AdjustmentLineResponse": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "adjustment"
+            ]
+          },
+          "adjustmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amountCents": {
+            "type": "number",
+            "example": -6742
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "refund",
+              "chargeback",
+              "manual"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "payoutStatus": {
+            "type": "string",
+            "enum": [
+              "requested",
+              "held",
+              "processing",
+              "paid",
+              "rejected"
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "kind",
+          "adjustmentId",
+          "amountCents",
+          "reason",
+          "createdAt",
+          "payoutStatus"
         ]
       },
       "WeddingCommissionsResponse": {
@@ -24176,16 +24334,16 @@
             "type": "string",
             "nullable": true
           },
-          "partnerNames": {
+          "coupleNames": {
+            "type": "string",
             "nullable": true,
-            "example": [
-              "Ana",
-              "Marcos"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "example": "Ana & Marcos"
+          },
+          "weddingPurged": {
+            "type": "boolean"
+          },
+          "clickable": {
+            "type": "boolean"
           },
           "availableCents": {
             "type": "number",
@@ -24205,10 +24363,39 @@
         },
         "required": [
           "weddingId",
-          "partnerNames",
+          "coupleNames",
+          "weddingPurged",
+          "clickable",
           "availableCents",
           "pendingCents",
           "releaseDates"
+        ]
+      },
+      "CommissionBalancesResponse": {
+        "type": "object",
+        "properties": {
+          "availableCents": {
+            "type": "number",
+            "example": 6742
+          },
+          "pendingCents": {
+            "type": "number",
+            "example": 1740
+          },
+          "receivedCents": {
+            "type": "number",
+            "example": 0
+          },
+          "inPayoutCents": {
+            "type": "number",
+            "example": 0
+          }
+        },
+        "required": [
+          "availableCents",
+          "pendingCents",
+          "receivedCents",
+          "inPayoutCents"
         ]
       },
       "ReferrerCommissionsResponse": {
@@ -24217,23 +24404,49 @@
           "balances": {
             "$ref": "#/components/schemas/CommissionBalancesResponse"
           },
+          "view": {
+            "type": "string",
+            "enum": [
+              "payment",
+              "wedding"
+            ]
+          },
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/CommissionItemResponse"
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/CommissionLineResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/AdjustmentLineResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/WeddingCommissionsResponse"
+                }
+              ]
             }
           },
-          "byWedding": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WeddingCommissionsResponse"
-            }
+          "page": {
+            "type": "number",
+            "example": 1
+          },
+          "pageSize": {
+            "type": "number",
+            "example": 50
+          },
+          "total": {
+            "type": "number",
+            "example": 2
           }
         },
         "required": [
           "balances",
+          "view",
           "items",
-          "byWedding"
+          "page",
+          "pageSize",
+          "total"
         ]
       },
       "MalformedWebhookErrorBody": {

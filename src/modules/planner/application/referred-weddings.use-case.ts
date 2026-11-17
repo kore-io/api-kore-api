@@ -9,7 +9,7 @@ import {
   type ReferredWeddingsReader,
 } from './ports/referred-weddings-reader.port';
 import { requirePlannerProfile } from './planner-gate';
-import { commissionsByWedding } from '@/modules/planner/domain/commissions';
+import { referredCommission, type ReferredCommission } from '@/modules/planner/domain/commissions';
 import {
   REFERRER_COMMISSIONS_READER,
   type ReferrerCommissionsReader,
@@ -26,7 +26,8 @@ export interface ReferredWeddingView {
    * A coluna Comissão (Comissões do indicador RN08): a soma por estado; sem
    * pagamento, nula ("—"). Estornada, Bloqueada e Retida não entram.
    */
-  commission: { availableCents: number; pendingCents: number } | null;
+  /** A coluna Comissão (RN08): a soma com os estados; nula sem comissão ("—"). */
+  commission: ReferredCommission | null;
 }
 
 /**
@@ -46,22 +47,16 @@ export class ListReferredWeddings {
   async execute({ userId }: { userId: string }): Promise<ReferredWeddingView[]> {
     await requirePlannerProfile({ profiles: this.profiles, userId });
     const commissionRows = await this.commissions.list();
-    const byWedding = new Map(
-      commissionsByWedding(commissionRows).map((entry) => [entry.weddingId, entry]),
-    );
-    const paidWeddings = new Set(commissionRows.map((row) => row.weddingId));
-    return (await this.reader.list()).map((row) => ({
-      weddingId: row.clickable ? row.weddingId : null,
-      partnerNames: row.partnerNames,
-      status: row.status,
-      createdAt: row.createdAt,
-      clickable: row.clickable,
-      commission: paidWeddings.has(row.weddingId)
-        ? {
-            availableCents: byWedding.get(row.weddingId)?.availableCents ?? 0,
-            pendingCents: byWedding.get(row.weddingId)?.pendingCents ?? 0,
-          }
-        : null,
-    }));
+    return (await this.reader.list()).map((row) => {
+      const own = commissionRows.filter((commission) => commission.weddingId === row.weddingId);
+      return {
+        weddingId: row.clickable ? row.weddingId : null,
+        partnerNames: row.partnerNames,
+        status: row.status,
+        createdAt: row.createdAt,
+        clickable: row.clickable,
+        commission: own.length > 0 ? referredCommission(own) : null,
+      };
+    });
   }
 }

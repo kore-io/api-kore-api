@@ -453,6 +453,13 @@ describe('Publicar e pagar (Publicar e pagar RN01 a RN12; banco real)', () => {
 
   it('RN08 e RN10 (B2-2) - Pix antigo pago depois do cartão: pago sem ser aplicado, estorno automático, alerta, e o cartão continua valendo', async () => {
     const { ana, weddingId } = await scenario();
+    // Indicado por Juliana: só o pagamento aplicado gera comissão (Comissões RN01; B2-2).
+    const juliana = await seedReferrer({ db, kind: 'planner', name: 'Juliana Prado' });
+    const referrer = await db.referrer.findUniqueOrThrow({ where: { userId: juliana.userId } });
+    await db.wedding.update({
+      where: { id: weddingId },
+      data: { referrerId: referrer.id, referralSource: 'referral_link' },
+    });
     const pix = await pay({ cookie: ana.cookie, weddingId, method: 'pix', installments: 1 }).expect(
       201,
     );
@@ -481,6 +488,8 @@ describe('Publicar e pagar (Publicar e pagar RN01 a RN12; banco real)', () => {
     expect((await db.wedding.findUniqueOrThrow({ where: { id: weddingId } })).status).toBe(
       'published',
     );
+    expect(await db.commission.count({ where: { paymentId: applied.id } })).toBe(1);
+    expect(await db.commission.count({ where: { paymentId: pixId } })).toBe(0);
   });
 
   it('RN07 - dois donos pagando ao mesmo tempo: um pagamento, o outro PAYMENT_PENDING', async () => {

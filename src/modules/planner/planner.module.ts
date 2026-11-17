@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AccessModule } from '@/modules/access/access.module';
+import { ReferralModule } from '@/modules/referral/referral.module';
+import { MyReferrerController } from './presentation/controllers/my-referrer.controller';
 import { GetMyWedding, ListMyWeddings } from './application/my-weddings.use-cases';
 import { PLANNER_WEDDINGS_READER } from './application/ports/planner-weddings-reader.port';
 import { PrismaPlannerWeddingsReader } from './infrastructure/persistence/prisma-planner-weddings.reader';
@@ -27,8 +29,9 @@ import { PlannerTemplatesController } from './presentation/controllers/planner-t
  * central; nenhuma consulta aceita um weddingId sem conferir o Membership ativo.
  */
 @Module({
-  imports: [AccessModule],
+  imports: [AccessModule, ReferralModule],
   controllers: [
+    MyReferrerController,
     MyWeddingsController,
     ReferredWeddingsController,
     PlannerTemplatesController,

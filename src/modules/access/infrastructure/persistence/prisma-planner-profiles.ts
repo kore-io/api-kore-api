@@ -135,6 +135,7 @@ export class PrismaPlannerProfiles implements PlannerProfiles {
         id: true,
         referralCode: true,
         referralDiscountEnabled: true,
+        ratePercent: true,
         planner: {
           select: {
             creditName: true,
@@ -153,6 +154,7 @@ export class PrismaPlannerProfiles implements PlannerProfiles {
       referrerId: referrer.id,
       referralCode: referrer.referralCode,
       referralDiscountEnabled: referrer.referralDiscountEnabled,
+      ratePercent: referrer.ratePercent,
       creditName: planner.creditName,
       phone: planner.phone,
       whatsapp: planner.whatsapp,

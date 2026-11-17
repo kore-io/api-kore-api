@@ -27,6 +27,7 @@ const commission = (overrides: Partial<CommissionRow>): CommissionRow => ({
   paidAt: null,
   createdAt: new Date('2026-08-10T12:00:00Z'),
   payoutId: null,
+  blockReason: null,
   ...overrides,
 });
 
@@ -54,16 +55,28 @@ describe('ListReferredWeddings (GET /v1/me/referrer/weddings)', () => {
     ]);
   });
 
-  it('Comissões RN08 - a coluna Comissão: a soma por estado; sem pagamento, nula; Estornada fora', async () => {
+  it('Comissões RN08 - a coluna Comissão: a soma e os estados, com a paga e a que está em repasse; sem pagamento, nula; Estornada, Bloqueada e Retida fora', async () => {
     const weddings = await useCase({
       commissions: [
         commission({ id: 'a', status: 'available', amountCents: 6_742 }),
         commission({ id: 'b', status: 'pending', amountCents: 1_740 }),
         commission({ id: 'c', status: 'reversed', amountCents: 9_999 }),
+        commission({ id: 'd', status: 'paid', amountCents: 2_000 }),
+        // Disponível dentro de um repasse aberto: continua disponível.
+        commission({ id: 'e', status: 'available', amountCents: 500, payoutId: 'p1' }),
+        commission({ id: 'f', status: 'blocked', amountCents: 7_000 }),
+        commission({ id: 'g', status: 'held', amountCents: 8_000 }),
       ],
     }).execute({ userId: 'u-j' });
     expect(weddings.map(({ commission: value }) => value)).toEqual([
-      { availableCents: 6_742, pendingCents: 1_740 },
+      {
+        totalCents: 6_742 + 500 + 1_740 + 2_000,
+        byStatus: [
+          { status: 'available', amountCents: 7_242 },
+          { status: 'pending', amountCents: 1_740 },
+          { status: 'paid', amountCents: 2_000 },
+        ],
+      },
       null,
     ]);
   });
