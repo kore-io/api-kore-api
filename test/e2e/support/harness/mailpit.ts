@@ -82,3 +82,23 @@ export async function messageText({ id }: { id: string }): Promise<string> {
   const { Text } = (await response.json()) as { Text: string };
   return Text;
 }
+
+/**
+ * Os códigos dos e-mails de login de um endereço, sem depender da ordem: dois
+ * e-mails no mesmo segundo vêm do Mailpit em qualquer ordem.
+ */
+export async function loginEmailCodes({
+  to,
+  count,
+}: {
+  to: string;
+  count: number;
+}): Promise<string[]> {
+  const messages = await waitForInbox({ to, count });
+  const codes: string[] = [];
+  for (const message of messages) {
+    const code = /(\d{3}) (\d{3})/.exec(await messageText({ id: message.ID }));
+    if (code) codes.push(`${code[1]}${code[2]}`);
+  }
+  return codes;
+}

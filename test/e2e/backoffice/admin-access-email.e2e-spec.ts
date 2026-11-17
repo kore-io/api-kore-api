@@ -109,10 +109,16 @@ describe('Backoffice: trocar o e-mail de acesso (Backoffice - acesso RN09; decis
     expect(log).toMatchObject({ actorUserId: support.userId, ipHash: expect.any(String) });
     expect(JSON.stringify(log.data)).not.toContain(target);
 
-    const [toNew] = await waitForInbox({ to: target });
-    expect(toNew.Subject).toBe('Seu novo e-mail de acesso ao Kore');
-    const [toOld] = await waitForInbox({ to: ana.email });
-    expect(toOld.Subject).toBe('O e-mail de acesso da sua conta mudou');
+    // Pelo assunto: a Ana também recebe o "Pagamento confirmado", assíncrono,
+    // que pode chegar depois e tomar o lugar na ordem do Mailpit (o CI do #164).
+    const [toNew] = await waitForInbox({
+      to: target,
+      subject: 'Seu novo e-mail de acesso ao Kore',
+    });
+    const [toOld] = await waitForInbox({
+      to: ana.email,
+      subject: 'O e-mail de acesso da sua conta mudou',
+    });
 
     // Os corpos (RN09): o botão Entrar no Kore entra uma vez só com o endereço
     // novo; o aviso ao antigo traz o novo só mascarado.
