@@ -569,9 +569,11 @@ export class PrismaPaymentLedger implements PaymentLedger {
     await this.lockCommissionChain({ paymentId });
     // Fora de repasse ou num repasse pedido ou retido (RN05): reversed; o
     // trigger payout_follows_commission retém o repasse (Repasse RN06 (a)).
+    // A bloqueada também é estornada, e o motivo do bloqueio sai junto
+    // (chk_commissions_block_reason: só a bloqueada tem motivo).
     await this.db().$executeRaw`
       UPDATE commissions c
-      SET status = 'reversed', reversed_at = ${now}, updated_at = ${now}
+      SET status = 'reversed', block_reason = NULL, reversed_at = ${now}, updated_at = ${now}
       WHERE c.payment_id = ${paymentId}::uuid
         AND c.status IN ('pending', 'available', 'blocked', 'held')
         AND (c.payout_id IS NULL OR EXISTS (
