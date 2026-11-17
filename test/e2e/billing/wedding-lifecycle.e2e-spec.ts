@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { AdvanceWeddingLifecycle } from '@/modules/billing/application/wedding-lifecycle/advance-wedding-lifecycle.use-case';
 import { addDays, addMonths } from '@/modules/billing/domain/payments/pricing';
+import { formatShortDay } from '@/modules/billing/infrastructure/mail/templates/billing.email';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import { localDate } from '@/shared/kernel/time/local-date';
 import { createTestApp } from '../support/harness/create-test-app';
@@ -103,7 +104,7 @@ describe('Carência, expirado e avisos (Data de saída do ar RN01 a RN03; banco 
   });
 
   it('RN01 e RN02 - no dia seguinte à endDate entra na carência até endDate + 7, com o aviso do 1º dia', async () => {
-    const { weddingId } = await published();
+    const { ana, weddingId } = await published();
     expect(await run(weddingId, addDays({ day: endDate, days: 1 }))).toMatchObject({ grace: 1 });
     const grace = await wedding(weddingId);
     expect(grace.status).toBe('grace');
@@ -112,13 +113,18 @@ describe('Carência, expirado e avisos (Data de saída do ar RN01 a RN03; banco 
       1,
     );
     expect((await notices(weddingId)).map((row) => row.notice)).toContain('grace_day_1');
+    // O e-mail do 1º dia sai pela fila (RN03).
+    const graceSubject = `O site sai do ar depois de ${formatShortDay(addDays({ day: endDate, days: 7 }))}`;
+    await waitForInbox({ to: ana.email, subject: graceSubject });
 
     await run(weddingId, addDays({ day: endDate, days: 5 }));
     expect((await notices(weddingId)).map((row) => row.notice)).toContain('grace_day_5');
+    // E o do 5º dia, com o mesmo assunto.
+    await waitForInbox({ to: ana.email, subject: graceSubject, count: 2 });
   });
 
   it('RN01, RN02 e RN08 - expira em graceUntil + 1, com o expurgo 6 meses depois, e o site responde 410', async () => {
-    const { weddingId, slug } = await published();
+    const { ana, weddingId, slug } = await published();
     await run(weddingId, addDays({ day: endDate, days: 1 }));
     expect(await run(weddingId, addDays({ day: endDate, days: 8 }))).toMatchObject({ expired: 1 });
     const expired = await wedding(weddingId);
@@ -127,6 +133,11 @@ describe('Carência, expirado e avisos (Data de saída do ar RN01 a RN03; banco 
     expect(expired.expiredAt).toEqual(day(expiredAt));
     expect(expired.purgeAt).toEqual(day(addMonths({ day: expiredAt, months: 6 })));
     expect((await notices(weddingId)).map((row) => row.notice)).toContain('expired');
+    // O log wedding.expired e o e-mail "O site saiu do ar" (RN02 e RN03).
+    expect(await db.applicationLog.count({ where: { weddingId, action: 'wedding.expired' } })).toBe(
+      1,
+    );
+    await waitForInbox({ to: ana.email, subject: 'O site saiu do ar' });
     const items = await billingItems(weddingId);
     expect(items.at(-1)?.payload).toEqual([
       expect.objectContaining({
@@ -193,5 +204,38 @@ describe('Carência, expirado e avisos (Data de saída do ar RN01 a RN03; banco 
     // Na rodada seguinte, já é o dia seguinte também no Acre.
     await advance.execute({ now: new Date(`${next}T06:30:00Z`), weddingId });
     expect((await wedding(weddingId)).status).toBe('grace');
+  });
+
+  it('RN02 (B4-7) e RN11 - em Manaus, a virada chega 1 h depois: às 00h30 de São Paulo o site ainda não entrou na carência', async () => {
+    const { weddingId } = await published({ timezone: 'America/Manaus', state: 'AM' });
+    // 00h30 em São Paulo do dia seguinte à endDate = 23h30 da endDate em Manaus.
+    const next = addDays({ day: endDate, days: 1 });
+    await advance.execute({ now: new Date(`${next}T03:30:00Z`), weddingId });
+    expect((await wedding(weddingId)).status).toBe('post_event');
+    // 01h30 em São Paulo = 00h30 em Manaus: já é o dia seguinte lá.
+    await advance.execute({ now: new Date(`${next}T04:30:00Z`), weddingId });
+    expect((await wedding(weddingId)).status).toBe('grace');
+  });
+
+  it('RN02 e Casos de borda - o publicado com o casamento e a saída já passados vai direto para a carência (casamento em 14/11, saída em 15/11)', async () => {
+    const { weddingId } = await published();
+    const eventDay = addDays({ day: today, days: -3 });
+    const endDay = addDays({ day: today, days: -2 });
+    await db.wedding.update({
+      where: { id: weddingId },
+      data: {
+        status: 'published',
+        eventDate: day(eventDay),
+        endDate: day(endDay),
+        paidThrough: day(endDay),
+      },
+    });
+    await run(weddingId, today);
+    const grace = await wedding(weddingId);
+    expect(grace.status).toBe('grace');
+    expect(grace.graceUntil).toEqual(day(addDays({ day: endDay, days: 7 })));
+    expect(await db.applicationLog.count({ where: { weddingId, action: 'wedding.grace' } })).toBe(
+      1,
+    );
   });
 });
