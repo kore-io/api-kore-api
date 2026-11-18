@@ -38,6 +38,17 @@ describe('serializeRequest', () => {
     expect(serializeRequest({ raw })).toEqual({ method: 'GET', route: '/v1/sites/:slug' });
   });
 
+  it('decisão 285 - dado uma rota registrada por expressão regular, quando serializa, então sai (unmatched) sem quebrar', () => {
+    const request = {
+      method: 'GET',
+      url: '/v1/x',
+      baseUrl: '',
+      route: { path: /^\/v1\/x$/ },
+    } as unknown as IncomingMessage;
+
+    expect(serializeRequest(request)).toEqual({ method: 'GET', route: '(unmatched)' });
+  });
+
   it('decisão 285 - dado o 404 que caiu no curinga do Nest, quando serializa, então sai (unmatched)', () => {
     const request = {
       method: 'GET',
