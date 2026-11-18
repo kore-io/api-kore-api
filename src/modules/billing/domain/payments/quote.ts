@@ -59,7 +59,9 @@ export interface BillingQuote {
  * - publicação: o dia da cotação no fuso do casamento, de rascunho, com
  *   endereço, data e fuso;
  * - extensão: a data de saída do ar atual (ou o paidThrough, se o casal
- *   antecipou), ou hoje no expirado; só de quem já publicou.
+ *   antecipou); no expirado, o maior entre hoje e o paidThrough (decisão
+ *   289(2): quem antecipou e expirou não paga de novo os meses já pagos); só de
+ *   quem já publicou.
  * A nova data vai do dia seguinte ao casamento (e depois do início) até o
  * casamento + 12 meses.
  */
@@ -84,8 +86,8 @@ export function quoteWindow({
 
   const today = localDate({ at: now, timezone: wedding.timezone });
   let start = today;
-  if (kind === 'extension' && wedding.status !== 'expired') {
-    const current = wedding.endDate ?? today;
+  if (kind === 'extension') {
+    const current = wedding.status === 'expired' ? today : (wedding.endDate ?? today);
     start = wedding.paidThrough && wedding.paidThrough > current ? wedding.paidThrough : current;
   }
   const endDateMax = addMonths({

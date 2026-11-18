@@ -416,4 +416,88 @@ describe('Extensão e data de saída do ar (Data de saída do ar RN04 e RN05; ba
     expect(await call(ana.userId, target)).toBe('post_event');
     expect((await wedding(weddingId)).endDate).toEqual(day(target));
   });
+
+  describe('decisão 289 - expirado com meses pagos à frente (antecipou e deixou vencer)', () => {
+    /** Antecipou a data, passou a carência e expirou com o paidThrough 2 meses à frente. */
+    async function expiredWithPaidMonths() {
+      const { ana, weddingId } = await published();
+      const lapsed = addDays({ day: today, days: -12 });
+      const paid = addMonths({ day: today, months: 2 });
+      await db.wedding.update({
+        where: { id: weddingId },
+        data: {
+          status: 'expired',
+          endDate: day(lapsed),
+          paidThrough: day(paid),
+          graceUntil: day(addDays({ day: lapsed, days: 7 })),
+          expiredAt: day(addDays({ day: lapsed, days: 8 })),
+          purgeAt: day(addMonths({ day: addDays({ day: lapsed, days: 8 }), months: 6 })),
+          purgeNoticeSentAt: new Date(),
+        },
+      });
+      return { ana, weddingId, lapsed, paid };
+    }
+
+    it('289(1) e RN05 - voltar atrás de graça no expirado, até o paidThrough: volta ao ar, sem o expiredAt, o purgeAt e o aviso', async () => {
+      const { ana, weddingId, lapsed, paid } = await expiredWithPaidMonths();
+
+      expect(
+        (await patchEndDate(ana.cookie, weddingId, addDays({ day: paid, days: 1 })).expect(422))
+          .body.error,
+      ).toBe('END_DATE_BEYOND_PAID');
+      const to = addMonths({ day: today, months: 1 });
+      const back = await patchEndDate(ana.cookie, weddingId, to).expect(200);
+      expect(back.body).toMatchObject({ endDate: to, paidThrough: paid, status: 'post_event' });
+      expect(await wedding(weddingId)).toMatchObject({
+        status: 'post_event',
+        endDate: day(to),
+        paidThrough: day(paid),
+        graceUntil: null,
+        expiredAt: null,
+        purgeAt: null,
+        purgeNoticeSentAt: null,
+      });
+      const line = await db.applicationLog.findFirstOrThrow({
+        where: { action: 'wedding.end_date_restored', weddingId },
+      });
+      expect(line.data).toMatchObject({ from: lapsed, to, paidThrough: paid });
+    });
+
+    it('289(1) - o expirado sem mês pago à frente não volta de graça (renova pela extensão, RN04)', async () => {
+      const { ana, weddingId } = await expiredWithPaidMonths();
+      await db.wedding.update({
+        where: { id: weddingId },
+        data: { paidThrough: day(addDays({ day: today, days: -12 })) },
+      });
+      expect(
+        (await patchEndDate(ana.cookie, weddingId, addDays({ day: today, days: 5 })).expect(409))
+          .body.error,
+      ).toBe('NOT_PUBLISHED');
+      expect((await wedding(weddingId)).status).toBe('expired');
+    });
+
+    it('289(2) e (3) - a extensão conta os meses a partir do paidThrough, e a confirmação aplica e volta ao ar, sem estorno', async () => {
+      const { ana, weddingId, paid } = await expiredWithPaidMonths();
+      const to = addMonths({ day: today, months: 3 });
+
+      const paymentId = await extend(ana.cookie, weddingId, to);
+      const quoted = await db.payment.findUniqueOrThrow({ where: { id: paymentId } });
+      expect(iso(quoted.periodStart)).toBe(paid);
+      expect(quoted.monthsCovered).toBe(1);
+      await confirm(paymentId);
+
+      expect(await db.payment.findUniqueOrThrow({ where: { id: paymentId } })).toMatchObject({
+        status: 'paid',
+        appliedAt: expect.any(Date),
+      });
+      expect(await wedding(weddingId)).toMatchObject({
+        status: 'post_event',
+        endDate: day(to),
+        paidThrough: day(to),
+        expiredAt: null,
+        purgeAt: null,
+        purgeNoticeSentAt: null,
+      });
+    });
+  });
 });
