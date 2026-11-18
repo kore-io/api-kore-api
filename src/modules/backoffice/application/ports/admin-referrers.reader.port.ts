@@ -82,7 +82,7 @@ export type AdminReferrerStatementEntry =
       ratePercent: number;
       amountCents: number;
       status: 'pending' | 'available' | 'paid' | 'reversed' | 'blocked' | 'held';
-      blockReason: 'self_referral' | 'referrer_blocked' | 'admin' | null;
+      blockReason: 'self_referral' | 'referrer_blocked' | 'admin' | 'wedding_blocked' | null;
       availableAt: Date;
       paidAt: Date | null;
       payoutId: string | null;
