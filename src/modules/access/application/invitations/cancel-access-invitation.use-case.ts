@@ -11,7 +11,11 @@ import {
 } from '@/modules/access/application/ports/access-invitation-store.port';
 import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
 
-/** Cancela um convite pendente (RN05 de Convites); o link cai em Convite inválido. */
+/**
+ * Cancela um convite pendente (RN05 de Convites); o link cai em Convite
+ * inválido. Sem outro convite de dono pendente, "aguardando o casal" volta a
+ * rascunho (decisão 297).
+ */
 @Injectable()
 export class CancelAccessInvitation {
   constructor(
@@ -38,6 +42,7 @@ export class CancelAccessInvitation {
       throw new WeddingActionForbiddenError();
     if (!isPendingAt({ invitation, now })) throw new InvitationNotPendingError();
     await this.store.revoke({ invitationId, now });
+    await this.store.revertAwaitingCouple({ weddingId, now });
     await this.store.touchActivity({ weddingId, now });
   }
 }

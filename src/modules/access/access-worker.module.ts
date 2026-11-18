@@ -25,11 +25,23 @@ import {
 } from './infrastructure/jobs/ownerless-purge.job';
 import { OutboxPurgeNoticeMailer } from './infrastructure/mail/outbox-purge-notice-mailer';
 import { PurgeNoticeGiveUpHandler } from './infrastructure/jobs/purge-notice-give-up.handler';
+import { AWAITING_COUPLE_WEDDINGS } from './application/ports/awaiting-couple-weddings.port';
+import { RevertExpiredCoupleInvitations } from './application/weddings/revert-expired-couple-invitations.use-case';
+import { PrismaAwaitingCoupleWeddings } from './infrastructure/backoffice/prisma-awaiting-couple-weddings';
+import {
+  COUPLE_INVITATION_EXPIRY_QUEUE,
+  CoupleInvitationExpiryProcessor,
+  CoupleInvitationExpiryScheduler,
+} from './infrastructure/jobs/couple-invitation-expiry.job';
 
 /** Rotinas do contexto Acesso, do lado do worker. */
 @Module({
   imports: [
-    BullModule.registerQueue({ name: ACCESS_CLEANUP_QUEUE }, { name: OWNERLESS_PURGE_QUEUE }),
+    BullModule.registerQueue(
+      { name: ACCESS_CLEANUP_QUEUE },
+      { name: OWNERLESS_PURGE_QUEUE },
+      { name: COUPLE_INVITATION_EXPIRY_QUEUE },
+    ),
     // O aviso de exclusão (e-mail 6) entra na fila de e-mail, como na API.
     EmailQueuesModule,
     // O log da aplicação pela conexão do backoffice (registro da execução).
@@ -48,6 +60,10 @@ import { PurgeNoticeGiveUpHandler } from './infrastructure/jobs/purge-notice-giv
     OwnerlessPurgeProcessor,
     OwnerlessPurgeScheduler,
     PurgeNoticeGiveUpHandler,
+    { provide: AWAITING_COUPLE_WEDDINGS, useClass: PrismaAwaitingCoupleWeddings },
+    RevertExpiredCoupleInvitations,
+    CoupleInvitationExpiryProcessor,
+    CoupleInvitationExpiryScheduler,
   ],
 })
 export class AccessWorkerModule {}

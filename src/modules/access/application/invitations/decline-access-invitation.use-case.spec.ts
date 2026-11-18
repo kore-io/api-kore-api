@@ -36,6 +36,7 @@ function setup({
   const store = {
     findByToken: jest.fn().mockResolvedValue(invitation),
     decline: jest.fn().mockResolvedValue(true),
+    revertAwaitingCouple: jest.fn().mockResolvedValue(false),
   } as unknown as InvitationAcceptanceStore;
   const useCase = new DeclineAccessInvitation(
     store,
@@ -92,6 +93,18 @@ describe('DeclineAccessInvitation (POST /v1/access-invitations/{token}/decline)'
 
     expect(store.decline).toHaveBeenCalledWith({ tokenHash: 'h-t' });
     expect(notices).toEqual([]);
+  });
+
+  it('decisão 297 - a recusa de convite de dono confere a volta a rascunho; a de colaborador, não', async () => {
+    const owner = setup({ invitation: partnerInvite });
+    await owner.useCase.execute({ token: 't', now });
+    expect(owner.store.revertAwaitingCouple).toHaveBeenCalledWith({ weddingId: 'w1', now });
+
+    const planner = setup({
+      invitation: { ...partnerInvite, kind: 'planner', role: 'collaborator' },
+    });
+    await planner.useCase.execute({ token: 't', now });
+    expect(planner.store.revertAwaitingCouple).not.toHaveBeenCalled();
   });
 
   it('decisão 136 (8) - o link sem e-mail não tem Recusar e nada muda', async () => {

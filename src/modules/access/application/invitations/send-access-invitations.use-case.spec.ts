@@ -78,6 +78,7 @@ function setup({
     touchActivity: jest.fn().mockResolvedValue(undefined),
     find: jest.fn(),
     revoke: jest.fn(),
+    revertAwaitingCouple: jest.fn(),
   };
   const mailer: InvitationMailer = {
     send: jest.fn(({ email }: { email: InvitationEmail }) => {

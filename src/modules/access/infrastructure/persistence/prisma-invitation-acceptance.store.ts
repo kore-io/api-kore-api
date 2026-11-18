@@ -140,6 +140,18 @@ export class PrismaInvitationAcceptanceStore implements InvitationAcceptanceStor
     return wedding.status;
   }
 
+  async revertAwaitingCouple({
+    weddingId,
+    now,
+  }: {
+    weddingId: string;
+    now: Date;
+  }): Promise<boolean> {
+    const [row] = await this.db().$queryRaw<[{ reverted: boolean }]>`
+      SELECT revert_awaiting_couple(${weddingId}::uuid, 'declined', ${now}::timestamptz) AS reverted`;
+    return row.reverted;
+  }
+
   async decline({ tokenHash }: { tokenHash: string }): Promise<boolean> {
     const [row] = await this.db().$queryRaw<[{ declined: boolean | null }]>`
       SELECT decline_access_invitation(${tokenHash}) AS declined`;
