@@ -81,6 +81,19 @@ describe('DeclineAccessInvitation (POST /v1/access-invitations/{token}/decline)'
     expect(withoutAccount.notices[0]?.declinedBy).toBe('j@x.com');
   });
 
+  it('Casamento bloqueado RN06 (decisão 282(2)) - com o casamento bloqueado, a recusa vale e o aviso não sai', async () => {
+    const blocked = {
+      ...partnerInvite,
+      wedding: { ...partnerInvite.wedding, blocked: true },
+    } as InvitationSnapshot;
+    const { useCase, store, notices } = setup({ invitation: blocked });
+
+    await useCase.execute({ token: 't', now });
+
+    expect(store.decline).toHaveBeenCalledWith({ tokenHash: 'h-t' });
+    expect(notices).toEqual([]);
+  });
+
   it('decisão 136 (8) - o link sem e-mail não tem Recusar e nada muda', async () => {
     const { useCase, store } = setup({
       invitation: { ...partnerInvite, kind: 'couple', email: null },

@@ -38,6 +38,7 @@ const coupleLink: InvitationSnapshot = {
     state: 'SP',
     createdByUserId: 'u-lucas',
     referralSource: 'created_by_seller',
+    blocked: false,
     partners: [
       { slot: 1, displayName: 'Fernanda', title: null, userId: null },
       { slot: 2, displayName: 'João', title: null, userId: null },
