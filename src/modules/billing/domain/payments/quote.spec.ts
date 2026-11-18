@@ -117,6 +117,43 @@ describe('buildQuote (Preço e cotação RN02 a RN05)', () => {
     expect(quote.lines?.monthsCovered).toBe(4);
   });
 
+  it('decisão 289(2) - no expirado com meses pagos à frente, a extensão começa no paidThrough', () => {
+    const quote = buildQuote({
+      wedding: {
+        ...published,
+        status: 'expired',
+        endDate: '2027-02-14',
+        paidThrough: '2027-04-01',
+      },
+      kind: 'extension',
+      endDate: '2027-07-01',
+      method: 'card',
+      installments: 1,
+      referral: null,
+      now: new Date('2027-03-01T15:00:00Z'),
+    });
+    expect(quote.periodStart).toBe('2027-04-01');
+    expect(quote.lines?.monthsCovered).toBe(3);
+  });
+
+  it('decisão 289(2) - no expirado com o paidThrough já passado, a extensão começa hoje', () => {
+    const quote = buildQuote({
+      wedding: {
+        ...published,
+        status: 'expired',
+        endDate: '2027-02-14',
+        paidThrough: '2027-02-20',
+      },
+      kind: 'extension',
+      endDate: '2027-07-01',
+      method: 'card',
+      installments: 1,
+      referral: null,
+      now: new Date('2027-03-01T15:00:00Z'),
+    });
+    expect(quote.periodStart).toBe('2027-03-01');
+  });
+
   it('RN03 (D6) - expirado há mais de 12 meses do casamento: não dá para estender', () => {
     const quote = buildQuote({
       wedding: { ...published, status: 'expired' },

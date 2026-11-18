@@ -22,7 +22,7 @@ import {
 } from '@/modules/billing/application/ports/payment-request.store.port';
 
 const logger = new Logger('ChangeEndDate');
-const CHANGEABLE = new Set(['published', 'post_event', 'grace']);
+const CHANGEABLE = new Set(['published', 'post_event', 'grace', 'expired']);
 
 export interface EndDateChanged {
   endDate: string;
@@ -36,7 +36,9 @@ export interface EndDateChanged {
  * amanhã (e depois do casamento) até o limite de 12 meses e **até o
  * paidThrough** (o publicado por Cortesia, sem paidThrough, até a endDate
  * dele); depois disso, paga-se a extensão. Não cobra nem devolve. Na carência,
- * voltar a data a encerra. Depois do commit, cancela o Pix de extensão
+ * voltar a data a encerra. No expirado, só com meses pagos à frente (o
+ * paidThrough depois de hoje; decisão 289(1)): ele volta ao ar, sem o
+ * expiredAt, o purgeAt e o aviso da exclusão. Depois do commit, cancela o Pix de extensão
  * pendente, cotado com a data anterior (G1; B2-9).
  */
 @Injectable()
@@ -75,6 +77,9 @@ export class ChangeEndDate {
           throw new NotPublishedError();
 
         const today = localDate({ at: now, timezone: wedding.timezone });
+        // O expirado sem mês pago à frente renova pela extensão (RN04).
+        if (wedding.status === 'expired' && !(wedding.paidThrough && wedding.paidThrough > today))
+          throw new NotPublishedError();
         const tomorrow = addDays({ day: today, days: 1 });
         const dayAfterWedding = wedding.eventDate
           ? addDays({ day: wedding.eventDate, days: 1 })
