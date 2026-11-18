@@ -1,4 +1,6 @@
 import { INestApplication } from '@nestjs/common';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { Client } from 'pg';
 import request from 'supertest';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
@@ -136,5 +138,21 @@ describe('Link de indicação: os casais do link (banco real; RN03 a RN05)', () 
     } finally {
       await api.query('ROLLBACK');
     }
+  });
+
+  it('decisão 288(2) - o contrato publicado (openapi.json) tem o createdAt e o clickable de cada casal', () => {
+    // O schema vem do plugin do Swagger no nest build, que o Jest não roda; o
+    // openapi:check do CI garante que o arquivo gravado é o do código.
+    const document = JSON.parse(
+      readFileSync(join(__dirname, '..', '..', '..', 'openapi.json'), 'utf8'),
+    ) as {
+      components: {
+        schemas: Record<string, { required?: string[]; properties: Record<string, unknown> }>;
+      };
+    };
+    const schema = document.components.schemas.ReferredWeddingResponse;
+    expect(schema.required).toEqual(expect.arrayContaining(['createdAt', 'clickable']));
+    expect(schema.properties.createdAt).toMatchObject({ type: 'string', format: 'date-time' });
+    expect(schema.properties.clickable).toMatchObject({ type: 'boolean' });
   });
 });

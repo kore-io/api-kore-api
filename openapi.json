@@ -24423,6 +24423,10 @@
               "expired"
             ]
           },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
           "commission": {
             "nullable": true,
             "type": "object",
@@ -24431,13 +24435,18 @@
                 "$ref": "#/components/schemas/ReferredWeddingCommissionResponse"
               }
             ]
+          },
+          "clickable": {
+            "type": "boolean"
           }
         },
         "required": [
           "weddingId",
           "partnerNames",
           "status",
-          "commission"
+          "createdAt",
+          "commission",
+          "clickable"
         ]
       },
       "PlannerTemplateResponse": {

@@ -26,15 +26,16 @@ export class ReferredWeddingResponse {
   /** Os primeiros nomes; o app junta. */
   @ApiProperty({ type: [String], example: ['Ana', 'Marcos'] }) partnerNames: [string, string];
   @ApiProperty({ enum: MY_WEDDING_STATUSES }) status: MyWeddingStatus;
-  createdAt: string;
+  /** Quando o casal entrou pelo link (a lista vem do mais recente; Contrato de API, decisão 288(2)). */
+  @ApiProperty({ format: 'date-time' }) createdAt: string;
   /**
    * A coluna Comissão (Comissões do indicador RN08): "R$ 67,42 disponível ·
    * R$ 17,40 aguardando"; nula sem pagamento ("—").
    */
   @ApiProperty({ type: ReferredWeddingCommissionResponse, nullable: true })
   commission: ReferredWeddingCommissionResponse | null;
-  /** Ela colabora no casamento: a linha abre o detalhe em Meus casamentos. */
-  clickable: boolean;
+  /** Ela colabora no casamento: a linha abre o detalhe em Meus casamentos (RN05). */
+  @ApiProperty() clickable: boolean;
 }
 
 @ApiTags('planner')
