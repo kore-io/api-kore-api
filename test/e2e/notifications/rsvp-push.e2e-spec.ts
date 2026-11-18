@@ -124,6 +124,30 @@ describe('Push das respostas (worker)', () => {
     expect(calls[0].payload.body).toBe('3 grupos responderam');
   });
 
+  it('Casamento bloqueado RN06 - com o casamento bloqueado, o push da resposta não sai (pela consulta real); desbloqueado, sai', async () => {
+    const { userId, weddingId, subscription } = await scenario();
+    await subscription();
+    const admin = (await db.user.create({ data: { email: `${randomUUID()}@kore.local` } })).id;
+    await db.wedding.update({
+      where: { id: weddingId },
+      data: { blockedAt: new Date(), blockedByUserId: admin },
+    });
+    const { sender, calls } = fakeSender();
+
+    expect(await pushWith(sender).send({ userId, weddingId, now: new Date() })).toEqual({
+      sent: 0,
+    });
+    expect(calls).toHaveLength(0);
+
+    await db.wedding.update({
+      where: { id: weddingId },
+      data: { blockedAt: null, blockedByUserId: null },
+    });
+    expect(await pushWith(sender).send({ userId, weddingId, now: new Date() })).toEqual({
+      sent: 1,
+    });
+  });
+
   it('RN07, RN08 e RN09 - sem push ligado, sem vínculo ou de sessão revogada não sai; a revogada é apagada', async () => {
     const off = await scenario({ push: false });
     await off.subscription();
