@@ -603,4 +603,100 @@ describe('Backoffice: ações na cerimonialista (Backoffice - cobrança RN08; ba
       /^(pending|available)$/,
     );
   });
+  describe('Comissões RN03 e Repasse RN06 (e): a bloqueada num repasse já retido pela troca da chave (DoD da F3)', () => {
+    /** Juliana com o repasse pedido retido por uma troca da chave em andamento (RN06 (b)). */
+    async function withKeyChange({ weddings }: { weddings: number }) {
+      const person = await juliana({ weddings, payout: true });
+      const key = await db.referrerPixKey.create({
+        data: {
+          id: uuidV7(),
+          referrerId: person.referrerId,
+          keyType: 'email',
+          keyEncrypted: 'cifrado',
+          keyHash: `hash-${randomUUID()}`,
+          keyMasked: 'nov***@prado.com.br',
+          status: 'pending_activation',
+          confirmedAt: new Date(),
+          activeFrom: new Date(Date.now() + 48 * 3_600_000),
+        },
+      });
+      await db.payout.update({
+        where: { id: person.payoutId! },
+        data: { status: 'held', holdReason: 'pix_key_change' },
+      });
+      const cancelKeyChange = () =>
+        http()
+          .delete(`/v1/me/referrer/pix-keys/${key.id}`)
+          .set('Cookie', person.cookie)
+          .set('Origin', ORIGIN)
+          .expect(204);
+      return { ...person, cancelKeyChange };
+    }
+    const pay = (cookie: string, payoutId: string) =>
+      http()
+        .post(`/v1/admin/payouts/${payoutId}/pay`)
+        .set('Cookie', cookie)
+        .set('Origin', ORIGIN)
+        .set('Idempotency-Key', randomUUID())
+        .send({});
+
+    it('RN03 e RN06 (e) - o Bloquear comissão retém por commission_blocked; o fim da troca não o devolve e o Pagar não leva a bloqueada', async () => {
+      const admin = await staffUser({ app, role: 'admin' });
+      const person = await withKeyChange({ weddings: 2 });
+      const [target] = person.commissions;
+
+      expect(
+        (
+          await post(admin.cookie, `/commissions/${target.id}/block`, {
+            reason: 'Suspeita de autoindicação',
+          }).expect(200)
+        ).body,
+      ).toEqual({ status: 'blocked', heldPayoutId: person.payoutId });
+      expect(await db.payout.findUniqueOrThrow({ where: { id: person.payoutId! } })).toMatchObject({
+        status: 'held',
+        holdReason: 'commission_blocked',
+      });
+
+      await person.cancelKeyChange();
+      expect(await db.payout.findUniqueOrThrow({ where: { id: person.payoutId! } })).toMatchObject({
+        status: 'held',
+        holdReason: 'commission_blocked',
+      });
+      expect((await pay(admin.cookie, person.payoutId!).expect(409)).body.error).toBe(
+        'PAYOUT_HELD',
+      );
+      expect(await db.commission.findUniqueOrThrow({ where: { id: target.id } })).toMatchObject({
+        status: 'blocked',
+        blockReason: 'admin',
+      });
+    });
+
+    it('RN03 e RN06 (e) - a autoindicação achada na correção do CPF retém o repasse já retido por commission_blocked', async () => {
+      const admin = await staffUser({ app, role: 'admin' });
+      const person = await withKeyChange({ weddings: 1 });
+      const cpf = randomCpf();
+      const { hash } = app.get<TaxIdHasher>(TAX_ID_HASHER).digest({ taxId: cpf });
+      await db.payment.update({
+        where: { id: person.commissions[0].paymentId },
+        data: { payerTaxIdHash: hash },
+      });
+
+      await put(admin.cookie, `/referrers/${person.referrerId}/document`, {
+        taxIdType: 'cpf',
+        taxId: cpf,
+        reason: 'Documento digitado errado',
+      }).expect(200);
+      expect(
+        await db.commission.findUniqueOrThrow({ where: { id: person.commissions[0].id } }),
+      ).toMatchObject({ status: 'blocked', blockReason: 'self_referral' });
+      expect(await db.payout.findUniqueOrThrow({ where: { id: person.payoutId! } })).toMatchObject({
+        status: 'held',
+        holdReason: 'commission_blocked',
+      });
+      await person.cancelKeyChange();
+      expect((await db.payout.findUniqueOrThrow({ where: { id: person.payoutId! } })).status).toBe(
+        'held',
+      );
+    });
+  });
 });
