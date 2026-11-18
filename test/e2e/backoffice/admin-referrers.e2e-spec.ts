@@ -721,4 +721,37 @@ describe('Backoffice: ações na cerimonialista (Backoffice - cobrança RN08; ba
       }
     });
   });
+
+  it('decisão 290(4) - desbloquear a comissão com o pagamento em disputa a deixa retida (held), e ela segue o desfecho', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const person = await juliana();
+    const [commission] = person.commissions;
+    await post(admin.cookie, `/commissions/${commission.id}/block`, {
+      reason: 'Suspeita de autoindicação',
+    }).expect(200);
+    expectStatus(
+      await devPaymentEvent({ app, paymentId: commission.paymentId, event: 'dispute' }),
+      200,
+    );
+
+    expect(
+      (
+        await post(admin.cookie, `/commissions/${commission.id}/unblock`, {
+          reason: 'Análise concluída',
+        }).expect(200)
+      ).body,
+    ).toEqual({ status: 'held', weddingBlocked: false });
+    expect(await db.commission.findUniqueOrThrow({ where: { id: commission.id } })).toMatchObject({
+      status: 'held',
+      blockReason: null,
+    });
+
+    expectStatus(
+      await devPaymentEvent({ app, paymentId: commission.paymentId, event: 'dispute-won' }),
+      200,
+    );
+    expect(
+      (await db.commission.findUniqueOrThrow({ where: { id: commission.id } })).status,
+    ).toMatch(/^(pending|available)$/);
+  });
 });

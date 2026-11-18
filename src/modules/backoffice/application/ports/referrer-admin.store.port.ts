@@ -18,6 +18,8 @@ export interface LockedCommission {
   payoutStatus: 'requested' | 'held' | 'processing' | 'paid' | 'rejected' | null;
   /** O casamento da comissão está bloqueado (decisão 284(3)); lido sem trava. */
   weddingBlocked: boolean;
+  /** O status do pagamento dela: em disputa ou em estorno, o desbloqueio a retém (290(4)). */
+  paymentStatus: string;
 }
 
 /**
@@ -57,7 +59,7 @@ export interface ReferrerAdminStore {
   }): Promise<{ heldPayoutId: string | null }>;
   unblockCommission(input: {
     commission: LockedCommission;
-    status: 'pending' | 'available';
+    status: 'pending' | 'available' | 'held';
     adminUserId: string;
     reason: string;
     now: Date;

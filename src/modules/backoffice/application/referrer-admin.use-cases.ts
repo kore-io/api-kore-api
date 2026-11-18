@@ -119,13 +119,17 @@ export class ReferrerAdminActions {
     commissionId: string;
     reason: string;
     now: Date;
-  }): Promise<{ status: 'pending' | 'available'; weddingBlocked: boolean }> {
+  }): Promise<{ status: 'pending' | 'available' | 'held'; weddingBlocked: boolean }> {
     requireRecentSession({ session, now });
     return this.transaction.run(async () => {
       const commission = await this.store.lockCommission({ commissionId });
       if (!commission) throw new CommissionNotFoundError();
       if (commission.status !== 'blocked') throw new CommissionNotBlockableError(commission.status);
-      const status = unblockedStatus({ availableAt: commission.availableAt, now });
+      const status = unblockedStatus({
+        availableAt: commission.availableAt,
+        paymentStatus: commission.paymentStatus,
+        now,
+      });
       await this.store.unblockCommission({
         commission,
         status,
