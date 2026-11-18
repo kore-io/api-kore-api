@@ -49,7 +49,8 @@ export class CommissionBlockResponse {
 }
 
 export class CommissionUnblockResponse {
-  @ApiProperty({ enum: ['pending', 'available'] }) status: 'pending' | 'available';
+  /** `held` com o pagamento em disputa ou em estorno: segue o desfecho (decisão 290(4)). */
+  @ApiProperty({ enum: ['pending', 'available', 'held'] }) status: 'pending' | 'available' | 'held';
   /** O casamento da comissão segue bloqueado: "O casamento continua bloqueado." (decisão 284(3)). */
   weddingBlocked: boolean;
 }

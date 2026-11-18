@@ -27207,9 +27207,11 @@
         "type": "object",
         "properties": {
           "status": {
+            "description": "`held` com o pagamento em disputa ou em estorno: segue o desfecho (decisão 290(4)).",
             "enum": [
               "pending",
-              "available"
+              "available",
+              "held"
             ],
             "type": "string"
           },

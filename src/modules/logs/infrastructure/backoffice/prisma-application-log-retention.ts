@@ -7,6 +7,8 @@ const DELETE_BATCH_SIZE = 5_000;
 /**
  * Roda com a conexão do backoffice: só o papel kore_backoffice pode apagar do
  * log da aplicação. Apaga em lotes para não segurar locks longos na tabela.
+ * As linhas do casamento bloqueado ficam (decisão 290(1): o motivo do
+ * bloqueio mora no log); saem pela idade depois do desbloqueio.
  */
 @Injectable()
 export class PrismaApplicationLogRetention implements ApplicationLogRetention {
@@ -20,6 +22,8 @@ export class PrismaApplicationLogRetention implements ApplicationLogRetention {
         WHERE id IN (
           SELECT id FROM application_logs
           WHERE created_at < ${cutoff}
+            AND (wedding_id IS NULL OR wedding_id NOT IN (
+              SELECT w.id FROM weddings w WHERE w.blocked_at IS NOT NULL))
           ORDER BY created_at
           LIMIT ${DELETE_BATCH_SIZE}
         )`;

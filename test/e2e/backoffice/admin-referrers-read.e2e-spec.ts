@@ -3,6 +3,7 @@ import type { TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { ReleaseCommissions } from '@/modules/billing/application/payouts/release-commissions.use-case';
+import { BlockWedding } from '@/modules/billing/application/wedding-lifecycle/block-wedding.use-case';
 import { addMonths } from '@/modules/billing/domain/payments/pricing';
 import { FIELD_CIPHER, type FieldCipher } from '@/shared/crypto/application/field-cipher.port';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
@@ -354,6 +355,28 @@ describe('Backoffice: lista e detalhe das cerimonialistas (Backoffice - cobranç
       adjustmentReason: null,
     });
     expect(commission.coupleNames).toContain('&');
+  });
+
+  it('RN08 e decisão 284(3) - aba Comissões: a comissão do casamento bloqueado sai Bloqueada com o motivo wedding_blocked ("Casamento bloqueado")', async () => {
+    const person = await juliana();
+    await app.get(BlockWedding).block({
+      weddingId: person.weddingIds[0],
+      byUserId: admin.userId,
+      reason: 'Denúncia',
+      now: new Date(),
+    });
+    const response = await get(
+      admin.cookie,
+      `/referrers/${person.referrerId}?tab=commissions`,
+    ).expect(200);
+    expect(response.body.statement.items).toEqual([
+      expect.objectContaining({
+        kind: 'commission',
+        id: person.commissions[0].id,
+        status: 'blocked',
+        blockReason: 'wedding_blocked',
+      }),
+    ]);
   });
 
   it('RN08 e decisão 69 - aba Repasses só do Admin; o suporte não vê a chave Pix', async () => {

@@ -19,10 +19,21 @@ describe('Ações na cerimonialista (Backoffice - cobrança RN08)', () => {
 
   it('RN08 - desbloquear volta ao prazo de liberação', () => {
     const now = new Date('2026-11-14T12:00:00Z');
-    expect(unblockedStatus({ availableAt: new Date('2026-11-01T00:00:00Z'), now })).toBe(
-      'available',
-    );
-    expect(unblockedStatus({ availableAt: new Date('2026-12-01T00:00:00Z'), now })).toBe('pending');
+    const paymentStatus = 'paid';
+    expect(
+      unblockedStatus({ availableAt: new Date('2026-11-01T00:00:00Z'), paymentStatus, now }),
+    ).toBe('available');
+    expect(
+      unblockedStatus({ availableAt: new Date('2026-12-01T00:00:00Z'), paymentStatus, now }),
+    ).toBe('pending');
+  });
+
+  it('decisão 290(4) - com o pagamento em disputa ou em estorno, desbloquear retém a comissão (held)', () => {
+    const now = new Date('2026-11-14T12:00:00Z');
+    for (const paymentStatus of ['disputed', 'refund_requested'])
+      expect(
+        unblockedStatus({ availableAt: new Date('2026-11-01T00:00:00Z'), paymentStatus, now }),
+      ).toBe('held');
   });
 
   it('RN08 (B10-7) - o ajuste positivo acima de R$ 500,00 abre o alerta; o de R$ 500,00 e o negativo não', () => {

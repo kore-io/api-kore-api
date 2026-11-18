@@ -19,14 +19,23 @@ export const isCommissionBlockable = ({
   (status === 'pending' || status === 'available') &&
   (payoutStatus === null || payoutStatus === 'requested' || payoutStatus === 'held');
 
-/** Desbloquear: a comissão volta a seguir o prazo de liberação. */
+/**
+ * Desbloquear: a comissão volta a seguir o prazo de liberação; com o pagamento
+ * ainda em disputa ou em estorno, vai a `held` e segue o desfecho dele
+ * (decisão 290(4); Comissões RN05 e RN06).
+ */
 export const unblockedStatus = ({
   availableAt,
+  paymentStatus,
   now,
 }: {
   availableAt: Date;
+  paymentStatus: string;
   now: Date;
-}): 'pending' | 'available' => (availableAt.getTime() <= now.getTime() ? 'available' : 'pending');
+}): 'pending' | 'available' | 'held' => {
+  if (paymentStatus === 'disputed' || paymentStatus === 'refund_requested') return 'held';
+  return availableAt.getTime() <= now.getTime() ? 'available' : 'pending';
+};
 
 /**
  * B10-7: o ajuste positivo acima de R$ 500,00 abre o Alert `manual_adjustment`

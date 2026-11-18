@@ -82,7 +82,8 @@ export class PrismaReferrerAdminStore implements ReferrerAdminStore {
              c.amount_cents AS "amountCents", c.available_at AS "availableAt",
              c.payout_id AS "payoutId",
              (SELECT w.blocked_at IS NOT NULL FROM weddings w WHERE w.id = c.wedding_id)
-               AS "weddingBlocked"
+               AS "weddingBlocked",
+             (SELECT p.status::text FROM payments p WHERE p.id = c.payment_id) AS "paymentStatus"
       FROM commissions c WHERE c.id = ${commissionId}::uuid FOR UPDATE`;
     return row ? { ...row, payoutStatus: payout?.status ?? null } : null;
   }
@@ -202,7 +203,7 @@ export class PrismaReferrerAdminStore implements ReferrerAdminStore {
     now,
   }: {
     commission: LockedCommission;
-    status: 'pending' | 'available';
+    status: 'pending' | 'available' | 'held';
     adminUserId: string;
     reason: string;
     now: Date;

@@ -9,6 +9,7 @@ import {
   SendPayoutTransfer,
 } from '@/modules/billing/application/payouts/payout-transfers.use-cases';
 import { ReleaseCommissions } from '@/modules/billing/application/payouts/release-commissions.use-case';
+import { BlockWedding } from '@/modules/billing/application/wedding-lifecycle/block-wedding.use-case';
 import { addMonths } from '@/modules/billing/domain/payments/pricing';
 import {
   PayoutAmountMismatchError,
@@ -361,6 +362,54 @@ describe('Repasse: o Pix de saída (Repasse RN05 e RN08; banco real)', () => {
     expect(
       await db.commissionAdjustment.count({ where: { commissionId: person.commission.id } }),
     ).toBe(0);
+  });
+
+  it('decisão 290(3) - casamento bloqueado durante o Pix que falha: na volta, a comissão vira blocked/wedding_blocked e o repasse fica retido por commission_blocked', async () => {
+    const person = await requested();
+    const adminUserId = await admin();
+    await worker.get(PayPayout).execute({
+      payoutId: person.payoutId,
+      adminUserId,
+      idempotencyKey: randomUUID(),
+      now: new Date(),
+    });
+    const { externalRef } = await payout(person.payoutId);
+    await until(
+      () => app.get(LocalGatewayStore).transferByReference({ externalReference: externalRef }),
+      (value) => value !== null,
+    );
+    expect(
+      await app.get(BlockWedding).block({
+        weddingId: person.weddingId,
+        byUserId: adminUserId,
+        reason: 'Denúncia',
+        now: new Date(),
+      }),
+    ).toBe('blocked');
+    // No processamento, ela segue o Pix (Repasse B6-4).
+    expect(
+      (await db.commission.findUniqueOrThrow({ where: { id: person.commission.id } })).status,
+    ).toBe('available');
+
+    expectStatus(
+      await devPaymentEvent({ app, paymentId: externalRef, event: 'payout-failed' }),
+      200,
+    );
+
+    expect(
+      await db.commission.findUniqueOrThrow({ where: { id: person.commission.id } }),
+    ).toMatchObject({ status: 'blocked', blockReason: 'wedding_blocked' });
+    expect(await payout(person.payoutId)).toMatchObject({
+      status: 'held',
+      holdReason: 'commission_blocked',
+    });
+    const line = await db.applicationLog.findFirstOrThrow({
+      where: { action: 'commission.blocked', entityId: person.commission.id },
+    });
+    expect(line).toMatchObject({
+      actorKind: 'system',
+      data: expect.objectContaining({ blockReason: 'wedding_blocked', adminUserId }),
+    });
   });
 
   it('Comissões RN05 (B6-4) - estornada durante o Pix: o repasse pago leva o ajuste negativo', async () => {

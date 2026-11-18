@@ -721,4 +721,69 @@ describe('Backoffice: ações na cerimonialista (Backoffice - cobrança RN08; ba
       }
     });
   });
+
+  it('Backoffice - cobrança RN09 - o Liberar do repasse retido pelo casamento bloqueado (motivo (f)) sai só com a outra comissão; a bloqueada fica fora do pedido', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const person = await juliana({ weddings: 2, payout: true });
+    const [target, other] = person.commissions;
+    await app.get(BlockWedding).block({
+      weddingId: target.weddingId,
+      byUserId: admin.userId,
+      reason: 'Denúncia',
+      now: new Date(),
+    });
+    expect(await db.payout.findUniqueOrThrow({ where: { id: person.payoutId! } })).toMatchObject({
+      status: 'held',
+      holdReason: 'commission_blocked',
+    });
+    const released = await http()
+      .post(`/v1/admin/payouts/${person.payoutId}/release`)
+      .set('Cookie', admin.cookie)
+      .set('Origin', ORIGIN)
+      .set('Idempotency-Key', randomUUID())
+      .send({})
+      .expect(200);
+    expect(released.body).toEqual({ status: 'requested', amountCents: other.amountCents });
+    expect(await db.commission.findUniqueOrThrow({ where: { id: target.id } })).toMatchObject({
+      status: 'blocked',
+      blockReason: 'wedding_blocked',
+      payoutId: null,
+    });
+    expect((await db.commission.findUniqueOrThrow({ where: { id: other.id } })).payoutId).toBe(
+      person.payoutId,
+    );
+  });
+
+  it('decisão 290(4) - desbloquear a comissão com o pagamento em disputa a deixa retida (held), e ela segue o desfecho', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const person = await juliana();
+    const [commission] = person.commissions;
+    await post(admin.cookie, `/commissions/${commission.id}/block`, {
+      reason: 'Suspeita de autoindicação',
+    }).expect(200);
+    expectStatus(
+      await devPaymentEvent({ app, paymentId: commission.paymentId, event: 'dispute' }),
+      200,
+    );
+
+    expect(
+      (
+        await post(admin.cookie, `/commissions/${commission.id}/unblock`, {
+          reason: 'Análise concluída',
+        }).expect(200)
+      ).body,
+    ).toEqual({ status: 'held', weddingBlocked: false });
+    expect(await db.commission.findUniqueOrThrow({ where: { id: commission.id } })).toMatchObject({
+      status: 'held',
+      blockReason: null,
+    });
+
+    expectStatus(
+      await devPaymentEvent({ app, paymentId: commission.paymentId, event: 'dispute-won' }),
+      200,
+    );
+    expect(
+      (await db.commission.findUniqueOrThrow({ where: { id: commission.id } })).status,
+    ).toMatch(/^(pending|available)$/);
+  });
 });
