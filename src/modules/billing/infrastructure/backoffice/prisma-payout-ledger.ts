@@ -167,6 +167,21 @@ export class PrismaPayoutLedger implements PayoutLedger {
       WHERE id = ${payoutId}::uuid AND status = 'requested'
         AND EXISTS (SELECT 1 FROM commissions c
                     WHERE c.payout_id = ${payoutId}::uuid AND c.status = 'held')`;
+    // Decisão 290(3): na volta, a comissão de casamento bloqueado (que no
+    // processamento seguia o Pix) vira blocked/wedding_blocked, e o repasse fica
+    // retido pelo motivo (f) (286(a)): nunca é paga sem o Admin. O log
+    // commission.blocked sai pelo trigger, com ator system.
+    const blocked = await this.db().$executeRaw`
+      UPDATE commissions c
+      SET status = 'blocked', block_reason = 'wedding_blocked', updated_at = ${now}
+      FROM weddings w
+      WHERE w.id = c.wedding_id AND w.blocked_at IS NOT NULL
+        AND c.payout_id = ${payoutId}::uuid AND c.status IN ('pending', 'available')`;
+    if (blocked > 0)
+      await this.db().payout.updateMany({
+        where: { id: payoutId, status: { in: ['requested', 'held'] } },
+        data: { status: 'held', holdReason: 'commission_blocked' },
+      });
   }
 
   async paidWithKey({
