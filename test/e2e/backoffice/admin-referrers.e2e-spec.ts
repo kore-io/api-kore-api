@@ -3,6 +3,7 @@ import type { TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { ReleaseCommissions } from '@/modules/billing/application/payouts/release-commissions.use-case';
+import { BlockWedding } from '@/modules/billing/application/wedding-lifecycle/block-wedding.use-case';
 import { addMonths } from '@/modules/billing/domain/payments/pricing';
 import { FIELD_CIPHER, type FieldCipher } from '@/shared/crypto/application/field-cipher.port';
 import { TAX_ID_HASHER, type TaxIdHasher } from '@/shared/crypto/application/tax-id-hasher.port';
@@ -346,5 +347,82 @@ describe('Backoffice: ações na cerimonialista (Backoffice - cobrança RN08; ba
       (await put(admin.cookie, `/referrers/${other.referrerId}/document`, body).expect(409)).body
         .error,
     ).toBe('TAX_ID_IN_USE');
+  });
+  it('decisão 282(3) e Comissões RN04 - bloquear o casamento bloqueia as comissões em aberto dele e retém o repasse pedido; desbloquear não libera, o Admin libera', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const blocks = app.get(BlockWedding);
+    const block = (weddingId: string) =>
+      blocks.block({ weddingId, byUserId: admin.userId, reason: 'Denúncia', now: new Date() });
+
+    // Disponível num repasse pedido (a do casamento bloqueado) e a de outro casamento.
+    const inPayout = await juliana({ weddings: 2, payout: true });
+    const [target, other] = inPayout.commissions;
+    expect(await block(target.weddingId)).toBe('blocked');
+    expect(await db.commission.findUniqueOrThrow({ where: { id: target.id } })).toMatchObject({
+      status: 'blocked',
+      blockReason: 'wedding_blocked',
+      payoutId: inPayout.payoutId,
+    });
+    expect((await db.commission.findUniqueOrThrow({ where: { id: other.id } })).status).toBe(
+      'available',
+    );
+    expect(await db.payout.findUniqueOrThrow({ where: { id: inPayout.payoutId! } })).toMatchObject({
+      status: 'held',
+      holdReason: 'commission_blocked',
+    });
+    const [line] = await db.applicationLog.findMany({
+      where: { action: 'commission.blocked', entityId: target.id },
+    });
+    expect(line).toMatchObject({
+      actorKind: 'system',
+      weddingId: target.weddingId,
+      data: expect.objectContaining({
+        previousStatus: 'available',
+        blockReason: 'wedding_blocked',
+        adminUserId: admin.userId,
+      }),
+    });
+    await db.applicationLog.findFirstOrThrow({
+      where: { action: 'payout.held', entityId: inPayout.payoutId! },
+    });
+
+    // Pendente fora de repasse: bloqueia. Num repasse em processamento: segue o Pix.
+    const pending = await juliana();
+    const sending = await juliana({ payout: true });
+    await db.payout.update({
+      where: { id: sending.payoutId! },
+      data: { status: 'processing', processingAt: new Date() },
+    });
+    await block(pending.commissions[0].weddingId);
+    await block(sending.commissions[0].weddingId);
+    expect(
+      await db.commission.findUniqueOrThrow({ where: { id: pending.commissions[0].id } }),
+    ).toMatchObject({ status: 'blocked', blockReason: 'wedding_blocked' });
+    expect(
+      (await db.commission.findUniqueOrThrow({ where: { id: sending.commissions[0].id } })).status,
+    ).toBe('available');
+    expect((await db.payout.findUniqueOrThrow({ where: { id: sending.payoutId! } })).status).toBe(
+      'processing',
+    );
+
+    // Desbloquear o casamento não libera a comissão; o Desbloquear comissão do Admin libera.
+    expect(
+      await blocks.unblock({
+        weddingId: pending.commissions[0].weddingId,
+        byUserId: admin.userId,
+        reason: null,
+        now: new Date(),
+      }),
+    ).toBe('unblocked');
+    expect(
+      (await db.commission.findUniqueOrThrow({ where: { id: pending.commissions[0].id } })).status,
+    ).toBe('blocked');
+    expect(
+      (
+        await post(admin.cookie, `/commissions/${pending.commissions[0].id}/unblock`, {
+          reason: 'Casamento desbloqueado',
+        }).expect(200)
+      ).body,
+    ).toEqual({ status: 'pending' });
   });
 });

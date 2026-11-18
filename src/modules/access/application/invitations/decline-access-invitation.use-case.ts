@@ -28,7 +28,8 @@ import {
 /**
  * Recusa o convite sem login (RN11; decisão 136): o link é a credencial. O link
  * sem e-mail não tem Recusar e segue válido. O aviso (e-mail 5) vai a quem
- * convidou depois de a recusa estar gravada.
+ * convidou depois de a recusa estar gravada, salvo com o casamento bloqueado
+ * (Casamento bloqueado RN06; decisão 282(2)).
  */
 @Injectable()
 export class DeclineAccessInvitation {
@@ -48,6 +49,8 @@ export class DeclineAccessInvitation {
     if (!invitation.email) throw new InvitationNotDeclinableError();
     if (!(await this.store.decline({ tokenHash })))
       throw new InvitationInvalidError({ reason: 'used' });
+    // Casamento bloqueado RN06 (decisão 282(2)): a recusa vale, o aviso não sai.
+    if (invitation.wedding.blocked) return;
 
     const partners = invitation.wedding.partners.slice().sort((a, b) => a.slot - b.slot);
     const [partner1, partner2] = partners.map((partner) =>

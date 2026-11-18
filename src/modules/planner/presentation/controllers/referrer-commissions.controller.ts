@@ -22,7 +22,7 @@ import {
 } from '@/modules/planner/domain/commissions';
 
 const STATUSES = ['pending', 'available', 'paid', 'reversed', 'blocked', 'held'] as const;
-const BLOCK_REASONS = ['self_referral', 'referrer_blocked', 'admin'] as const;
+const BLOCK_REASONS = ['self_referral', 'referrer_blocked', 'admin', 'wedding_blocked'] as const;
 const PAYOUT_STATUSES = ['requested', 'held', 'processing', 'paid', 'rejected'] as const;
 
 /** A aba e a página (Contrato de API: `view=payment|wedding&page=`). */

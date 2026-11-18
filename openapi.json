@@ -24659,7 +24659,8 @@
             "enum": [
               "self_referral",
               "referrer_blocked",
-              "admin"
+              "admin",
+              "wedding_blocked"
             ],
             "nullable": true
           },
@@ -29849,7 +29850,8 @@
             "enum": [
               "self_referral",
               "referrer_blocked",
-              "admin"
+              "admin",
+              "wedding_blocked"
             ]
           },
           "availableAt": {

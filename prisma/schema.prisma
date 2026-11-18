@@ -1474,6 +1474,8 @@ enum CommissionBlockReason {
   self_referral
   referrer_blocked
   admin
+  // Decisão 282(3): o casamento bloqueado pelo Admin.
+  wedding_blocked
 
   @@map("commission_block_reason")
 }

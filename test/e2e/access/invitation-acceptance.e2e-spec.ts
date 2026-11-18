@@ -12,7 +12,7 @@ import { TenantTransaction } from '@/shared/database/tenant-transaction';
 import { createTestApp } from '../support/harness/create-test-app';
 import { createTestWorker } from '../support/harness/create-test-worker';
 import { seedInvitation } from '../support/factories/invitations';
-import { messageText, waitForInbox } from '../support/harness/mailpit';
+import { inbox, messageText, waitForInbox } from '../support/harness/mailpit';
 import { seedReferrer } from '../support/factories/referrers';
 import { SESSION_COOKIE } from '@/modules/access/presentation/http/cookies/session-cookie';
 import { openSession, signedInUser } from '../support/harness/sessions';
@@ -641,6 +641,39 @@ describe('Convites de acesso: ler, aceitar e recusar (banco real; decisões 168 
       expect(await messageText({ id: message.ID })).toContain(
         'Abrir o Kore: http://localhost:5173/app/colaboradores',
       );
+    });
+
+    it('Casamento bloqueado RN06 (decisão 282(2)) - com o casamento bloqueado, a recusa vale e o e-mail 5 não sai', async () => {
+      const { ana, weddingId } = await anaWedding();
+      const anaEmail = (await db.user.findUniqueOrThrow({ where: { id: ana.userId } })).email;
+      const admin = (await db.user.create({ data: { email: `${randomUUID()}@kore.local` } })).id;
+      await db.wedding.update({
+        where: { id: weddingId },
+        data: { blockedAt: new Date(), blockedByUserId: admin },
+      });
+      const invite = () =>
+        seedInvitation({
+          db,
+          weddingId,
+          kind: 'partner',
+          email: `${randomUUID()}@kore.local`,
+          invitedByUserId: ana.userId,
+        });
+      const blocked = await invite();
+
+      await decline(blocked.token).expect(204);
+      expect((await read(blocked.token).expect(410)).body.reason).toBe('used');
+
+      // Desbloqueado, a recusa seguinte avisa: só esse e-mail chega à Ana.
+      await db.wedding.update({
+        where: { id: weddingId },
+        data: { blockedAt: null, blockedByUserId: null },
+      });
+      const after = await invite();
+      await decline(after.token).expect(204);
+      await waitForInbox({ to: anaEmail });
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      expect(await inbox({ to: anaEmail })).toHaveLength(1);
     });
 
     it('RN11 - no convite do casal, o aviso usa o e-mail convidado', async () => {

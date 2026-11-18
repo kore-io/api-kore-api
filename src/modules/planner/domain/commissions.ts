@@ -15,7 +15,7 @@ export interface CommissionRow {
   createdAt: Date;
   payoutId: string | null;
   /** O motivo do bloqueio (o contrato devolve; a tela mostra só a legenda, RN07). */
-  blockReason: 'self_referral' | 'referrer_blocked' | 'admin' | null;
+  blockReason: 'self_referral' | 'referrer_blocked' | 'admin' | 'wedding_blocked' | null;
 }
 
 export interface CommissionBalances {

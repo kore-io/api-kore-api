@@ -177,7 +177,10 @@ class AdminReferrerStatementEntryResponse {
     nullable: true,
   })
   status: string | null;
-  @ApiProperty({ enum: ['self_referral', 'referrer_blocked', 'admin'], nullable: true })
+  @ApiProperty({
+    enum: ['self_referral', 'referrer_blocked', 'admin', 'wedding_blocked'],
+    nullable: true,
+  })
   blockReason: string | null;
   @ApiProperty({ type: String, format: 'date-time', nullable: true }) availableAt: string | null;
   @ApiProperty({ type: String, format: 'date-time', nullable: true }) paidAt: string | null;

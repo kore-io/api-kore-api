@@ -30,6 +30,8 @@ export interface InvitationSnapshot {
     state: string;
     createdByUserId: string;
     referralSource: string | null;
+    /** Casamento bloqueado RN06 (decisão 282(2)): sem o e-mail da recusa. */
+    blocked: boolean;
     partners: InvitationPartner[];
     activeOwners: number;
     activeCollaborators: number;
