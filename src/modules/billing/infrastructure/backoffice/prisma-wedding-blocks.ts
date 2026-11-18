@@ -81,19 +81,27 @@ export class PrismaWeddingBlocks implements WeddingBlocks {
   /**
    * Decisão 282(3), no padrão da Comissões RN04: as comissões em aberto do
    * casamento (`pending` e `available`, fora de repasse ou num repasse
-   * `requested`) ficam `blocked` com `wedding_blocked`, e o repasse pedido que
-   * as contém fica retido por `commission_blocked` (Repasse RN06 (e)). As
-   * pagas, as estornadas e as de um repasse `processing` ou retido não mudam.
-   * Desbloquear o casamento não as libera: o Admin libera uma a uma. Os logs
-   * `commission.blocked` e `payout.held` saem pelos triggers, com ator system.
+   * `requested` ou `held`) ficam `blocked` com `wedding_blocked`, e o repasse
+   * que as contém fica retido por `commission_blocked` (Repasse RN06 (f)). O
+   * repasse já retido (ex.: `pix_key_change`) troca de motivo e espera o Admin:
+   * não volta a `requested` sozinho no fim da troca da chave (decisão 286(a)).
+   * As pagas, as estornadas e as de um repasse `processing` não mudam; a `held`
+   * por contestação fica para o fim da disputa (decisão 286(b), no
+   * PrismaPaymentLedger.releaseCommission). Desbloquear o casamento não as
+   * libera: o Admin libera uma a uma. Os logs `commission.blocked` e
+   * `payout.held` saem pelos triggers, com ator system.
    * Travas na ordem G2: Wedding (já travado) → Referrer → Payout → Commission.
+   * O Referrer da comissão `held` também é travado: assim o fim de uma
+   * contestação que corre junto (ele trava o Referrer) ou acontece antes, e
+   * aqui a comissão já está `available`, ou depois, e lá o casamento já está
+   * bloqueado.
    */
   private async blockOpenCommissions({ weddingId }: { weddingId: string }): Promise<void> {
     const tx = this.db();
     const referrers = await tx.$queryRaw<{ id: string }[]>`
       SELECT id FROM referrers WHERE id IN (
         SELECT referrer_id FROM commissions
-        WHERE wedding_id = ${weddingId}::uuid AND status IN ('pending', 'available'))
+        WHERE wedding_id = ${weddingId}::uuid AND status IN ('pending', 'available', 'held'))
       ORDER BY id FOR UPDATE`;
     if (referrers.length === 0) return;
     // Com o Referrer travado, o payout_id das comissões dele não muda.
@@ -103,13 +111,15 @@ export class PrismaWeddingBlocks implements WeddingBlocks {
         WHERE wedding_id = ${weddingId}::uuid AND status IN ('pending', 'available')
           AND payout_id IS NOT NULL)
       ORDER BY id FOR UPDATE`;
-    const requested = payouts.filter((payout) => payout.status === 'requested').map(({ id }) => id);
+    const open = payouts
+      .filter((payout) => payout.status === 'requested' || payout.status === 'held')
+      .map(({ id }) => id);
     const commissions = await tx.$queryRaw<{ id: string; payoutId: string | null }[]>`
       SELECT id, payout_id AS "payoutId" FROM commissions
       WHERE wedding_id = ${weddingId}::uuid AND status IN ('pending', 'available')
       ORDER BY id FOR UPDATE`;
     const blockable = commissions.filter(
-      (commission) => commission.payoutId === null || requested.includes(commission.payoutId),
+      (commission) => commission.payoutId === null || open.includes(commission.payoutId),
     );
     if (blockable.length === 0) return;
     await tx.commission.updateMany({
@@ -119,7 +129,7 @@ export class PrismaWeddingBlocks implements WeddingBlocks {
     const held = [...new Set(blockable.flatMap(({ payoutId }) => (payoutId ? [payoutId] : [])))];
     if (held.length > 0)
       await tx.payout.updateMany({
-        where: { id: { in: held }, status: 'requested' },
+        where: { id: { in: held }, status: { in: ['requested', 'held'] } },
         data: { status: 'held', holdReason: 'commission_blocked' },
       });
   }
