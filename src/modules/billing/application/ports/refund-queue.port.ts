@@ -5,15 +5,11 @@
  */
 export interface RefundQueue {
   /**
-   * `series`: o Tentar o estorno de novo do Admin recomeça a contagem
-   * (Pagamentos RN05), e a tentativa 1 da série nova tem um id próprio.
+   * O Tentar o estorno de novo do Admin (Pagamentos RN05) recomeça na
+   * tentativa 1 com o mesmo id: a reconciliação, que vê o pagamento com a
+   * contagem zerada, não põe um segundo job na fila (RN04).
    */
-  enqueue(input: {
-    paymentId: string;
-    attempt: number;
-    delayMs: number;
-    series?: string;
-  }): Promise<void>;
+  enqueue(input: { paymentId: string; attempt: number; delayMs: number }): Promise<void>;
   /**
    * O cancelamento do pendente pela porta, depois do commit do bloqueio
    * (Casamento bloqueado RN06; G1 e B8-5) ou da exclusão pedida (Retenção

@@ -14,7 +14,7 @@ describe('BullmqRefundQueue (Pagamentos e arrependimento RN04 e RN05)', () => {
     return { refunds: new BullmqRefundQueue(queue as unknown as Queue), queue, job };
   }
 
-  it('RN05 (decisão 275) - o job falho de uma série anterior sai antes, e a tentativa da série nova entra com o mesmo id', async () => {
+  it('RN05 (decisão 275) - o job falho da contagem anterior sai antes, e a mesma tentativa entra de novo com o mesmo id', async () => {
     const { refunds, queue, job } = build({ failed: true });
     await refunds.enqueue({ paymentId: 'p1', attempt: 2, delayMs: 3_600_000 });
     expect(queue.getJob).toHaveBeenCalledWith('refund-p1-2');
@@ -32,13 +32,13 @@ describe('BullmqRefundQueue (Pagamentos e arrependimento RN04 e RN05)', () => {
     expect(job!.remove).not.toHaveBeenCalled();
   });
 
-  it('RN05 - a tentativa 1 da série nova do Admin tem a marca da série no id', async () => {
+  it('RN04 e RN05 - o Tentar o estorno de novo e a reconciliação põem a tentativa 1 com o mesmo id', async () => {
     const { refunds, queue } = build(null);
-    await refunds.enqueue({ paymentId: 'p1', attempt: 1, delayMs: 0, series: 'retry123' });
+    await refunds.enqueue({ paymentId: 'p1', attempt: 1, delayMs: 0 });
     expect(queue.add).toHaveBeenCalledWith(
       'refund',
       expect.anything(),
-      expect.objectContaining({ jobId: 'refund-p1-retry123-1' }),
+      expect.objectContaining({ jobId: 'refund-p1-1' }),
     );
   });
 });

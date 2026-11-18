@@ -93,16 +93,9 @@ export class AdminPaymentActions {
         previousAttempts: payment.refundAttempts,
         now,
       });
-      // Pagamentos RN05 (decisão 275): zera a contagem; a nova série recomeça
-      // na tentativa 1, com o 1 h, 6 h e 24 h se ela falhar.
-      this.transaction.schedule(() =>
-        this.refunds.enqueue({
-          paymentId,
-          attempt: 1,
-          delayMs: 0,
-          series: `retry${now.getTime()}`,
-        }),
-      );
+      // Pagamentos RN05 (decisão 275): zera a contagem; recomeça na tentativa
+      // 1, com o 1 h, 6 h e 24 h se ela falhar. O id é o da tentativa 1 (RN04).
+      this.transaction.schedule(() => this.refunds.enqueue({ paymentId, attempt: 1, delayMs: 0 }));
     });
   }
 
