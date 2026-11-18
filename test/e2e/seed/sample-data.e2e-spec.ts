@@ -139,6 +139,37 @@ describe('Dados de exemplo do Kore (seed da Fase 0; banco real)', () => {
     expect(emails.every((email) => email.endsWith(`@${SAMPLE_EMAIL_DOMAIN}`))).toBe(true);
   });
 
+  it('DoD da F3 - os casamentos publicados, em carência e expirado nascem com as datas de vida (endDate, paidThrough, graceUntil, expiredAt, publishedAt)', async () => {
+    await run();
+    const bySlug = async (slug: string) =>
+      db.wedding.findUniqueOrThrow({
+        where: { slug },
+        select: {
+          status: true,
+          publishedAt: true,
+          endDate: true,
+          paidThrough: true,
+          graceUntil: true,
+          expiredAt: true,
+          purgeAt: true,
+        },
+      });
+    const published = await bySlug('paula-e-diego');
+    expect(published).toMatchObject({ status: 'post_event', publishedAt: expect.any(Date) });
+    expect(published.endDate!.getTime()).toBeGreaterThan(Date.now());
+    expect(await bySlug('sofia-e-matheus')).toMatchObject({
+      status: 'grace',
+      graceUntil: expect.any(Date),
+      expiredAt: null,
+    });
+    expect(await bySlug('natalia-e-vinicius')).toMatchObject({
+      status: 'expired',
+      expiredAt: expect.any(Date),
+      purgeAt: expect.any(Date),
+    });
+    expect(await bySlug('camila-e-leticia')).toMatchObject({ status: 'draft', endDate: null });
+  });
+
   it('RN14 e decisão 174 - Juliana tem dois perfis (casal e cerimonialista) e 12 casamentos como colaboradora', async () => {
     await run();
     const juliana = await db.user.findUniqueOrThrow({

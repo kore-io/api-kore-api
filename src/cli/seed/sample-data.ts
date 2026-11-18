@@ -6,6 +6,7 @@
  * uma caixa de verdade.
  */
 import type { BrazilianState, PartnerTitle } from '@/modules/access/domain/weddings/wedding-signup';
+import { addDays, addMonths } from '@/modules/billing/domain/payments/pricing';
 
 export const SAMPLE_EMAIL_DOMAIN = 'exemplo.kore.local';
 
@@ -226,3 +227,73 @@ export const SAMPLE_INVITATIONS: SampleInvitation[] = [
     fixedToken: 'seed-convite-cerimonialista-bianca-e-henrique',
   },
 ];
+
+export interface SampleLifecycle {
+  publishedAt: Date | null;
+  endDate: string | null;
+  paidThrough: string | null;
+  graceUntil: string | null;
+  expiredAt: string | null;
+  purgeAt: string | null;
+}
+
+/**
+ * As datas de vida do casamento de exemplo, a partir de hoje (sugestão do
+ * Crivo no DoD da F3; decisão 290): o front da F3 tem dado para "Vence em N
+ * dias", a carência e a faixa do expirado. Publicado e pós-evento saem do ar
+ * 3 meses depois do casamento, nunca antes de 20 dias; a carência começou há 3
+ * dias (graceUntil = endDate + 7); o expirado saiu do ar há 20 dias (expiredAt
+ * = graceUntil + 1, purgeAt 6 meses depois), como a rotina da Data de saída do
+ * ar grava. Os outros status ficam sem datas.
+ */
+export function sampleLifecycle({
+  status,
+  eventDate,
+  today,
+  now,
+}: {
+  status: SampleWedding['status'];
+  eventDate: string;
+  today: string;
+  now: Date;
+}): SampleLifecycle {
+  const none = {
+    publishedAt: null,
+    endDate: null,
+    paidThrough: null,
+    graceUntil: null,
+    expiredAt: null,
+    purgeAt: null,
+  };
+  const publishedAt = new Date(now.getTime() - 60 * 86_400_000);
+  if (status === 'published' || status === 'post_event') {
+    const afterEvent = addMonths({ day: eventDate, months: 3 });
+    const soonest = addDays({ day: today, days: 20 });
+    const endDate = afterEvent > soonest ? afterEvent : soonest;
+    return { ...none, publishedAt, endDate, paidThrough: endDate };
+  }
+  if (status === 'grace') {
+    const endDate = addDays({ day: today, days: -3 });
+    return {
+      ...none,
+      publishedAt,
+      endDate,
+      paidThrough: endDate,
+      graceUntil: addDays({ day: endDate, days: 7 }),
+    };
+  }
+  if (status === 'expired') {
+    const endDate = addDays({ day: today, days: -20 });
+    const graceUntil = addDays({ day: endDate, days: 7 });
+    const expiredAt = addDays({ day: graceUntil, days: 1 });
+    return {
+      publishedAt,
+      endDate,
+      paidThrough: endDate,
+      graceUntil,
+      expiredAt,
+      purgeAt: addMonths({ day: expiredAt, months: 6 }),
+    };
+  }
+  return none;
+}

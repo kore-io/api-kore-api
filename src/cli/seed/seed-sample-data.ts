@@ -5,6 +5,7 @@ import { timezoneForState } from '@/modules/access/domain/weddings/wedding-signu
 import { OpaqueSessionTokens } from '@/modules/access/infrastructure/providers/opaque-session-tokens';
 import { recomputeWeddingStats } from '@/modules/guests/infrastructure/backoffice/wedding-stats-recompute';
 import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
+import { localDate } from '@/shared/kernel/time/local-date';
 import { INVITATION_PATH } from '@/modules/access/infrastructure/mail/outbox-invitation-mailer';
 import {
   ownAccountEmail,
@@ -14,6 +15,7 @@ import {
   SAMPLE_PLANNER,
   SAMPLE_SELLER,
   SAMPLE_WEDDINGS,
+  sampleLifecycle,
   type SampleWedding,
 } from './sample-data';
 import { SAMPLE_GUESTS_WEDDING, SAMPLE_PARTIES, SAMPLE_TAGS, SAMPLE_TRASH } from './sample-guests';
@@ -280,12 +282,27 @@ async function upsertWedding({
   const julianaId = accountOf(users, SAMPLE_PLANNER.account);
   const createdByUserId =
     wedding.createdBy === 'planner' ? julianaId : (partnerUser(0) ?? julianaId);
+  const timezone = timezoneForState({ state: wedding.state });
+  const lifecycle = sampleLifecycle({
+    status: wedding.status,
+    eventDate: wedding.eventDate,
+    today: localDate({ at: now, timezone }),
+    now,
+  });
+  const asDay = (value: string | null) => (value ? new Date(`${value}T00:00:00Z`) : null);
   const fields = {
     status: wedding.status,
     eventDate: new Date(`${wedding.eventDate}T00:00:00Z`),
     city: wedding.city,
     state: wedding.state,
-    timezone: timezoneForState({ state: wedding.state }),
+    timezone,
+    // A data de saída do ar, a carência e o expirado (sugestão do Crivo no DoD da F3).
+    publishedAt: lifecycle.publishedAt,
+    endDate: asDay(lifecycle.endDate),
+    paidThrough: asDay(lifecycle.paidThrough),
+    graceUntil: asDay(lifecycle.graceUntil),
+    expiredAt: asDay(lifecycle.expiredAt),
+    purgeAt: asDay(lifecycle.purgeAt),
     createdByUserId,
     referrerId: wedding.referral ? plannerReferrerId : null,
     referralSource: wedding.referral,
