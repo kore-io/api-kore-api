@@ -12,7 +12,12 @@ import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import { localDate } from '@/shared/kernel/time/local-date';
 import { createTestApp } from '../support/harness/create-test-app';
 import { createTestWorker } from '../support/harness/create-test-worker';
-import { publishByPayment, randomCpf } from '../support/factories/payments';
+import {
+  devPaymentEvent,
+  expectStatus,
+  publishByPayment,
+  randomCpf,
+} from '../support/factories/payments';
 import { seedReferrer } from '../support/factories/referrers';
 import { openSession, signedInUser, staffUser } from '../support/harness/sessions';
 import { seedWedding } from '../support/factories/weddings';
@@ -467,6 +472,135 @@ describe('Backoffice: ações na cerimonialista (Backoffice - cobrança RN08; ba
     ).toEqual({ status: expect.stringMatching(/^(pending|available)$/), weddingBlocked: true });
     expect((await db.commission.findUniqueOrThrow({ where: { id: target.id } })).blockReason).toBe(
       null,
+    );
+  });
+  it('decisão 286(a) - a comissão de um repasse já retido pela troca da chave também bloqueia, e o repasse espera o Admin no fim da troca', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const person = await juliana({ weddings: 2, payout: true });
+    const [target, other] = person.commissions;
+    // A troca da chave em andamento: o repasse pedido retido por pix_key_change (RN06 (b)).
+    const pending = await db.referrerPixKey.create({
+      data: {
+        id: uuidV7(),
+        referrerId: person.referrerId,
+        keyType: 'email',
+        keyEncrypted: 'cifrado',
+        keyHash: `hash-${randomUUID()}`,
+        keyMasked: 'nov***@prado.com.br',
+        status: 'pending_activation',
+        confirmedAt: new Date(),
+        activeFrom: new Date(Date.now() + 48 * 3_600_000),
+      },
+    });
+    await db.payout.update({
+      where: { id: person.payoutId! },
+      data: { status: 'held', holdReason: 'pix_key_change' },
+    });
+
+    await app.get(BlockWedding).block({
+      weddingId: target.weddingId,
+      byUserId: admin.userId,
+      reason: 'Denúncia',
+      now: new Date(),
+    });
+    expect(await db.commission.findUniqueOrThrow({ where: { id: target.id } })).toMatchObject({
+      status: 'blocked',
+      blockReason: 'wedding_blocked',
+      payoutId: person.payoutId,
+    });
+    expect((await db.commission.findUniqueOrThrow({ where: { id: other.id } })).status).toBe(
+      'available',
+    );
+    expect(await db.payout.findUniqueOrThrow({ where: { id: person.payoutId! } })).toMatchObject({
+      status: 'held',
+      holdReason: 'commission_blocked',
+    });
+    const [line] = await db.applicationLog.findMany({
+      where: { action: 'commission.blocked', entityId: target.id },
+    });
+    expect(line).toMatchObject({
+      actorKind: 'system',
+      data: expect.objectContaining({
+        blockReason: 'wedding_blocked',
+        adminUserId: admin.userId,
+      }),
+    });
+
+    // Cancelar a troca devolve o retido por pix_key_change; este espera o Admin.
+    await http()
+      .delete(`/v1/me/referrer/pix-keys/${pending.id}`)
+      .set('Cookie', person.cookie)
+      .set('Origin', ORIGIN)
+      .expect(204);
+    expect(await db.payout.findUniqueOrThrow({ where: { id: person.payoutId! } })).toMatchObject({
+      status: 'held',
+      holdReason: 'commission_blocked',
+    });
+  });
+
+  it('decisão 286(b) - a contestação ganha com o casamento ainda bloqueado leva a comissão a blocked/wedding_blocked; a perdida estorna (Comissões RN05)', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const event = async (paymentId: string, name: 'dispute' | 'dispute-won' | 'dispute-lost') =>
+      expectStatus(await devPaymentEvent({ app, paymentId, event: name }), 200);
+    const block = (weddingId: string) =>
+      app
+        .get(BlockWedding)
+        .block({ weddingId, byUserId: admin.userId, reason: 'Denúncia', now: new Date() });
+
+    // Num repasse pedido: a contestação retém a comissão e o repasse (RN06 (d)).
+    const inPayout = await juliana({ payout: true });
+    const [won] = inPayout.commissions;
+    await event(won.paymentId, 'dispute');
+    expect((await db.commission.findUniqueOrThrow({ where: { id: won.id } })).status).toBe('held');
+    expect(await block(won.weddingId)).toBe('blocked');
+    // A held fica para o fim da disputa.
+    expect((await db.commission.findUniqueOrThrow({ where: { id: won.id } })).status).toBe('held');
+    await event(won.paymentId, 'dispute-won');
+    expect(await db.commission.findUniqueOrThrow({ where: { id: won.id } })).toMatchObject({
+      status: 'blocked',
+      blockReason: 'wedding_blocked',
+    });
+    expect(await db.payout.findUniqueOrThrow({ where: { id: inPayout.payoutId! } })).toMatchObject({
+      status: 'held',
+      holdReason: 'commission_blocked',
+    });
+    const [line] = await db.applicationLog.findMany({
+      where: { action: 'commission.blocked', entityId: won.id },
+    });
+    expect(line).toMatchObject({
+      actorKind: 'system',
+      data: expect.objectContaining({ blockReason: 'wedding_blocked', adminUserId: admin.userId }),
+    });
+
+    // Fora de repasse: também bloqueia.
+    const loose = await juliana();
+    const [alone] = loose.commissions;
+    await event(alone.paymentId, 'dispute');
+    await block(alone.weddingId);
+    await event(alone.paymentId, 'dispute-won');
+    expect(await db.commission.findUniqueOrThrow({ where: { id: alone.id } })).toMatchObject({
+      status: 'blocked',
+      blockReason: 'wedding_blocked',
+    });
+
+    // Perdida: o estorno de sempre.
+    const lostCase = await juliana();
+    const [lost] = lostCase.commissions;
+    await event(lost.paymentId, 'dispute');
+    await block(lost.weddingId);
+    await event(lost.paymentId, 'dispute-lost');
+    expect(await db.commission.findUniqueOrThrow({ where: { id: lost.id } })).toMatchObject({
+      status: 'reversed',
+      blockReason: null,
+    });
+
+    // Sem bloqueio, a ganha volta como sempre.
+    const free = await juliana();
+    const [plain] = free.commissions;
+    await event(plain.paymentId, 'dispute');
+    await event(plain.paymentId, 'dispute-won');
+    expect((await db.commission.findUniqueOrThrow({ where: { id: plain.id } })).status).toMatch(
+      /^(pending|available)$/,
     );
   });
 });

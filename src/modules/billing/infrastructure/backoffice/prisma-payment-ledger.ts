@@ -545,6 +545,26 @@ export class PrismaPaymentLedger implements PaymentLedger {
 
   async releaseCommission({ paymentId, now }: { paymentId: string; now: Date }): Promise<void> {
     await this.lockCommissionChain({ paymentId });
+    // Decisão 286(b): com o casamento ainda bloqueado, a disputa ganha leva a
+    // comissão a blocked/wedding_blocked (fora de repasse ou num repasse pedido
+    // ou retido), e o repasse dela fica retido por commission_blocked, à espera
+    // do Admin. O bloqueio do casamento trava o Referrer da comissão held
+    // (PrismaWeddingBlocks), então o blocked_at lido aqui já é o final.
+    const blocked = await this.db().$queryRaw<{ payoutId: string | null }[]>`
+      UPDATE commissions c
+      SET status = 'blocked', block_reason = 'wedding_blocked', updated_at = ${now}
+      WHERE c.payment_id = ${paymentId}::uuid AND c.status = 'held'
+        AND EXISTS (
+          SELECT 1 FROM weddings w WHERE w.id = c.wedding_id AND w.blocked_at IS NOT NULL)
+        AND (c.payout_id IS NULL OR EXISTS (
+          SELECT 1 FROM payouts p WHERE p.id = c.payout_id AND p.status IN ('requested', 'held')))
+      RETURNING c.payout_id AS "payoutId"`;
+    const payoutIds = blocked.flatMap(({ payoutId }) => (payoutId ? [payoutId] : []));
+    if (payoutIds.length > 0)
+      await this.db().payout.updateMany({
+        where: { id: { in: payoutIds }, status: { in: ['requested', 'held'] } },
+        data: { status: 'held', holdReason: 'commission_blocked' },
+      });
     // Volta pelo availableAt (RN06): a data no fuso de São Paulo, como a liberação.
     await this.db().$executeRaw`
       UPDATE commissions
