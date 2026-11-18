@@ -32,6 +32,7 @@ function setup({
     lockWedding: jest.fn().mockResolvedValue(undefined),
     find: jest.fn().mockResolvedValue(invitation),
     revoke: jest.fn().mockResolvedValue(undefined),
+    revertAwaitingCouple: jest.fn().mockResolvedValue(false),
     touchActivity: jest.fn().mockResolvedValue(undefined),
   } as unknown as AccessInvitationStore;
   const authorization = {
@@ -50,6 +51,8 @@ describe('CancelAccessInvitation (DELETE /v1/weddings/{weddingId}/access-invitat
 
     expect(store.revoke).toHaveBeenCalledWith({ invitationId: 'i1', now });
     expect(store.touchActivity).toHaveBeenCalledWith({ weddingId: 'w1', now });
+    // Decisão 297: sem outro convite de dono pendente, volta a rascunho.
+    expect(store.revertAwaitingCouple).toHaveBeenCalledWith({ weddingId: 'w1', now });
   });
 
   it('RN05 - um colaborador que não enviou não cancela (403)', async () => {

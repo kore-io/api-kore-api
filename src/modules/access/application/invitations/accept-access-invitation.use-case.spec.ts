@@ -83,6 +83,7 @@ function setup({
     accept: jest.fn().mockResolvedValue({ weddingId: 'w1', attributed: false }),
     handOverToCouple: jest.fn().mockResolvedValue('draft'),
     decline: jest.fn(),
+    revertAwaitingCouple: jest.fn(),
   } satisfies InvitationAcceptanceStore;
   const owners = {
     lockOwner: jest.fn().mockResolvedValue(undefined),

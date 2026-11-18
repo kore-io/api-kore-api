@@ -76,6 +76,11 @@ export interface AccessInvitationStore {
     invitationId: string;
   }): Promise<StoredInvitation | null>;
   revoke({ invitationId, now }: { invitationId: string; now: Date }): Promise<void>;
+  /**
+   * Decisão 297: sem convite de dono pendente, "aguardando o casal" volta a
+   * rascunho, com o log wedding.awaiting_couple_reverted; false se nada mudou.
+   */
+  revertAwaitingCouple({ weddingId, now }: { weddingId: string; now: Date }): Promise<boolean>;
 }
 
 export const ACCESS_INVITATION_STORE = Symbol('AccessInvitationStore');

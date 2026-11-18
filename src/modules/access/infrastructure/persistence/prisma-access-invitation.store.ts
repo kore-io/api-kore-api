@@ -145,6 +145,18 @@ export class PrismaAccessInvitationStore implements AccessInvitationStore {
     });
   }
 
+  async revertAwaitingCouple({
+    weddingId,
+    now,
+  }: {
+    weddingId: string;
+    now: Date;
+  }): Promise<boolean> {
+    const [row] = await this.tenant.client().$queryRaw<[{ reverted: boolean }]>`
+      SELECT revert_awaiting_couple(${weddingId}::uuid, 'revoked', ${now}::timestamptz) AS reverted`;
+    return row.reverted;
+  }
+
   async revoke({ invitationId, now }: { invitationId: string; now: Date }): Promise<void> {
     await this.tenant.client().accessInvitation.updateMany({
       where: { id: invitationId, ...PENDING },
