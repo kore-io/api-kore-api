@@ -168,8 +168,11 @@ export class PrismaReferrerAdminStore implements ReferrerAdminStore {
     });
     let heldPayoutId: string | null = null;
     if (commission.payoutId) {
+      // O repasse pedido fica retido; o já retido (ex.: pix_key_change) troca
+      // de motivo e espera o Admin, sem voltar sozinho no fim da troca da chave
+      // (Comissões RN03; Repasse RN06 (e), como a decisão 286(a)).
       const held = await tx.payout.updateMany({
-        where: { id: commission.payoutId, status: 'requested' },
+        where: { id: commission.payoutId, status: { in: ['requested', 'held'] } },
         data: { status: 'held', holdReason: 'commission_blocked' },
       });
       if (held.count > 0) heldPayoutId = commission.payoutId;
@@ -304,7 +307,8 @@ export class PrismaReferrerAdminStore implements ReferrerAdminStore {
         AND NOT EXISTS (SELECT 1 FROM referrers o WHERE o.tax_id_hash = ${hash} AND o.id <> ${referrerId}::uuid)`;
     if (saved === 0) return 'in_use';
     // A autoindicação de novo (Comissões RN03; B6-7): as pendentes e disponíveis
-    // pagas por este documento ficam bloqueadas, e o repasse pedido, retido.
+    // pagas por este documento ficam bloqueadas, e o repasse pedido ou já retido,
+    // retido por commission_blocked.
     // G2: os repasses abertos dela antes das comissões.
     await tx.$queryRaw`
       SELECT id FROM payouts WHERE referrer_id = ${referrerId}::uuid
@@ -320,9 +324,10 @@ export class PrismaReferrerAdminStore implements ReferrerAdminStore {
           SELECT 1 FROM payouts o WHERE o.id = c.payout_id AND o.status IN ('requested', 'held')))
       RETURNING c.id, c.payout_id`;
     const payoutIds = [...new Set(blocked.map((row) => row.payout_id).filter((id) => id !== null))];
+    // O retido (ex.: pix_key_change) também passa a commission_blocked (Repasse RN06 (e)).
     if (payoutIds.length > 0)
       await tx.payout.updateMany({
-        where: { id: { in: payoutIds }, status: 'requested' },
+        where: { id: { in: payoutIds }, status: { in: ['requested', 'held'] } },
         data: { status: 'held', holdReason: 'commission_blocked' },
       });
     await this.log({
