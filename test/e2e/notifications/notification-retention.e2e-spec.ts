@@ -56,4 +56,30 @@ describe('Retenção das notificações (worker)', () => {
     expect(left.map((row) => row.id).sort()).toEqual([recent.id, unread.id].sort());
     expect(left.map((row) => row.id)).not.toContain(old.id);
   });
+
+  it('decisão 290(1) - as lidas do casamento bloqueado ficam enquanto ele está bloqueado; depois do desbloqueio, saem pela idade', async () => {
+    const { id: userId } = await db.user.create({
+      data: { email: `retencao.${randomUUID()}@kore.local` },
+    });
+    const { weddingId } = await seedWedding({ db, ownerId: userId });
+    await db.wedding.update({ where: { id: weddingId }, data: { blockedAt: new Date() } });
+    const now = new Date('2027-01-31T12:00:00Z');
+    const old = await db.notification.create({
+      data: {
+        userId,
+        weddingId,
+        type: 'rsvp',
+        groupKey: 'a',
+        payload: [],
+        readAt: new Date(now.getTime() - 91 * DAY_MS),
+      },
+    });
+
+    await worker.get(CleanNotifications).execute({ now });
+    expect(await db.notification.count({ where: { id: old.id } })).toBe(1);
+
+    await db.wedding.update({ where: { id: weddingId }, data: { blockedAt: null } });
+    await worker.get(CleanNotifications).execute({ now });
+    expect(await db.notification.count({ where: { id: old.id } })).toBe(0);
+  });
 });

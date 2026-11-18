@@ -9,6 +9,7 @@ import {
 } from '@/modules/logs/infrastructure/jobs/application-log-retention.job';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import { WorkerModule } from '@/app/worker.module';
+import { seedWedding } from '../support/factories/weddings';
 
 const YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
@@ -67,5 +68,30 @@ describe('Rotina de retenção do log da aplicação no worker (decisão 137)', 
       actorKind: 'system',
       data: { deleted, cutoff: expect.any(String) },
     });
+  });
+
+  it('decisão 290(1) - o log do casamento bloqueado fica enquanto ele está bloqueado (o motivo do bloqueio mora nele); depois do desbloqueio, sai pela idade', async () => {
+    const { id: ownerId } = await backoffice.user.create({
+      data: { email: `retencao.${randomUUID()}@kore.local` },
+    });
+    const { weddingId } = await seedWedding({ db: backoffice, ownerId });
+    await backoffice.wedding.update({ where: { id: weddingId }, data: { blockedAt: new Date() } });
+    const entityType = `teste-${randomUUID()}`;
+    await backoffice.applicationLog.create({
+      data: {
+        action: 'commission.blocked',
+        actorKind: 'system',
+        weddingId,
+        entityType,
+        createdAt: new Date(Date.now() - 5.1 * YEAR_MS),
+      },
+    });
+
+    await worker.get(ApplicationLogRetentionProcessor).process();
+    expect(await backoffice.applicationLog.count({ where: { entityType } })).toBe(1);
+
+    await backoffice.wedding.update({ where: { id: weddingId }, data: { blockedAt: null } });
+    await worker.get(ApplicationLogRetentionProcessor).process();
+    expect(await backoffice.applicationLog.count({ where: { entityType } })).toBe(0);
   });
 });
