@@ -44,6 +44,12 @@ export interface SiteExpiredNotice {
   expiredAt: string;
   /** Até quando dá para renovar (12 meses depois do casamento); nulo sem data. */
   renewUntil: string | null;
+  /**
+   * A versão B (decisão 293(7)): o paidThrough, AAAA-MM-DD, quando é depois do
+   * expiredAt (antecipou e deixou vencer com meses pagos à frente: volta ao ar
+   * sem custo); nulo na versão A (renovar).
+   */
+  paidAhead: string | null;
   partnerNames: [string, string];
 }
 

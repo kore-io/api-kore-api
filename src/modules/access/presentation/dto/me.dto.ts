@@ -26,6 +26,11 @@ class MeLifecycleResponse {
   /** O último dia no ar na carência; o selo "Vence em N dias" conta até o expiredAt. */
   @ApiProperty({ type: String, nullable: true, example: '2027-02-21' }) graceUntil: string | null;
   @ApiProperty({ type: String, nullable: true, example: '2027-02-22' }) expiredAt: string | null;
+  /**
+   * Até onde está pago (o paidThrough): com ele depois de hoje, a faixa e o
+   * Dashboard do caso B, também para a colaboradora (decisões 293(5) e 296(2)).
+   */
+  @ApiProperty({ type: String, nullable: true, example: '2027-02-14' }) paidThrough: string | null;
   @ApiProperty({ type: String, nullable: true }) deletionScheduledFor: string | null;
 }
 

@@ -194,7 +194,11 @@ export function graceEmail({ notice, url }: { notice: GraceNotice; url: string }
   });
 }
 
-/** Quando o site expira (RN03; textos da Pena). */
+/**
+ * Quando o site expira (RN03; textos da Pena). Versão B (decisão 293(7)), com
+ * o paidThrough depois do expiredAt: voltar ao ar sem custo, sem o prazo de
+ * renovar e sem valor de pagamento.
+ */
 export function siteExpiredEmail({
   notice,
   url,
@@ -202,6 +206,22 @@ export function siteExpiredEmail({
   notice: SiteExpiredNotice;
   url: string;
 }): EmailMessage {
+  if (notice.paidAhead) {
+    const paid = formatShortDay(notice.paidAhead);
+    return message({
+      to: notice.to,
+      subject: 'O site saiu do ar',
+      preheader: `Vocês já pagaram até ${paid} Voltem o site ao ar, sem custo.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: `O site de vocês saiu do ar em ${formatShortDay(notice.expiredAt)}, mas vocês já pagaram até ${paid} Voltem o site ao ar, sem custo. Os dados continuam guardados.`,
+        },
+        { kind: 'button', text: 'Voltar ao ar', href: url },
+      ],
+      footer: OWNER_FOOTER(notice.partnerNames),
+    });
+  }
   const renew = notice.renewUntil
     ? `, e vocês podem renovar até ${formatDay(notice.renewUntil)}`
     : '';

@@ -553,12 +553,20 @@ export class PrismaPaymentLedger implements PaymentLedger {
     // ou retido), e o repasse dela fica retido por commission_blocked, à espera
     // do Admin. O bloqueio do casamento trava o Referrer da comissão held
     // (PrismaWeddingBlocks), então o blocked_at lido aqui já é o final.
+    // Decisão 296(3): a decisão do Admin prevalece. A comissão que ele
+    // desbloqueou durante este bloqueio (290(4): held com a disputa aberta)
+    // segue o desfecho normal; a 286(b) vale só para a que ele não decidiu.
     const blocked = await this.db().$queryRaw<{ payoutId: string | null }[]>`
       UPDATE commissions c
       SET status = 'blocked', block_reason = 'wedding_blocked', updated_at = ${now}
       WHERE c.payment_id = ${paymentId}::uuid AND c.status = 'held'
         AND EXISTS (
-          SELECT 1 FROM weddings w WHERE w.id = c.wedding_id AND w.blocked_at IS NOT NULL)
+          SELECT 1 FROM weddings w
+          WHERE w.id = c.wedding_id AND w.blocked_at IS NOT NULL
+            AND NOT EXISTS (
+              SELECT 1 FROM application_logs l
+              WHERE l.action = 'commission.unblocked' AND l.entity_type = 'commission'
+                AND l.entity_id = c.id::text AND l.created_at >= w.blocked_at))
         AND (c.payout_id IS NULL OR EXISTS (
           SELECT 1 FROM payouts p
           WHERE p.id = c.payout_id AND p.status::text IN (${Prisma.join([...BLOCKABLE_PAYOUT_STATUSES])})))

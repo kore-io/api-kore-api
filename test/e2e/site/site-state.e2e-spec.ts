@@ -227,11 +227,11 @@ describe('O site no ar pela wedding_site_state (Data de saída do ar RN07 e RN08
     expect((await queue().expect(409)).body).toMatchObject({ error: 'SITE_EXPIRED' });
   });
 
-  it('RN06 (decisão 231) - o /me traz o ciclo de vida de cada vínculo', async () => {
+  it('RN06 (decisões 231 e 296(2)) - o /me traz o ciclo de vida de cada vínculo, com o paidThrough também para a colaboradora', async () => {
     const { ana, juliana, weddingId } = await scenario();
     await db.wedding.update({
       where: { id: weddingId },
-      data: { status: 'grace', endDate: date(-2), graceUntil: date(5) },
+      data: { status: 'grace', endDate: date(-2), graceUntil: date(5), paidThrough: date(40) },
     });
     for (const cookie of [ana.cookie, juliana.cookie]) {
       const me = await http().get('/v1/me').set('Cookie', cookie).expect(200);
@@ -245,6 +245,7 @@ describe('O site no ar pela wedding_site_state (Data de saída do ar RN07 e RN08
           endDate: day(-2),
           graceUntil: day(5),
           expiredAt: null,
+          paidThrough: day(40),
           deletionScheduledFor: null,
         },
       });

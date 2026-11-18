@@ -66,6 +66,7 @@ export class PrismaProfileDirectory implements ProfileDirectory {
               endDate: true,
               graceUntil: true,
               expiredAt: true,
+              paidThrough: true,
               deletionScheduledFor: true,
               blockedAt: true,
               partners: { select: { slot: true, displayName: true, title: true, userId: true } },
@@ -96,6 +97,7 @@ export class PrismaProfileDirectory implements ProfileDirectory {
         endDate: day(wedding.endDate),
         graceUntil: day(wedding.graceUntil),
         expiredAt: day(wedding.expiredAt),
+        paidThrough: day(wedding.paidThrough),
         deletionScheduledFor: day(wedding.deletionScheduledFor),
       },
     }));

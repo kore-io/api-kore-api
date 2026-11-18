@@ -3,13 +3,14 @@ import type { TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { AdvanceWeddingLifecycle } from '@/modules/billing/application/wedding-lifecycle/advance-wedding-lifecycle.use-case';
+import { PurgeRetainedWeddings } from '@/modules/billing/application/wedding-lifecycle/purge-retained-weddings.use-case';
 import { addDays, addMonths } from '@/modules/billing/domain/payments/pricing';
 import { formatShortDay } from '@/modules/billing/infrastructure/mail/templates/billing.email';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import { localDate } from '@/shared/kernel/time/local-date';
 import { createTestApp } from '../support/harness/create-test-app';
 import { createTestWorker } from '../support/harness/create-test-worker';
-import { waitForInbox } from '../support/harness/mailpit';
+import { messageText, waitForInbox } from '../support/harness/mailpit';
 import { signedInUser } from '../support/harness/sessions';
 import { seedWedding } from '../support/factories/weddings';
 
@@ -28,6 +29,7 @@ describe('Carência, expirado e avisos (Data de saída do ar RN01 a RN03; banco 
   let worker: TestingModule;
   let db: BackofficePrismaService;
   let advance: AdvanceWeddingLifecycle;
+  let retention: PurgeRetainedWeddings;
   const today = localDate({ at: new Date(), timezone: 'America/Sao_Paulo' });
   // O casamento já passou e a data de saída do ar é daqui a um mês.
   const eventDate = addMonths({ day: today, months: -1 });
@@ -38,6 +40,7 @@ describe('Carência, expirado e avisos (Data de saída do ar RN01 a RN03; banco 
     worker = await createTestWorker();
     db = app.get(BackofficePrismaService);
     advance = worker.get(AdvanceWeddingLifecycle);
+    retention = worker.get(PurgeRetainedWeddings);
   });
 
   afterAll(async () => {
@@ -137,19 +140,92 @@ describe('Carência, expirado e avisos (Data de saída do ar RN01 a RN03; banco 
     expect(await db.applicationLog.count({ where: { weddingId, action: 'wedding.expired' } })).toBe(
       1,
     );
-    await waitForInbox({ to: ana.email, subject: 'O site saiu do ar' });
+    const [mail] = await waitForInbox({ to: ana.email, subject: 'O site saiu do ar' });
+    // Versão A (o paidThrough não passa do expiredAt): Renovar.
+    expect(await messageText({ id: mail.ID })).toContain('Renovar: ');
     const items = await billingItems(weddingId);
     expect(items.at(-1)?.payload).toEqual([
       expect.objectContaining({
         kind: 'expired',
         expiredAt,
         renewUntil: addMonths({ day: eventDate, months: 12 }),
+        paidThrough: null,
       }),
     ]);
     await request(app.getHttpServer())
       .get(`/v1/sites/${slug}`)
       .set('Origin', SITE_ORIGIN)
       .expect(410);
+  });
+
+  it('RN03 e decisão 293(7) - quem antecipou e expirou com mês pago à frente recebe a versão B: voltar ao ar sem custo (central e e-mail)', async () => {
+    const { ana, weddingId } = await published();
+    // Antecipou a data para endDate − 10 e manteve o paidThrough em endDate.
+    const earlier = addDays({ day: endDate, days: -10 });
+    await db.wedding.update({ where: { id: weddingId }, data: { endDate: day(earlier) } });
+    await run(weddingId, addDays({ day: earlier, days: 1 }));
+    const expiredAt = addDays({ day: earlier, days: 8 });
+    expect(await run(weddingId, expiredAt)).toMatchObject({ expired: 1 });
+    expect(await wedding(weddingId)).toMatchObject({
+      status: 'expired',
+      expiredAt: day(expiredAt),
+      paidThrough: day(endDate),
+    });
+
+    const items = await billingItems(weddingId);
+    expect(items.at(-1)?.payload).toEqual([
+      expect.objectContaining({ kind: 'expired', expiredAt, paidThrough: endDate }),
+    ]);
+    const [mail] = await waitForInbox({ to: ana.email, subject: 'O site saiu do ar' });
+    const text = await messageText({ id: mail.ID });
+    expect(text).toContain(
+      `O site de vocês saiu do ar em ${formatShortDay(expiredAt)}, mas vocês já pagaram até ${formatShortDay(endDate)} Voltem o site ao ar, sem custo. Os dados continuam guardados.`,
+    );
+    expect(text).toContain('Voltar ao ar: ');
+    expect(text).not.toContain('Renovar');
+  });
+
+  it('decisão 296(1) e Retenção RN02 - com mês pago à frente, o expurgo conta 6 meses do paidThrough, e o aviso de 30 dias segue a data nova', async () => {
+    const { weddingId } = await published();
+    const earlier = addDays({ day: endDate, days: -20 });
+    await db.wedding.update({ where: { id: weddingId }, data: { endDate: day(earlier) } });
+    await run(weddingId, addDays({ day: earlier, days: 1 }));
+    const expiredAt = addDays({ day: earlier, days: 8 });
+    await run(weddingId, expiredAt);
+    const purgeAt = addMonths({ day: endDate, months: 6 });
+    expect(await wedding(weddingId)).toMatchObject({
+      status: 'expired',
+      expiredAt: day(expiredAt),
+      paidThrough: day(endDate),
+      purgeAt: day(purgeAt),
+    });
+
+    const retain = (at: string) => retention.execute({ now: noonInSaoPaulo(at), weddingId });
+    // Pela data antiga (expiredAt + 6 meses) o aviso já sairia; pela nova, não.
+    expect(
+      await retain(addDays({ day: addMonths({ day: expiredAt, months: 6 }), days: -30 })),
+    ).toMatchObject({ notices: 0, purged: 0 });
+    expect(await retain(addDays({ day: purgeAt, days: -31 }))).toMatchObject({ notices: 0 });
+    expect(await retain(addDays({ day: purgeAt, days: -30 }))).toMatchObject({ notices: 1 });
+  });
+
+  it('RN03 e decisão 293(7) - o paidThrough igual ao expiredAt não é mês pago à frente: versão A', async () => {
+    const { ana, weddingId } = await published();
+    const earlier = addDays({ day: endDate, days: -8 });
+    await db.wedding.update({ where: { id: weddingId }, data: { endDate: day(earlier) } });
+    await run(weddingId, addDays({ day: earlier, days: 1 }));
+    expect(await run(weddingId, endDate)).toMatchObject({ expired: 1 });
+    expect(await wedding(weddingId)).toMatchObject({
+      expiredAt: day(endDate),
+      paidThrough: day(endDate),
+      purgeAt: day(addMonths({ day: endDate, months: 6 })),
+    });
+    const items = await billingItems(weddingId);
+    expect(items.at(-1)?.payload).toEqual([
+      expect.objectContaining({ kind: 'expired', expiredAt: endDate, paidThrough: null }),
+    ]);
+    const [mail] = await waitForInbox({ to: ana.email, subject: 'O site saiu do ar' });
+    expect(await messageText({ id: mail.ID })).toContain('Renovar: ');
   });
 
   it('RN01 e RN02 (B4-7) - a data de expirar não depende da hora da rotina: parada, expira com a data derivada', async () => {

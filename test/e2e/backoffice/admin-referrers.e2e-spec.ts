@@ -786,4 +786,42 @@ describe('Backoffice: ações na cerimonialista (Backoffice - cobrança RN08; ba
       (await db.commission.findUniqueOrThrow({ where: { id: commission.id } })).status,
     ).toMatch(/^(pending|available)$/);
   });
+
+  it('decisão 296(3) - com o casamento ainda bloqueado, a comissão que o Admin desbloqueou durante a disputa segue o desfecho normal quando ela é ganha, sem voltar a blocked', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const event = async (paymentId: string, name: 'dispute' | 'dispute-won') =>
+      expectStatus(await devPaymentEvent({ app, paymentId, event: name }), 200);
+    const person = await juliana();
+    const [commission] = person.commissions;
+    await app.get(BlockWedding).block({
+      weddingId: commission.weddingId,
+      byUserId: admin.userId,
+      reason: 'Denúncia',
+      now: new Date(),
+    });
+    expect(await db.commission.findUniqueOrThrow({ where: { id: commission.id } })).toMatchObject({
+      status: 'blocked',
+      blockReason: 'wedding_blocked',
+    });
+    await event(commission.paymentId, 'dispute');
+
+    expect(
+      (
+        await post(admin.cookie, `/commissions/${commission.id}/unblock`, {
+          reason: 'Análise concluída',
+        }).expect(200)
+      ).body,
+    ).toEqual({ status: 'held', weddingBlocked: true });
+
+    await event(commission.paymentId, 'dispute-won');
+    expect(await db.commission.findUniqueOrThrow({ where: { id: commission.id } })).toMatchObject({
+      status: expect.stringMatching(/^(pending|available)$/),
+      blockReason: null,
+    });
+    expect(
+      await db.applicationLog.count({
+        where: { action: 'commission.blocked', entityId: commission.id },
+      }),
+    ).toBe(1);
+  });
 });

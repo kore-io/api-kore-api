@@ -8,6 +8,8 @@ export interface DueNotice {
   endDate: string;
   graceUntil: string | null;
   expiredAt: string | null;
+  /** AAAA-MM-DD: até onde está pago (a versão B do aviso de expirado; decisão 293(7)). */
+  paidThrough: string | null;
   eventDate: string | null;
   timezone: string | null;
   /** Dias até a endDate, no fuso do casamento (só no aviso de antes). */
@@ -23,7 +25,8 @@ export interface WeddingLifecycleStore {
   /**
    * Numa transação: `published · post_event → grace` (endDate passada, com
    * graceUntil = endDate + 7) e `grace → expired` (graceUntil passado, com
-   * expiredAt = graceUntil + 1 e purgeAt = expiredAt + 6 meses), com os logs
+   * expiredAt = graceUntil + 1 e purgeAt = maior entre expiredAt e paidThrough
+   * + 6 meses, decisão 296(1)), com os logs
    * `wedding.grace` e `wedding.expired` só das linhas mudadas. O relógio corre
    * também no bloqueado e na exclusão agendada (B4-5).
    */
