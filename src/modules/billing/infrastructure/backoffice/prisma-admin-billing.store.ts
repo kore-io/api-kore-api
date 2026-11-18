@@ -31,7 +31,7 @@ export class PrismaAdminBillingStore implements AdminBillingStore {
     const tx = this.db();
     const payment = await tx.payment.findUnique({
       where: { id: paymentId },
-      select: { weddingId: true, kind: true, method: true, paidAt: true },
+      select: { weddingId: true, kind: true, method: true, paidAt: true, appliedAt: true },
     });
     if (!payment)
       return {
@@ -72,8 +72,11 @@ export class PrismaAdminBillingStore implements AdminBillingStore {
         },
       })),
     });
+    // O Pix de extensão pendente cai junto com a publicação que volta o site a
+    // rascunho (Pagamentos RN03). O valor menor não aplicado não mexe no
+    // casamento (decisão 275): o ciclo dele segue, e o Pix também.
     const pending =
-      payment.kind === 'publication'
+      payment.kind === 'publication' && payment.appliedAt !== null
         ? await tx.payment.findFirst({
             where: { weddingId: payment.weddingId, kind: 'extension', status: 'pending' },
             select: { id: true },

@@ -24,21 +24,19 @@ export class BullmqRefundQueue implements RefundQueue {
     paymentId,
     attempt,
     delayMs,
-    series,
   }: {
     paymentId: string;
     attempt: number;
     delayMs: number;
-    series?: string;
   }): Promise<void> {
     const data: RefundJob = { paymentId, attempt };
     // O id fixo por pagamento e tentativa (RN04): o repetido não entra. O job
-    // concluído sai, e a tentativa seguinte tem outro id.
-    const jobId = series
-      ? `refund-${paymentId}-${series}-${attempt}`
-      : `refund-${paymentId}-${attempt}`;
+    // concluído sai, e a tentativa seguinte tem outro id. O Tentar o estorno de
+    // novo (RN05) usa o mesmo id da tentativa 1, para a reconciliação não pôr
+    // um segundo job ao lado do dele (sugestão do Crivo no DoD da F3).
+    const jobId = `refund-${paymentId}-${attempt}`;
     // O job que lançou erro fica guardado (removeOnFail) e barraria a mesma
-    // tentativa de uma série nova (o Tentar o estorno de novo zera a contagem,
+    // tentativa depois do Tentar o estorno de novo (que zera a contagem,
     // Pagamentos RN05): o falho sai antes. O que espera ou roda continua barrando.
     const existing = await this.queue.getJob(jobId);
     if (existing && (await existing.isFailed())) await existing.remove();
