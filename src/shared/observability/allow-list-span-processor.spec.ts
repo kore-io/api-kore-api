@@ -58,6 +58,37 @@ describe('AllowListSpanProcessor', () => {
     expect(exported.name).toBe('GET /v1/public/parties/:linkToken');
   });
 
+  it('Publicar e pagar RN02 (B2-13) - dado o span do pagamento com o CPF de quem paga no SQL, na URL, no corpo e na exceção, quando exporta, então o CPF não sai', async () => {
+    const CPF = '529.982.247-25';
+    const CPF_DIGITS = '52998224725';
+    const exported = await exportSpan({
+      build: (span) => {
+        span.setAttributes({
+          'http.request.method': 'POST',
+          'http.route': '/v1/weddings/:weddingId/payments',
+          'http.response.status_code': 201,
+          'url.full': `https://api.kore.com.br/v1/weddings/x/payments?taxId=${CPF}`,
+          'http.request.body': JSON.stringify({ payer: { name: 'Ana', taxId: CPF } }),
+          'db.query.text': `INSERT INTO gateway_customers (tax_id) VALUES ('${CPF_DIGITS}')`,
+          'db.statement': `SELECT * FROM local_gateway.customers WHERE document = '${CPF_DIGITS}'`,
+          'app.payer_tax_id': CPF,
+        });
+        span.addEvent('gateway.customer', { document: CPF_DIGITS });
+        span.recordException(new Error(`customer ${CPF_DIGITS} already exists`));
+        span.setStatus({ code: SpanStatusCode.ERROR, message: `CPF ${CPF} recusado` });
+      },
+    });
+
+    const data = exportedData({ span: exported });
+    expect(data).not.toContain(CPF);
+    expect(data).not.toContain(CPF_DIGITS);
+    expect(exported.attributes).toEqual({
+      'http.request.method': 'POST',
+      'http.route': '/v1/weddings/:weddingId/payments',
+      'http.response.status_code': 201,
+    });
+  });
+
   it('dado um recordException com e-mail na mensagem, quando exporta, então o evento leva só o tipo do erro', async () => {
     const error = new TypeError(`Unique constraint failed: ${EMAIL}`);
 
