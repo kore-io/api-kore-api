@@ -80,6 +80,7 @@ export class PrismaPayoutAdminStore implements PayoutAdminStore {
             select: {
               amountCents: true,
               status: true,
+              blockReason: true,
               wedding: {
                 select: { partners: { orderBy: { slot: 'asc' }, select: { displayName: true } } },
               },
@@ -117,6 +118,7 @@ export class PrismaPayoutAdminStore implements PayoutAdminStore {
               : null,
             amountCents: c.amountCents,
             status: c.status,
+            blockReason: c.blockReason,
           })),
         pixKeyActiveFrom: payout.referrer.pixKeys[0]?.activeFrom ?? null,
         releaseAmountCents: payout.status === 'held' ? releasable : null,

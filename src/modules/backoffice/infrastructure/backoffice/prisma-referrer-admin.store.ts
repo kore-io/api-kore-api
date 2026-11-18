@@ -74,10 +74,16 @@ export class PrismaReferrerAdminStore implements ReferrerAdminStore {
       ? await this.db().$queryRaw<{ status: LockedCommission['payoutStatus'] }[]>`
           SELECT status::text AS status FROM payouts WHERE id = ${link.payoutId}::uuid FOR UPDATE`
       : [];
+    // O weddingBlocked é só leitura (o FOR UPDATE trava só a comissão): o
+    // bloqueio do casamento trava o Wedding antes do Referrer, e travá-lo aqui
+    // inverteria a ordem (G2). Serve ao aviso do modal (decisão 284(3)).
     const [row] = await this.db().$queryRaw<Omit<LockedCommission, 'payoutStatus'>[]>`
-      SELECT id, referrer_id AS "referrerId", status::text AS status, amount_cents AS "amountCents",
-             available_at AS "availableAt", payout_id AS "payoutId"
-      FROM commissions WHERE id = ${commissionId}::uuid FOR UPDATE`;
+      SELECT c.id, c.referrer_id AS "referrerId", c.status::text AS status,
+             c.amount_cents AS "amountCents", c.available_at AS "availableAt",
+             c.payout_id AS "payoutId",
+             (SELECT w.blocked_at IS NOT NULL FROM weddings w WHERE w.id = c.wedding_id)
+               AS "weddingBlocked"
+      FROM commissions c WHERE c.id = ${commissionId}::uuid FOR UPDATE`;
     return row ? { ...row, payoutStatus: payout?.status ?? null } : null;
   }
 

@@ -12,7 +12,13 @@ export interface PayoutQueueRow {
   requestedAt: Date;
   holdReason: string | null;
   /** O que segura o repasse: as comissões estornadas, em estorno, em contestação ou bloqueadas. */
-  heldCommissions: { coupleNames: string | null; amountCents: number; status: string }[];
+  heldCommissions: {
+    coupleNames: string | null;
+    amountCents: number;
+    status: string;
+    /** Só na bloqueada: "Comissão bloqueada: casamento de {casal} bloqueado" (decisão 284(3)). */
+    blockReason: string | null;
+  }[];
   /** A troca da chave que ainda não vale: quando vale. */
   pixKeyActiveFrom: Date | null;
   /** O valor do Liberar: sem as comissões estornadas e bloqueadas, com os ajustes. */

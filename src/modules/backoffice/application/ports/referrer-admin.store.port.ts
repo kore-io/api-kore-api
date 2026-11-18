@@ -16,6 +16,8 @@ export interface LockedCommission {
   payoutId: string | null;
   /** O estado do repasse dela, travado antes da comissão (G2). */
   payoutStatus: 'requested' | 'held' | 'processing' | 'paid' | 'rejected' | null;
+  /** O casamento da comissão está bloqueado (decisão 284(3)); lido sem trava. */
+  weddingBlocked: boolean;
 }
 
 /**
