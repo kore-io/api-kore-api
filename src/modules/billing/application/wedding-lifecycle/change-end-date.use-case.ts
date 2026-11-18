@@ -38,7 +38,8 @@ export interface EndDateChanged {
  * dele); depois disso, paga-se a extensão. Não cobra nem devolve. Na carência,
  * voltar a data a encerra. No expirado, só com meses pagos à frente (o
  * paidThrough depois de hoje; decisão 289(1)): ele volta ao ar, sem o
- * expiredAt, o purgeAt e o aviso da exclusão. Depois do commit, cancela o Pix de extensão
+ * expiredAt, o purgeAt e o aviso da exclusão; sem eles, END_DATE_BEYOND_PAID
+ * (decisão 294(1)). Depois do commit, cancela o Pix de extensão
  * pendente, cotado com a data anterior (G1; B2-9).
  */
 @Injectable()
@@ -77,9 +78,11 @@ export class ChangeEndDate {
           throw new NotPublishedError();
 
         const today = localDate({ at: now, timezone: wedding.timezone });
-        // O expirado sem mês pago à frente renova pela extensão (RN04).
+        const paidLimit = wedding.paidThrough ?? wedding.endDate;
+        // O expirado sem mês pago à frente (paidThrough até hoje): toda data
+        // futura passa do paidThrough, e o caminho é a extensão (RN04; decisão 294(1)).
         if (wedding.status === 'expired' && !(wedding.paidThrough && wedding.paidThrough > today))
-          throw new NotPublishedError();
+          throw new EndDateBeyondPaidError(paidLimit);
         const tomorrow = addDays({ day: today, days: 1 });
         const dayAfterWedding = wedding.eventDate
           ? addDays({ day: wedding.eventDate, days: 1 })
@@ -92,7 +95,6 @@ export class ChangeEndDate {
             })
           : endDate;
         if (endDate < min || endDate > max) throw new BillingEndDateOutOfRangeError(min, max);
-        const paidLimit = wedding.paidThrough ?? wedding.endDate;
         if (endDate > paidLimit) throw new EndDateBeyondPaidError(paidLimit);
 
         if (endDate === wedding.endDate)

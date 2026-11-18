@@ -82,13 +82,14 @@ export class PrismaWeddingLifecycleStore implements WeddingLifecycleStore {
         endDate: Date;
         graceUntil: Date | null;
         expiredAt: Date | null;
+        paidThrough: Date | null;
         eventDate: Date | null;
         timezone: string | null;
         daysLeft: number;
       }[]
     >`
       WITH local AS (
-        SELECT w.id, w.status, w.end_date, w.grace_until, w.expired_at, w.event_date, w.timezone,
+        SELECT w.id, w.status, w.end_date, w.grace_until, w.expired_at, w.paid_through, w.event_date, w.timezone,
                (${now}::timestamptz AT TIME ZONE coalesce(w.timezone, ${DEFAULT_TIMEZONE}))::date AS today
         FROM weddings w
         WHERE w.status IN ('published', 'post_event', 'grace', 'expired')
@@ -109,7 +110,7 @@ export class PrismaWeddingLifecycleStore implements WeddingLifecycleStore {
         SELECT id, 'expired' FROM local WHERE status = 'expired'
       )
       SELECT l.id::text AS "weddingId", d.notice, l.end_date AS "endDate",
-             l.grace_until AS "graceUntil", l.expired_at AS "expiredAt",
+             l.grace_until AS "graceUntil", l.expired_at AS "expiredAt", l.paid_through AS "paidThrough",
              l.event_date AS "eventDate", l.timezone, (l.end_date - l.today)::int AS "daysLeft"
       FROM due d JOIN local l ON l.id = d.id
       WHERE NOT EXISTS (
@@ -124,6 +125,7 @@ export class PrismaWeddingLifecycleStore implements WeddingLifecycleStore {
       endDate: day(row.endDate) ?? '',
       graceUntil: day(row.graceUntil),
       expiredAt: day(row.expiredAt),
+      paidThrough: day(row.paidThrough),
       eventDate: day(row.eventDate),
     }));
   }

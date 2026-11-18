@@ -8,6 +8,8 @@ export interface DueNotice {
   endDate: string;
   graceUntil: string | null;
   expiredAt: string | null;
+  /** AAAA-MM-DD: até onde está pago (a versão B do aviso de expirado; decisão 293(7)). */
+  paidThrough: string | null;
   eventDate: string | null;
   timezone: string | null;
   /** Dias até a endDate, no fuso do casamento (só no aviso de antes). */

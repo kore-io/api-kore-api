@@ -100,6 +100,13 @@ export class BillingEntryResponse {
   @ApiProperty({ required: false, example: '2027-02-22' }) expiredAt?: string;
   @ApiProperty({ required: false, nullable: true, example: '2027-11-14' }) renewUntil?:
     string | null;
+  /**
+   * Expirado, versão B (Data de saída do ar RN03; decisão 293(7)): o
+   * paidThrough quando é depois do expiredAt ("Vocês já pagaram até 14 de
+   * fev.: voltem o site ao ar, sem custo"); nulo ou ausente na versão A.
+   */
+  @ApiProperty({ required: false, nullable: true, example: '2027-02-14' }) paidThrough?:
+    string | null;
   /** purge_soon (Retenção e expurgo RN02): o dia em que os dados são apagados, AAAA-MM-DD. */
   @ApiProperty({ required: false, example: '2027-08-22' }) purgeAt?: string;
   /** A data de saída do ar paga, AAAA-MM-DD (só no payment_confirmed). */

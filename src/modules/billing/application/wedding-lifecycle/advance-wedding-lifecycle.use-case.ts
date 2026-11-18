@@ -78,12 +78,13 @@ export class AdvanceWeddingLifecycle {
       const renewUntil =
         endDateRange({ eventDate: due.eventDate, timezone: due.timezone ?? 'America/Sao_Paulo' })
           ?.max ?? null;
+      const paidAhead = paidAheadOf(due);
       await this.ledger.notifyEndDateNotice({
         weddingId: due.weddingId,
         notice: due.notice,
         endDate: due.endDate,
         userIds: recipients.map((recipient) => recipient.userId),
-        payload: payloadOf({ due, renewUntil, now }),
+        payload: payloadOf({ due, renewUntil, paidAhead, now }),
         now,
       });
       for (const recipient of recipients) {
@@ -114,6 +115,7 @@ export class AdvanceWeddingLifecycle {
                   to: recipient.email,
                   expiredAt: due.expiredAt ?? due.endDate,
                   renewUntil,
+                  paidAhead,
                   partnerNames,
                 },
               });
@@ -126,17 +128,30 @@ export class AdvanceWeddingLifecycle {
 }
 
 /**
+ * A versão B do aviso de expirado (Data de saída do ar RN03; decisão 293(7)):
+ * o paidThrough, quando é depois do expiredAt; nulo na versão A.
+ */
+function paidAheadOf(due: DueNotice): string | null {
+  if (due.notice !== 'expired' || !due.paidThrough) return null;
+  const expiredAt = due.expiredAt ?? due.endDate;
+  return due.paidThrough > expiredAt ? due.paidThrough : null;
+}
+
+/**
  * O item da central (RN03): o app monta o texto da Pena com as datas ("O site
  * fica no ar até 14 de fev., daqui a 7 dias…", "…só até 21 de fev", "O site
- * saiu do ar…"); sem valor de pagamento.
+ * saiu do ar…", e na versão B "…Vocês já pagaram até 14 de fev.: voltem o
+ * site ao ar, sem custo", pelo paidThrough); sem valor de pagamento.
  */
 function payloadOf({
   due,
   renewUntil,
+  paidAhead,
   now,
 }: {
   due: DueNotice;
   renewUntil: string | null;
+  paidAhead: string | null;
   now: Date;
 }): Record<string, unknown> {
   const at = now.toISOString();
@@ -153,6 +168,6 @@ function payloadOf({
         at,
       };
     case 'expired':
-      return { kind: 'expired', expiredAt: due.expiredAt, renewUntil, at };
+      return { kind: 'expired', expiredAt: due.expiredAt, renewUntil, paidThrough: paidAhead, at };
   }
 }

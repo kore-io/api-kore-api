@@ -23551,6 +23551,12 @@
             "nullable": true,
             "example": "2027-11-14"
           },
+          "paidThrough": {
+            "type": "string",
+            "nullable": true,
+            "description": "Expirado, versão B (Data de saída do ar RN03; decisão 293(7)): o\npaidThrough quando é depois do expiredAt (\"Vocês já pagaram até 14 de\nfev.: voltem o site ao ar, sem custo\"); nulo ou ausente na versão A.",
+            "example": "2027-02-14"
+          },
           "purgeAt": {
             "type": "string",
             "description": "purge_soon (Retenção e expurgo RN02): o dia em que os dados são apagados, AAAA-MM-DD.",
