@@ -6,6 +6,7 @@ import { EMAIL_OUTBOX, type EmailOutbox } from '@/shared/email/application/email
 import { PLANNER_COMMISSIONS_PATH } from '@/modules/notifications/application/rsvp-emails.use-cases';
 import {
   PayoutAmountMismatchError,
+  PayoutHasHeldCommissionError,
   PayoutNotFoundError,
   PayoutPaymentsDisabledError,
   PayoutPixKeyChangePendingError,
@@ -140,6 +141,8 @@ export class PayPayout {
       }
       if (payout.referrerStatus !== 'active') throw new PayoutReferrerBlockedError();
       if (payout.pixKeyChangePending) throw new PayoutPixKeyChangePendingError();
+      // Defesa em profundidade (RN05; Repasse RN06): a bloqueada ou retida não sai no Pix.
+      if (payout.heldCommissions > 0) throw new PayoutHasHeldCommissionError();
       if (payout.amountCents !== payout.itemsCents)
         throw new PayoutAmountMismatchError(payout.amountCents, payout.itemsCents);
       // A ação que tira dinheiro do Kore fica no log (Backoffice - cobrança RN01; D19).

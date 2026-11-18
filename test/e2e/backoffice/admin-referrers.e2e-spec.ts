@@ -698,5 +698,27 @@ describe('Backoffice: ações na cerimonialista (Backoffice - cobrança RN08; ba
         'held',
       );
     });
+
+    it('RN05 (defesa em profundidade) - o Pagar recusa o repasse pedido com uma comissão bloqueada ou retida dentro (409 PAYOUT_HELD), sem Pix', async () => {
+      const admin = await staffUser({ app, role: 'admin' });
+      for (const status of ['blocked', 'held'] as const) {
+        const person = await juliana({ weddings: 2, payout: true });
+        // Um caminho que esquecesse de reter o repasse: ele segue requested.
+        await db.commission.update({
+          where: { id: person.commissions[0].id },
+          data: { status, blockReason: status === 'blocked' ? 'admin' : null },
+        });
+        await db.payout.update({
+          where: { id: person.payoutId! },
+          data: { status: 'requested', holdReason: null },
+        });
+        expect((await pay(admin.cookie, person.payoutId!).expect(409)).body.error).toBe(
+          'PAYOUT_HELD',
+        );
+        expect(
+          (await db.payout.findUniqueOrThrow({ where: { id: person.payoutId! } })).status,
+        ).toBe('requested');
+      }
+    });
   });
 });

@@ -60,3 +60,12 @@ export class PayoutBelowMinimumError extends Error {
 export class PayoutStillHeldError extends Error {
   override name = 'PayoutStillHeldError';
 }
+
+/**
+ * RN05, defesa em profundidade: o Pagar recusa o repasse com uma comissão
+ * bloqueada ou retida dentro (409 PAYOUT_HELD); ela nunca sai no Pix sem o
+ * Admin liberar ou recusar o repasse (Repasse RN06).
+ */
+export class PayoutHasHeldCommissionError extends Error {
+  override name = 'PayoutHasHeldCommissionError';
+}

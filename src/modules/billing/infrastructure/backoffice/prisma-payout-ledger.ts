@@ -39,11 +39,13 @@ export class PrismaPayoutLedger implements PayoutLedger {
              k.key_type::text AS key_type, k.key_encrypted
       FROM payouts p JOIN referrer_pix_keys k ON k.id = p.pix_key_id
       WHERE p.id = ${payoutId}::uuid FOR UPDATE OF p`;
-    const [items] = await this.db().$queryRaw<{ cents: number }[]>`
+    const [items] = await this.db().$queryRaw<{ cents: number; held: number }[]>`
       SELECT (COALESCE((SELECT sum(c.amount_cents) FROM commissions c
                         WHERE c.payout_id = ${payoutId}::uuid AND c.status <> 'reversed'), 0)
             + COALESCE((SELECT sum(a.amount_cents) FROM commission_adjustments a
-                        WHERE a.payout_id = ${payoutId}::uuid), 0))::int AS cents`;
+                        WHERE a.payout_id = ${payoutId}::uuid), 0))::int AS cents,
+             (SELECT count(*) FROM commissions c
+              WHERE c.payout_id = ${payoutId}::uuid AND c.status IN ('blocked', 'held'))::int AS held`;
     const pending = await this.db().referrerPixKey.count({
       where: { referrerId: target.referrerId, status: 'pending_activation' },
     });
@@ -57,6 +59,7 @@ export class PrismaPayoutLedger implements PayoutLedger {
       referrerStatus: referrer.status,
       pixKeyChangePending: pending > 0,
       itemsCents: items.cents,
+      heldCommissions: items.held,
       pixKey: { type: payout.key_type, encrypted: payout.key_encrypted },
     };
   }

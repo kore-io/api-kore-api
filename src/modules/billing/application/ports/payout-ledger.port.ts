@@ -13,6 +13,8 @@ export interface LockedPayout {
   pixKeyChangePending: boolean;
   /** A soma das comissões não estornadas e dos ajustes do repasse. */
   itemsCents: number;
+  /** Comissões `blocked` ou `held` dentro do repasse (o Pagar recusa). */
+  heldCommissions: number;
   pixKey: { type: PixKeyType; encrypted: string };
 }
 

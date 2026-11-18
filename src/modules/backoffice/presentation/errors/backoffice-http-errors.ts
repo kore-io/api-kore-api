@@ -45,6 +45,7 @@ import {
 import {
   PayoutAmountMismatchError,
   PayoutBelowMinimumError,
+  PayoutHasHeldCommissionError,
   PayoutNotFoundError,
   PayoutPaymentsDisabledError,
   PayoutPixKeyChangePendingError,
@@ -259,6 +260,12 @@ export function toHttpError(error: unknown): unknown {
       message: 'Below the payout minimum after removing the reversed commissions. Reject it.',
       amountCents: error.amountCents,
       minimumCents: error.minimumCents,
+    });
+  if (error instanceof PayoutHasHeldCommissionError)
+    return new ConflictException({
+      statusCode: 409,
+      error: 'PAYOUT_HELD',
+      message: 'A commission of this payout is blocked or held. Release or reject the payout.',
     });
   if (error instanceof PayoutStillHeldError)
     return new ConflictException({
