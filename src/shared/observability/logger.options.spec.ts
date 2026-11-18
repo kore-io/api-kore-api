@@ -26,6 +26,28 @@ describe('serializeRequest', () => {
 
     expect(serializeRequest(request)).toEqual({ method: 'GET', route: '(unmatched)' });
   });
+
+  it('decisão 285 - dado o pedido embrulhado pelo pino-http ({ raw }), quando serializa, então lê a rota do pedido cru', () => {
+    const raw = {
+      method: 'GET',
+      url: '/v1/sites/ana-e-marcos',
+      baseUrl: '',
+      route: { path: '/v1/sites/:slug' },
+    } as unknown as IncomingMessage;
+
+    expect(serializeRequest({ raw })).toEqual({ method: 'GET', route: '/v1/sites/:slug' });
+  });
+
+  it('decisão 285 - dado o 404 que caiu no curinga do Nest, quando serializa, então sai (unmatched)', () => {
+    const request = {
+      method: 'GET',
+      url: '/v1/nada',
+      baseUrl: '',
+      route: { path: '/v1{/*splat}' },
+    } as unknown as IncomingMessage;
+
+    expect(serializeRequest(request)).toEqual({ method: 'GET', route: '(unmatched)' });
+  });
 });
 
 describe('traceMixin', () => {
