@@ -225,7 +225,7 @@ describe('Backoffice: ações na cerimonialista (Backoffice - cobrança RN08; ba
           reason: 'Análise concluída',
         }).expect(200)
       ).body,
-    ).toEqual({ status: 'pending' });
+    ).toEqual({ status: 'pending', weddingBlocked: false });
     // O roteiro liberou antes do prazo; o desbloqueio volta ao prazo (available_at no futuro).
     await db.applicationLog.findFirstOrThrow({
       where: { action: 'commission.unblocked', entityId: commission.id },
@@ -423,6 +423,50 @@ describe('Backoffice: ações na cerimonialista (Backoffice - cobrança RN08; ba
           reason: 'Casamento desbloqueado',
         }).expect(200)
       ).body,
-    ).toEqual({ status: 'pending' });
+    ).toEqual({ status: 'pending', weddingBlocked: false });
+  });
+  it('decisão 284(3) - a fila de Repasses diz que a comissão foi bloqueada pelo casamento, e o Desbloquear comissão avisa que o casamento continua bloqueado', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const inPayout = await juliana({ weddings: 2, payout: true });
+    const [target] = inPayout.commissions;
+    await app.get(BlockWedding).block({
+      weddingId: target.weddingId,
+      byUserId: admin.userId,
+      reason: 'Denúncia',
+      now: new Date(),
+    });
+
+    // "Comissão bloqueada: casamento de {casal} bloqueado".
+    const held = await http()
+      .get('/v1/admin/payouts')
+      .query({ status: 'held', referrerId: inPayout.referrerId })
+      .set('Cookie', admin.cookie)
+      .expect(200);
+    expect(held.body.items).toEqual([
+      expect.objectContaining({
+        id: inPayout.payoutId,
+        holdReason: 'commission_blocked',
+        heldCommissions: [
+          {
+            coupleNames: expect.any(String),
+            amountCents: target.amountCents,
+            status: 'blocked',
+            blockReason: 'wedding_blocked',
+          },
+        ],
+      }),
+    ]);
+
+    // Com o casamento ainda bloqueado: "O casamento continua bloqueado.".
+    expect(
+      (
+        await post(admin.cookie, `/commissions/${target.id}/unblock`, {
+          reason: 'Análise concluída',
+        }).expect(200)
+      ).body,
+    ).toEqual({ status: expect.stringMatching(/^(pending|available)$/), weddingBlocked: true });
+    expect((await db.commission.findUniqueOrThrow({ where: { id: target.id } })).blockReason).toBe(
+      null,
+    );
   });
 });

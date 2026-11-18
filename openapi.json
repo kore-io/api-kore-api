@@ -27203,10 +27203,15 @@
               "available"
             ],
             "type": "string"
+          },
+          "weddingBlocked": {
+            "type": "boolean",
+            "description": "O casamento da comissão segue bloqueado: \"O casamento continua bloqueado.\" (decisão 284(3))."
           }
         },
         "required": [
-          "status"
+          "status",
+          "weddingBlocked"
         ]
       },
       "AdminPayoutReferrerResponse": {
@@ -27249,6 +27254,17 @@
               "blocked"
             ]
           },
+          "blockReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Só na bloqueada; `wedding_blocked` é \"Comissão bloqueada: casamento de {casal} bloqueado\".",
+            "enum": [
+              "self_referral",
+              "referrer_blocked",
+              "admin",
+              "wedding_blocked"
+            ]
+          },
           "amountCents": {
             "type": "number"
           }
@@ -27256,6 +27272,7 @@
         "required": [
           "coupleNames",
           "status",
+          "blockReason",
           "amountCents"
         ]
       },

@@ -119,7 +119,7 @@ export class ReferrerAdminActions {
     commissionId: string;
     reason: string;
     now: Date;
-  }): Promise<{ status: 'pending' | 'available' }> {
+  }): Promise<{ status: 'pending' | 'available'; weddingBlocked: boolean }> {
     requireRecentSession({ session, now });
     return this.transaction.run(async () => {
       const commission = await this.store.lockCommission({ commissionId });
@@ -133,7 +133,8 @@ export class ReferrerAdminActions {
         reason,
         now,
       });
-      return { status };
+      // O modal diz "O casamento continua bloqueado." (decisão 284(3)).
+      return { status, weddingBlocked: commission.weddingBlocked };
     });
   }
 

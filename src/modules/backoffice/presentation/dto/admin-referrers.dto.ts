@@ -50,6 +50,8 @@ export class CommissionBlockResponse {
 
 export class CommissionUnblockResponse {
   @ApiProperty({ enum: ['pending', 'available'] }) status: 'pending' | 'available';
+  /** O casamento da comissão segue bloqueado: "O casamento continua bloqueado." (decisão 284(3)). */
+  weddingBlocked: boolean;
 }
 
 export class AdjustmentResponse {

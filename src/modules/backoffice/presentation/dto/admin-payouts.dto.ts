@@ -40,6 +40,13 @@ class AdminHeldCommissionResponse {
   @ApiProperty({ type: String, nullable: true }) coupleNames: string | null;
   amountCents: number;
   @ApiProperty({ enum: ['held', 'reversed', 'blocked'] }) status: string;
+  /** Só na bloqueada; `wedding_blocked` é "Comissão bloqueada: casamento de {casal} bloqueado". */
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    enum: ['self_referral', 'referrer_blocked', 'admin', 'wedding_blocked'],
+  })
+  blockReason: string | null;
 }
 
 class AdminPayoutResponse {
