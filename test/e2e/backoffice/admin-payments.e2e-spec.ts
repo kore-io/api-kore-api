@@ -551,6 +551,51 @@ describe('Backoffice: Cobrança (Backoffice - cobrança RN02 a RN07 e RN11; banc
     );
   });
 
+  it('RN11 (decisão 275) - o Reembolsar do valor menor não aplicado não cancela o Pix de extensão do ciclo que segue', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const { ana, weddingId, paymentId } = await paid();
+    const pix = expectStatus(
+      await payForExtension({
+        app,
+        cookie: ana.cookie,
+        weddingId,
+        endDate: addMonths({ day: endDate, months: 3 }),
+        method: 'pix',
+      }),
+      201,
+    );
+    const pendingId = pix.body.paymentId as string;
+    // O pagamento de publicação pedido não está aplicado (o valor menor); o
+    // casamento segue publicado pelo ciclo dele. Montado à mão: o caminho real
+    // seria um 2º pagamento de publicação, e a regra do store é a mesma.
+    await db.commission.deleteMany({ where: { paymentId } });
+    await db.payment.update({ where: { id: paymentId }, data: { appliedAt: null } });
+    await db.alert.create({
+      data: {
+        type: 'gateway_amount_mismatch',
+        weddingId,
+        entityType: 'payment',
+        entityId: paymentId,
+        data: { chargedCents: 30000 },
+      },
+    });
+
+    await post(admin.cookie, `/payments/${paymentId}/refund`, {
+      reason: 'O casal pagou a menos; devolver.',
+    }).expect(202);
+
+    // O cancelamento sairia depois do commit, por job: espera a fila andar.
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    expect((await db.payment.findUniqueOrThrow({ where: { id: pendingId } })).status).toBe(
+      'pending',
+    );
+    expect(
+      await db.applicationLog.count({
+        where: { entityId: pendingId, action: { startsWith: 'payment.cancel' } },
+      }),
+    ).toBe(0);
+  });
+
   it('RN11 (decisão 275) - o Reembolsar do pagamento aplicado com valor maior também fecha o gateway_amount_mismatch', async () => {
     const admin = await staffUser({ app, role: 'admin' });
     const over = await paid();
