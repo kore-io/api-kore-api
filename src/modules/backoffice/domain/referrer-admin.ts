@@ -1,3 +1,5 @@
+import { isPayoutOpenToBlock } from '@/modules/billing/domain/payouts/commission';
+
 /**
  * As ações do Admin na cerimonialista (Backoffice - cobrança RN08; decisões
  * 68, 74 e 230 D15; revisões técnicas B6-7, B10-4 e B10-7).
@@ -15,9 +17,7 @@ export const isCommissionBlockable = ({
 }: {
   status: CommissionStatus;
   payoutStatus?: string | null;
-}) =>
-  (status === 'pending' || status === 'available') &&
-  (payoutStatus === null || payoutStatus === 'requested' || payoutStatus === 'held');
+}) => (status === 'pending' || status === 'available') && isPayoutOpenToBlock(payoutStatus);
 
 /** Desbloquear: a comissão volta a seguir o prazo de liberação. */
 export const unblockedStatus = ({

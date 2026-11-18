@@ -1,4 +1,4 @@
-import { newCommission, type CommissionInput } from './commission';
+import { isPayoutOpenToBlock, newCommission, type CommissionInput } from './commission';
 
 const base: CommissionInput = {
   amountCents: 33_710,
@@ -49,5 +49,17 @@ describe('A comissão do indicador (Comissões RN01, RN03 e RN04)', () => {
         status: 'blocked',
         blockReason: 'referrer_blocked',
       });
+  });
+});
+
+describe('isPayoutOpenToBlock (B10-4; decisões 282(3) e 286)', () => {
+  it('dado fora de repasse, num repasse pedido ou retido, então a comissão ainda pode ser bloqueada', () => {
+    for (const status of [null, 'requested', 'held'])
+      expect(isPayoutOpenToBlock(status)).toBe(true);
+  });
+
+  it('dado um repasse em processamento, pago ou recusado, então ela segue o repasse', () => {
+    for (const status of ['processing', 'paid', 'rejected'])
+      expect(isPayoutOpenToBlock(status)).toBe(false);
   });
 });

@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '@/generated/prisma/client';
+import { Prisma } from '@/generated/prisma/client';
 import { BackofficeTransaction } from '@/shared/database/backoffice-transaction';
 import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
+import { BLOCKABLE_PAYOUT_STATUSES } from '@/modules/billing/domain/payouts/commission';
 import type {
   LockedCommission,
   LockedReferrer,
@@ -172,7 +173,7 @@ export class PrismaReferrerAdminStore implements ReferrerAdminStore {
       // de motivo e espera o Admin, sem voltar sozinho no fim da troca da chave
       // (Comissões RN03; Repasse RN06 (e), como a decisão 286(a)).
       const held = await tx.payout.updateMany({
-        where: { id: commission.payoutId, status: { in: ['requested', 'held'] } },
+        where: { id: commission.payoutId, status: { in: [...BLOCKABLE_PAYOUT_STATUSES] } },
         data: { status: 'held', holdReason: 'commission_blocked' },
       });
       if (held.count > 0) heldPayoutId = commission.payoutId;
@@ -321,13 +322,15 @@ export class PrismaReferrerAdminStore implements ReferrerAdminStore {
         AND c.status IN ('pending', 'available') AND p.payer_tax_id_hash = ${hash}
         -- A do repasse em processamento ou pago segue com ele (Repasse B6-4).
         AND (c.payout_id IS NULL OR EXISTS (
-          SELECT 1 FROM payouts o WHERE o.id = c.payout_id AND o.status IN ('requested', 'held')))
+          SELECT 1 FROM payouts o
+          WHERE o.id = c.payout_id
+            AND o.status::text IN (${Prisma.join([...BLOCKABLE_PAYOUT_STATUSES])})))
       RETURNING c.id, c.payout_id`;
     const payoutIds = [...new Set(blocked.map((row) => row.payout_id).filter((id) => id !== null))];
     // O retido (ex.: pix_key_change) também passa a commission_blocked (Repasse RN06 (e)).
     if (payoutIds.length > 0)
       await tx.payout.updateMany({
-        where: { id: { in: payoutIds }, status: { in: ['requested', 'held'] } },
+        where: { id: { in: payoutIds }, status: { in: [...BLOCKABLE_PAYOUT_STATUSES] } },
         data: { status: 'held', holdReason: 'commission_blocked' },
       });
     await this.log({

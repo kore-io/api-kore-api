@@ -1,8 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import type { AlertType, Prisma } from '@/generated/prisma/client';
+import { type AlertType, Prisma } from '@/generated/prisma/client';
 import { BackofficeTransaction } from '@/shared/database/backoffice-transaction';
 import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
-import { newCommission } from '@/modules/billing/domain/payouts/commission';
+import {
+  BLOCKABLE_PAYOUT_STATUSES,
+  newCommission,
+} from '@/modules/billing/domain/payouts/commission';
 import type {
   BillingRecipient,
   LedgerLogEntry,
@@ -557,12 +560,13 @@ export class PrismaPaymentLedger implements PaymentLedger {
         AND EXISTS (
           SELECT 1 FROM weddings w WHERE w.id = c.wedding_id AND w.blocked_at IS NOT NULL)
         AND (c.payout_id IS NULL OR EXISTS (
-          SELECT 1 FROM payouts p WHERE p.id = c.payout_id AND p.status IN ('requested', 'held')))
+          SELECT 1 FROM payouts p
+          WHERE p.id = c.payout_id AND p.status::text IN (${Prisma.join([...BLOCKABLE_PAYOUT_STATUSES])})))
       RETURNING c.payout_id AS "payoutId"`;
     const payoutIds = blocked.flatMap(({ payoutId }) => (payoutId ? [payoutId] : []));
     if (payoutIds.length > 0)
       await this.db().payout.updateMany({
-        where: { id: { in: payoutIds }, status: { in: ['requested', 'held'] } },
+        where: { id: { in: payoutIds }, status: { in: [...BLOCKABLE_PAYOUT_STATUSES] } },
         data: { status: 'held', holdReason: 'commission_blocked' },
       });
     // Volta pelo availableAt (RN06): a data no fuso de São Paulo, como a liberação.
