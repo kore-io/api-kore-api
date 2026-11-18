@@ -34,10 +34,14 @@ export class PrismaWeddingLifecycleStore implements WeddingLifecycleStore {
           ${only}
         RETURNING id::text AS id`;
       // expiredAt é derivado (graceUntil + 1), não a hora da rotina (B4-7).
+      // O expurgo conta 6 meses do maior entre o expiredAt e o paidThrough: com
+      // meses pagos à frente, dá para voltar de graça até o paidThrough (289), e
+      // os dados não somem antes disso (decisão 296(1)).
       const expired = await tx.$queryRaw<{ id: string }[]>`
         UPDATE weddings
         SET status = 'expired', expired_at = grace_until + 1,
-            purge_at = ((grace_until + 1) + interval '6 months')::date, updated_at = ${now}
+            purge_at = (greatest(grace_until + 1, paid_through) + interval '6 months')::date,
+            updated_at = ${now}
         WHERE status = 'grace' AND grace_until IS NOT NULL
           AND grace_until < (${now}::timestamptz AT TIME ZONE coalesce(timezone, ${DEFAULT_TIMEZONE}))::date
           ${only}

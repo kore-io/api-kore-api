@@ -15565,6 +15565,12 @@
             "nullable": true,
             "example": "2027-02-22"
           },
+          "paidThrough": {
+            "type": "string",
+            "nullable": true,
+            "description": "Até onde está pago (o paidThrough): com ele depois de hoje, a faixa e o\nDashboard do caso B, também para a colaboradora (decisões 293(5) e 296(2)).",
+            "example": "2027-02-14"
+          },
           "deletionScheduledFor": {
             "type": "string",
             "nullable": true
@@ -15579,6 +15585,7 @@
           "endDate",
           "graceUntil",
           "expiredAt",
+          "paidThrough",
           "deletionScheduledFor",
           "blocked"
         ]
