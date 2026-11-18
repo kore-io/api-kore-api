@@ -165,6 +165,23 @@ describe('Pagamentos e arrependimento (RN02 a RN08; banco real)', () => {
     expect(emails.map((email) => email.Subject)).toContain('Reembolso concluído');
   });
 
+  it('decisão 282(1) e Casamento bloqueado RN06 - com o casamento bloqueado, o "Reembolso concluído" ainda chega a quem pagou', async () => {
+    const { ana, weddingId, paymentId } = await published();
+    expectStatus(await refund(ana.cookie, weddingId, paymentId), 202);
+    await attempted(paymentId);
+    const support = await signedInUser({ app, name: 'Suporte Kore' });
+    await db.wedding.update({
+      where: { id: weddingId },
+      data: { blockedAt: new Date(), blockedByUserId: support.userId },
+    });
+
+    expectStatus(await devPaymentEvent({ app, paymentId, event: 'refund' }), 200);
+
+    expect((await payment(paymentId)).status).toBe('refunded');
+    const emails = await waitForInbox({ to: ana.email, count: 2 });
+    expect(emails.map((email) => email.Subject)).toContain('Reembolso concluído');
+  });
+
   it('RN02 - fora do prazo: REFUND_WINDOW_CLOSED com o último instante, e o GET sem refundableUntil', async () => {
     const { ana, weddingId, paymentId } = await published();
     await db.payment.update({
