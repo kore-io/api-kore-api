@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { BackofficeTransaction } from '@/shared/database/backoffice-transaction';
 import type { WeddingBlocks } from '@/modules/billing/application/ports/wedding-blocks.port';
+import {
+  BLOCKABLE_PAYOUT_STATUSES,
+  isPayoutOpenToBlock,
+} from '@/modules/billing/domain/payouts/commission';
 
 /** Na transação corrente da BackofficeTransaction (kore_backoffice). */
 @Injectable()
@@ -111,15 +115,13 @@ export class PrismaWeddingBlocks implements WeddingBlocks {
         WHERE wedding_id = ${weddingId}::uuid AND status IN ('pending', 'available')
           AND payout_id IS NOT NULL)
       ORDER BY id FOR UPDATE`;
-    const open = payouts
-      .filter((payout) => payout.status === 'requested' || payout.status === 'held')
-      .map(({ id }) => id);
+    const open = payouts.filter(({ status }) => isPayoutOpenToBlock(status)).map(({ id }) => id);
     const commissions = await tx.$queryRaw<{ id: string; payoutId: string | null }[]>`
       SELECT id, payout_id AS "payoutId" FROM commissions
       WHERE wedding_id = ${weddingId}::uuid AND status IN ('pending', 'available')
       ORDER BY id FOR UPDATE`;
     const blockable = commissions.filter(
-      (commission) => commission.payoutId === null || open.includes(commission.payoutId),
+      ({ payoutId }) => payoutId === null || open.includes(payoutId),
     );
     if (blockable.length === 0) return;
     await tx.commission.updateMany({
@@ -129,7 +131,7 @@ export class PrismaWeddingBlocks implements WeddingBlocks {
     const held = [...new Set(blockable.flatMap(({ payoutId }) => (payoutId ? [payoutId] : [])))];
     if (held.length > 0)
       await tx.payout.updateMany({
-        where: { id: { in: held }, status: { in: ['requested', 'held'] } },
+        where: { id: { in: held }, status: { in: [...BLOCKABLE_PAYOUT_STATUSES] } },
         data: { status: 'held', holdReason: 'commission_blocked' },
       });
   }

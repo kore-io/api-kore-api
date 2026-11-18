@@ -58,3 +58,15 @@ export function newCommission(input: CommissionInput): NewCommission {
     };
   return { kind: 'create', baseAmountCents, amountCents, status: 'pending', blockReason: null };
 }
+
+/**
+ * Onde uma comissão `pending` ou `available` ainda pode ser bloqueada (B10-4;
+ * decisões 282(3) e 286): fora de repasse ou num repasse pedido ou retido. A
+ * de um repasse em processamento ou pago segue o Pix (Repasse B6-4). Uma regra
+ * só para o Bloquear comissão do Admin, o bloqueio do casamento e o fim da
+ * contestação com o casamento bloqueado.
+ */
+export const BLOCKABLE_PAYOUT_STATUSES = ['requested', 'held'] as const;
+
+export const isPayoutOpenToBlock = (payoutStatus: string | null): boolean =>
+  payoutStatus === null || (BLOCKABLE_PAYOUT_STATUSES as readonly string[]).includes(payoutStatus);

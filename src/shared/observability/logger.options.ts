@@ -21,7 +21,12 @@ export function serializeRequest(request: RoutedRequest | { raw: RoutedRequest }
   // O pino-http entrega o pedido embrulhado pelo pino-std-serializers ({ raw }).
   const raw = 'raw' in request ? request.raw : request;
   const path = raw.route?.path;
-  const route = path && !path.includes('*') ? `${raw.baseUrl ?? ''}${path}` : '(unmatched)';
+  // Sempre texto hoje (o Nest registra um caminho por rota); a guarda deixa
+  // explícito, para uma rota por expressão regular não quebrar a linha do log.
+  const route =
+    typeof path === 'string' && path !== '' && !path.includes('*')
+      ? `${raw.baseUrl ?? ''}${path}`
+      : '(unmatched)';
   return { method: raw.method, route };
 }
 
