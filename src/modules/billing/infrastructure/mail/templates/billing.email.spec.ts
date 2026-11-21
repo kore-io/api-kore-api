@@ -86,25 +86,45 @@ describe('Os avisos de saída do ar (Data de saída do ar RN03; textos da Pena)'
   const url = 'http://localhost:5173/app/cobranca';
   const partnerNames: [string, string] = ['Ana', 'Marcos'];
 
-  it('RN03 - antes da data: assunto, pré-cabeçalho, corpo com o preço da regra e Adiar a data', () => {
-    const email = endDateSoonEmail({
+  const soon = (daysLeft: number) =>
+    endDateSoonEmail({
       notice: {
         to: 'ana@kore.local',
         firstName: 'Ana',
         endDate: '2027-02-14',
+        daysLeft,
         monthlyCents: 2900,
         partnerNames,
       },
       url,
     });
+
+  it('RN03 - antes da data: assunto, pré-cabeçalho, corpo com o preço da regra e Adiar a data', () => {
+    const email = soon(7);
     expect(email.subject).toBe('O site fica no ar até 14 de fev.');
     expect(email.html).toContain('Adiem a data para mantê-lo no ar.');
-    expect(email.text).toContain('Olá, Ana!');
+    expect(email.text).toContain('Olá, Ana.');
     expect(email.text).toContain(
       'O site de vocês fica no ar até 14 de fev. Depois dessa data, ele fica mais 7 dias no ar e então sai do ar.',
     );
     expect(email.text).toContain('Para manter o site, adiem a data. Cada mês a mais custa R$ 29.');
     expect(email.text).toContain(`Adiar a data: ${url}`);
+    // Dos dias 7 a 2, o e-mail diz só a data ("daqui a" é só da central).
+    expect(soon(2).subject).toBe('O site fica no ar até 14 de fev.');
+    expect(soon(2).text).not.toMatch(/amanhã|daqui a/);
+  });
+
+  it('RN03 e decisão 298(2) - com daysLeft = 1, "amanhã, 14 de fev." no assunto e na 1ª frase; o resto igual', () => {
+    const email = soon(1);
+    const seven = soon(7);
+    expect(email.subject).toBe('O site fica no ar até amanhã, 14 de fev.');
+    expect(email.text.split('\n\n')).toEqual([
+      'Olá, Ana.',
+      'O site de vocês fica no ar até amanhã, 14 de fev. Depois dessa data, ele fica mais 7 dias no ar e então sai do ar.',
+      ...seven.text.split('\n\n').slice(2),
+    ]);
+    expect(email.html).toContain('Adiem a data para mantê-lo no ar.');
+    expect(email.text).not.toContain('daqui a');
   });
 
   it('RN03 - 1º e 5º dia: o último dia no ar, sem a palavra carência', () => {

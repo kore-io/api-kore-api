@@ -218,6 +218,7 @@ export class PayoutDataUseCases {
           message: pixKeyChangeConfirmedEmail({
             to: recipient.email,
             firstName: recipient.firstName,
+            keyMasked: result.keyMasked,
             activeFrom: result.activeFrom,
             url: `${this.appUrl}${PAYOUT_DATA_PATH}`,
           }),

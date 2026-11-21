@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { RevertExpiredCoupleInvitations } from '@/modules/access/application/weddings/revert-expired-couple-invitations.use-case';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import { PrismaService } from '@/shared/database/prisma.service';
 import { createTestApp } from '../support/harness/create-test-app';
 import { createTestWorker } from '../support/harness/create-test-worker';
 import { seedInvitation } from '../support/factories/invitations';
@@ -197,5 +198,60 @@ describe('Aguardando o casal volta a rascunho sem convite (decisão 297; banco r
     await seedInvitation({ db, weddingId, kind: 'couple', email: null, invitedByUserId: userId });
     expect(await revert()).toBe(false);
     expect(await status(weddingId)).toBe('awaiting_couple');
+  });
+
+  it('decisão 297 (sugestão do Crivo) - pela API (kore_app), um p_now adiantado não vence o link no prazo; pela rotina, o relógio injetado vale', async () => {
+    const { userId, weddingId } = await plannerWedding();
+    await db.wedding.update({ where: { id: weddingId }, data: { status: 'awaiting_couple' } });
+    await seedInvitation({
+      db,
+      weddingId,
+      kind: 'couple',
+      email: null,
+      invitedByUserId: userId,
+      expiresAt: new Date(Date.now() + 2 * DAY_MS),
+    });
+    const ahead = new Date(Date.now() + 10 * DAY_MS);
+
+    const [api] = await app.get(PrismaService).$queryRaw<{ reverted: boolean }[]>`
+      SELECT revert_awaiting_couple(${weddingId}::uuid, 'revoked', ${ahead}::timestamptz) AS reverted`;
+    expect(api.reverted).toBe(false);
+    expect(await status(weddingId)).toBe('awaiting_couple');
+
+    const [routineRow] = await db.$queryRaw<{ reverted: boolean }[]>`
+      SELECT revert_awaiting_couple(${weddingId}::uuid, 'expired', ${ahead}::timestamptz) AS reverted`;
+    expect(routineRow.reverted).toBe(true);
+    expect(await status(weddingId)).toBe('draft');
+  });
+
+  it('decisão 297 (sugestão do Crivo) - cancelar o convite de colaboradora não volta a rascunho, mesmo com o link do casal vencido; a rotina volta, com cause expired', async () => {
+    const { userId, cookie, weddingId } = await plannerWedding();
+    await db.wedding.update({ where: { id: weddingId }, data: { status: 'awaiting_couple' } });
+    const expiresAt = new Date(Date.now() - 60_000);
+    await seedInvitation({
+      db,
+      weddingId,
+      kind: 'couple',
+      email: null,
+      invitedByUserId: userId,
+      expiresAt,
+    });
+    const planner = await seedInvitation({
+      db,
+      weddingId,
+      kind: 'planner',
+      email: email('outra'),
+      invitedByUserId: userId,
+      expiresAt: new Date(Date.now() + 30 * DAY_MS),
+    });
+
+    await cancel(cookie, weddingId, planner.invitationId).expect(204);
+    expect(await status(weddingId)).toBe('awaiting_couple');
+    expect(await reverts(weddingId)).toEqual([]);
+
+    expect(await routine.execute({ now: new Date(), weddingId })).toEqual({ reverted: 1 });
+    expect(await reverts(weddingId)).toEqual([
+      expect.objectContaining({ actorKind: 'system', data: { cause: 'expired' } }),
+    ]);
   });
 });

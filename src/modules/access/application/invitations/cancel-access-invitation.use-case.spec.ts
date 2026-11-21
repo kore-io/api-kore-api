@@ -13,6 +13,7 @@ import type { WeddingAuthorization } from '@/modules/access/application/services
 const now = new Date('2026-11-10T00:00:00Z');
 const pending: StoredInvitation = {
   id: 'i1',
+  role: 'owner',
   invitedByUserId: 'u-juliana',
   expiresAt: new Date('2026-12-01T00:00:00Z'),
   acceptedAt: null,
@@ -53,6 +54,18 @@ describe('CancelAccessInvitation (DELETE /v1/weddings/{weddingId}/access-invitat
     expect(store.touchActivity).toHaveBeenCalledWith({ weddingId: 'w1', now });
     // Decisão 297: sem outro convite de dono pendente, volta a rascunho.
     expect(store.revertAwaitingCouple).toHaveBeenCalledWith({ weddingId: 'w1', now });
+  });
+
+  it('decisão 297 - cancelar o convite de colaboradora não chama a volta a rascunho', async () => {
+    const { useCase, store } = setup({
+      invitation: { ...pending, role: 'collaborator' },
+      role: 'collaborator',
+    });
+
+    await useCase.execute({ ...input, userId: 'u-juliana' });
+
+    expect(store.revoke).toHaveBeenCalledWith({ invitationId: 'i1', now });
+    expect(store.revertAwaitingCouple).not.toHaveBeenCalled();
   });
 
   it('RN05 - um colaborador que não enviou não cancela (403)', async () => {

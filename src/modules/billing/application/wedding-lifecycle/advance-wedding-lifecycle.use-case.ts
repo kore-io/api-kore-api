@@ -96,6 +96,7 @@ export class AdvanceWeddingLifecycle {
                   to: recipient.email,
                   firstName: recipient.firstName,
                   endDate: due.endDate,
+                  daysLeft: due.daysLeft,
                   monthlyCents: CURRENT_PRICE_TABLE.monthlyCents,
                   partnerNames,
                 },

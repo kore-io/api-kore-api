@@ -147,7 +147,11 @@ export function refundCompletedEmail({
 const OWNER_FOOTER = (partnerNames: [string, string]) =>
   `Você recebeu este e-mail porque o casamento de ${partnerNames[0]} e ${partnerNames[1]} é seu no Kore.`;
 
-/** Antes da data de saída do ar (Data de saída do ar RN03; textos da Pena). */
+/**
+ * Antes da data de saída do ar (Data de saída do ar RN03; textos da Pena). Com
+ * 1 dia até a data, "amanhã, 14 de fev." no assunto e na 1ª frase (decisão
+ * 298(2)); dos dias 7 a 2, só a data. Saudação com ponto (decisão 302(3)).
+ */
 export function endDateSoonEmail({
   notice,
   url,
@@ -155,13 +159,14 @@ export function endDateSoonEmail({
   notice: EndDateSoonNotice;
   url: string;
 }): EmailMessage {
-  const until = formatShortDay(notice.endDate);
+  const day = formatShortDay(notice.endDate);
+  const until = notice.daysLeft === 1 ? `amanhã, ${day}` : day;
   return message({
     to: notice.to,
     subject: `O site fica no ar até ${until}`,
     preheader: 'Adiem a data para mantê-lo no ar.',
     blocks: [
-      { kind: 'paragraph', text: `Olá, ${notice.firstName}!` },
+      { kind: 'paragraph', text: `Olá, ${notice.firstName}.` },
       {
         kind: 'paragraph',
         text: `O site de vocês fica no ar até ${until} Depois dessa data, ele fica mais 7 dias no ar e então sai do ar.`,

@@ -135,6 +135,7 @@ export class PrismaAccessInvitationStore implements AccessInvitationStore {
       where: { id: invitationId, weddingId },
       select: {
         id: true,
+        role: true,
         invitedByUserId: true,
         expiresAt: true,
         acceptedAt: true,

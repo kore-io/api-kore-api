@@ -91,7 +91,7 @@ describe('Dados para receber: CPF ou CNPJ e chave Pix (Repasse RN02 e RN03; banc
       keyType: 'email',
       key: 'juliana@pradoassessoria.com.br',
     }).expect(201);
-    const { token } = await linkFromEmail(person.email, 'Confirme a sua chave Pix');
+    const { token } = await linkFromEmail(person.email, 'Confirme sua chave Pix');
     await confirmKey(person.cookie, token!).expect(200);
   }
 
@@ -210,8 +210,8 @@ describe('Dados para receber: CPF ou CNPJ e chave Pix (Repasse RN02 e RN03; banc
     expect(requested.body).toMatchObject({ firstKey: true });
     expect(requested.body.emailMasked).toMatch(/^.{1,3}\*\*\*@kore\.local$/);
 
-    const email = await linkFromEmail(person.email, 'Confirme a sua chave Pix');
-    expect(email.subject).toBe('Confirme a sua chave Pix');
+    const email = await linkFromEmail(person.email, 'Confirme sua chave Pix');
+    expect(email.subject).toBe('Confirme sua chave Pix');
     expect(email.text).toContain('jul***@pradoassessoria.com.br');
     expect(email.text).not.toContain('juliana@pradoassessoria.com.br');
     expect(email.text).toContain('/dados-para-receber/confirmar?token=');
@@ -247,7 +247,7 @@ describe('Dados para receber: CPF ou CNPJ e chave Pix (Repasse RN02 e RN03; banc
   it('RN03 - o link vencido: PIX_KEY_LINK_EXPIRED', async () => {
     const person = await juliana();
     await requestKey(person.cookie, { keyType: 'random', key: uuidV7() }).expect(201);
-    const { token } = await linkFromEmail(person.email, 'Confirme a sua chave Pix');
+    const { token } = await linkFromEmail(person.email, 'Confirme sua chave Pix');
     await db.referrerPixKey.updateMany({
       where: { referrerId: person.referrerId, status: 'pending_confirmation' },
       data: { confirmExpiresAt: new Date(Date.now() - 1_000) },
@@ -283,9 +283,12 @@ describe('Dados para receber: CPF ou CNPJ e chave Pix (Repasse RN02 e RN03; banc
     expect(confirmed.body.status).toBe('pending_activation');
     const activeFrom = new Date(confirmed.body.activeFrom);
     expect(Math.abs(activeFrom.getTime() - Date.now() - 48 * HOUR)).toBeLessThan(60_000);
-    expect((await linkFromEmail(person.email, 'Troca da chave Pix confirmada')).subject).toBe(
-      'Troca da chave Pix confirmada',
-    );
+    const confirmedEmail = await linkFromEmail(person.email, 'Troca da chave Pix confirmada');
+    expect(confirmedEmail.subject).toBe('Troca da chave Pix confirmada');
+    // Decisão 302(2): a chave nova mascarada e a espera dos repasses, sem a chave inteira.
+    expect(confirmedEmail.text).toContain('A nova chave Pix (19) 9****-3310 vale a partir de');
+    expect(confirmedEmail.text).toContain('Até lá, os repasses ficam em espera.');
+    expect(confirmedEmail.text).not.toContain('99876-3310');
     expect(await db.payout.findUniqueOrThrow({ where: { id: payout.id } })).toMatchObject({
       status: 'held',
       holdReason: 'pix_key_change',
