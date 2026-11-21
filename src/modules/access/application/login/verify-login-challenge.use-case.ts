@@ -34,6 +34,33 @@ import {
 
 const logger = new Logger('VerifyLoginChallenge');
 
+/**
+ * O aviso de quando o login_abuse não grava (decisão 304): o nome do erro, o
+ * código do Prisma (ex. P2028, a transação que passou do tempo; P2010, o SQL cru) e o SQLSTATE
+ * do Postgres (ex. 40P01, deadlock), quando houver, para achar a causa da
+ * falha perdida. O adaptador do pg põe o SQLSTATE em `cause.originalCode` nos
+ * erros que classifica (o deadlock vira TransactionWriteConflict) e em
+ * `cause.code` nos crus; lê os dois. Lido pela forma do erro, sem depender do
+ * Prisma; sem mensagem, e-mail nem IP.
+ */
+export function loginAbuseNotRecordedMessage({ error }: { error: unknown }): string {
+  const shape = (error ?? {}) as {
+    name?: unknown;
+    code?: unknown;
+    meta?: { driverAdapterError?: { cause?: { code?: unknown; originalCode?: unknown } } };
+  };
+  const name = typeof shape.name === 'string' ? shape.name : 'Error';
+  const cause = shape.meta?.driverAdapterError?.cause;
+  const codes = [
+    ...new Set(
+      [shape.code, cause?.originalCode, cause?.code].filter(
+        (code): code is string => typeof code === 'string',
+      ),
+    ),
+  ];
+  return `login_abuse sem registro: ${name}${codes.length ? ` (${codes.join(', ')})` : ''}`;
+}
+
 export type LoginCredentials = { email: string; code: string } | { token: string };
 
 type CodeCheck =
@@ -156,7 +183,7 @@ export class VerifyLoginChallenge {
     // Uma falha do monitor não troca a resposta do login (o 401 ou o 410) por 500.
     if (check.outcome === 'wrong' || check.outcome === 'locked')
       await this.abuse.recordFailure({ email, ip, now }).catch((error: unknown) => {
-        logger.warn(`login_abuse sem registro: ${(error as Error).name}`);
+        logger.warn(loginAbuseNotRecordedMessage({ error }));
       });
 
     switch (check.outcome) {

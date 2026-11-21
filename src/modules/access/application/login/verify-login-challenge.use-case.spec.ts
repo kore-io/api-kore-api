@@ -1,3 +1,5 @@
+import { Logger } from '@nestjs/common';
+import { Prisma } from '@/generated/prisma/client';
 import {
   InvalidLoginCodeError,
   LoginChallengeExpiredError,
@@ -11,7 +13,10 @@ import type {
   LoginChallengeTransaction,
 } from '@/modules/access/application/ports/login-challenge-store.port';
 import type { LoginCodeMailer } from '@/modules/access/application/ports/login-code-mailer.port';
-import { VerifyLoginChallenge } from './verify-login-challenge.use-case';
+import {
+  loginAbuseNotRecordedMessage,
+  VerifyLoginChallenge,
+} from './verify-login-challenge.use-case';
 
 const now = new Date('2026-11-05T13:00:00.000Z');
 const minutesAgo = (minutes: number) => new Date(now.getTime() - minutes * 60_000);
@@ -128,6 +133,63 @@ describe('VerifyLoginChallenge', () => {
     recordFailure.mockRejectedValueOnce(new Error('backoffice fora'));
     await expect(useCase.execute(byCode('000000'))).rejects.toEqual(
       new InvalidLoginCodeError({ attemptsLeft: 4 }),
+    );
+  });
+
+  it('decisão 304 - o aviso do login_abuse sem registro leva o código do Prisma e o SQLSTATE, sem e-mail', async () => {
+    const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+    try {
+      const { useCase, recordFailure } = build({ attemptsAfterFailure: 1 });
+      recordFailure.mockRejectedValueOnce(
+        new Prisma.PrismaClientKnownRequestError('deadlock detected', {
+          code: 'P2010',
+          clientVersion: 'test',
+          // Como o adaptador do pg entrega o deadlock: classificado, com o SQLSTATE em originalCode.
+          meta: {
+            driverAdapterError: {
+              cause: {
+                kind: 'TransactionWriteConflict',
+                originalCode: '40P01',
+                originalMessage: 'deadlock detected',
+              },
+            },
+          },
+        }),
+      );
+      await expect(useCase.execute(byCode('000000'))).rejects.toBeInstanceOf(InvalidLoginCodeError);
+      expect(warn).toHaveBeenCalledWith(
+        'login_abuse sem registro: PrismaClientKnownRequestError (P2010, 40P01)',
+      );
+      expect(JSON.stringify(warn.mock.calls)).not.toMatch(/@|deadlock detected/);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('decisão 304 - sem código no erro, o aviso fica só com o nome', () => {
+    expect(loginAbuseNotRecordedMessage({ error: new Error('backoffice fora') })).toBe(
+      'login_abuse sem registro: Error',
+    );
+    expect(
+      loginAbuseNotRecordedMessage({
+        error: new Prisma.PrismaClientKnownRequestError('timeout', {
+          code: 'P2028',
+          clientVersion: 'test',
+        }),
+      }),
+    ).toBe('login_abuse sem registro: PrismaClientKnownRequestError (P2028)');
+    // O erro cru do Postgres (sem classificação) traz o SQLSTATE em cause.code.
+    expect(
+      loginAbuseNotRecordedMessage({
+        error: new Prisma.PrismaClientKnownRequestError('barreira', {
+          code: 'P2010',
+          clientVersion: 'test',
+          meta: { driverAdapterError: { cause: { kind: 'postgres', code: 'KA001' } } },
+        }),
+      }),
+    ).toBe('login_abuse sem registro: PrismaClientKnownRequestError (P2010, KA001)');
+    expect(loginAbuseNotRecordedMessage({ error: undefined })).toBe(
+      'login_abuse sem registro: Error',
     );
   });
 
