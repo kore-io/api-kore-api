@@ -29,9 +29,10 @@ function message({
   return { to, subject, text, html: renderEmailHtml({ preheader, blocks, footer: FOOTER }) };
 }
 
-const hello = (firstName: string | null) => (firstName ? `Olá, ${firstName}!` : 'Olá!');
+/** "Olá, {nome}." com ponto; "Olá!" sem nome (decisão 302(3)). */
+const hello = (firstName: string | null) => (firstName ? `Olá, ${firstName}.` : 'Olá!');
 
-/** "Repasse pago" (Repasse RN08; textos da Pena): só e-mail, sem valor. */
+/** "Repasse pago" (Repasse RN08; textos da Pena, decisão 302(4)): só e-mail, sem valor. */
 export function payoutPaidEmail({
   to,
   firstName,
@@ -44,19 +45,22 @@ export function payoutPaidEmail({
   return message({
     to,
     subject: 'Repasse pago',
-    preheader: 'O Pix foi enviado para a sua chave.',
+    preheader: 'O Pix foi enviado para sua chave.',
     blocks: [
       { kind: 'paragraph', text: hello(firstName) },
       {
         kind: 'paragraph',
-        text: 'O Kore pagou o seu repasse por Pix. O comprovante está no Kore.',
+        text: 'O Kore pagou seu repasse por Pix. O comprovante está em Repasses, no Kore.',
       },
       { kind: 'button', text: 'Ver repasses', href: url },
     ],
   });
 }
 
-/** "Repasse recusado" (Repasse RN07 e RN08; textos da Pena): só e-mail, sem valor. */
+/**
+ * "Repasse recusado" (Repasse RN07 e RN08; textos da Pena, decisão 302(4)): só
+ * e-mail, sem valor; o motivo fica no app.
+ */
 export function payoutRejectedEmail({
   to,
   firstName,
@@ -74,7 +78,7 @@ export function payoutRejectedEmail({
       { kind: 'paragraph', text: hello(firstName) },
       {
         kind: 'paragraph',
-        text: 'O seu pedido de repasse foi recusado. O motivo está no Kore, e as comissões voltaram ao saldo disponível. Você pode pedir de novo agora.',
+        text: 'Seu pedido de repasse foi recusado. Veja o motivo em Repasses: as comissões voltaram ao saldo disponível, e você pode pedir de novo agora.',
       },
       { kind: 'button', text: 'Ver repasses', href: url },
     ],

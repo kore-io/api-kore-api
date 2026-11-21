@@ -106,6 +106,18 @@ describe('Carência, expirado e avisos (Data de saída do ar RN01 a RN03; banco 
     expect(item.payload).toEqual([expect.objectContaining({ daysLeft: 6 })]);
   });
 
+  it('RN03 e decisão 298(2) - com 1 dia até a endDate, o e-mail diz "amanhã" junto da data', async () => {
+    const { ana, weddingId } = await published();
+    expect(await run(weddingId, addDays({ day: endDate, days: -1 }))).toMatchObject({ notices: 1 });
+    const [item] = await billingItems(weddingId);
+    expect(item.payload).toEqual([
+      expect.objectContaining({ kind: 'end_date_soon', endDate, daysLeft: 1 }),
+    ]);
+    const subject = `O site fica no ar até amanhã, ${formatShortDay(endDate)}`;
+    const [email] = await waitForInbox({ to: ana.email, subject });
+    expect(email.Subject).toBe(subject);
+  });
+
   it('RN01 e RN02 - no dia seguinte à endDate entra na carência até endDate + 7, com o aviso do 1º dia', async () => {
     const { ana, weddingId } = await published();
     expect(await run(weddingId, addDays({ day: endDate, days: 1 }))).toMatchObject({ grace: 1 });

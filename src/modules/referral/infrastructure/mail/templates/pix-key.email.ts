@@ -25,34 +25,54 @@ export function formatDayAndHour(at: Date): string {
   return `${day} às ${Number(hour)}h${minute === '00' ? '' : minute}`;
 }
 
-/** A linha de segurança de todos os e-mails da chave (Repasse RN03; Pena). */
-const NOT_YOU = 'Se não foi você, cancele a troca no Kore ou escreva para suporte@kore.com.br.';
-/** O rodapé: por que a pessoa recebe (decisão 244(1); a Pena revisa na fase de Docs). */
-const FOOTER = 'Você recebeu este e-mail porque cadastrou dados para receber no Kore.';
+/**
+ * Cada e-mail da chave tem a sua linha de segurança e o seu rodapé (decisão
+ * 302(2); Pena, tabela 2.6): o "cancele a troca" só onde há troca a cancelar,
+ * e o rodapé neutro, porque o aviso existe para quem não pediu.
+ */
+const NOT_YOU = {
+  firstKey: 'Se não foi você, não use o botão e escreva para suporte@kore.com.br.',
+  change:
+    'Se não foi você, não use o botão. Cancele a troca no Kore ou escreva para suporte@kore.com.br.',
+  changeConfirmed: 'Se não foi você, cancele a troca no Kore ou escreva para suporte@kore.com.br.',
+  changeCanceled: 'Se não foi você, escreva para suporte@kore.com.br.',
+} as const;
+const FOOTER = {
+  firstKey: 'Você recebeu este e-mail porque uma chave Pix foi cadastrada na sua conta do Kore.',
+  changeRequested:
+    'Você recebeu este e-mail porque a troca da chave Pix foi pedida na sua conta do Kore.',
+  changeCanceled:
+    'Você recebeu este e-mail porque a troca da chave Pix foi cancelada na sua conta do Kore.',
+} as const;
 
 function message({
   to,
   subject,
   preheader,
   blocks,
+  notYou,
+  footer,
 }: {
   to: string;
   subject: string;
   preheader: string;
   blocks: EmailBlock[];
+  notYou: string;
+  footer: string;
 }): EmailMessage {
-  const all: EmailBlock[] = [...blocks, { kind: 'paragraph', text: NOT_YOU }];
+  const all: EmailBlock[] = [...blocks, { kind: 'paragraph', text: notYou }];
   const text = [
     ...all.map((block) =>
       block.kind === 'button' ? `${block.text}: ${block.href ?? ''}` : block.text,
     ),
     SUPPORT_LINE,
-    FOOTER,
+    footer,
   ].join('\n\n');
-  return { to, subject, text, html: renderEmailHtml({ preheader, blocks: all, footer: FOOTER }) };
+  return { to, subject, text, html: renderEmailHtml({ preheader, blocks: all, footer }) };
 }
 
-const hello = (firstName: string | null) => (firstName ? `Olá, ${firstName}!` : 'Olá!');
+/** "Olá, {nome}." com ponto; "Olá!" sem nome (decisão 302(3)). */
+const hello = (firstName: string | null) => (firstName ? `Olá, ${firstName}.` : 'Olá!');
 
 /**
  * O link de confirmação (decisão 244(1), (a) e (b) num e-mail só): a primeira
@@ -73,43 +93,55 @@ export function pixKeyConfirmEmail({
 }): EmailMessage {
   return message({
     to,
-    subject: firstKey ? 'Confirme a sua chave Pix' : 'Confirme a troca da chave Pix',
+    subject: firstKey ? 'Confirme sua chave Pix' : 'Confirme a troca da chave Pix',
     preheader: 'O link vale por 30 minutos.',
     blocks: [
       { kind: 'paragraph', text: hello(firstName) },
       {
         kind: 'paragraph',
-        text: `Para confirmar a chave Pix ${keyMasked}, abra o link abaixo. Ele vale por 30 minutos.`,
+        text: firstKey
+          ? `Para confirmar a chave Pix ${keyMasked}, use o botão abaixo. Ele vale por 30 minutos.`
+          : `Para confirmar a troca para a chave Pix ${keyMasked}, use o botão abaixo. Ele vale por 30 minutos.`,
       },
-      { kind: 'button', text: 'Confirmar chave Pix', href: url },
+      { kind: 'button', text: firstKey ? 'Confirmar chave Pix' : 'Confirmar a troca', href: url },
     ],
+    notYou: firstKey ? NOT_YOU.firstKey : NOT_YOU.change,
+    footer: firstKey ? FOOTER.firstKey : FOOTER.changeRequested,
   });
 }
 
-/** A troca confirmada (decisão 244(1), (c)): a nova chave vale 48 h depois. */
+/**
+ * A troca confirmada (decisão 244(1), (c)): a nova chave vale 48 h depois. Traz
+ * a chave nova mascarada, para quem não pediu reconhecê-la, e a espera dos
+ * repasses (decisão 302(2)); o pré-cabeçalho não leva a chave.
+ */
 export function pixKeyChangeConfirmedEmail({
   to,
   firstName,
+  keyMasked,
   activeFrom,
   url,
 }: {
   to: string;
   firstName: string | null;
+  keyMasked: string;
   activeFrom: Date;
   url: string;
 }): EmailMessage {
   return message({
     to,
     subject: 'Troca da chave Pix confirmada',
-    preheader: `A nova chave vale a partir de ${formatDayAndHour(activeFrom)}.`,
+    preheader: 'Até lá, os repasses ficam em espera.',
     blocks: [
       { kind: 'paragraph', text: hello(firstName) },
       {
         kind: 'paragraph',
-        text: `A nova chave vale a partir de ${formatDayAndHour(activeFrom)}.`,
+        text: `A nova chave Pix ${keyMasked} vale a partir de ${formatDayAndHour(activeFrom)}. Até lá, os repasses ficam em espera.`,
       },
       { kind: 'button', text: 'Ver dados para receber', href: url },
     ],
+    notYou: NOT_YOU.changeConfirmed,
+    footer: FOOTER.changeRequested,
   });
 }
 
@@ -132,5 +164,7 @@ export function pixKeyChangeCanceledEmail({
       { kind: 'paragraph', text: 'A chave atual continua valendo.' },
       { kind: 'button', text: 'Ver dados para receber', href: url },
     ],
+    notYou: NOT_YOU.changeCanceled,
+    footer: FOOTER.changeCanceled,
   });
 }

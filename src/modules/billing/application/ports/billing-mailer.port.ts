@@ -26,6 +26,8 @@ export interface EndDateSoonNotice {
   firstName: string;
   /** AAAA-MM-DD. */
   endDate: string;
+  /** Dias de hoje (no fuso do casamento) até a endDate; com 1, o "amanhã" (decisão 298(2)). */
+  daysLeft: number;
   /** O preço do mês a mais, da regra (o "R$ 29" do texto). */
   monthlyCents: number;
   partnerNames: [string, string];
