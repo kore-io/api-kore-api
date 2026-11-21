@@ -1,4 +1,5 @@
 import { SUPPORT_SESSION_STORE } from './application/ports/support-session.store.port';
+import { ipFailureLimitProviders } from '@/shared/rate-limit/ip-failure-limit';
 import { PrismaSupportSessionStore } from './infrastructure/backoffice/prisma-support-session.store';
 import { SupportContextInterceptor } from './presentation/http/interceptors/support-context.interceptor';
 import { SupportSessionGuard } from './presentation/http/guards/support-session.guard';
@@ -218,6 +219,7 @@ import { TenantTransactionInterceptor } from './presentation/http/interceptors/t
     ListWeddingMembers,
     RemoveMembership,
     GetReferral,
+    ...ipFailureLimitProviders,
     SuggestSlug,
     CheckSlugAvailability,
     CreateWedding,

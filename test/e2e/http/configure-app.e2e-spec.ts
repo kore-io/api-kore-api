@@ -63,6 +63,24 @@ describe('configureApp', () => {
       .expect(201, { name: 'Ana' });
   });
 
+  it('decisão 306(3) - sem X-Powered-By e com X-Content-Type-Options: nosniff, no acerto, no erro, na rota que não existe e no preflight', async () => {
+    const responses = [
+      await request(app.getHttpServer()).post('/v1/echo').send({ name: 'Ana' }).expect(201),
+      await request(app.getHttpServer()).post('/v1/echo').send({}).expect(400),
+      await request(app.getHttpServer()).get('/v1/nao-existe').expect(404),
+      await request(app.getHttpServer())
+        .options('/v1/echo')
+        .set('Origin', APP_ORIGIN)
+        .set('Access-Control-Request-Method', 'POST')
+        .expect(204),
+    ];
+
+    for (const response of responses) {
+      expect(response.headers['x-powered-by']).toBeUndefined();
+      expect(response.headers['x-content-type-options']).toBe('nosniff');
+    }
+  });
+
   it('dado um campo inesperado no corpo, quando chama a rota, então responde 400 no formato nativo com errors (decisões 97 e 190)', async () => {
     const response = await request(app.getHttpServer())
       .post('/v1/echo')

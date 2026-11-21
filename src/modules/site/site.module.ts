@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ipFailureLimitProviders } from '@/shared/rate-limit/ip-failure-limit';
 import { SiteImageRateLimitGuard } from '@/shared/rate-limit/user-rate-limit.guard';
 import { AccessModule } from '@/modules/access/access.module';
 import { AuthorizeSiteImageUpload } from './application/images/authorize-site-image-upload.use-case';
@@ -71,6 +72,7 @@ import { SiteImagesController } from './presentation/controllers/site-images.con
     GetPublicSite,
     { provide: PARTY_COOKIES, useClass: HmacPartyCookies },
     PartyLinkFailures,
+    ...ipFailureLimitProviders,
     { provide: PARTY_VISITS, useClass: PrismaPartyVisits },
     StartPartySession,
     { provide: PREVIEW_COOKIES, useClass: HmacPreviewCookies },

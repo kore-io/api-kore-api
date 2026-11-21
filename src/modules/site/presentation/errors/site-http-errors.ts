@@ -16,6 +16,7 @@ import {
   SitePartyNotFoundError,
   SiteSlugMissingError,
   PartyLinkRateLimitedError,
+  SiteLookupRateLimitedError,
   SiteLinkInvalidError,
   SiteDraftError,
   SiteExpiredError,
@@ -100,7 +101,7 @@ export function toHttpError(error: unknown): unknown {
       message: 'This link no longer works.',
     });
   }
-  if (error instanceof PartyLinkRateLimitedError) {
+  if (error instanceof PartyLinkRateLimitedError || error instanceof SiteLookupRateLimitedError) {
     return new HttpException(
       { statusCode: 429, error: 'RATE_LIMITED', message: 'Too many requests.' },
       HttpStatus.TOO_MANY_REQUESTS,

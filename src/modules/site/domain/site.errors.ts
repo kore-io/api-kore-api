@@ -136,6 +136,11 @@ export class PartyLinkRateLimitedError extends Error {
   override name = 'PartyLinkRateLimitedError';
 }
 
+/** Falhas demais do mesmo IP na leitura do site (429 RATE_LIMITED; decisão 306(2)). */
+export class SiteLookupRateLimitedError extends Error {
+  override name = 'SiteLookupRateLimitedError';
+}
+
 /** O casamento ainda não tem endereço (409 SITE_SLUG_MISSING; Pré-visualização RN01). */
 export class SiteSlugMissingError extends Error {
   override name = 'SiteSlugMissingError';
