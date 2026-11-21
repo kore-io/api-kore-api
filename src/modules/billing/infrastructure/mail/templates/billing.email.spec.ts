@@ -23,7 +23,7 @@ describe('E-mail de pagamento confirmado (Publicar e pagar RN13; textos da Pena)
   it('RN13 - assunto, pré-cabeçalho e corpo da Pena', () => {
     expect(email.subject).toBe('Pagamento confirmado. O site está no ar');
     expect(email.html).toContain('Ele fica no ar até 14 de fev. de 2027.');
-    expect(email.text).toContain('Olá, Ana!');
+    expect(email.text).toContain('Olá, Ana.');
     expect(email.text).toContain(
       'O pagamento foi confirmado e o site de vocês já está no ar até 14 de fev. de 2027.',
     );
@@ -72,7 +72,7 @@ describe('E-mail do reembolso concluído (Pagamentos e arrependimento RN07; text
   it('RN07 - assunto, pré-cabeçalho, corpo e botão da Pena, sem valor', () => {
     expect(email.subject).toBe('Reembolso concluído');
     expect(email.html).toContain('O valor foi devolvido pela mesma forma de pagamento.');
-    expect(email.text).toContain('Olá, Ana!');
+    expect(email.text).toContain('Olá, Ana.');
     expect(email.text).toContain(
       'O reembolso foi concluído. O valor foi devolvido pela mesma forma de pagamento: no cartão, ele aparece numa das próximas faturas.',
     );

@@ -17,7 +17,7 @@ describe('purgeSoonEmail (Retenção e expurgo RN02; textos da Pena)', () => {
     });
     expect(message.subject).toBe('Os dados do casamento serão apagados em 30 dias');
     expect(message.html).toContain('Renovem o site ou exportem os convidados antes de 22 de ago.');
-    expect(message.text).toContain('Olá, Ana!');
+    expect(message.text).toContain('Olá, Ana.');
     expect(message.text).toContain(
       'O site de vocês está fora do ar desde 22 de fev. Em 22 de ago., os convidados, as respostas e o site serão apagados.',
     );

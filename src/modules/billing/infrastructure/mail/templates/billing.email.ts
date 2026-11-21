@@ -79,7 +79,7 @@ export function paymentConfirmedEmail({
     subject: 'Pagamento confirmado. O site está no ar',
     preheader: `Ele fica no ar até ${until}.`,
     blocks: [
-      { kind: 'paragraph', text: `Olá, ${notice.firstName}!` },
+      { kind: 'paragraph', text: `Olá, ${notice.firstName}.` },
       {
         kind: 'paragraph',
         text: `O pagamento foi confirmado e o site de vocês já está no ar até ${until}.`,
@@ -133,7 +133,7 @@ export function refundCompletedEmail({
     subject: 'Reembolso concluído',
     preheader: 'O valor foi devolvido pela mesma forma de pagamento.',
     blocks: [
-      { kind: 'paragraph', text: `Olá, ${notice.firstName}!` },
+      { kind: 'paragraph', text: `Olá, ${notice.firstName}.` },
       {
         kind: 'paragraph',
         text: 'O reembolso foi concluído. O valor foi devolvido pela mesma forma de pagamento: no cartão, ele aparece numa das próximas faturas.',
@@ -261,7 +261,7 @@ export function purgeSoonEmail({
     subject: 'Os dados do casamento serão apagados em 30 dias',
     preheader: `Renovem o site ou exportem os convidados antes de ${purgeDay}`,
     blocks: [
-      { kind: 'paragraph', text: `Olá, ${notice.firstName}!` },
+      { kind: 'paragraph', text: `Olá, ${notice.firstName}.` },
       {
         kind: 'paragraph',
         text: `O site de vocês está fora do ar desde ${formatShortDay(notice.expiredAt)} Em ${purgeDay}, os convidados, as respostas e o site serão apagados.`,

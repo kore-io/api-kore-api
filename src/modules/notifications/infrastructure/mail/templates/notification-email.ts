@@ -314,7 +314,7 @@ export function commissionAvailableEmail({
   settingsUrl: string;
 }): EmailMessage {
   const blocks: EmailBlock[] = [
-    { kind: 'paragraph', text: firstName ? `Olá, ${firstName}!` : 'Olá!' },
+    { kind: 'paragraph', text: firstName ? `Olá, ${firstName}.` : 'Olá!' },
     {
       kind: 'paragraph',
       text: 'Uma comissão ficou disponível. Veja o valor e peça o repasse no Kore.',

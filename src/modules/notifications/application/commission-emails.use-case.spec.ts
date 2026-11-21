@@ -72,7 +72,7 @@ describe('O e-mail de comissão disponível (Comissões do indicador RN09; decis
       settingsUrl: 'http://app/cerimonialista/configuracoes/notificacoes',
     });
     expect(message.subject).toBe('Você tem comissão disponível');
-    expect(message.text).toContain('Olá, Juliana!');
+    expect(message.text).toContain('Olá, Juliana.');
     expect(message.text).toContain(
       'Uma comissão ficou disponível. Veja o valor e peça o repasse no Kore.',
     );

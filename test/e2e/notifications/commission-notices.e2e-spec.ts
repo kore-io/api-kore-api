@@ -126,7 +126,7 @@ describe('Comissão disponível: central, push e e-mail (Comissões RN09; decis�
     const [mail] = await waitForInbox({ to: juliana.address });
     expect(mail.Subject).toBe('Você tem comissão disponível');
     const body = await text(mail.ID);
-    expect(body).toContain('Olá, Juliana!');
+    expect(body).toContain('Olá, Juliana.');
     expect(body).toContain('Uma comissão ficou disponível. Veja o valor e peça o repasse no Kore.');
     expect(body).toContain('/cerimonialista/comissoes');
     expect(body).not.toMatch(/R\$/);
