@@ -64,6 +64,12 @@ describe('E-mail das respostas (E-mail e push RN02 a RN06)', () => {
     const many = immediateEmail({ context: context([moreira, duarte]) });
     expect(many.subject).toBe('2 grupos responderam o convite');
     expect(many.text).toContain('Olá, Ana.');
+    // Decisão 302(3) e Pena 2.1: sem nome, "Olá!" (no "Na hora" e no resumo do casal).
+    for (const email of [
+      immediateEmail({ context: { ...context([moreira]), firstName: null } }),
+      digestEmail({ context: { ...context([moreira]), firstName: null } }),
+    ])
+      expect(email.text.split('\n\n')[0]).toBe('Olá!');
     expect(many.text).toContain('Chegaram respostas ao convite do casamento de vocês:');
     expect(many.text).toContain('Família Duarte: 2 confirmados, 1 recusado');
     expect(many.text).toContain('Ver a lista de convidados: http://localhost:5173/app/convidados');
@@ -135,7 +141,8 @@ describe('Os e-mails da cerimonialista (Notificações da cerimonialista RN07; P
       },
     });
     expect(one.subject).toBe('1 grupo respondeu em Ana e Marcos');
-    expect(one.text).toContain('Olá.\n\n1 grupo respondeu o convite de Ana e Marcos.');
+    // Decisão 302(3) e Pena 2.1: sem nome, "Olá!".
+    expect(one.text).toContain('Olá!\n\n1 grupo respondeu o convite de Ana e Marcos.');
   });
 
   it('Resumo agrupado: um bloco por casamento, com as respostas e o "Site publicado"', () => {
@@ -159,14 +166,15 @@ describe('Os e-mails da cerimonialista (Notificações da cerimonialista RN07; P
     );
     expect(email.text).toContain('Abrir Meus casamentos: http://app/cerimonialista');
     expect(email.text).toContain('Você recebe este resumo porque escolheu o resumo diário.');
-    expect(
-      plannerDigestEmail({
-        to: 'j@x.com',
-        firstName: null,
-        blocks: [{ partnerNames: ['Ana', 'Marcos'], groupCount: 0, published: true }],
-        homeUrl: 'h',
-        settingsUrl: 's',
-      }).subject,
-    ).toBe('Resumo do dia: novidades em 1 casamento');
+    const unnamed = plannerDigestEmail({
+      to: 'j@x.com',
+      firstName: null,
+      blocks: [{ partnerNames: ['Ana', 'Marcos'], groupCount: 0, published: true }],
+      homeUrl: 'h',
+      settingsUrl: 's',
+    });
+    expect(unnamed.subject).toBe('Resumo do dia: novidades em 1 casamento');
+    // Decisão 302(3) e Pena 2.1: sem nome, "Olá!".
+    expect(unnamed.text.split('\n\n')[0]).toBe('Olá!');
   });
 });
