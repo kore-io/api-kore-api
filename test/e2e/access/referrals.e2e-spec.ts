@@ -115,6 +115,9 @@ describe('GET /v1/referrals/{code} (Cadastro, RN08 e RN09; banco real)', () => {
       error: 'RATE_LIMITED',
       message: 'Too many requests.',
     });
+    // Decisão 306(3), na pilha inteira: sem a marca do Express, com o nosniff.
+    expect(blocked.headers['x-powered-by']).toBeUndefined();
+    expect(blocked.headers['x-content-type-options']).toBe('nosniff');
     await get('nao-existe-0', crowded).expect(429);
     await get(referralCode, ip()).expect(200);
   });
