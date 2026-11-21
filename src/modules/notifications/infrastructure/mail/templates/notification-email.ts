@@ -112,7 +112,7 @@ function message({
   footer: string;
 }): EmailMessage {
   const blocks: EmailBlock[] = [
-    { kind: 'paragraph', text: context.firstName ? `Olá, ${context.firstName}.` : 'Olá.' },
+    { kind: 'paragraph', text: context.firstName ? `Olá, ${context.firstName}.` : 'Olá!' },
     { kind: 'paragraph', text: intro },
     ...context.groups.map((group) => ({ kind: 'paragraph' as const, text: groupLine({ group }) })),
     { kind: 'paragraph', text: totalsLine(context.totals) },
@@ -209,7 +209,7 @@ export interface PlannerEmailContext {
 export function plannerImmediateEmail({ context }: { context: PlannerEmailContext }): EmailMessage {
   const couple = coupleLabel(context);
   const blocks: EmailBlock[] = [
-    { kind: 'paragraph', text: context.firstName ? `Olá, ${context.firstName}.` : 'Olá.' },
+    { kind: 'paragraph', text: context.firstName ? `Olá, ${context.firstName}.` : 'Olá!' },
     {
       kind: 'paragraph',
       text:
@@ -265,7 +265,7 @@ export function plannerDigestEmail({
   settingsUrl: string;
 }): EmailMessage {
   const blocks: EmailBlock[] = [
-    { kind: 'paragraph', text: firstName ? `Olá, ${firstName}.` : 'Olá.' },
+    { kind: 'paragraph', text: firstName ? `Olá, ${firstName}.` : 'Olá!' },
     { kind: 'paragraph', text: 'Hoje, nos seus casamentos:' },
     ...weddings.flatMap((wedding): EmailBlock[] => [
       { kind: 'paragraph', text: coupleLabel(wedding) },
@@ -314,7 +314,7 @@ export function commissionAvailableEmail({
   settingsUrl: string;
 }): EmailMessage {
   const blocks: EmailBlock[] = [
-    { kind: 'paragraph', text: firstName ? `Olá, ${firstName}!` : 'Olá!' },
+    { kind: 'paragraph', text: firstName ? `Olá, ${firstName}.` : 'Olá!' },
     {
       kind: 'paragraph',
       text: 'Uma comissão ficou disponível. Veja o valor e peça o repasse no Kore.',
