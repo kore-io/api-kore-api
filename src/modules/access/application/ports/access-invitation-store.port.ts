@@ -46,6 +46,8 @@ export interface NewAccessInvitation {
 
 export interface StoredInvitation {
   id: string;
+  /** Só o convite de dono segura o "aguardando o casal" (decisão 297). */
+  role: MembershipRole;
   invitedByUserId: string;
   expiresAt: Date;
   acceptedAt: Date | null;
