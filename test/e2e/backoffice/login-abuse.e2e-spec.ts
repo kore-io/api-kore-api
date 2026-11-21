@@ -58,13 +58,20 @@ describe('Backoffice: o alerta login_abuse (Backoffice - acesso RN12; banco real
   };
   const loginAlerts = (entityType: 'login_email' | 'login_ip') =>
     db.alert.findMany({ where: { type: 'login_abuse', entityType, status: 'open' } });
+  // O kore_test é compartilhado: o alerta do caso é o da conta dele, não o de
+  // outra rodada que abriu um alerta por e-mail no meio (decisão 303(3)).
+  const emailAlertsOf = (userId: string) =>
+    db.alert.findMany({
+      where: { type: 'login_abuse', entityType: 'login_email', status: 'open', userId },
+    });
+  const failuresFromIp = (ipHash: string) =>
+    db.applicationLog.count({ where: { action: 'login.code_failed', ipHash } });
 
   it('RN12 - o 11º código errado em 1 h para o mesmo e-mail abre um alerta, com a conta e o e-mail mascarado; o suporte o vê', async () => {
     const email = `abuso.${randomUUID()}@kore.local`;
     const user = await prisma.user.create({
       data: { id: randomUUID(), email, name: 'Pessoa Alvo' },
     });
-    const before = new Set((await loginAlerts('login_email')).map((alert) => alert.id));
 
     let wrongCodes = 0;
     let sent = 1;
@@ -80,13 +87,14 @@ describe('Backoffice: o alerta login_abuse (Backoffice - acesso RN12; banco real
       }
       sent++;
     }
-    const opened = (await loginAlerts('login_email')).filter((alert) => !before.has(alert.id));
-    expect(opened).toHaveLength(0);
+    expect(await emailAlertsOf(user.id)).toHaveLength(0);
 
     const { code } = await latestLoginEmail({ to: email, count: sent - 1 });
     await verify({ ip: uniqueIp(), email, code: code === '000000' ? '111111' : '000000' });
 
-    const [alert] = (await loginAlerts('login_email')).filter((row) => !before.has(row.id));
+    const opened = await emailAlertsOf(user.id);
+    expect(opened).toHaveLength(1);
+    const [alert] = opened;
     expect(alert).toMatchObject({
       userId: user.id,
       data: { emailMasked: `${email.slice(0, 3)}***@kore.local`, failures: 11, windowMinutes: 60 },
@@ -134,11 +142,17 @@ describe('Backoffice: o alerta login_abuse (Backoffice - acesso RN12; banco real
         ipHash,
       })),
     });
+    // Cada erro deixa a sua linha no log antes da resposta; se uma sumir (o
+    // monitor engole a falha para não trocar o 401), o teste diz qual.
     const wrongFrom = async () => {
       const email = `ip.${randomUUID()}@kore.local`;
       await requestCode({ email, ip: uniqueIp() }).expect(202);
       const { code } = await latestLoginEmail({ to: email });
+      const logged = await failuresFromIp(ipHash);
       await verify({ ip, email, code: code === '000000' ? '111111' : '000000' }).expect(401);
+      expect({ ipFailuresLogged: await failuresFromIp(ipHash) }).toEqual({
+        ipFailuresLogged: logged + 1,
+      });
     };
 
     await wrongFrom();
