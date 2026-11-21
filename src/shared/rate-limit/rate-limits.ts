@@ -78,3 +78,20 @@ export const PLANNER_WEDDINGS_PER_MINUTE = 10;
  */
 export const PAYMENT_WEBHOOK_THROTTLER = 'payment_webhook';
 export const PAYMENT_WEBHOOK_PER_MINUTE = 600;
+
+/**
+ * Código de indicação (decisão 306(1); Gazua, rodada 3): 20 falhas
+ * (REFERRAL_NOT_FOUND) por minuto por IP no GET /v1/referrals/{code}, no molde
+ * do `party_link`. Os acertos não contam: o link de uma indicadora aberto por
+ * muita gente atrás do mesmo IP não é barrado.
+ */
+export const REFERRAL_LOOKUP_THROTTLER = 'referral_lookup';
+export const REFERRAL_LOOKUP_FAILURES_PER_MINUTE = 20;
+
+/**
+ * Endereço do site (decisão 306(2); Gazua, rodada 3): 20 falhas (SITE_NOT_FOUND
+ * e SITE_DRAFT) por minuto por IP no GET /v1/sites/{slug}, no molde do
+ * `party_link`. Expirado e bloqueado não contam (são páginas da F3).
+ */
+export const SITE_LOOKUP_THROTTLER = 'site_lookup';
+export const SITE_LOOKUP_FAILURES_PER_MINUTE = 20;

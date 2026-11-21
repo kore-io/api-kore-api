@@ -18,6 +18,7 @@ import {
   LoginChallengeLockedError,
   LoginRequestLimitError,
   LoginRequestTooSoonError,
+  ReferralLookupRateLimitedError,
   ReferralNotFoundError,
   OwnersFullError,
   InvitationInvalidError,
@@ -145,6 +146,12 @@ export function toHttpError(error: unknown): unknown {
       error: 'REFERRAL_NOT_FOUND',
       message: 'Referral not found.',
     });
+  }
+  if (error instanceof ReferralLookupRateLimitedError) {
+    return new HttpException(
+      { statusCode: 429, error: 'RATE_LIMITED', message: 'Too many requests.' },
+      HttpStatus.TOO_MANY_REQUESTS,
+    );
   }
   // A aparência do simulador no cadastro (Simule RN10): o mesmo 422 do Editor.
   if (error instanceof ContrastTooLowError) {

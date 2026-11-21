@@ -1,5 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { SiteExpiredError, SiteUnavailableError } from '@/modules/site/domain/site.errors';
+import {
+  SiteDraftError,
+  SiteExpiredError,
+  SiteLookupRateLimitedError,
+  SiteNotFoundError,
+  SiteUnavailableError,
+} from '@/modules/site/domain/site.errors';
+import { IpFailureLimit } from '@/shared/rate-limit/ip-failure-limit';
+import {
+  SITE_LOOKUP_FAILURES_PER_MINUTE,
+  SITE_LOOKUP_THROTTLER,
+} from '@/shared/rate-limit/rate-limits';
 import {
   OBJECT_STORAGE,
   type ObjectStorage,
@@ -105,7 +116,12 @@ type LiveSite = PublicSiteRow & { live: true };
  * os locais, o contato e o nome do grupo. Cookie que não vale mais (versão do
  * link, lixeira, outro casamento) é apagado e a leitura segue como visitante.
  * Rascunho é SITE_DRAFT sem dado nenhum; endereço que não existe ou casamento
- * fora do ar, SITE_NOT_FOUND. A prévia vem depois.
+ * fora do ar, SITE_NOT_FOUND. A prévia vem antes.
+ *
+ * O limite `site_lookup` (decisões 306(2) e 307(1)) vale só para o visitante
+ * sem cookie válido: a prévia e o grupo do cookie assinado não são barrados nem
+ * contam. Conta só o SITE_NOT_FOUND e o SITE_DRAFT; acima, 429. Expirado e
+ * bloqueado não contam.
  */
 @Injectable()
 export class GetPublicSite {
@@ -116,15 +132,18 @@ export class GetPublicSite {
     private readonly previews: PreviewSessions,
     @Inject(SITE_READER) private readonly siteReader: SiteReader,
     @Inject(SITE_PREVIEW_STORE) private readonly previewStore: SitePreviewStore,
+    private readonly failures: IpFailureLimit,
   ) {}
 
   async execute({
     slug,
     cookies,
+    ip,
     now = new Date(),
   }: {
     slug: string;
     cookies: Record<string, string | undefined>;
+    ip: string;
     now?: Date;
   }): Promise<PublicSiteRead> {
     // A prévia vale mais que o cookie de um grupo e também mostra o rascunho
@@ -180,8 +199,42 @@ export class GetPublicSite {
     }
 
     const site = await this.reader.bySlug({ slug });
+    const { party, cookieName, cookie } = await this.partyOf({ site, cookies });
+
+    // Só o visitante sem cookie válido entra no limite (decisão 307(1)).
+    if (!party) {
+      const limit = { throttler: SITE_LOOKUP_THROTTLER, ip };
+      if (await this.failures.isBlocked({ ...limit, limit: SITE_LOOKUP_FAILURES_PER_MINUTE }))
+        throw new SiteLookupRateLimitedError();
+      try {
+        requireLiveSite(site);
+      } catch (error) {
+        if (error instanceof SiteNotFoundError || error instanceof SiteDraftError)
+          await this.failures.recordFailure(limit);
+        throw error;
+      }
+    }
+    // Com o grupo, o site está no ar: a asserção é só para o tipo.
     requireLiveSite(site);
 
+    return {
+      view: this.view({ site, party }),
+      staleCookie: cookie && !party ? cookieName : null,
+    };
+  }
+
+  /**
+   * O grupo do cookie assinado, se ainda vale (ADR-36, item 2). Só no site no
+   * ar: fora dele a leitura não traz o casamento, e o cookie não dá nada.
+   */
+  private async partyOf({
+    site,
+    cookies,
+  }: {
+    site: PublicSiteRow | null;
+    cookies: Record<string, string | undefined>;
+  }): Promise<{ party: PartySiteView | null; cookieName: string | null; cookie?: string }> {
+    if (!site?.live) return { party: null, cookieName: null };
     const cookieName = this.partyCookies.name({ weddingId: site.weddingId });
     const cookie = cookies[cookieName];
     const claims = cookie
@@ -190,10 +243,7 @@ export class GetPublicSite {
     const party = claims
       ? await this.reader.partyView({ weddingId: site.weddingId, ...claims })
       : null;
-    return {
-      view: this.view({ site, party }),
-      staleCookie: cookie && !party ? cookieName : null,
-    };
+    return { party, cookieName, cookie };
   }
 
   private view({ site, party }: { site: LiveSite; party: PartySiteView | null }): PublicSiteView {

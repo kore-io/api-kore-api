@@ -189,6 +189,7 @@ export class PublicSiteController {
       const { view, staleCookie } = await this.getSite.execute({
         slug: slug.toLowerCase(),
         cookies: cookiesOf(request),
+        ip: request.ip ?? 'unknown',
       });
       if (staleCookie) clearPartyCookie({ response, name: staleCookie });
       return view;

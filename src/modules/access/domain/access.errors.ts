@@ -86,6 +86,11 @@ export class ReferralNotFoundError extends Error {
   override name = 'ReferralNotFoundError';
 }
 
+/** Falhas demais do mesmo IP no código de indicação (429 RATE_LIMITED; decisão 306(1)). */
+export class ReferralLookupRateLimitedError extends Error {
+  override name = 'ReferralLookupRateLimitedError';
+}
+
 /** RN05 de Cadastro: endereço em uso ou reservado, com uma alternativa livre. */
 export class SlugUnavailableError extends Error {
   override name = 'SlugUnavailableError';
