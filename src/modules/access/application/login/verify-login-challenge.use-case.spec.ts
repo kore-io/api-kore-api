@@ -142,16 +142,25 @@ describe('VerifyLoginChallenge', () => {
       const { useCase, recordFailure } = build({ attemptsAfterFailure: 1 });
       recordFailure.mockRejectedValueOnce(
         new Prisma.PrismaClientKnownRequestError('deadlock detected', {
-          code: 'P2034',
+          code: 'P2010',
           clientVersion: 'test',
-          meta: { driverAdapterError: { cause: { code: '40P01' } } },
+          // Como o adaptador do pg entrega o deadlock: classificado, com o SQLSTATE em originalCode.
+          meta: {
+            driverAdapterError: {
+              cause: {
+                kind: 'TransactionWriteConflict',
+                originalCode: '40P01',
+                originalMessage: 'deadlock detected',
+              },
+            },
+          },
         }),
       );
       await expect(useCase.execute(byCode('000000'))).rejects.toBeInstanceOf(InvalidLoginCodeError);
       expect(warn).toHaveBeenCalledWith(
-        'login_abuse sem registro: PrismaClientKnownRequestError (P2034, 40P01)',
+        'login_abuse sem registro: PrismaClientKnownRequestError (P2010, 40P01)',
       );
-      expect(JSON.stringify(warn.mock.calls)).not.toContain('@');
+      expect(JSON.stringify(warn.mock.calls)).not.toMatch(/@|deadlock detected/);
     } finally {
       warn.mockRestore();
     }
@@ -169,6 +178,16 @@ describe('VerifyLoginChallenge', () => {
         }),
       }),
     ).toBe('login_abuse sem registro: PrismaClientKnownRequestError (P2028)');
+    // O erro cru do Postgres (sem classificação) traz o SQLSTATE em cause.code.
+    expect(
+      loginAbuseNotRecordedMessage({
+        error: new Prisma.PrismaClientKnownRequestError('barreira', {
+          code: 'P2010',
+          clientVersion: 'test',
+          meta: { driverAdapterError: { cause: { kind: 'postgres', code: 'KA001' } } },
+        }),
+      }),
+    ).toBe('login_abuse sem registro: PrismaClientKnownRequestError (P2010, KA001)');
     expect(loginAbuseNotRecordedMessage({ error: undefined })).toBe(
       'login_abuse sem registro: Error',
     );
