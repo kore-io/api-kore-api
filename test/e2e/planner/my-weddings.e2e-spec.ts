@@ -67,7 +67,11 @@ describe('Meus casamentos e alertas (banco real; decisões 223 e 224)', () => {
     return { weddingId, ana };
   }
 
-  async function parties(weddingId: string, statuses: ('not_sent' | 'sent')[]) {
+  async function parties(
+    weddingId: string,
+    statuses: ('not_sent' | 'sent')[],
+    { deletedAt = null }: { deletedAt?: Date | null } = {},
+  ) {
     for (const deliveryStatus of statuses)
       await db.party.create({
         data: {
@@ -75,6 +79,7 @@ describe('Meus casamentos e alertas (banco real; decisões 223 e 224)', () => {
           name: 'Família',
           linkToken: randomBytes(16).toString('base64url'),
           deliveryStatus,
+          deletedAt,
         },
       });
   }
@@ -217,6 +222,25 @@ describe('Meus casamentos e alertas (banco real; decisões 223 e 224)', () => {
       });
     });
 
+    it('RN01 - o casamento que veio pelo link dela, sem vínculo de colaboradora, não entra', async () => {
+      const planner = await juliana();
+      const { id: biancaId } = await db.user.create({
+        data: { email: `bianca.${randomBytes(6).toString('hex')}@kore.local`, name: 'Bianca' },
+      });
+      const { weddingId } = await seedWedding({ db, ownerId: biancaId });
+      await db.wedding.update({
+        where: { id: weddingId },
+        data: { referrerId: planner.referrerId, referralSource: 'referral_link' },
+      });
+
+      const { body } = await list(planner.cookie).expect(200);
+
+      expect(body.weddings).toEqual([]);
+      expect((await detail(planner.cookie, weddingId).expect(404)).body.error).toBe(
+        'WEDDING_NOT_FOUND',
+      );
+    });
+
     it('RN02 (decisão 308(2)) - hoje e futuro primeiro, em ordem crescente; depois o passado, do mais recente; sem data no fim', async () => {
       const planner = await juliana();
       const dated = async (
@@ -245,6 +269,26 @@ describe('Meus casamentos e alertas (banco real; decisões 223 e 224)', () => {
         expired,
         noDate,
       ]);
+    });
+
+    it('RN06 - o grupo na lixeira não conta no alerta de convites', async () => {
+      const planner = await juliana();
+      const { weddingId } = await coupleWedding({ plannerId: planner.userId });
+      await db.wedding.update({
+        where: { id: weddingId },
+        data: { status: 'published', eventDate: asDate(dayIn(30)) },
+      });
+      // 8 de 40 ativos não enviados (exatamente 20%, não acende); com o da
+      // lixeira contado seriam 9 de 41 (acenderia).
+      await parties(weddingId, [
+        ...Array.from({ length: 8 }, () => 'not_sent' as const),
+        ...Array.from({ length: 32 }, () => 'sent' as const),
+      ]);
+      await parties(weddingId, ['not_sent'], { deletedAt: new Date() });
+
+      const { body } = await list(planner.cookie).expect(200);
+
+      expect(body.alerts.invitationsNotSent).toEqual([]);
     });
 
     it('revisão C2-8 - ler o painel e o detalhe não é atividade do casamento', async () => {
@@ -363,6 +407,43 @@ describe('Meus casamentos e alertas (banco real; decisões 223 e 224)', () => {
       expect(body.myMembershipId).toBe(mine.id);
       // Decisão 263: o fuso do casamento, para o "Enviado em".
       expect(body.timezone).toBe('America/Manaus');
+    });
+
+    it('RN09 - depois do aceite do casal, o detalhe vem com dono e sem o link', async () => {
+      const planner = await juliana();
+      const { weddingId } = await seedReferrerWedding({ db, referrerUserId: planner.userId });
+      const generated = await http()
+        .post(`/v1/weddings/${weddingId}/access-invitations`)
+        .set('Cookie', planner.cookie)
+        .set('Origin', APP_ORIGIN)
+        .send({ kind: 'couple' })
+        .expect(201);
+      const { url } = generated.body.invitations[0] as { url: string };
+      const fernanda = await signedInUser({ app, name: 'Fernanda Alves' });
+      await http()
+        .post(`/v1/access-invitations/${new URL(url).pathname.split('/').pop() ?? ''}/accept`)
+        .set('Cookie', fernanda.cookie)
+        .set('Origin', APP_ORIGIN)
+        .send({ partnerIndex: 1, myTitle: 'bride' })
+        .expect(200);
+
+      const { body } = await detail(planner.cookie, weddingId).expect(200);
+
+      expect(body).toMatchObject({ hasOwner: true, canEditIdentity: false, coupleInvitations: [] });
+      expect(JSON.stringify(body)).not.toContain(url);
+    });
+
+    it('RN01 - o expurgado: 404, mesmo com o vínculo dela', async () => {
+      const planner = await juliana();
+      const { weddingId } = await coupleWedding({ plannerId: planner.userId });
+      await db.wedding.update({
+        where: { id: weddingId },
+        data: { status: 'purged', purgedAt: new Date() },
+      });
+
+      expect((await detail(planner.cookie, weddingId).expect(404)).body.error).toBe(
+        'WEDDING_NOT_FOUND',
+      );
     });
 
     it('RN01 - sem vínculo de colaboradora (outra assessoria, o casamento próprio, quem saiu): 404', async () => {
