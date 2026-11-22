@@ -1,5 +1,5 @@
-import type { AppConfigService } from '../../../shared/config/app-config.service';
-import { commissionAvailableEmail } from '../infrastructure/emails/notification-email';
+import type { AppConfigService } from '@/shared/config/app-config.service';
+import { commissionAvailableEmail } from '@/modules/notifications/infrastructure/mail/templates/notification-email';
 import { CommissionEmails } from './commission-emails.use-case';
 import type {
   CommissionEmailStore,
@@ -26,7 +26,7 @@ function setup(state: Partial<LockedCommissionEmail> = {}) {
     },
   };
   const send = jest.fn().mockResolvedValue(undefined);
-  const useCase = new CommissionEmails(store, { send }, { record: jest.fn() }, {
+  const useCase = new CommissionEmails(store, { send, ping: jest.fn() }, { record: jest.fn() }, {
     get: () => 'http://localhost:5173/',
   } as unknown as AppConfigService);
   return { useCase, send, cursors };
@@ -72,7 +72,7 @@ describe('O e-mail de comissão disponível (Comissões do indicador RN09; decis
       settingsUrl: 'http://app/cerimonialista/configuracoes/notificacoes',
     });
     expect(message.subject).toBe('Você tem comissão disponível');
-    expect(message.text).toContain('Olá, Juliana!');
+    expect(message.text).toContain('Olá, Juliana.');
     expect(message.text).toContain(
       'Uma comissão ficou disponível. Veja o valor e peça o repasse no Kore.',
     );

@@ -1,8 +1,8 @@
-import type { AppConfigService } from '../../../shared/config/app-config.service';
-import type { FieldCipher } from '../../../shared/crypto/application/field-cipher.port';
-import type { PlannerProfiles } from '../../access/application/ports/planner-profiles.port';
-import type { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
-import { ProfileNotOwnedError, WeddingNotFoundError } from '../../access/domain/access.errors';
+import type { AppConfigService } from '@/shared/config/app-config.service';
+import type { FieldCipher } from '@/shared/crypto/application/field-cipher.port';
+import type { PlannerProfiles } from '@/modules/access/application/ports/planner-profiles.port';
+import type { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
+import { ProfileNotOwnedError, WeddingNotFoundError } from '@/modules/access/domain/access.errors';
 import { GetMyWedding } from './my-weddings.use-cases';
 import type {
   CollaborationDetail,
@@ -20,6 +20,7 @@ const link = {
 };
 const detail = (extra: Partial<CollaborationDetail> = {}): CollaborationDetail => ({
   weddingId: 'w1',
+  myMembershipId: 'm1',
   partnerNames: ['Fernanda', 'João'],
   eventDate: null,
   city: 'Valinhos',

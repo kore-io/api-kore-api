@@ -1,4 +1,4 @@
-import type { AppConfigService } from '../../../shared/config/app-config.service';
+import type { AppConfigService } from '@/shared/config/app-config.service';
 import type { PushStore } from './ports/push-store.port';
 import { BILLING_PUSH_BODY, plannerPushBody, pushBody, RsvpPush } from './rsvp-push.use-case';
 
@@ -33,6 +33,7 @@ describe('O push da cobrança (Publicar e pagar RN13; decisão 236)', () => {
     const store = {
       recipient: jest.fn().mockResolvedValue({
         member: true,
+        weddingBlocked: false,
         role: 'owner',
         partnerNames: ['', ''],
         push: true,
@@ -68,6 +69,17 @@ describe('O push da cobrança (Publicar e pagar RN13; decisão 236)', () => {
     });
     expect(BILLING_PUSH_BODY).toBe('Pagamento confirmado. O site está no ar');
     expect(payload.body).not.toMatch(/R\$|\d/);
+  });
+
+  it('Casamento bloqueado RN06 - com o casamento bloqueado, o push das respostas não sai', async () => {
+    const { push, sender } = build({
+      weddingBlocked: true,
+      notification: { groupKey: 'rsvp:w1', count: 1, firstGroupName: 'Família Moreira' },
+    });
+    expect(
+      await push.send({ userId: 'u1', weddingId: 'w1', type: 'rsvp', now: new Date() }),
+    ).toEqual({ sent: 0 });
+    expect(sender.send).not.toHaveBeenCalled();
   });
 
   it('decisão 236 - com o Push desligado, não sai', async () => {

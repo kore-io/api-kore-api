@@ -26,6 +26,39 @@ describe('serializeRequest', () => {
 
     expect(serializeRequest(request)).toEqual({ method: 'GET', route: '(unmatched)' });
   });
+
+  it('decisão 285 - dado o pedido embrulhado pelo pino-http ({ raw }), quando serializa, então lê a rota do pedido cru', () => {
+    const raw = {
+      method: 'GET',
+      url: '/v1/sites/ana-e-marcos',
+      baseUrl: '',
+      route: { path: '/v1/sites/:slug' },
+    } as unknown as IncomingMessage;
+
+    expect(serializeRequest({ raw })).toEqual({ method: 'GET', route: '/v1/sites/:slug' });
+  });
+
+  it('decisão 285 - dado uma rota registrada por expressão regular, quando serializa, então sai (unmatched) sem quebrar', () => {
+    const request = {
+      method: 'GET',
+      url: '/v1/x',
+      baseUrl: '',
+      route: { path: /^\/v1\/x$/ },
+    } as unknown as IncomingMessage;
+
+    expect(serializeRequest(request)).toEqual({ method: 'GET', route: '(unmatched)' });
+  });
+
+  it('decisão 285 - dado o 404 que caiu no curinga do Nest, quando serializa, então sai (unmatched)', () => {
+    const request = {
+      method: 'GET',
+      url: '/v1/nada',
+      baseUrl: '',
+      route: { path: '/v1{/*splat}' },
+    } as unknown as IncomingMessage;
+
+    expect(serializeRequest(request)).toEqual({ method: 'GET', route: '(unmatched)' });
+  });
 });
 
 describe('traceMixin', () => {
@@ -83,5 +116,32 @@ describe('REDACTED_PATHS', () => {
     expect(output).not.toContain('"cpf":"123"');
     expect(output).not.toContain('bia@kore.com.br');
     expect(output).toContain('[Redacted]');
+  });
+
+  it('Publicar e pagar RN02 - o corpo do pagamento (payer.taxId e cardToken) sai como [Redacted]', () => {
+    const lines: string[] = [];
+    const stream = new Writable({
+      write(chunk: Buffer, _encoding, callback) {
+        lines.push(chunk.toString());
+        callback();
+      },
+    });
+    const logger = pino({ redact: { paths: REDACTED_PATHS } }, stream);
+
+    logger.info(
+      {
+        body: {
+          payer: { name: 'Ana Beatriz Moreira', taxId: '529.982.247-25' },
+          cardToken: 'tok_local_4242',
+        },
+      },
+      'x',
+    );
+
+    const output = lines.join('');
+    expect(output).not.toContain('529.982.247-25');
+    expect(output).not.toContain('52998224725');
+    expect(output).not.toContain('tok_local_4242');
+    expect(output).not.toContain('Ana Beatriz');
   });
 });

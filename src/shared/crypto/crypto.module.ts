@@ -1,5 +1,5 @@
 import { Global, Module } from '@nestjs/common';
-import { AppConfigService } from '../config/app-config.service';
+import { AppConfigService } from '@/shared/config/app-config.service';
 import { FIELD_CIPHER } from './application/field-cipher.port';
 import { KEY_MANAGEMENT, KeyManagement } from './application/key-management.port';
 import { TAX_ID_HASHER, type TaxIdHasher } from './application/tax-id-hasher.port';

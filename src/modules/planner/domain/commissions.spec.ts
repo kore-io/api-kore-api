@@ -15,6 +15,7 @@ const row = (overrides: Partial<CommissionRow>): CommissionRow => ({
   paidAt: null,
   createdAt: new Date('2026-08-10T12:00:00Z'),
   payoutId: null,
+  blockReason: null,
   ...overrides,
 });
 
@@ -58,5 +59,56 @@ describe('Os saldos e a soma por casamento (Comissões do indicador RN02, RN07 e
       '2026-10-10',
     ]);
     expect(second).toMatchObject({ weddingId: 'w2', availableCents: 500, pendingCents: 0 });
+  });
+
+  it('RN02 (B6-2) - o Disponível soma os ajustes sem repasse; o do repasse vai em "em repasse"', () => {
+    expect(
+      commissionBalances(rows, [
+        {
+          id: 'a',
+          reason: 'manual',
+          createdAt: new Date(),
+          amountCents: -1_000,
+          payoutId: null,
+          payoutStatus: null,
+        },
+        {
+          id: 'a',
+          reason: 'manual',
+          createdAt: new Date(),
+          amountCents: -500,
+          payoutId: 'p1',
+          payoutStatus: 'requested',
+        },
+      ]),
+    ).toMatchObject({ availableCents: 6_242, inPayoutCents: 2_500 });
+  });
+
+  it('RN02 (B6-2) - o ajuste de um repasse já pago soma no Já recebido e sai do "em repasse", como no Backoffice', () => {
+    const base = commissionBalances(rows);
+    expect(
+      commissionBalances(rows, [
+        {
+          id: 'a',
+          reason: 'manual',
+          createdAt: new Date(),
+          amountCents: -1_000,
+          payoutId: 'p0',
+          payoutStatus: 'paid',
+        },
+        {
+          id: 'a',
+          reason: 'manual',
+          createdAt: new Date(),
+          amountCents: -500,
+          payoutId: 'p1',
+          payoutStatus: 'processing',
+        },
+      ]),
+    ).toEqual({
+      ...base,
+      receivedCents: base.receivedCents - 1_000,
+      inPayoutCents: base.inPayoutCents - 500,
+    });
   });
 });

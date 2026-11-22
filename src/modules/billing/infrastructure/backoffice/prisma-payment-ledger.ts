@@ -1,15 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import type { AlertType, Prisma } from '../../../../generated/prisma/client';
-import { BackofficeTransaction } from '../../../../shared/database/backoffice-transaction';
-import { uuidV7 } from '../../../../shared/ids/uuid-v7';
-import { newCommission } from '../../domain/commission';
+import { type AlertType, Prisma } from '@/generated/prisma/client';
+import { BackofficeTransaction } from '@/shared/database/backoffice-transaction';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
+import {
+  BLOCKABLE_PAYOUT_STATUSES,
+  newCommission,
+} from '@/modules/billing/domain/payouts/commission';
 import type {
   BillingRecipient,
   LedgerLogEntry,
   LedgerPayment,
   LedgerWedding,
   PaymentLedger,
-} from '../../application/ports/payment-ledger.port';
+} from '@/modules/billing/application/ports/payment-ledger.port';
 
 const day = (value: Date | null): string | null => value?.toISOString().slice(0, 10) ?? null;
 const firstName = (value: string | null | undefined): string =>
@@ -515,7 +518,28 @@ export class PrismaPaymentLedger implements PaymentLedger {
     });
   }
 
+  /**
+   * A ordem única das travas (Publicar e pagar RN18, G2; decisão 275): quem
+   * chama já travou o Wedding e o Payment (o `lock`); antes de mexer na
+   * comissão, o Referrer, o Payout e a Commission, como no Pagar, no Recusar e
+   * no Liberar. Sem isso, o estorno e a contestação cruzavam com eles
+   * (deadlock), e o Pagar podia somar uma comissão que estava sendo estornada.
+   */
+  private async lockCommissionChain({ paymentId }: { paymentId: string }): Promise<void> {
+    await this.db().$queryRaw`
+      SELECT 1 FROM referrers r
+      WHERE r.id IN (SELECT c.referrer_id FROM commissions c WHERE c.payment_id = ${paymentId}::uuid)
+      ORDER BY r.id FOR UPDATE`;
+    await this.db().$queryRaw`
+      SELECT 1 FROM payouts po
+      WHERE po.id IN (SELECT c.payout_id FROM commissions c WHERE c.payment_id = ${paymentId}::uuid)
+      ORDER BY po.id FOR UPDATE`;
+    await this.db().$queryRaw`
+      SELECT 1 FROM commissions c WHERE c.payment_id = ${paymentId}::uuid ORDER BY c.id FOR UPDATE`;
+  }
+
   async holdCommission({ paymentId }: { paymentId: string; now: Date }): Promise<void> {
+    await this.lockCommissionChain({ paymentId });
     await this.db().commission.updateMany({
       where: { paymentId, status: { in: ['pending', 'available'] } },
       data: { status: 'held' },
@@ -523,6 +547,36 @@ export class PrismaPaymentLedger implements PaymentLedger {
   }
 
   async releaseCommission({ paymentId, now }: { paymentId: string; now: Date }): Promise<void> {
+    await this.lockCommissionChain({ paymentId });
+    // Decisão 286(b): com o casamento ainda bloqueado, a disputa ganha leva a
+    // comissão a blocked/wedding_blocked (fora de repasse ou num repasse pedido
+    // ou retido), e o repasse dela fica retido por commission_blocked, à espera
+    // do Admin. O bloqueio do casamento trava o Referrer da comissão held
+    // (PrismaWeddingBlocks), então o blocked_at lido aqui já é o final.
+    // Decisão 296(3): a decisão do Admin prevalece. A comissão que ele
+    // desbloqueou durante este bloqueio (290(4): held com a disputa aberta)
+    // segue o desfecho normal; a 286(b) vale só para a que ele não decidiu.
+    const blocked = await this.db().$queryRaw<{ payoutId: string | null }[]>`
+      UPDATE commissions c
+      SET status = 'blocked', block_reason = 'wedding_blocked', updated_at = ${now}
+      WHERE c.payment_id = ${paymentId}::uuid AND c.status = 'held'
+        AND EXISTS (
+          SELECT 1 FROM weddings w
+          WHERE w.id = c.wedding_id AND w.blocked_at IS NOT NULL
+            AND NOT EXISTS (
+              SELECT 1 FROM application_logs l
+              WHERE l.action = 'commission.unblocked' AND l.entity_type = 'commission'
+                AND l.entity_id = c.id::text AND l.created_at >= w.blocked_at))
+        AND (c.payout_id IS NULL OR EXISTS (
+          SELECT 1 FROM payouts p
+          WHERE p.id = c.payout_id AND p.status::text IN (${Prisma.join([...BLOCKABLE_PAYOUT_STATUSES])})))
+      RETURNING c.payout_id AS "payoutId"`;
+    const payoutIds = blocked.flatMap(({ payoutId }) => (payoutId ? [payoutId] : []));
+    if (payoutIds.length > 0)
+      await this.db().payout.updateMany({
+        where: { id: { in: payoutIds }, status: { in: [...BLOCKABLE_PAYOUT_STATUSES] } },
+        data: { status: 'held', holdReason: 'commission_blocked' },
+      });
     // Volta pelo availableAt (RN06): a data no fuso de São Paulo, como a liberação.
     await this.db().$executeRaw`
       UPDATE commissions
@@ -535,16 +589,48 @@ export class PrismaPaymentLedger implements PaymentLedger {
       WHERE payment_id = ${paymentId}::uuid AND status = 'held'`;
   }
 
-  async reverseCommission({ paymentId, now }: { paymentId: string; now: Date }): Promise<void> {
-    // Fora de repasse (RN05). Dentro de um repasse pedido ou pago: o PR do repasse.
-    await this.db().commission.updateMany({
+  async reverseCommission({
+    paymentId,
+    now,
+    reason,
+  }: {
+    paymentId: string;
+    now: Date;
+    reason: 'refund' | 'chargeback';
+  }): Promise<void> {
+    await this.lockCommissionChain({ paymentId });
+    // Fora de repasse ou num repasse pedido ou retido (RN05): reversed; o
+    // trigger payout_follows_commission retém o repasse (Repasse RN06 (a)).
+    // A bloqueada também é estornada, e o motivo do bloqueio sai junto
+    // (chk_commissions_block_reason: só a bloqueada tem motivo).
+    await this.db().$executeRaw`
+      UPDATE commissions c
+      SET status = 'reversed', block_reason = NULL, reversed_at = ${now}, updated_at = ${now}
+      WHERE c.payment_id = ${paymentId}::uuid
+        AND c.status IN ('pending', 'available', 'blocked', 'held')
+        AND (c.payout_id IS NULL OR EXISTS (
+          SELECT 1 FROM payouts p WHERE p.id = c.payout_id AND p.status IN ('requested', 'held')))`;
+    // Já paga (RN05): um ajuste negativo do mesmo valor, que abate o próximo
+    // repasse; nunca dois para a mesma comissão.
+    const paid = await this.db().commission.findMany({
       where: {
         paymentId,
-        payoutId: null,
-        status: { in: ['pending', 'available', 'blocked', 'held'] },
+        status: 'paid',
+        adjustments: { none: { reason: { in: ['refund', 'chargeback'] } } },
       },
-      data: { status: 'reversed', reversedAt: now },
+      select: { id: true, referrerId: true, amountCents: true },
     });
+    if (paid.length > 0)
+      await this.db().commissionAdjustment.createMany({
+        data: paid.map((commission, index) => ({
+          id: uuidV7({ now: now.getTime() + index }),
+          createdAt: now,
+          referrerId: commission.referrerId,
+          commissionId: commission.id,
+          amountCents: -commission.amountCents,
+          reason,
+        })),
+      });
   }
 
   async openAlert({

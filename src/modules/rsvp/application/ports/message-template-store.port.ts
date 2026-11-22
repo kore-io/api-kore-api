@@ -1,4 +1,4 @@
-import type { MessageKind } from '../../domain/message-templates';
+import type { MessageKind } from '@/modules/rsvp/domain/message-templates';
 
 export interface StoredMessageTemplate {
   kind: MessageKind;

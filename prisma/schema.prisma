@@ -74,18 +74,21 @@ enum AccessIpLogActor {
 // Usuário (Glossário): casal, cerimonialista, vendedor ou Admin Kore.
 // Convidado não é User.
 model User {
-  id              String       @id @default(uuid(7)) @db.Uuid
-  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
-  email           String       @unique(map: "uq_users_email") @db.Citext
+  id                   String       @id @default(uuid(7)) @db.Uuid
+  createdAt            DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  email                String       @unique(map: "uq_users_email") @db.Citext
   // Nulo até a pessoa informar o nome (cadastro do casal ou aceite de convite).
-  name            String?
-  avatarKey       String?      @map("avatar_key")
-  platformRole    PlatformRole @default(none) @map("platform_role")
-  status          UserStatus   @default(active)
-  lastLoginAt     DateTime?    @map("last_login_at") @db.Timestamptz(3)
-  termsVersion    String?      @map("terms_version")
-  termsAcceptedAt DateTime?    @map("terms_accepted_at") @db.Timestamptz(3)
+  name                 String?
+  avatarKey            String?      @map("avatar_key")
+  platformRole         PlatformRole @default(none) @map("platform_role")
+  status               UserStatus   @default(active)
+  lastLoginAt          DateTime?    @map("last_login_at") @db.Timestamptz(3)
+  termsVersion         String?      @map("terms_version")
+  termsAcceptedAt      DateTime?    @map("terms_accepted_at") @db.Timestamptz(3)
+  // Quando o staff trocou o e-mail de acesso (Backoffice - acesso RN09; decisão
+  // 253(2)): 48 h sem chave Pix nem remoção de membros. Só o kore_backoffice grava.
+  accessEmailChangedAt DateTime?    @map("access_email_changed_at") @db.Timestamptz(3)
 
   authIdentities            AuthIdentity[]
   sessions                  Session[]
@@ -1236,13 +1239,15 @@ model NotificationDigestState {
 // Estado do e-mail por pessoa e casamento (E-mail e push RN02; decisão 217(b)):
 // o cursor do que já foi mandado. Escrita só pelo worker.
 model NotificationEmailState {
-  userId          String    @map("user_id") @db.Uuid
-  weddingId       String    @map("wedding_id") @db.Uuid
-  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
-  emailedThrough  DateTime? @map("emailed_through") @db.Timestamptz(3)
-  lastImmediateAt DateTime? @map("last_immediate_at") @db.Timestamptz(3)
+  userId                  String    @map("user_id") @db.Uuid
+  weddingId               String    @map("wedding_id") @db.Uuid
+  updatedAt               DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  emailedThrough          DateTime? @map("emailed_through") @db.Timestamptz(3)
+  /// Até onde o `wedding_published` já foi no Resumo da cerimonialista (RN07; decisão 308(5)).
+  publishedEmailedThrough DateTime? @map("published_emailed_through") @db.Timestamptz(3)
+  lastImmediateAt         DateTime? @map("last_immediate_at") @db.Timestamptz(3)
   // No fuso do casamento.
-  lastDigestDate  DateTime? @map("last_digest_date") @db.Date
+  lastDigestDate          DateTime? @map("last_digest_date") @db.Date
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   wedding Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
@@ -1471,6 +1476,8 @@ enum CommissionBlockReason {
   self_referral
   referrer_blocked
   admin
+  // Decisão 282(3): o casamento bloqueado pelo Admin.
+  wedding_blocked
 
   @@map("commission_block_reason")
 }
@@ -1668,6 +1675,8 @@ enum AlertType {
   purge_failed
   access_email_changed
   manual_adjustment
+  access_email_locked
+  access_email_unlocked
 
   @@map("alert_type")
 }
@@ -1704,6 +1713,7 @@ enum SupportSessionEndReason {
   idle
   max_duration
   logout
+  role_revoked
 
   @@map("support_session_end_reason")
 }

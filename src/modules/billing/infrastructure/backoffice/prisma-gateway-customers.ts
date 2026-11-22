@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
-import type { GatewayCustomers } from '../../application/ports/payment-request.store.port';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import type { GatewayCustomers } from '@/modules/billing/application/ports/payment-request.store.port';
 
 /**
  * O cliente do gateway por pagador do casamento (B2-11). Sem GRANT ao

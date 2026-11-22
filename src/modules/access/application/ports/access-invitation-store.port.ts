@@ -1,5 +1,8 @@
-import type { AccessInvitationKind, InvitationWedding } from '../../domain/access-invitation';
-import type { MembershipRole } from '../../domain/wedding-authorization';
+import type {
+  AccessInvitationKind,
+  InvitationWedding,
+} from '@/modules/access/domain/invitations/access-invitation';
+import type { MembershipRole } from '@/modules/access/domain/weddings/wedding-authorization';
 
 /** O casamento e quem convida, como o envio e os e-mails precisam ver. */
 export interface InvitationWeddingDetails extends InvitationWedding {
@@ -43,6 +46,8 @@ export interface NewAccessInvitation {
 
 export interface StoredInvitation {
   id: string;
+  /** Só o convite de dono segura o "aguardando o casal" (decisão 297). */
+  role: MembershipRole;
   invitedByUserId: string;
   expiresAt: Date;
   acceptedAt: Date | null;
@@ -73,6 +78,11 @@ export interface AccessInvitationStore {
     invitationId: string;
   }): Promise<StoredInvitation | null>;
   revoke({ invitationId, now }: { invitationId: string; now: Date }): Promise<void>;
+  /**
+   * Decisão 297: sem convite de dono pendente, "aguardando o casal" volta a
+   * rascunho, com o log wedding.awaiting_couple_reverted; false se nada mudou.
+   */
+  revertAwaitingCouple({ weddingId, now }: { weddingId: string; now: Date }): Promise<boolean>;
 }
 
 export const ACCESS_INVITATION_STORE = Symbol('AccessInvitationStore');

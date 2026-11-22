@@ -1,4 +1,4 @@
-import type { AgeGroup, RsvpStatus } from '../../domain/party';
+import type { AgeGroup, RsvpStatus } from '@/modules/guests/domain/parties/party';
 
 export interface TrashedGuestRow {
   id: string;

@@ -1,14 +1,14 @@
-import { Prisma } from '../../../../generated/prisma/client';
+import { Prisma } from '@/generated/prisma/client';
 import { Injectable } from '@nestjs/common';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
-import { DEFAULT_TIMEZONE } from '../../../../shared/time/local-date';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import { DEFAULT_TIMEZONE } from '@/shared/kernel/time/local-date';
 import type {
   EmailCandidate,
   EmailStateChange,
   LockedEmailState,
   NotificationEmailStore,
-} from '../../application/ports/notification-email-store.port';
-import type { EmailFrequency } from '../../application/ports/notification-store.port';
+} from '@/modules/notifications/application/ports/notification-email-store.port';
+import type { EmailFrequency } from '@/modules/notifications/application/ports/notification-store.port';
 import { partnerNamesOf, preferenceWhere, recipientRole } from './notification-recipient';
 
 /** O envio de e-mail cabe na transação (o SMTP aceita em segundos). */
@@ -52,7 +52,7 @@ export class PrismaNotificationEmailStore implements NotificationEmailStore {
           }),
           await tx.wedding.findUniqueOrThrow({
             where: { id: weddingId },
-            select: { timezone: true },
+            select: { timezone: true, blockedAt: true },
           }),
           role
             ? await tx.notificationPreference.findFirst({
@@ -76,6 +76,7 @@ export class PrismaNotificationEmailStore implements NotificationEmailStore {
         ];
         const change = await work({
           member: role !== null,
+          blocked: wedding.blockedAt !== null,
           role,
           // Só os textos da cerimonialista levam o casal.
           partnerNames: role === 'planner' ? await partnerNamesOf({ db: tx, weddingId }) : ['', ''],
@@ -145,6 +146,7 @@ export class PrismaNotificationEmailStore implements NotificationEmailStore {
       FROM notifications n
       JOIN memberships m
         ON m.user_id = n.user_id AND m.wedding_id = n.wedding_id AND m.removed_at IS NULL
+      JOIN weddings w ON w.id = n.wedding_id AND w.blocked_at IS NULL
       LEFT JOIN notification_email_states s
         ON s.user_id = n.user_id AND s.wedding_id = n.wedding_id
       WHERE n.type = 'rsvp' ${only}
@@ -183,6 +185,10 @@ export class PrismaNotificationEmailStore implements NotificationEmailStore {
       JOIN weddings w ON w.id = m.wedding_id
       WHERE m.role = 'owner' AND m.removed_at IS NULL ${only}
         AND w.status IN ('published', 'post_event', 'grace')
+        -- O bloqueado fica de fora (Casamento bloqueado RN06): sem isso, o dia
+        -- dele fecharia com as respostas esperando, e o desbloqueio depois das
+        -- 20h só mandaria o Resumo no dia seguinte (revisão do Crivo no PR (C)).
+        AND w.blocked_at IS NULL
         AND extract(hour FROM ${now}::timestamptz AT TIME ZONE COALESCE(w.timezone, 'America/Sao_Paulo')) >= 20
         AND COALESCE((
           SELECT p.email::text FROM notification_preferences p

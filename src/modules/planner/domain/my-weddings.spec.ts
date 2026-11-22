@@ -55,19 +55,39 @@ describe('Meus casamentos e alertas (F6, C2)', () => {
     ).toBe('couple_invite');
   });
 
-  it('RN02 - a data mais próxima primeiro; sem data, no fim, do mais novo para o mais antigo', () => {
+  it('RN02 (decisão 308(2)) - hoje e futuro em ordem crescente, depois o passado do mais recente ao mais antigo, e sem data no fim do mais novo ao mais antigo', () => {
     const rows = [
       row({ weddingId: 'sem-data-velho', eventDate: null, createdAt: new Date('2026-01-01') }),
+      row({ weddingId: 'expirado-2025', eventDate: '2025-05-10', status: 'expired' }),
       row({ weddingId: 'marco', eventDate: '2027-03-20' }),
+      row({ weddingId: 'ontem', eventDate: '2026-11-11', status: 'post_event' }),
       row({ weddingId: 'sem-data-novo', eventDate: null, createdAt: new Date('2026-06-01') }),
+      row({ weddingId: 'hoje', eventDate: '2026-11-12' }),
       row({ weddingId: 'janeiro', eventDate: '2027-01-30' }),
     ];
 
-    expect(rows.sort(compareWeddings).map(({ weddingId }) => weddingId)).toEqual([
+    expect(rows.sort(compareWeddings({ now })).map(({ weddingId }) => weddingId)).toEqual([
+      'hoje',
       'janeiro',
       'marco',
+      'ontem',
+      'expirado-2025',
       'sem-data-novo',
       'sem-data-velho',
+    ]);
+  });
+
+  it('RN02 - o "hoje" é do fuso do casamento', () => {
+    // 12/11 às 01h30 UTC: em São Paulo ainda é 11/11; em Lisboa, já 12/11.
+    const late = new Date('2026-11-12T01:30:00Z');
+    const rows = [
+      row({ weddingId: 'lisboa-11', eventDate: '2026-11-11', timezone: 'Europe/Lisbon' }),
+      row({ weddingId: 'sp-11', eventDate: '2026-11-11' }),
+    ];
+
+    expect(rows.sort(compareWeddings({ now: late })).map(({ weddingId }) => weddingId)).toEqual([
+      'sp-11',
+      'lisboa-11',
     ]);
   });
 

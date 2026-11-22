@@ -1,5 +1,5 @@
 import { BullModule } from '@nestjs/bullmq';
-import { AppConfigService } from '../config/app-config.service';
+import { AppConfigService } from '@/shared/config/app-config.service';
 
 /**
  * A fila do lado que produz (a API), sem fila offline: com o Redis fora, o

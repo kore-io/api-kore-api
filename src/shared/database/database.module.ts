@@ -1,3 +1,4 @@
+import { SupportContext } from './support-context';
 import { Global, Module } from '@nestjs/common';
 import { BackofficePrismaService } from './backoffice-prisma.service';
 import { PrismaService } from './prisma.service';
@@ -10,11 +11,13 @@ import { BackofficeTransaction } from './backoffice-transaction';
   providers: [
     PrismaService,
     BackofficePrismaService,
+    SupportContext,
     TenantTransaction,
     BackofficeTransaction,
     { provide: AFTER_COMMIT, useExisting: TenantTransaction },
   ],
   exports: [
+    SupportContext,
     PrismaService,
     BackofficePrismaService,
     TenantTransaction,

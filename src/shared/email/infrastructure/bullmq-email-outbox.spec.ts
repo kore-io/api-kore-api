@@ -1,5 +1,5 @@
 import type { Queue } from 'bullmq';
-import type { EmailSender } from '../application/email-sender.port';
+import type { EmailSender } from '@/shared/email/application/email-sender.port';
 import { BullmqEmailOutbox } from './bullmq-email-outbox';
 import { EMAIL_JOB_OPTIONS } from './email-queues';
 
@@ -10,7 +10,7 @@ function build({ add }: { add: jest.Mock }) {
   const defaultAdd = jest.fn().mockResolvedValue({});
   const defaultQueue = { add: defaultAdd } as unknown as Queue;
   const send = jest.fn().mockResolvedValue(undefined);
-  const sender: EmailSender = { send };
+  const sender: EmailSender = { send, ping: jest.fn() };
   return { outbox: new BullmqEmailOutbox(loginQueue, defaultQueue, sender), send, defaultAdd };
 }
 

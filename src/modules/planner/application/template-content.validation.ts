@@ -13,8 +13,8 @@ import {
   ValidateNested,
   validate,
 } from 'class-validator';
-import { toFieldErrors, type FieldError } from '../../../shared/http/validation-errors';
-import { checkedAppearance } from '../../access/application/create-wedding.use-case';
+import { toFieldErrors, type FieldError } from '@/shared/http/validation-errors';
+import { checkedAppearance } from '@/modules/access/application/weddings/create-wedding.use-case';
 import {
   BACKGROUND_MODES,
   FONT_PAIR_KEYS,
@@ -23,9 +23,12 @@ import {
   type BackgroundMode,
   type FontPairKey,
   type StarterPaletteKey,
-} from '../../site/domain/appearance';
-import { SECTION_LIMITS as L, normalizeSiteText } from '../../site/domain/site-sections';
-import type { PlannerTemplateKind, TemplateSectionType } from '../domain/planner-template';
+} from '@/modules/site/domain/appearance';
+import { SECTION_LIMITS as L, normalizeSiteText } from '@/modules/site/domain/site-sections';
+import type {
+  PlannerTemplateKind,
+  TemplateSectionType,
+} from '@/modules/planner/domain/planner-template';
 
 const text = ({ value }: { value: unknown }): unknown =>
   typeof value === 'string' ? normalizeSiteText({ value }) : value;

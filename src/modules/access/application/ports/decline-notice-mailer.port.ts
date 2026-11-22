@@ -1,4 +1,4 @@
-import type { AccessInvitationKind } from '../../domain/access-invitation';
+import type { AccessInvitationKind } from '@/modules/access/domain/invitations/access-invitation';
 
 export interface DeclineNotice {
   kind: AccessInvitationKind;
@@ -9,8 +9,12 @@ export interface DeclineNotice {
   declinedBy: string;
   /** Os primeiros nomes dos noivos, para o convite do casal. */
   partnerNames: [string, string];
-  /** Dono → /app; indicador → /perfis (decisão 172, item 7). */
+  /**
+   * Dono → Colaboradores; indicador → o detalhe do casamento na Área do
+   * cerimonialista (Cadastro e perfil do cerimonialista RN07).
+   */
   inviterIsOwner: boolean;
+  weddingId: string;
 }
 
 /** E-mail 5 da Voz & Microcopy: aviso de convite recusado. */

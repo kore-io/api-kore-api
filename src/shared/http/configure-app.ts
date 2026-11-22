@@ -6,8 +6,8 @@ import type { CorsOptionsDelegate } from '@nestjs/common/interfaces/external/cor
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, type OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
-import type { Request } from 'express';
-import { OPENAPI_CONSTANT_SCHEMAS } from '../../openapi-constants';
+import type { NextFunction, Request, Response } from 'express';
+import { OPENAPI_CONSTANT_SCHEMAS } from '@/cli/openapi-export/openapi-constants';
 import { originsFor } from './origin-policy';
 import { SiteRouteRegistry } from './site-routes.registry';
 import { validationExceptionFactory } from './validation-errors';
@@ -37,6 +37,14 @@ export function configureApp({
   if (trustProxyHops > 0) {
     (app as NestExpressApplication).set('trust proxy', trustProxyHops);
   }
+
+  // Sem a marca da pilha e sem o navegador adivinhar o tipo do conteúdo
+  // (decisão 306(3)). HSTS e os demais cabeçalhos ficam no proxy.
+  (app as NestExpressApplication).disable('x-powered-by');
+  app.use((_request: Request, response: Response, next: NextFunction) => {
+    response.setHeader('X-Content-Type-Options', 'nosniff');
+    next();
+  });
 
   // 410 e 423 do site fora do ar com Cache-Control: no-store (Data de saída do ar RN08).
   app.useGlobalFilters(new NoStoreGoneFilter(app.get(HttpAdapterHost).httpAdapter));

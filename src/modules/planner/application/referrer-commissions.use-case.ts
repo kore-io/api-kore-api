@@ -2,33 +2,42 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   PLANNER_PROFILES,
   type PlannerProfiles,
-} from '../../access/application/ports/planner-profiles.port';
+} from '@/modules/access/application/ports/planner-profiles.port';
 import {
   commissionBalances,
+  commissionPaymentLines,
   commissionsByWedding,
   type CommissionBalances,
-  type CommissionRow,
+  type CommissionPaymentLine,
   type WeddingCommissions,
-} from '../domain/commissions';
+} from '@/modules/planner/domain/commissions';
 import { requirePlannerProfile } from './planner-gate';
 import {
   REFERRER_COMMISSIONS_READER,
   type ReferrerCommissionsReader,
 } from './ports/referrer-commissions-reader.port';
 
-export interface ReferrerCommissionsView {
+/** As linhas por página da tela Comissões (Contrato de API: `page`). */
+export const COMMISSIONS_PAGE_SIZE = 50;
+
+export type CommissionsTab = 'payment' | 'wedding';
+
+export type ReferrerCommissionsView = {
   balances: CommissionBalances;
-  /** Aba Por pagamento: a mais nova primeiro. */
-  items: CommissionRow[];
-  /** Aba Por casamento. */
-  byWedding: WeddingCommissions[];
-}
+  page: number;
+  pageSize: number;
+  total: number;
+} & (
+  | { view: 'payment'; items: CommissionPaymentLine[] }
+  | { view: 'wedding'; items: WeddingCommissions[] }
+);
 
 /**
- * GET /v1/me/referrer/commissions (Comissões do indicador RN02, RN07 e RN10):
- * os saldos, as comissões por pagamento e por casamento. A API devolve o
- * percentual (a tela não o mostra, decisão 230, D3); o id do casamento só sai
- * quando a linha abre (ela colabora nele), como no Link de indicação.
+ * GET /v1/me/referrer/commissions?view=payment|wedding&page= (Comissões do
+ * indicador RN02, RN07 e RN10; Contrato de API, decisão 275): os saldos e uma
+ * aba por vez, paginada. Por pagamento, as comissões e os ajustes juntos, o
+ * mais novo primeiro; por casamento, a soma por casal. A API devolve o
+ * percentual e o motivo do bloqueio (a tela não os mostra, decisão 230, D3).
  */
 @Injectable()
 export class ListReferrerCommissions {
@@ -37,13 +46,26 @@ export class ListReferrerCommissions {
     @Inject(REFERRER_COMMISSIONS_READER) private readonly reader: ReferrerCommissionsReader,
   ) {}
 
-  async execute({ userId }: { userId: string }): Promise<ReferrerCommissionsView> {
+  async execute({
+    userId,
+    view = 'payment',
+    page = 1,
+  }: {
+    userId: string;
+    view?: CommissionsTab;
+    page?: number;
+  }): Promise<ReferrerCommissionsView> {
     await requirePlannerProfile({ profiles: this.profiles, userId });
     const rows = await this.reader.list();
-    return {
-      balances: commissionBalances(rows),
-      items: rows,
-      byWedding: commissionsByWedding(rows),
-    };
+    const adjustments = await this.reader.adjustments();
+    const balances = commissionBalances(rows, adjustments);
+    const slice = <T>(all: T[]) => ({
+      page,
+      pageSize: COMMISSIONS_PAGE_SIZE,
+      total: all.length,
+      items: all.slice((page - 1) * COMMISSIONS_PAGE_SIZE, page * COMMISSIONS_PAGE_SIZE),
+    });
+    if (view === 'wedding') return { balances, view, ...slice(commissionsByWedding(rows)) };
+    return { balances, view, ...slice(commissionPaymentLines({ rows, adjustments })) };
   }
 }

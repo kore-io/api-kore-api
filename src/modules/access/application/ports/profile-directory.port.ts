@@ -1,4 +1,4 @@
-import type { ProfileKind } from '../../domain/authenticated-session';
+import type { ProfileKind } from '@/modules/access/domain/sessions/authenticated-session';
 
 /** Um vínculo ativo da pessoa, como os cartões da Seleção de perfil mostram (decisão 174). */
 export interface MembershipSummary {
@@ -20,6 +20,8 @@ export interface MembershipSummary {
     endDate: string | null;
     graceUntil: string | null;
     expiredAt: string | null;
+    /** Até onde está pago: a faixa do caso B fora de Pagamentos (decisões 293(5) e 296(2)). */
+    paidThrough: string | null;
     deletionScheduledFor: string | null;
   };
 }

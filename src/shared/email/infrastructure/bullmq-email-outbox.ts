@@ -1,12 +1,16 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { Queue } from 'bullmq';
-import type { EmailOutbox, EmailPriority, EmailTag } from '../application/email-outbox.port';
+import type {
+  EmailOutbox,
+  EmailPriority,
+  EmailTag,
+} from '@/shared/email/application/email-outbox.port';
 import {
   EMAIL_SENDER,
   type EmailMessage,
   type EmailSender,
-} from '../application/email-sender.port';
+} from '@/shared/email/application/email-sender.port';
 import {
   DEFAULT_EMAIL_QUEUE,
   DELIVER_EMAIL_JOB,

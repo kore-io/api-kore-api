@@ -1,7 +1,7 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../../generated/prisma/client';
-import { AppConfigService } from '../config/app-config.service';
+import { PrismaClient } from '@/generated/prisma/client';
+import { AppConfigService } from '@/shared/config/app-config.service';
 
 export const BACKOFFICE_DB_ROLE = 'kore_backoffice';
 

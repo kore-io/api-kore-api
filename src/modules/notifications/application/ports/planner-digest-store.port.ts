@@ -4,10 +4,14 @@ import type { EmailFrequency } from './notification-store.port';
 export interface PlannerDigestWedding {
   weddingId: string;
   partnerNames: [string, string];
+  /** O cursor das respostas, o mesmo do e-mail na hora. */
   emailedThrough: Date | null;
   /** Os payloads das respostas, só com o vínculo de colaboradora ativo (D18). */
   rsvpPayloads: unknown[];
-  /** Quando o aviso de publicação chegou, se ela ainda colabora ou indicou (D18). */
+  /**
+   * Quando o aviso de publicação chegou, se ela ainda colabora ou indicou (D18)
+   * e ele ainda não foi num Resumo (o cursor próprio; decisão 308(5)).
+   */
   publishedAt: Date | null;
 }
 
@@ -25,8 +29,14 @@ export interface LockedPlannerDigest {
 
 export interface PlannerDigestChange {
   lastDigestDate: string;
-  /** O novo `emailedThrough` de cada casamento que entrou no e-mail. */
-  cursors: { weddingId: string; emailedThrough: Date }[];
+  /**
+   * Os cursores de cada casamento que entrou no e-mail: o das respostas
+   * (`emailedThrough`, só quando foram respostas) e o da publicação
+   * (`publishedEmailedThrough`, só quando foi a publicação). Um cursor por
+   * tipo: o e-mail na hora de uma resposta não passa por cima da publicação
+   * que espera o Resumo (decisão 308(5)).
+   */
+  cursors: { weddingId: string; emailedThrough?: Date; publishedEmailedThrough?: Date }[];
 }
 
 /**

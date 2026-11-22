@@ -1,8 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { HealthIndicatorService } from '@nestjs/terminus';
 import Redis from 'ioredis';
-import { PrismaService } from '../database/prisma.service';
-import { REDIS_CLIENT } from '../redis/redis.module';
+import { PrismaService } from '@/shared/database/prisma.service';
+import { REDIS_CLIENT } from '@/shared/redis/redis.module';
 
 const CHECK_TIMEOUT_MS = 1_000;
 

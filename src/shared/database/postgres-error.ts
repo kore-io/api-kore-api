@@ -1,4 +1,4 @@
-import { Prisma } from '../../generated/prisma/client';
+import { Prisma } from '@/generated/prisma/client';
 
 /**
  * O SQLSTATE de um erro do Postgres que veio pelo Prisma (adapter-pg), quando

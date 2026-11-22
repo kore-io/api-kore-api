@@ -1,0 +1,518 @@
+import type { TestingModule } from '@nestjs/testing';
+import { randomBytes, randomUUID } from 'node:crypto';
+import { PlannerDigest } from '@/modules/notifications/application/planner-digest.use-case';
+import {
+  NOTIFICATION_EMAIL_STORE,
+  type NotificationEmailStore,
+} from '@/modules/notifications/application/ports/notification-email-store.port';
+import {
+  PLANNER_DIGEST_STORE,
+  type PlannerDigestStore,
+} from '@/modules/notifications/application/ports/planner-digest-store.port';
+import type {
+  PushResult,
+  PushTarget,
+} from '@/modules/notifications/application/ports/push-sender.port';
+import { PUSH_STORE } from '@/modules/notifications/application/ports/push-store.port';
+import { RsvpEmails } from '@/modules/notifications/application/rsvp-emails.use-cases';
+import { RsvpPush } from '@/modules/notifications/application/rsvp-push.use-case';
+import { AppConfigService } from '@/shared/config/app-config.service';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import { createTestWorker } from '../support/harness/create-test-worker';
+import { inbox, waitForInbox } from '../support/harness/mailpit';
+import { seedReferrer } from '../support/factories/referrers';
+import { seedWedding } from '../support/factories/weddings';
+
+const MAILPIT_API_URL = process.env.MAILPIT_API_URL ?? 'http://localhost:8025';
+const DAY_MS = 86_400_000;
+
+/**
+ * O envio para a cerimonialista (Notificações da cerimonialista RN06 e RN07;
+ * worker e Mailpit): o e-mail na hora e o push com os textos dela e a
+ * preferência geral, o Resumo agrupado às 20h de São Paulo, e a reconferência
+ * do vínculo na hora de mandar (D18).
+ */
+describe('Envio das notificações da cerimonialista (worker)', () => {
+  let worker: TestingModule;
+  let db: BackofficePrismaService;
+  let emails: RsvpEmails;
+  let digest: PlannerDigest;
+
+  beforeAll(async () => {
+    worker = await createTestWorker();
+    db = worker.get(BackofficePrismaService);
+    emails = worker.get(RsvpEmails);
+    digest = worker.get(PlannerDigest);
+  });
+
+  afterAll(async () => {
+    await worker?.close();
+  });
+
+  /**
+   * Um dia futuro às 20h30 de São Paulo (23h30 UTC): longe do "hoje" da rotina
+   * real de 15 minutos que roda no worker de teste.
+   */
+  const evening = (days: number) => {
+    const date = new Date(Date.now() + days * DAY_MS).toISOString().slice(0, 10);
+    return new Date(`${date}T23:30:00Z`);
+  };
+  const textOf = async (id: string) =>
+    ((await (await fetch(`${MAILPIT_API_URL}/api/v1/message/${id}`)).json()) as { Text: string })
+      .Text;
+
+  async function planner() {
+    const juliana = await seedReferrer({ db, kind: 'planner', name: 'Juliana Prado' });
+    const { email } = await db.user.findUniqueOrThrow({ where: { id: juliana.userId } });
+    return { userId: juliana.userId, email };
+  }
+
+  /** Ana e Marcos, com a cerimonialista colaboradora, e uma resposta não lida para ela. */
+  async function collaboration({ userId }: { userId: string }) {
+    const { id: anaId } = await db.user.create({
+      data: { email: `ana.${randomUUID()}@kore.local`, name: 'Ana Beatriz' },
+    });
+    const { weddingId } = await seedWedding({ db, ownerId: anaId, collaboratorIds: [userId] });
+    const party = await db.party.create({
+      data: {
+        weddingId,
+        name: 'Família Moreira',
+        linkToken: randomBytes(16).toString('base64url'),
+      },
+    });
+    const at = new Date(Date.now() - 60_000);
+    await db.notification.create({
+      data: {
+        userId,
+        weddingId,
+        type: 'rsvp',
+        groupKey: `rsvp:${weddingId}`,
+        payload: [
+          {
+            partyId: party.id,
+            name: 'Família Moreira',
+            confirmed: 2,
+            declined: 0,
+            at: at.toISOString(),
+          },
+        ],
+        updatedAt: at,
+      },
+    });
+    return { anaId, weddingId };
+  }
+
+  const generalPreference = (
+    userId: string,
+    type: 'rsvp' | 'wedding_published',
+    data: { email?: 'off' | 'immediate' | 'daily'; push?: boolean },
+  ) => db.notificationPreference.create({ data: { userId, weddingId: null, type, ...data } });
+
+  /** Um aparelho inscrito para a pessoa e o RsvpPush com um envio que só registra. */
+  async function subscribedPush(userId: string) {
+    const session = await db.session.create({
+      data: {
+        userId,
+        tokenHash: randomBytes(32).toString('hex'),
+        expiresAt: new Date(Date.now() + DAY_MS),
+        lastSeenAt: new Date(),
+        authenticatedAt: new Date(),
+        authMethod: 'email',
+      },
+    });
+    await db.pushSubscription.create({
+      data: {
+        userId,
+        sessionId: session.id,
+        endpoint: `https://fcm.googleapis.com/fcm/send/${randomBytes(12).toString('hex')}`,
+        p256dh: 'p',
+        auth: 'a',
+      },
+    });
+    const calls: { target: PushTarget; payload: Record<string, unknown> }[] = [];
+    const sender = {
+      enabled: () => true,
+      send: ({ target, payload }: { target: PushTarget; payload: string }) => {
+        calls.push({ target, payload: JSON.parse(payload) as Record<string, unknown> });
+        return Promise.resolve('sent' as PushResult);
+      },
+    };
+    const push = new RsvpPush(worker.get(PUSH_STORE), sender, worker.get(AppConfigService));
+    return { calls, push };
+  }
+
+  it('RN07 - na hora, pela preferência geral: o texto dela, sem o nome do grupo', async () => {
+    const juliana = await planner();
+    const { weddingId } = await collaboration(juliana);
+    await generalPreference(juliana.userId, 'rsvp', { email: 'immediate' });
+
+    expect(
+      await emails.send({ userId: juliana.userId, weddingId, mode: 'immediate', now: new Date() }),
+    ).toEqual({ kind: 'sent' });
+
+    const [message] = await waitForInbox({ to: juliana.email });
+    expect(message.Subject).toBe('1 grupo respondeu em Ana e Marcos');
+    const text = await textOf(message.ID);
+    expect(text).toContain('Olá, Juliana.');
+    // Sem "Hoje" (decisão 274(5)); o rodapé fala dos casamentos dela (274(3)).
+    expect(text).toContain('1 grupo respondeu o convite de Ana e Marcos.');
+    expect(text).not.toContain('Hoje');
+    expect(text).toContain('escolheu receber as respostas dos seus casamentos na hora');
+    expect(text).toContain(`/cerimonialista/casamentos/${weddingId}`);
+    expect(text).not.toContain('Família Moreira');
+  });
+
+  it('RN06 - a preferência do casamento não vale para ela; sem a geral, o padrão é o resumo', async () => {
+    const juliana = await planner();
+    const { weddingId } = await collaboration(juliana);
+    await db.notificationPreference.create({
+      data: { userId: juliana.userId, weddingId, type: 'rsvp', email: 'immediate' },
+    });
+
+    expect(
+      await emails.send({ userId: juliana.userId, weddingId, mode: 'immediate', now: new Date() }),
+    ).toEqual({ kind: 'skipped' });
+  });
+
+  it('D18 e RN07 - removida antes do envio: o e-mail e o push da fila são descartados; o vendedor não recebe', async () => {
+    const juliana = await planner();
+    const { weddingId } = await collaboration(juliana);
+    await generalPreference(juliana.userId, 'rsvp', { email: 'immediate', push: true });
+    await db.membership.updateMany({
+      where: { weddingId, userId: juliana.userId },
+      data: { removedAt: new Date() },
+    });
+
+    expect(
+      await emails.send({ userId: juliana.userId, weddingId, mode: 'immediate', now: new Date() }),
+    ).toEqual({ kind: 'skipped' });
+    expect(await inbox({ to: juliana.email })).toEqual([]);
+    // O push da fila também é descartado (RN07): a mesma reconferência do vínculo.
+    const { calls, push } = await subscribedPush(juliana.userId);
+    expect(await push.send({ userId: juliana.userId, weddingId, now: new Date() })).toEqual({
+      sent: 0,
+    });
+    expect(calls).toEqual([]);
+
+    const lucas = await seedReferrer({ db, kind: 'seller', name: 'Lucas Andrade' });
+    const seller = await collaboration({ userId: lucas.userId });
+    await generalPreference(lucas.userId, 'rsvp', { email: 'immediate' });
+    expect(
+      await emails.send({
+        userId: lucas.userId,
+        weddingId: seller.weddingId,
+        mode: 'immediate',
+        now: new Date(),
+      }),
+    ).toEqual({ kind: 'skipped' });
+  });
+
+  it('RN07 - o push dela: o casal, sem o nome do grupo, e a central dela', async () => {
+    const juliana = await planner();
+    const { weddingId } = await collaboration(juliana);
+    await generalPreference(juliana.userId, 'rsvp', { push: true });
+    const { calls, push } = await subscribedPush(juliana.userId);
+
+    await push.send({ userId: juliana.userId, weddingId, now: new Date() });
+
+    expect(calls.map((call) => call.payload)).toEqual([
+      {
+        title: 'Kore',
+        body: 'Novas respostas em Ana e Marcos',
+        tag: `rsvp:${weddingId}`,
+        url: 'http://localhost:5173/cerimonialista/notificacoes',
+      },
+    ]);
+  });
+
+  it('RN07 - o Resumo agrupado às 20h de São Paulo: um e-mail com um bloco por casamento, uma vez por dia', async () => {
+    const juliana = await planner();
+    const collaborating = await collaboration(juliana);
+    // Um casamento que veio pelo link dela, publicado, sem vínculo.
+    const referrer = await db.referrer.findUniqueOrThrow({ where: { userId: juliana.userId } });
+    const { id: biancaId } = await db.user.create({
+      data: { email: `bianca.${randomUUID()}@kore.local` },
+    });
+    const referred = await seedWedding({ db, ownerId: biancaId });
+    await db.wedding.update({
+      where: { id: referred.weddingId },
+      data: { referrerId: referrer.id, referralSource: 'referral_link' },
+    });
+    await db.notification.create({
+      data: {
+        userId: juliana.userId,
+        weddingId: referred.weddingId,
+        type: 'wedding_published',
+        groupKey: `wedding_published:${referred.weddingId}`,
+        payload: [{ partnerNames: ['Ana', 'Marcos'] }],
+      },
+    });
+    const now = evening(3);
+
+    expect(await digest.send({ userId: juliana.userId, now })).toBe(true);
+
+    const [message] = await waitForInbox({ to: juliana.email });
+    expect(message.Subject).toBe('Resumo do dia: novidades em 2 casamentos');
+    const text = await textOf(message.ID);
+    expect(text).toContain('Hoje, nos seus casamentos:');
+    expect(text).toContain('1 grupo respondeu');
+    expect(text).toContain('Site publicado');
+    expect(text).not.toContain('Família Moreira');
+    expect(
+      (await db.notificationDigestState.findUniqueOrThrow({ where: { userId: juliana.userId } }))
+        .lastDigestDate,
+    ).toEqual(new Date(`${now.toISOString().slice(0, 10)}T00:00:00Z`));
+    // Um cursor por tipo (decisão 308(5)): a resposta anda o das respostas; a publicação, o dela.
+    const cursors = (weddingId: string) =>
+      db.notificationEmailState.findUniqueOrThrow({
+        where: { userId_weddingId: { userId: juliana.userId, weddingId } },
+        select: { emailedThrough: true, publishedEmailedThrough: true },
+      });
+    expect(await cursors(collaborating.weddingId)).toMatchObject({
+      emailedThrough: expect.any(Date),
+      publishedEmailedThrough: null,
+    });
+    expect(await cursors(referred.weddingId)).toMatchObject({
+      emailedThrough: null,
+      publishedEmailedThrough: expect.any(Date),
+    });
+
+    // No mesmo dia, não sai outro.
+    expect(await digest.send({ userId: juliana.userId, now })).toBe(false);
+    expect(await inbox({ to: juliana.email })).toHaveLength(1);
+  });
+
+  /** Ana e Marcos com o site publicado em `publishedAt` e uma resposta em `answeredAt`, para ela. */
+  async function publishedAndAnswered({
+    userId,
+    publishedAt,
+    answeredAt,
+  }: {
+    userId: string;
+    publishedAt: Date;
+    answeredAt: Date;
+  }) {
+    const { id: anaId } = await db.user.create({
+      data: { email: `ana.${randomUUID()}@kore.local`, name: 'Ana Beatriz' },
+    });
+    const { weddingId } = await seedWedding({ db, ownerId: anaId, collaboratorIds: [userId] });
+    const party = await db.party.create({
+      data: {
+        weddingId,
+        name: 'Família Moreira',
+        linkToken: randomBytes(16).toString('base64url'),
+      },
+    });
+    await db.notification.create({
+      data: {
+        userId,
+        weddingId,
+        type: 'wedding_published',
+        groupKey: `wedding_published:${weddingId}`,
+        payload: [{ partnerNames: ['Ana', 'Marcos'] }],
+        createdAt: publishedAt,
+        updatedAt: publishedAt,
+      },
+    });
+    await db.notification.create({
+      data: {
+        userId,
+        weddingId,
+        type: 'rsvp',
+        groupKey: `rsvp:${weddingId}`,
+        payload: [
+          {
+            partyId: party.id,
+            name: 'Família Moreira',
+            confirmed: 2,
+            declined: 0,
+            at: answeredAt.toISOString(),
+          },
+        ],
+        createdAt: answeredAt,
+        updatedAt: answeredAt,
+      },
+    });
+    return { weddingId };
+  }
+
+  it('RN07 (decisão 308(5)) - com Novas respostas em "Na hora", o Site publicado ainda sai no Resumo', async () => {
+    const juliana = await planner();
+    await generalPreference(juliana.userId, 'rsvp', { email: 'immediate' });
+    // O site publicado às 10h; uma resposta às 15h, que sai na hora.
+    const { weddingId } = await publishedAndAnswered({
+      userId: juliana.userId,
+      publishedAt: new Date(Date.now() - 5 * 3_600_000),
+      answeredAt: new Date(Date.now() - 60_000),
+    });
+    expect(
+      await emails.send({ userId: juliana.userId, weddingId, mode: 'immediate', now: new Date() }),
+    ).toEqual({ kind: 'sent' });
+
+    expect(await digest.send({ userId: juliana.userId, now: evening(3) })).toBe(true);
+
+    const messages = await waitForInbox({ to: juliana.email, count: 2 });
+    const summary = messages.find((message) => message.Subject.startsWith('Resumo do dia'));
+    expect(summary?.Subject).toBe('Resumo do dia: novidades em 1 casamento');
+    const text = await textOf(summary!.ID);
+    expect(text).toContain('Site publicado');
+    // A resposta já foi na hora: não entra de novo no Resumo.
+    expect(text).not.toContain('1 grupo respondeu');
+  });
+
+  it('RN07 (decisão 308(5)) - a publicação no Resumo não passa por cima da resposta que espera o "Na hora"', async () => {
+    const juliana = await planner();
+    await generalPreference(juliana.userId, 'rsvp', { email: 'immediate' });
+    // A resposta às 9h ainda não foi por e-mail; o site foi publicado às 10h.
+    const { weddingId } = await publishedAndAnswered({
+      userId: juliana.userId,
+      publishedAt: new Date(Date.now() - 3_600_000),
+      answeredAt: new Date(Date.now() - 2 * 3_600_000),
+    });
+    expect(await digest.send({ userId: juliana.userId, now: evening(3) })).toBe(true);
+
+    expect(
+      await emails.send({ userId: juliana.userId, weddingId, mode: 'immediate', now: new Date() }),
+    ).toEqual({ kind: 'sent' });
+    const messages = await waitForInbox({ to: juliana.email, count: 2 });
+    expect(messages.map((message) => message.Subject).sort()).toEqual([
+      '1 grupo respondeu em Ana e Marcos',
+      'Resumo do dia: novidades em 1 casamento',
+    ]);
+  });
+
+  it('Casamento bloqueado RN06 - o casamento bloqueado fica fora do Resumo dela, e o cursor dele não anda', async () => {
+    const juliana = await planner();
+    const collaborating = await collaboration(juliana);
+    await db.wedding.update({
+      where: { id: collaborating.weddingId },
+      data: { blockedAt: new Date() },
+    });
+    const now = evening(3);
+
+    expect(await digest.send({ userId: juliana.userId, now })).toBe(false);
+    expect(await inbox({ to: juliana.email })).toHaveLength(0);
+    expect(
+      await db.notificationEmailState.findUnique({
+        where: { userId_weddingId: { userId: juliana.userId, weddingId: collaborating.weddingId } },
+      }),
+    ).toBeNull();
+  });
+
+  it('RN07 e D18 - antes das 20h nada sai; a colaboração encerrada e o casamento de que é dona ficam fora', async () => {
+    const juliana = await planner();
+    const { weddingId } = await collaboration(juliana);
+    // Antes das 20h de São Paulo (19h59 = 22h59 UTC), a rotina não manda.
+    const date = new Date(Date.now() + 4 * DAY_MS).toISOString().slice(0, 10);
+    expect(await digest.sweep({ now: new Date(`${date}T22:59:00Z`) })).toEqual({
+      sent: 0,
+      failed: 0,
+    });
+    expect(await inbox({ to: juliana.email })).toEqual([]);
+
+    await db.membership.updateMany({
+      where: { weddingId, userId: juliana.userId },
+      data: { removedAt: new Date() },
+    });
+    const own = await seedWedding({ db, ownerId: juliana.userId });
+    await db.notification.create({
+      data: {
+        userId: juliana.userId,
+        weddingId: own.weddingId,
+        type: 'rsvp',
+        groupKey: `rsvp:${own.weddingId}`,
+        payload: [
+          {
+            partyId: randomUUID(),
+            name: 'Família Prado',
+            confirmed: 1,
+            declined: 0,
+            at: new Date().toISOString(),
+          },
+        ],
+      },
+    });
+
+    expect(await digest.send({ userId: juliana.userId, now: evening(5) })).toBe(false);
+    expect(await inbox({ to: juliana.email })).toEqual([]);
+  });
+
+  it('RN07 - com a preferência geral fora do resumo, a resposta não entra', async () => {
+    const juliana = await planner();
+    await collaboration(juliana);
+    await generalPreference(juliana.userId, 'rsvp', { email: 'off' });
+
+    expect(await digest.send({ userId: juliana.userId, now: evening(6) })).toBe(false);
+  });
+
+  it('RN04 e D18 - a rotina de 15 minutos só varre quem ainda pode receber', async () => {
+    const pairs = async () =>
+      (await worker.get<NotificationEmailStore>(NOTIFICATION_EMAIL_STORE).candidates()).map(
+        ({ userId, weddingId }) => `${userId}:${weddingId}`,
+      );
+    const digestUsers = () => worker.get<PlannerDigestStore>(PLANNER_DIGEST_STORE).candidates();
+
+    // A cerimonialista em "Na hora" entra nas duas listas que lhe cabem só pela preferência.
+    const immediate = await planner();
+    const a = await collaboration(immediate);
+    await generalPreference(immediate.userId, 'rsvp', { email: 'immediate' });
+    // No padrão (Resumo diário): fora da rotina por casamento, dentro do agrupado.
+    const daily = await planner();
+    const b = await collaboration(daily);
+    // Com o e-mail desligado: fora das duas.
+    const off = await planner();
+    const c = await collaboration(off);
+    await generalPreference(off.userId, 'rsvp', { email: 'off' });
+    // Removida: fora das duas.
+    const removed = await planner();
+    const d = await collaboration(removed);
+    await generalPreference(removed.userId, 'rsvp', { email: 'immediate' });
+    await db.membership.updateMany({
+      where: { weddingId: d.weddingId, userId: removed.userId },
+      data: { removedAt: new Date() },
+    });
+    // O vendedor: fora das duas.
+    const lucas = await seedReferrer({ db, kind: 'seller', name: 'Lucas Andrade' });
+    const e = await collaboration({ userId: lucas.userId });
+    await generalPreference(lucas.userId, 'rsvp', { email: 'immediate' });
+    // A dona com o e-mail do casamento desligado: fora; no padrão, dentro.
+    const ownerOff = await db.notification.create({
+      data: {
+        userId: a.anaId,
+        weddingId: a.weddingId,
+        type: 'rsvp',
+        groupKey: `rsvp:${a.weddingId}`,
+        payload: [],
+      },
+    });
+    await db.notification.create({
+      data: {
+        userId: b.anaId,
+        weddingId: b.weddingId,
+        type: 'rsvp',
+        groupKey: `rsvp:${b.weddingId}`,
+        payload: [],
+      },
+    });
+    await db.notificationPreference.create({
+      data: { userId: ownerOff.userId, weddingId: a.weddingId, type: 'rsvp', email: 'off' },
+    });
+
+    const found = await pairs();
+    expect(found).toContain(`${immediate.userId}:${a.weddingId}`);
+    expect(found).toContain(`${b.anaId}:${b.weddingId}`);
+    for (const pair of [
+      `${daily.userId}:${b.weddingId}`,
+      `${off.userId}:${c.weddingId}`,
+      `${removed.userId}:${d.weddingId}`,
+      `${lucas.userId}:${e.weddingId}`,
+      `${a.anaId}:${a.weddingId}`,
+    ])
+      expect(found).not.toContain(pair);
+
+    const users = await digestUsers();
+    expect(users).toContain(daily.userId);
+    for (const userId of [immediate.userId, off.userId, removed.userId, lucas.userId])
+      expect(users).not.toContain(userId);
+  });
+});

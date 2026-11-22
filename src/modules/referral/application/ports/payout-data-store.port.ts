@@ -1,4 +1,4 @@
-import type { PixKeyType, TaxIdType } from '../../domain/payout-data';
+import type { PixKeyType, TaxIdType } from '@/modules/referral/domain/payout-data';
 
 export interface PixKeyRow {
   id: string;
@@ -66,6 +66,8 @@ export interface PayoutDataStore {
   } | null>;
   /** O e-mail e o primeiro nome de quem está na sessão, para os avisos. */
   recipient({ userId }: { userId: string }): Promise<{ email: string; firstName: string | null }>;
+  /** Quando o staff trocou o e-mail de acesso da pessoa (decisão 253(2)). */
+  accessEmailChangedAt({ userId }: { userId: string }): Promise<Date | null>;
 }
 
 export const PAYOUT_DATA_STORE = Symbol('PayoutDataStore');

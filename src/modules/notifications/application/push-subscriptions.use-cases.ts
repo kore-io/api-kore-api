@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { isAllowedPushEndpoint } from '../domain/push-endpoint';
+import { isAllowedPushEndpoint } from '@/modules/notifications/domain/push-endpoint';
 import {
   PUSH_SUBSCRIPTION_STORE,
   type PushSubscriptionStore,

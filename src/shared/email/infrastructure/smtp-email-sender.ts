@@ -1,7 +1,7 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { createTransport, Transporter } from 'nodemailer';
-import { AppConfigService } from '../../config/app-config.service';
-import { EmailMessage, EmailSender } from '../application/email-sender.port';
+import { AppConfigService } from '@/shared/config/app-config.service';
+import { EmailMessage, EmailSender } from '@/shared/email/application/email-sender.port';
 
 /** Adaptador SMTP: Mailpit no ambiente local; o SES entra com a infraestrutura. */
 @Injectable()
@@ -20,6 +20,11 @@ export class SmtpEmailSender implements EmailSender, OnModuleDestroy {
 
   async send({ message }: { message: EmailMessage }): Promise<void> {
     await this.transporter.sendMail({ from: this.from, ...message });
+  }
+
+  /** O SMTP responde ao EHLO e à autenticação, sem enviar (o Mailpit, no local). */
+  async ping(): Promise<void> {
+    await this.transporter.verify();
   }
 
   onModuleDestroy(): void {

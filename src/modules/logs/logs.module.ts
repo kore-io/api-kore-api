@@ -1,12 +1,12 @@
 import { Global, Module } from '@nestjs/common';
-import { PrismaService } from '../../shared/database/prisma.service';
-import { TenantTransaction } from '../../shared/database/tenant-transaction';
+import { PrismaService } from '@/shared/database/prisma.service';
+import { TenantTransaction } from '@/shared/database/tenant-transaction';
 import { ACCESS_IP_LOG_WRITER } from './application/ports/access-ip-log-writer.port';
 import { APPLICATION_LOG_WRITER } from './application/ports/application-log-writer.port';
-import { IpHasher } from './infrastructure/ip-hasher';
-import { ipHasherProvider } from './infrastructure/ip-hasher.provider';
-import { PrismaAccessIpLogWriter } from './infrastructure/prisma-access-ip-log-writer';
-import { PrismaApplicationLogWriter } from './infrastructure/prisma-application-log-writer';
+import { IpHasher } from './infrastructure/providers/ip-hasher';
+import { ipHasherProvider } from './infrastructure/providers/ip-hasher.provider';
+import { PrismaAccessIpLogWriter } from './infrastructure/persistence/prisma-access-ip-log-writer';
+import { PrismaApplicationLogWriter } from './infrastructure/persistence/prisma-application-log-writer';
 
 /**
  * Log da aplicação e log de IP real (decisão 116), do lado da API. Global:

@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import type Redis from 'ioredis';
-import { AppConfigService } from '../config/app-config.service';
-import { REDIS_CLIENT } from '../redis/redis.module';
+import { AppConfigService } from '@/shared/config/app-config.service';
+import { REDIS_CLIENT } from '@/shared/redis/redis.module';
 import { KoreThrottlerGuard } from './kore-throttler.guard';
 import {
   AUTH_THROTTLER,

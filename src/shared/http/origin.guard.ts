@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
-import { AppConfigService } from '../config/app-config.service';
+import { AppConfigService } from '@/shared/config/app-config.service';
 import { evaluateOrigin, originsFor } from './origin-policy';
 import { hasCredentialCookie } from './session-cookie-name';
 import { IS_SITE_ROUTE } from './site-route.decorator';

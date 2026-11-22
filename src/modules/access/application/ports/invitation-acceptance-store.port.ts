@@ -1,5 +1,5 @@
-import type { InvitationSnapshot } from '../../domain/invitation-acceptance';
-import type { PartnerTitle } from '../../domain/wedding-signup';
+import type { InvitationSnapshot } from '@/modules/access/domain/invitations/invitation-acceptance';
+import type { PartnerTitle } from '@/modules/access/domain/weddings/wedding-signup';
 
 export type AcceptRefusal =
   'not_pending' | 'owners_full' | 'partner_taken' | 'planner_already' | 'self_referral';
@@ -47,6 +47,11 @@ export interface InvitationAcceptanceStore {
   }): Promise<string>;
   /** RN11: só convite por e-mail, pendente e no prazo; false se nada mudou. */
   decline({ tokenHash }: { tokenHash: string }): Promise<boolean>;
+  /**
+   * Decisão 297: a recusa do último convite de dono pendente volta "aguardando
+   * o casal" a rascunho (log wedding.awaiting_couple_reverted, system).
+   */
+  revertAwaitingCouple({ weddingId, now }: { weddingId: string; now: Date }): Promise<boolean>;
 }
 
 export const INVITATION_ACCEPTANCE_STORE = Symbol('InvitationAcceptanceStore');

@@ -1,6 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { FieldCipher, FieldCipherContext } from '../application/field-cipher.port';
-import { KEY_MANAGEMENT, type KeyManagement } from '../application/key-management.port';
+import { FieldCipher, FieldCipherContext } from '@/shared/crypto/application/field-cipher.port';
+import {
+  KEY_MANAGEMENT,
+  type KeyManagement,
+} from '@/shared/crypto/application/key-management.port';
 import { aesGcmDecrypt, aesGcmEncrypt } from './aes-gcm';
 import { DataKeyCache } from './data-key-cache';
 

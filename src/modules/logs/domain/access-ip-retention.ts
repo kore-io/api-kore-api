@@ -1,4 +1,4 @@
-import { monthsBefore } from '../../../shared/time/months-before';
+import { monthsBefore } from '@/shared/kernel/time/months-before';
 
 /** Prazo de guarda do IP real (decisão 116; Marco Civil da Internet, art. 15). */
 export const ACCESS_IP_RETENTION_MONTHS = 6;

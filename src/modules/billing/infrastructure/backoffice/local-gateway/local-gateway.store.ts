@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import type { BackofficePrismaService } from '../../../../../shared/database/backoffice-prisma.service';
+import type { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import type {
   GatewayChargeStatus,
   GatewayTransferStatus,
-} from '../../../application/ports/payment-gateway.port';
+} from '@/modules/billing/application/ports/payment-gateway.port';
 
 /** O esquema do adaptador local (Publicar e pagar RN14; decisão 231, rec. 18; B2-14). */
 export const LOCAL_GATEWAY_SCHEMA = 'local_gateway';

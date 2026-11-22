@@ -1,5 +1,5 @@
-import type { AgeGroup } from '../../domain/party';
-import type { StatsDelta } from '../../domain/wedding-stats';
+import type { AgeGroup } from '@/modules/guests/domain/parties/party';
+import type { StatsDelta } from '@/modules/guests/domain/stats/wedding-stats';
 
 export interface NewGuest {
   id: string;

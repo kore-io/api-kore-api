@@ -27,6 +27,8 @@ export interface PushStore {
     now: Date;
   }): Promise<{
     member: boolean;
+    /** O casamento bloqueado: o push das respostas não sai (Casamento bloqueado RN06). */
+    weddingBlocked: boolean;
     /** O dono ou a cerimonialista com Planner, conferido agora (D18); nulo sem vínculo. */
     role: 'owner' | 'planner' | null;
     partnerNames: [string, string];

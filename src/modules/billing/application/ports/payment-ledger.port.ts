@@ -1,5 +1,8 @@
-import type { AlertType } from '../../../../generated/prisma/client';
-import type { ConfirmingPayment, ConfirmingWedding } from '../../domain/payment-confirmation';
+import type { AlertType } from '@/generated/prisma/client';
+import type {
+  ConfirmingPayment,
+  ConfirmingWedding,
+} from '@/modules/billing/domain/payments/payment-confirmation';
 
 export interface LedgerWedding extends ConfirmingWedding {
   id: string;
@@ -179,8 +182,17 @@ export interface PaymentLedger {
   holdCommission(input: { paymentId: string; now: Date }): Promise<void>;
   /** Contestação ganha (RN06): held → available ou pending, pelo availableAt. */
   releaseCommission(input: { paymentId: string; now: Date }): Promise<void>;
-  /** Reembolso confirmado ou contestação perdida (RN05): fora de repasse → reversed. */
-  reverseCommission(input: { paymentId: string; now: Date }): Promise<void>;
+  /**
+   * Reembolso confirmado ou contestação perdida (RN05): fora de repasse ou num
+   * repasse pedido ou retido → reversed (o repasse fica retido, Repasse RN06);
+   * já paga → um ajuste negativo do mesmo valor (`refund` ou `chargeback`). No
+   * repasse em processamento, o Pix de saída decide (PR 9c).
+   */
+  reverseCommission(input: {
+    paymentId: string;
+    now: Date;
+    reason: 'refund' | 'chargeback';
+  }): Promise<void>;
   /** Um alerta aberto por tipo e entidade (B9-7): o repetido não abre outro. */
   openAlert(input: {
     type: AlertType;

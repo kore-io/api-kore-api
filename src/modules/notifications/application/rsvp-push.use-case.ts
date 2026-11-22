@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AppConfigService } from '../../../shared/config/app-config.service';
-import { isAllowedPushEndpoint } from '../domain/push-endpoint';
+import { AppConfigService } from '@/shared/config/app-config.service';
+import { isAllowedPushEndpoint } from '@/modules/notifications/domain/push-endpoint';
 import { PLANNER_COMMISSIONS_PATH } from './rsvp-emails.use-cases';
 import { PUSH_SENDER, type PushSender } from './ports/push-sender.port';
 import { PUSH_STORE, type PushStore, type PushType } from './ports/push-store.port';
@@ -95,6 +95,8 @@ export class RsvpPush {
     if (!this.sender.enabled()) return { sent: 0 };
     const recipient = await this.store.recipient({ userId, weddingId, type, now });
     if (!recipient.member || !recipient.push || !recipient.notification) return { sent: 0 };
+    // Casamento bloqueado RN06: o push das respostas para (o RSVP já está fechado).
+    if (type === 'rsvp' && recipient.weddingBlocked) return { sent: 0 };
 
     const stale = recipient.subscriptions.filter(
       (subscription) =>

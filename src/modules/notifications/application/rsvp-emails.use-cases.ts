@@ -1,14 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { AppConfigService } from '../../../shared/config/app-config.service';
-import {
-  EMAIL_SENDER,
-  type EmailSender,
-} from '../../../shared/email/application/email-sender.port';
-import { localDate } from '../../../shared/time/local-date';
+import { AppConfigService } from '@/shared/config/app-config.service';
+import { EMAIL_SENDER, type EmailSender } from '@/shared/email/application/email-sender.port';
+import { localDate } from '@/shared/kernel/time/local-date';
 import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,
-} from '../../logs/application/ports/application-log-writer.port';
+} from '@/modules/logs/application/ports/application-log-writer.port';
 import {
   DIGEST_HOUR,
   IMMEDIATE_WINDOW_MS,
@@ -19,7 +16,7 @@ import {
   newestAt,
   pendingGroups,
   type EmailContext,
-} from '../infrastructure/emails/notification-email';
+} from '@/modules/notifications/infrastructure/mail/templates/notification-email';
 import {
   NOTIFICATION_EMAIL_STORE,
   type LockedEmailState,
@@ -100,7 +97,8 @@ export class RsvpEmails {
       userId,
       weddingId,
       work: async (state) => {
-        if (!state.member) return null;
+        // Casamento bloqueado RN06: nada sai, e o cursor não anda (retoma no desbloqueio).
+        if (!state.member || state.blocked) return null;
         const groups = pendingGroups({
           payloads: state.payloads,
           emailedThrough: state.emailedThrough,

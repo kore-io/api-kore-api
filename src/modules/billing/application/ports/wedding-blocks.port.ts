@@ -4,12 +4,15 @@ export interface WeddingBlocks {
     weddingId: string;
     byUserId: string;
     reason: string;
+    /** O hash do IP de quem bloqueou (a rota do staff), para o log. */
+    ipHash?: string | null;
     now: Date;
   }): Promise<'blocked' | 'already_blocked' | 'not_found'>;
   unblock(input: {
     weddingId: string;
     byUserId: string;
     reason: string | null;
+    ipHash?: string | null;
     now: Date;
   }): Promise<'unblocked' | 'not_blocked' | 'not_found'>;
   /** Os pagamentos pendentes (publicação e extensão), para cancelar na porta (RN06). */

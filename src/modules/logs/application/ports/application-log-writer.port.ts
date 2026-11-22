@@ -1,4 +1,4 @@
-import type { ApplicationLogEntry } from '../../domain/log-entries';
+import type { ApplicationLogEntry } from '@/modules/logs/domain/log-entries';
 
 /** Porta usada pelos outros módulos para registrar no log da aplicação. */
 export interface ApplicationLogWriter {

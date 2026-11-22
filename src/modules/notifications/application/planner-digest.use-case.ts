@@ -1,14 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { AppConfigService } from '../../../shared/config/app-config.service';
-import {
-  EMAIL_SENDER,
-  type EmailSender,
-} from '../../../shared/email/application/email-sender.port';
-import { localDate } from '../../../shared/time/local-date';
+import { AppConfigService } from '@/shared/config/app-config.service';
+import { EMAIL_SENDER, type EmailSender } from '@/shared/email/application/email-sender.port';
+import { localDate } from '@/shared/kernel/time/local-date';
 import {
   APPLICATION_LOG_WRITER,
   type ApplicationLogWriter,
-} from '../../logs/application/ports/application-log-writer.port';
+} from '@/modules/logs/application/ports/application-log-writer.port';
 import {
   DIGEST_HOUR,
   localHour,
@@ -16,7 +13,7 @@ import {
   pendingGroups,
   plannerDigestEmail,
   type PlannerDigestBlock,
-} from '../infrastructure/emails/notification-email';
+} from '@/modules/notifications/infrastructure/mail/templates/notification-email';
 import {
   PLANNER_DIGEST_STORE,
   type PlannerDigestChange,
@@ -76,11 +73,13 @@ export class PlannerDigest {
             groupCount: groups.length,
             published,
           });
-          const newest = Math.max(
-            groups.length ? newestAt({ groups }).getTime() : 0,
-            published && wedding.publishedAt ? wedding.publishedAt.getTime() : 0,
-          );
-          cursors.push({ weddingId: wedding.weddingId, emailedThrough: new Date(newest) });
+          cursors.push({
+            weddingId: wedding.weddingId,
+            ...(groups.length ? { emailedThrough: newestAt({ groups }) } : {}),
+            ...(published && wedding.publishedAt
+              ? { publishedEmailedThrough: wedding.publishedAt }
+              : {}),
+          });
         }
         if (blocks.length === 0) return null;
         await this.sender.send({

@@ -4,12 +4,21 @@
  * chama a porta duas vezes.
  */
 export interface RefundQueue {
+  /**
+   * O Tentar o estorno de novo do Admin (Pagamentos RN05) recomeça na
+   * tentativa 1 com o mesmo id: a reconciliação, que vê o pagamento com a
+   * contagem zerada, não põe um segundo job na fila (RN04).
+   */
   enqueue(input: { paymentId: string; attempt: number; delayMs: number }): Promise<void>;
   /**
    * O cancelamento do pendente pela porta, depois do commit do bloqueio
-   * (Casamento bloqueado RN06; G1 e B8-5), com o id fixo por pagamento.
+   * (Casamento bloqueado RN06; G1 e B8-5) ou da exclusão pedida (Retenção
+   * RN06), com o id fixo por pagamento. Sem o motivo, o bloqueio.
    */
-  enqueueCancel(input: { paymentId: string }): Promise<void>;
+  enqueueCancel(input: {
+    paymentId: string;
+    reason?: 'wedding_blocked' | 'wedding_deletion' | 'courtesy_extended';
+  }): Promise<void>;
 }
 
 export const REFUND_QUEUE = Symbol('RefundQueue');

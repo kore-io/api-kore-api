@@ -1,35 +1,47 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
-import { LogsWorkerModule } from '../logs/logs-worker.module';
+import { LogsWorkerModule } from '@/modules/logs/logs-worker.module';
 import { ACCESS_CLEANUP } from './application/ports/access-cleanup.port';
-import { PurgeEndedAccess } from './application/purge-ended-access.use-case';
+import { PurgeEndedAccess } from './application/members/purge-ended-access.use-case';
 import {
   ACCESS_CLEANUP_QUEUE,
   AccessCleanupProcessor,
   AccessCleanupScheduler,
-} from './infrastructure/access-cleanup.job';
+} from './infrastructure/jobs/access-cleanup.job';
 import { PrismaAccessCleanup } from './infrastructure/backoffice/prisma-access-cleanup';
-import { EMAIL_OUTBOX } from '../../shared/email/application/email-outbox.port';
-import { EMAIL_SENDER } from '../../shared/email/application/email-sender.port';
-import { EmailQueuesModule } from '../../shared/email/email-queues.module';
-import { BullmqEmailOutbox } from '../../shared/email/infrastructure/bullmq-email-outbox';
-import { SmtpEmailSender } from '../../shared/email/infrastructure/smtp-email-sender';
+import { EMAIL_OUTBOX } from '@/shared/email/application/email-outbox.port';
+import { EMAIL_SENDER } from '@/shared/email/application/email-sender.port';
+import { EmailQueuesModule } from '@/shared/email/email-queues.module';
+import { BullmqEmailOutbox } from '@/shared/email/infrastructure/bullmq-email-outbox';
+import { SmtpEmailSender } from '@/shared/email/infrastructure/smtp-email-sender';
 import { OWNERLESS_WEDDINGS } from './application/ports/ownerless-weddings.port';
 import { PURGE_NOTICE_MAILER } from './application/ports/purge-notice-mailer.port';
-import { PurgeOwnerlessWeddings } from './application/purge-ownerless-weddings.use-case';
+import { PurgeOwnerlessWeddings } from './application/weddings/purge-ownerless-weddings.use-case';
 import { PrismaOwnerlessWeddings } from './infrastructure/backoffice/prisma-ownerless-weddings';
 import {
   OWNERLESS_PURGE_QUEUE,
   OwnerlessPurgeProcessor,
   OwnerlessPurgeScheduler,
-} from './infrastructure/ownerless-purge.job';
-import { OutboxPurgeNoticeMailer } from './infrastructure/outbox-purge-notice-mailer';
-import { PurgeNoticeGiveUpHandler } from './infrastructure/purge-notice-give-up.handler';
+} from './infrastructure/jobs/ownerless-purge.job';
+import { OutboxPurgeNoticeMailer } from './infrastructure/mail/outbox-purge-notice-mailer';
+import { PurgeNoticeGiveUpHandler } from './infrastructure/jobs/purge-notice-give-up.handler';
+import { AWAITING_COUPLE_WEDDINGS } from './application/ports/awaiting-couple-weddings.port';
+import { RevertExpiredCoupleInvitations } from './application/weddings/revert-expired-couple-invitations.use-case';
+import { PrismaAwaitingCoupleWeddings } from './infrastructure/backoffice/prisma-awaiting-couple-weddings';
+import {
+  COUPLE_INVITATION_EXPIRY_QUEUE,
+  CoupleInvitationExpiryProcessor,
+  CoupleInvitationExpiryScheduler,
+} from './infrastructure/jobs/couple-invitation-expiry.job';
 
 /** Rotinas do contexto Acesso, do lado do worker. */
 @Module({
   imports: [
-    BullModule.registerQueue({ name: ACCESS_CLEANUP_QUEUE }, { name: OWNERLESS_PURGE_QUEUE }),
+    BullModule.registerQueue(
+      { name: ACCESS_CLEANUP_QUEUE },
+      { name: OWNERLESS_PURGE_QUEUE },
+      { name: COUPLE_INVITATION_EXPIRY_QUEUE },
+    ),
     // O aviso de exclusão (e-mail 6) entra na fila de e-mail, como na API.
     EmailQueuesModule,
     // O log da aplicação pela conexão do backoffice (registro da execução).
@@ -48,6 +60,10 @@ import { PurgeNoticeGiveUpHandler } from './infrastructure/purge-notice-give-up.
     OwnerlessPurgeProcessor,
     OwnerlessPurgeScheduler,
     PurgeNoticeGiveUpHandler,
+    { provide: AWAITING_COUPLE_WEDDINGS, useClass: PrismaAwaitingCoupleWeddings },
+    RevertExpiredCoupleInvitations,
+    CoupleInvitationExpiryProcessor,
+    CoupleInvitationExpiryScheduler,
   ],
 })
 export class AccessWorkerModule {}

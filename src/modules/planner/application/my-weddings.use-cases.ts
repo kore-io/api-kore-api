@@ -1,17 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AppConfigService } from '../../../shared/config/app-config.service';
-import {
-  FIELD_CIPHER,
-  type FieldCipher,
-} from '../../../shared/crypto/application/field-cipher.port';
+import { AppConfigService } from '@/shared/config/app-config.service';
+import { FIELD_CIPHER, type FieldCipher } from '@/shared/crypto/application/field-cipher.port';
 import {
   PLANNER_PROFILES,
   type PlannerProfiles,
-} from '../../access/application/ports/planner-profiles.port';
-import { WeddingAuthorization } from '../../access/application/wedding-authorization.service';
-import { coupleLinkCipherContext } from '../../access/domain/access-invitation';
-import { WeddingNotFoundError } from '../../access/domain/access.errors';
-import { INVITATION_PATH } from '../../access/infrastructure/outbox-invitation-mailer';
+} from '@/modules/access/application/ports/planner-profiles.port';
+import { WeddingAuthorization } from '@/modules/access/application/services/wedding-authorization.service';
+import { coupleLinkCipherContext } from '@/modules/access/domain/invitations/access-invitation';
+import { WeddingNotFoundError } from '@/modules/access/domain/access.errors';
+import { INVITATION_PATH } from '@/modules/access/infrastructure/mail/outbox-invitation-mailer';
 import {
   compareWeddings,
   hasInvitationsNotSentAlert,
@@ -20,16 +17,17 @@ import {
   originOf,
   summaryOf,
   type CollaborationRow,
+  type MyWeddingFilter,
   type MyWeddingStatus,
   type WeddingOrigin,
-} from '../domain/my-weddings';
+} from '@/modules/planner/domain/my-weddings';
 import {
   PLANNER_WEDDINGS_READER,
   type PendingCoupleInvitation,
   type PlannerWeddingsReader,
 } from './ports/planner-weddings-reader.port';
 import { requirePlannerProfile } from './planner-gate';
-import { commissionBalances } from '../domain/commissions';
+import { commissionBalances } from '@/modules/planner/domain/commissions';
 import {
   REFERRER_COMMISSIONS_READER,
   type ReferrerCommissionsReader,
@@ -82,6 +80,10 @@ export interface MyWeddingDetail extends MyWeddingItem {
   stats: { guestsTotal: number; confirmed: number; declined: number; pending: number };
   hasOwner: boolean;
   canEditIdentity: boolean;
+  /** O vínculo ativo de quem lê, para o "Sair do casamento" (decisão 261(1)). */
+  myMembershipId: string;
+  /** O fuso do casamento, para as datas do detalhe ("Enviado em"; decisão 263). */
+  timezone: string;
   /** Só quando ela criou o casamento (revisão C2-8): o convite do parceiro não é dela. */
   coupleInvitations: CoupleInvitationView[];
 }
@@ -123,9 +125,18 @@ export class ListMyWeddings {
     @Inject(REFERRER_COMMISSIONS_READER) private readonly commissions: ReferrerCommissionsReader,
   ) {}
 
-  async execute({ userId, now }: { userId: string; now: Date }): Promise<MyWeddingsView> {
+  async execute({
+    userId,
+    now,
+    status,
+  }: {
+    userId: string;
+    now: Date;
+    /** Filtra só a lista; o Resumo e os alertas contam todos (RN02 e RN07). */
+    status?: MyWeddingFilter;
+  }): Promise<MyWeddingsView> {
     await requirePlannerProfile({ profiles: this.profiles, userId });
-    const rows = (await this.reader.listCollaborations({ userId })).sort(compareWeddings);
+    const rows = (await this.reader.listCollaborations({ userId })).sort(compareWeddings({ now }));
 
     const candidates = rows.filter((row) => isInvitationsAlertCandidate({ row, now }));
     const counts = await this.reader.deliveryCounts({
@@ -134,7 +145,10 @@ export class ListMyWeddings {
     const awaiting = await this.reader.awaitingPayment({
       weddingIds: rows.map(({ weddingId }) => weddingId),
     });
-    const { availableCents } = commissionBalances(await this.commissions.list());
+    const { availableCents } = commissionBalances(
+      await this.commissions.list(),
+      await this.commissions.adjustments(),
+    );
     return {
       summary: {
         ...summaryOf({ rows }),
@@ -162,9 +176,15 @@ export class ListMyWeddings {
             eventDate: row.eventDate ?? '',
           })),
       },
-      weddings: rows.map((row) =>
-        itemOf({ row, userId, awaitingPayment: awaiting.has(row.weddingId) }),
-      ),
+      weddings: rows
+        .filter((row) =>
+          !status
+            ? true
+            : status === 'awaiting_payment'
+              ? awaiting.has(row.weddingId)
+              : row.status === status,
+        )
+        .map((row) => itemOf({ row, userId, awaitingPayment: awaiting.has(row.weddingId) })),
     };
   }
 }
@@ -217,6 +237,8 @@ export class GetMyWedding {
         pending: detail.stats.pending,
       },
       hasOwner: detail.hasOwner,
+      myMembershipId: detail.myMembershipId,
+      timezone: detail.timezone,
       canEditIdentity: await this.authorization.canManageSiteIdentity({ userId, weddingId }),
       coupleInvitations,
     };

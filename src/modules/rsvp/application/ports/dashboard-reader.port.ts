@@ -1,4 +1,4 @@
-import type { DeliveryCounts, ReminderQueue } from '../../domain/dashboard';
+import type { DeliveryCounts, ReminderQueue } from '@/modules/rsvp/domain/dashboard';
 
 export interface DashboardStats {
   guestsTotal: number;

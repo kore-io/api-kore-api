@@ -16,6 +16,11 @@ export class AppConfigService {
     return new URL(this.get({ key: 'SITE_URL' })).origin;
   }
 
+  /** O domínio do Google da empresa (Backoffice - acesso RN01); em local e test, kore.com.br. */
+  get staffDomain(): string {
+    return this.get({ key: 'GOOGLE_STAFF_DOMAIN' }) ?? 'kore.com.br';
+  }
+
   get isProduction(): boolean {
     return this.get({ key: 'APP_ENV' }) === 'production';
   }

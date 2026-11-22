@@ -1,0 +1,192 @@
+import {
+  comparableName,
+  findDuplicateGuest,
+  parsePastedList,
+  pastedGuestCount,
+  PLUS,
+  SEPARATORS,
+} from './paste-list';
+
+const names = (text: string) =>
+  parsePastedList({ text }).groups.map((group) => ({
+    name: group.name,
+    guests: group.guests.map((guest) => guest.name),
+    warnings: group.warnings,
+  }));
+
+describe('Lista colada (Importação RN10 e RN11)', () => {
+  it('RN10 - o exemplo do contrato: grupo com ":", "+ N", casal com " e " e pessoa sozinha', () => {
+    const { groups, droppedLines } = parsePastedList({
+      text: 'Família Moreira: Jorge, Célia, Pedro\nCarla Nunes + 2 filhos\n\nRafael e Bianca\nMárcia Rocha',
+    });
+
+    expect(groups.map(({ line, name, guests }) => ({ line, name, guests }))).toEqual([
+      {
+        line: 1,
+        name: 'Família Moreira',
+        guests: [{ name: 'Jorge' }, { name: 'Célia' }, { name: 'Pedro' }],
+      },
+      {
+        line: 2,
+        name: 'Carla Nunes',
+        guests: [{ name: 'Carla Nunes' }, { name: null }, { name: null }],
+      },
+      { line: 4, name: 'Rafael e Bianca', guests: [{ name: 'Rafael' }, { name: 'Bianca' }] },
+      { line: 5, name: 'Márcia Rocha', guests: [{ name: 'Márcia Rocha' }] },
+    ]);
+    expect(droppedLines).toEqual([]);
+    expect(pastedGuestCount({ groups })).toBe(9);
+  });
+
+  it('RN10 - só o primeiro ":" separa o grupo', () => {
+    expect(names('Mesa 1: 20:30')).toEqual([{ name: 'Mesa 1', guests: ['20:30'], warnings: [] }]);
+  });
+
+  it('RN10 - vírgula, " e " sem diferenciar maiúsculas, "&" e "/" separam pessoas; "Maria e Silva" vira duas', () => {
+    expect(names('Amigos: Ana E Bia & Caio / Dani, Maria e Silva')[0].guests).toEqual([
+      'Ana',
+      'Bia',
+      'Caio',
+      'Dani',
+      'Maria',
+      'Silva',
+    ]);
+  });
+
+  it('RN10 - "+1" e "+ 3" sem palavra depois; o "+ N" depois do ":"', () => {
+    expect(names('Ana +1')[0].guests).toEqual(['Ana', null]);
+    expect(names('Primos: Felipe + 3')[0]).toEqual({
+      name: 'Primos',
+      guests: ['Felipe', null, null, null],
+      warnings: [],
+    });
+  });
+
+  it('RN10 - linha só com "+ N": o grupo vem com nome nulo e N pessoas sem nome', () => {
+    expect(names('+ 2')).toEqual([{ name: null, guests: [null, null], warnings: [] }]);
+  });
+
+  it('RN10 - "+ N" fora de 1 a 20 avisa e não cria as pessoas sem nome; sem ninguém, a linha sai', () => {
+    expect(names('Carla Nunes + 99')).toEqual([
+      { name: 'Carla Nunes', guests: ['Carla Nunes'], warnings: ['PLUS_OUT_OF_RANGE'] },
+    ]);
+    const { groups, droppedLines } = parsePastedList({ text: 'Ana\n+ 0\n+ 21 primos' });
+    expect(groups).toHaveLength(1);
+    expect(droppedLines).toEqual([2, 3]);
+  });
+
+  it('RN06 - o nome repetido no mesmo grupo sai (sem diferenciar maiúsculas, acentos e espaços)', () => {
+    expect(names('Família: Célia, celia ,  CÉLIA, Luiz')).toEqual([
+      { name: 'Família', guests: ['Célia', 'Luiz'], warnings: ['DUPLICATE_REMOVED'] },
+    ]);
+  });
+
+  it('RN14 (decisão 210(4)) - conta cada nome repetido que saiu do grupo, e zero sem repetição', () => {
+    const { groups } = parsePastedList({ text: 'Jorge, jorge, JORGE\nAna e Ana\nRafael e Bianca' });
+    expect(groups.map((group) => group.duplicatesRemoved)).toEqual([2, 1, 0]);
+  });
+
+  it('RN11 - nome de pessoa ou de grupo acima de 80 avisa TOO_LONG e fica para corrigir', () => {
+    expect(names(`${'G'.repeat(81)}: Ana`)[0].warnings).toEqual(['TOO_LONG']);
+    expect(names(`Grupo: ${'a'.repeat(81)}`)[0].warnings).toEqual(['TOO_LONG']);
+    expect(names(`Grupo: ${'a'.repeat(80)}`)[0].warnings).toEqual([]);
+  });
+
+  it('RN10 - cada linha é um grupo, mesmo com nome repetido', () => {
+    expect(names('Família Silva\nFamília Silva')).toHaveLength(2);
+  });
+});
+
+describe('comparableName e findDuplicateGuest (RN06, RN11)', () => {
+  it('compara sem maiúsculas, acentos e espaços', () => {
+    expect(comparableName('  Família   MOREIRA ')).toBe('familia moreira');
+  });
+
+  it('acha o primeiro nome repetido no mesmo grupo; em grupos diferentes, não', () => {
+    expect(
+      findDuplicateGuest({
+        groups: [{ guests: ['Ana', 'Bia'] }, { guests: ['Ana', 'Caio', ' ANA '] }],
+      }),
+    ).toEqual({ group: 1, guest: 2 });
+    expect(findDuplicateGuest({ groups: [{ guests: ['Ana'] }, { guests: ['Ana'] }] })).toBeNull();
+  });
+});
+
+describe('Lista colada: tempo com o texto no limite (CodeQL js/polynomial-redos)', () => {
+  /** O limite do texto colado no DTO da prévia. */
+  const N = 100_000;
+  const worstCases: Record<string, string> = {
+    'um trecho de espaços sem separador': 'a' + ' '.repeat(N - 2) + 'b',
+    'um trecho de espaços antes de "e"': 'a' + ' '.repeat(N - 3) + 'ex',
+    'um trecho de espaços antes de "+1x"': 'a' + ' '.repeat(N - 4) + '+1x',
+    'tabulação e espaço alternados': 'a' + ' \t'.repeat(N / 2 - 1) + 'b',
+    '"+" com dígitos sem fim de palavra': '+' + '1'.repeat(N - 2) + 'x',
+  };
+
+  it.each(Object.entries(worstCases))(
+    'RN10 - 100 mil caracteres com %s: a prévia lê em menos de 200 ms (antes, 28 s)',
+    (_label, text) => {
+      const started = performance.now();
+      parsePastedList({ text });
+      expect(performance.now() - started).toBeLessThan(200);
+    },
+  );
+
+  it('RN10 - os espaços seguidos não mudam o resultado: "Ana    e   Marcos" é o casal de sempre', () => {
+    const parsed = (text: string) =>
+      parsePastedList({ text }).groups.map((group) => ({ ...group, source: '' }));
+    expect(parsed('Família   Moreira :  Ana    e   Marcos  +   2')).toEqual(
+      parsed('Família Moreira: Ana e Marcos + 2'),
+    );
+    expect(parsePastedList({ text: 'Ana    e   Marcos' }).groups[0]?.source).toBe(
+      'Ana    e   Marcos',
+    );
+  });
+});
+
+describe('Separadores e "+ N" lineares por construção, sobre o texto cru (decisão 313)', () => {
+  const N = 100_000;
+  /** Sem o compact da linha: o pior caso de cada regex sozinha (antes, ~30 s). */
+  const rawWorstCases: Record<string, string> = {
+    'um trecho de espaços sem separador': 'a' + ' '.repeat(N - 2) + 'b',
+    'um trecho de espaços antes de "e"': 'a' + ' '.repeat(N - 3) + 'ex',
+    'tabulação e espaço alternados': 'a' + ' \t'.repeat(N / 2 - 1) + 'b',
+    '" ," repetido': ' ,'.repeat(N / 2),
+    '" e" repetido': ' e'.repeat(N / 2),
+    '"+" e espaços repetidos, com um "\\r" no fim': '+ '.repeat(N / 2 - 1) + '\r',
+    '"+1 " repetido, com um "\\r" no fim': '+1 '.repeat(N / 3) + '\r',
+    '"+" seguido de espaços': '+' + ' '.repeat(N - 2) + 'x',
+  };
+
+  it.each(Object.entries(rawWorstCases))(
+    'RN10 - 100 mil caracteres crus com %s: o split e o "+ N" em menos de 200 ms',
+    (_label, text) => {
+      const started = performance.now();
+      text.split(SEPARATORS);
+      PLUS.exec(text);
+      expect(performance.now() - started).toBeLessThan(200);
+    },
+  );
+
+  it.each([
+    ['Ana, e Bia', ['Ana', 'e Bia']],
+    ['Ana & e Bia', ['Ana', 'e Bia']],
+    ['Ana e, Bia', ['Ana e', 'Bia']],
+    ['Ana E Bia / Caio & Duda', ['Ana', 'Bia', 'Caio', 'Duda']],
+    ['Ana,,Bia', ['Ana', 'Bia']],
+    ['Elisa e Eduardo', ['Elisa', 'Eduardo']],
+  ])('RN10 - "%s" separa como antes: %j', (text, guests) => {
+    expect(names(text)[0]?.guests).toEqual(guests);
+  });
+
+  it.each([
+    ['Ana + 2 filhos', 2],
+    ['Ana +1', 1],
+    ['Ana +12a + 3', 3],
+    ['Ana + 21', null],
+  ])('RN10 - "%s": o "+ N" de sempre', (text, unnamed) => {
+    const [group] = names(text);
+    expect(group?.guests.filter((guest) => guest === null)).toHaveLength(unnamed ?? 0);
+    expect(group?.warnings.includes('PLUS_OUT_OF_RANGE')).toBe(unnamed === null);
+  });
+});

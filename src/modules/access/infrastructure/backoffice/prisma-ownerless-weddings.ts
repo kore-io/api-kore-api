@@ -1,22 +1,25 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { Prisma } from '../../../../generated/prisma/client';
-import { BackofficePrismaService } from '../../../../shared/database/backoffice-prisma.service';
+import type { Prisma } from '@/generated/prisma/client';
+import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import {
   OBJECT_STORAGE,
   type ObjectStorage,
-} from '../../../../shared/storage/application/object-storage.port';
+} from '@/shared/storage/application/object-storage.port';
 import { deleteSiteImageObjects, purgeWeddingData } from './wedding-purge';
 import type {
   OwnerlessWedding,
   OwnerlessWeddings,
-} from '../../application/ports/ownerless-weddings.port';
+} from '@/modules/access/application/ports/ownerless-weddings.port';
 
 export const PURGE_NOTICE_SENT_ACTION = 'wedding.purge_notice_sent';
 export const OWNERLESS_PURGED_ACTION = 'wedding.purged';
 export const PURGE_NOTICE_FAILED_ACTION = 'wedding.purge_notice_failed';
 
 const OWNERLESS_STATUSES = ['awaiting_couple', 'draft'] as const;
-const NO_ACTIVE_OWNER: Prisma.WeddingWhereInput = {
+// Casamento bloqueado RN06 e decisão 86: o expurgo (e o aviso dele) não roda
+// enquanto o casamento estiver bloqueado; volta na rodada depois do desbloqueio.
+const NO_ACTIVE_OWNER_NOT_BLOCKED: Prisma.WeddingWhereInput = {
+  blockedAt: null,
   memberships: { none: { role: 'owner', removedAt: null } },
 };
 
@@ -37,7 +40,7 @@ export class PrismaOwnerlessWeddings implements OwnerlessWeddings {
       where: {
         status: { in: [...OWNERLESS_STATUSES] },
         lastActivityAt: { lte: lastActivityBefore },
-        ...NO_ACTIVE_OWNER,
+        ...NO_ACTIVE_OWNER_NOT_BLOCKED,
       },
       orderBy: { lastActivityAt: 'asc' },
       select: {
@@ -81,7 +84,7 @@ export class PrismaOwnerlessWeddings implements OwnerlessWeddings {
           status: { in: [...OWNERLESS_STATUSES] },
           lastActivityAt: seenLastActivityAt,
           purgeNoticeSentAt: null,
-          ...NO_ACTIVE_OWNER,
+          ...NO_ACTIVE_OWNER_NOT_BLOCKED,
         },
         data: { purgeNoticeSentAt: now },
       });
@@ -142,7 +145,7 @@ export class PrismaOwnerlessWeddings implements OwnerlessWeddings {
           status: { in: [...OWNERLESS_STATUSES] },
           lastActivityAt: seenLastActivityAt,
           purgeNoticeSentAt: { not: null },
-          ...NO_ACTIVE_OWNER,
+          ...NO_ACTIVE_OWNER_NOT_BLOCKED,
         },
         select: { status: true },
       });

@@ -26,6 +26,8 @@ export interface EndDateSoonNotice {
   firstName: string;
   /** AAAA-MM-DD. */
   endDate: string;
+  /** Dias de hoje (no fuso do casamento) até a endDate; com 1, o "amanhã" (decisão 298(2)). */
+  daysLeft: number;
   /** O preço do mês a mais, da regra (o "R$ 29" do texto). */
   monthlyCents: number;
   partnerNames: [string, string];
@@ -44,6 +46,39 @@ export interface SiteExpiredNotice {
   expiredAt: string;
   /** Até quando dá para renovar (12 meses depois do casamento); nulo sem data. */
   renewUntil: string | null;
+  /**
+   * A versão B (decisão 293(7)): o paidThrough, AAAA-MM-DD, quando é depois do
+   * expiredAt (antecipou e deixou vencer com meses pagos à frente: volta ao ar
+   * sem custo); nulo na versão A (renovar).
+   */
+  paidAhead: string | null;
+  partnerNames: [string, string];
+}
+
+/** O aviso de 30 dias antes do expurgo (Retenção e expurgo RN02): e-mail de serviço. */
+export interface PurgeSoonNotice {
+  to: string;
+  firstName: string;
+  /** Para a desistência do worker desfazer a marca do aviso (decisão 180(8)). */
+  weddingId: string;
+  noticeSentAt: Date;
+  /** AAAA-MM-DD: o dia em que os dados são apagados. */
+  purgeAt: string;
+  /** AAAA-MM-DD: desde quando o site está fora do ar. */
+  expiredAt: string;
+  partnerNames: [string, string];
+}
+
+/** A exclusão pedida (Retenção e expurgo RN05): e-mail de serviço às pessoas donas. */
+export interface DeletionScheduledNotice {
+  to: string;
+  firstName: string;
+  /** O primeiro nome de quem pediu ("Ana pediu para excluir…"). */
+  requesterFirstName: string;
+  /** A versão de quem pediu ("Você pediu para excluir…"; decisão 252). */
+  isRequester: boolean;
+  /** AAAA-MM-DD. */
+  deletionScheduledFor: string;
   partnerNames: [string, string];
 }
 
@@ -54,6 +89,8 @@ export interface BillingMailer {
   endDateSoon({ notice }: { notice: EndDateSoonNotice }): Promise<void>;
   graceStarted({ notice }: { notice: GraceNotice }): Promise<void>;
   siteExpired({ notice }: { notice: SiteExpiredNotice }): Promise<void>;
+  purgeSoon({ notice }: { notice: PurgeSoonNotice }): Promise<void>;
+  deletionScheduled({ notice }: { notice: DeletionScheduledNotice }): Promise<void>;
 }
 
 export const BILLING_MAILER = Symbol('BillingMailer');

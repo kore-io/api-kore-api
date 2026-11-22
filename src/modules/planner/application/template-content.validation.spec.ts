@@ -1,4 +1,4 @@
-import { ContrastTooLowError } from '../../site/domain/site.errors';
+import { ContrastTooLowError } from '@/modules/site/domain/site.errors';
 import { validateTemplateContent } from './template-content.validation';
 
 describe('Modelos do cerimonialista: o conteúdo por tipo (RN01, RN03 e RN04)', () => {

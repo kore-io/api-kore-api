@@ -1,5 +1,11 @@
 import { z } from 'zod';
-import { OTEL_EXPORTERS } from '../observability/otel-exporters';
+import { OTEL_EXPORTERS } from '@/shared/observability/otel-exporters';
+import {
+  isPublicExampleSecret,
+  SECRET_ENV_KEYS,
+  SECRET_URL_ENV_KEYS,
+  urlPassword,
+} from './public-example-secrets';
 
 export const APP_ENVS = ['local', 'test', 'homolog', 'production'] as const;
 export type AppEnv = (typeof APP_ENVS)[number];
@@ -85,6 +91,13 @@ export const envSchema = z
     GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
     // URL do callback da API registrada no Google (…/v1/auth/google/callback).
     GOOGLE_REDIRECT_URI: z.url({ protocol: /^https?$/ }).optional(),
+    // O domínio do Google da empresa (Backoffice - acesso RN01; B9-2): o guard do
+    // /v1/admin exige a declaração hd verificada igual a ele. Obrigatória em
+    // homolog e production; sem valor em local e test, kore.com.br.
+    GOOGLE_STAFF_DOMAIN: z
+      .string()
+      .regex(/^[a-z0-9.-]+\.[a-z]{2,}$/)
+      .optional(),
     // Chave do HMAC do cookie do state e do PKCE do Google (decisão 147).
     OAUTH_STATE_KEY: base64Key32,
     // Chave do HMAC do cookie do grupo, kore_party_<weddingId> (Site público
@@ -102,6 +115,12 @@ export const envSchema = z
     // Cadastro próprio de cerimonialista (Cadastro e perfil RN02; decisão 223,
     // D23): sem valor, desligado; só liga em local e test até o termo de parceria.
     PLANNER_SIGNUP_ENABLED: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
+    // O pedido de repasse (Repasse RN01; decisão 230, D12): sem valor, desligado;
+    // só liga em local e test até o contador (nenhum Pix de saída real antes).
+    PAYOUTS_ENABLED: z
       .enum(['true', 'false'])
       .default('false')
       .transform((value) => value === 'true'),
@@ -163,11 +182,45 @@ export const envSchema = z
         message: 'não pode ter a origem do SITE_URL (a origem do site vale só nas rotas do site)',
       });
     }
+    // Decisão 265(4): os valores do .env.example e do .env.test são públicos
+    // (os repositórios são públicos); em homolog e production, nenhum segredo
+    // pode ser um deles. A mensagem diz a variável, nunca o valor.
+    if (!LOCAL_KEY_ENVS.includes(env.APP_ENV)) {
+      for (const key of SECRET_ENV_KEYS) {
+        const value = env[key];
+        if (value !== undefined && isPublicExampleSecret(value)) {
+          ctx.addIssue({
+            code: 'custom',
+            path: [key],
+            message:
+              'é um valor público do .env.example ou do .env.test; gere um segredo próprio (decisão 265(4))',
+          });
+        }
+      }
+      for (const key of SECRET_URL_ENV_KEYS) {
+        if (isPublicExampleSecret(urlPassword(env[key]))) {
+          ctx.addIssue({
+            code: 'custom',
+            path: [key],
+            message:
+              'a senha é um valor público do .env.example ou do .env.test; use uma senha própria (decisão 265(4))',
+          });
+        }
+      }
+    }
     if (env.QUEUE_PREFIX !== undefined && env.APP_ENV !== 'test') {
       ctx.addIssue({
         code: 'custom',
         path: ['QUEUE_PREFIX'],
         message: 'só é aceito com APP_ENV test (o prefixo por arquivo dos e2e)',
+      });
+    }
+    if (env.PAYOUTS_ENABLED && !LOCAL_KEY_ENVS.includes(env.APP_ENV)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['PAYOUTS_ENABLED'],
+        message:
+          'os repasses só podem ser ligados com APP_ENV local ou test (Repasse RN01; decisão 230, D12)',
       });
     }
     if (env.PLANNER_SIGNUP_ENABLED && !LOCAL_KEY_ENVS.includes(env.APP_ENV)) {
@@ -196,6 +249,13 @@ export const envSchema = z
           });
         }
       }
+    }
+    if (!env.GOOGLE_STAFF_DOMAIN && !LOCAL_KEY_ENVS.includes(env.APP_ENV)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['GOOGLE_STAFF_DOMAIN'],
+        message: 'obrigatória com APP_ENV homolog ou production (o Backoffice, RN01)',
+      });
     }
     if (env.GOOGLE_PROVIDER === 'dev' && !LOCAL_KEY_ENVS.includes(env.APP_ENV)) {
       ctx.addIssue({

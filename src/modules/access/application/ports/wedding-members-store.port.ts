@@ -1,6 +1,6 @@
-import type { AccessInvitationKind } from '../../domain/access-invitation';
+import type { AccessInvitationKind } from '@/modules/access/domain/invitations/access-invitation';
 import type { PlannerLeftNotice } from './collaboration-notice-mailer.port';
-import type { MembershipRole } from '../../domain/wedding-authorization';
+import type { MembershipRole } from '@/modules/access/domain/weddings/wedding-authorization';
 
 export interface WeddingMember {
   id: string;
@@ -9,6 +9,8 @@ export interface WeddingMember {
   role: MembershipRole;
   /** Só no colaborador: cerimonialista ou vendedor, pelo perfil de indicador. */
   kind?: 'planner' | 'seller';
+  /** Desde quando tem acesso: o início do vínculo ("Desde 05/08"; decisão 271(1)). */
+  since: Date;
 }
 
 export interface PendingAccessInvitation {
@@ -24,6 +26,8 @@ export interface WeddingMembersStore {
   /** Pendentes no banco, inclusive os vencidos e o link sem e-mail (decisão 177, item 8). */
   listPendingInvitations({ weddingId }: { weddingId: string }): Promise<PendingAccessInvitation[]>;
   lockWedding({ weddingId }: { weddingId: string }): Promise<void>;
+  /** Quando o staff trocou o e-mail de acesso de quem pede (decisão 253(2)). */
+  accessEmailChangedAt({ userId }: { userId: string }): Promise<Date | null>;
   remove({
     membershipId,
     removedByUserId,
