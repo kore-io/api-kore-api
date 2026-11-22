@@ -5,6 +5,7 @@ import request from 'supertest';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import { createTestApp } from '../support/harness/create-test-app';
+import { waitUntilBlockedBy } from '../support/harness/lock-wait';
 import { seedReferrer } from '../support/factories/referrers';
 import { openSession, signedInUser } from '../support/harness/sessions';
 import { seedReferrerWedding, seedWedding } from '../support/factories/weddings';
@@ -320,7 +321,7 @@ describe('Novo casamento pela cerimonialista (banco real; decisões 223 e 224)',
       const saving = patchSite(planner.cookie, weddingId, { eventDate: '2027-05-08' }).then(
         (response) => response,
       );
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await waitUntilBlockedBy({ holder: owner });
       await owner.query('COMMIT');
 
       const response = await saving;

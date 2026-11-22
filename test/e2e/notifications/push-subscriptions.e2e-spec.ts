@@ -12,6 +12,7 @@ import { AppConfigService } from '@/shared/config/app-config.service';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import { createTestApp } from '../support/harness/create-test-app';
+import { waitUntilBlockedBy } from '../support/harness/lock-wait';
 import { createTestWorker } from '../support/harness/create-test-worker';
 import { seedInvitation } from '../support/factories/invitations';
 import { seedReferrer } from '../support/factories/referrers';
@@ -264,7 +265,7 @@ describe('Assinaturas de push (banco real)', () => {
           [uuidV7(), juliana.userId],
         );
         const pending = subscribe(cookie, endpoint()).then((response) => response);
-        await new Promise((resolve) => setTimeout(resolve, 300));
+        await waitUntilBlockedBy({ holder: other });
         await other.query('COMMIT');
 
         expect((await pending).status).toBe(201);
