@@ -33,7 +33,11 @@ export class PrismaPlannerDigestStore implements PlannerDigestStore {
       WHERE n.type IN ('rsvp', 'wedding_published')
         AND NOT EXISTS (
           SELECT 1 FROM weddings wb WHERE wb.id = n.wedding_id AND wb.blocked_at IS NOT NULL)
-        AND (s.emailed_through IS NULL OR n.updated_at > s.emailed_through)
+        AND (
+          CASE WHEN n.type = 'wedding_published' THEN s.published_emailed_through
+          ELSE s.emailed_through END IS NULL
+          OR n.updated_at > CASE WHEN n.type = 'wedding_published'
+            THEN s.published_emailed_through ELSE s.emailed_through END)
         AND COALESCE((
           SELECT np.email::text FROM notification_preferences np
           WHERE np.user_id = n.user_id AND np.wedding_id IS NULL AND np.type = n.type
@@ -82,15 +86,23 @@ export class PrismaPlannerDigestStore implements PlannerDigestStore {
         });
         const states = await tx.notificationEmailState.findMany({
           where: { userId, weddingId: { in: [...new Set(notifications.map((n) => n.weddingId))] } },
-          select: { weddingId: true, emailedThrough: true },
+          select: { weddingId: true, emailedThrough: true, publishedEmailedThrough: true },
         });
         const weddings: PlannerDigestWedding[] = [];
         for (const weddingId of new Set(notifications.map((n) => n.weddingId))) {
-          const emailedThrough =
-            states.find((state) => state.weddingId === weddingId)?.emailedThrough ?? null;
-          const fresh = notifications.filter(
-            (n) => n.weddingId === weddingId && (!emailedThrough || n.updatedAt > emailedThrough),
-          );
+          const state = states.find((row) => row.weddingId === weddingId);
+          const emailedThrough = state?.emailedThrough ?? null;
+          // Um cursor por tipo (decisão 308(5)): o das respostas anda também
+          // pelo e-mail na hora; o da publicação, só pelo Resumo.
+          const cursorOf = (type: string) =>
+            type === 'wedding_published'
+              ? (state?.publishedEmailedThrough ?? null)
+              : emailedThrough;
+          const fresh = notifications.filter((n) => {
+            if (n.weddingId !== weddingId) return false;
+            const cursor = cursorOf(n.type);
+            return !cursor || n.updatedAt > cursor;
+          });
           if (fresh.length === 0) continue;
           // Casamento bloqueado RN06: o casamento fica fora do Resumo e o cursor
           // dele não anda; retoma no desbloqueio.
@@ -136,12 +148,17 @@ export class PrismaPlannerDigestStore implements PlannerDigestStore {
           where: { userId },
           data: { lastDigestDate: new Date(`${change.lastDigestDate}T00:00:00Z`) },
         });
-        for (const cursor of change.cursors)
+        for (const { weddingId, emailedThrough, publishedEmailedThrough } of change.cursors) {
+          const data = {
+            ...(emailedThrough ? { emailedThrough } : {}),
+            ...(publishedEmailedThrough ? { publishedEmailedThrough } : {}),
+          };
           await tx.notificationEmailState.upsert({
-            where: { userId_weddingId: { userId, weddingId: cursor.weddingId } },
-            create: { userId, weddingId: cursor.weddingId, emailedThrough: cursor.emailedThrough },
-            update: { emailedThrough: cursor.emailedThrough },
+            where: { userId_weddingId: { userId, weddingId } },
+            create: { userId, weddingId, ...data },
+            update: data,
           });
+        }
       },
       { timeout: SEND_TRANSACTION_TIMEOUT_MS },
     );

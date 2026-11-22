@@ -54,5 +54,30 @@ export class PrismaPushSubscriptionStore implements PushSubscriptionStore {
           update: { push },
           select: { id: true },
         });
+    // A cerimonialista recebe as respostas dos casamentos em que colabora pela
+    // preferência geral (Notificações da cerimonialista RN06 e RN07): o switch
+    // deste aparelho liga e desliga também a linha geral de Novas respostas.
+    // Só a rsvp: a publicação e a colaboração encerrada não têm push (RN06).
+    const planner = await tx.referrer.findFirst({
+      where: { userId, kind: 'planner', status: 'active', planner: { isNot: null } },
+      select: { id: true },
+    });
+    if (!planner) return;
+    // O índice único da linha geral é parcial (weddingId nulo): sem upsert.
+    const general = await tx.notificationPreference.findFirst({
+      where: { userId, weddingId: null, type: 'rsvp' },
+      select: { id: true },
+    });
+    if (general)
+      await tx.notificationPreference.update({
+        where: { id: general.id },
+        data: { push },
+        select: { id: true },
+      });
+    else
+      await tx.notificationPreference.create({
+        data: { userId, weddingId: null, type: 'rsvp', push },
+        select: { id: true },
+      });
   }
 }
