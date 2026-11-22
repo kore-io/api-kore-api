@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { TenantTransaction } from '@/shared/database/tenant-transaction';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import type { PushSubscriptionStore } from '@/modules/notifications/application/ports/push-subscription-store.port';
 
 /** Na transação da requisição, com a RLS ligada (só as da própria pessoa). */
@@ -63,21 +64,13 @@ export class PrismaPushSubscriptionStore implements PushSubscriptionStore {
       select: { id: true },
     });
     if (!planner) return;
-    // O índice único da linha geral é parcial (weddingId nulo): sem upsert.
-    const general = await tx.notificationPreference.findFirst({
-      where: { userId, weddingId: null, type: 'rsvp' },
-      select: { id: true },
-    });
-    if (general)
-      await tx.notificationPreference.update({
-        where: { id: general.id },
-        data: { push },
-        select: { id: true },
-      });
-    else
-      await tx.notificationPreference.create({
-        data: { userId, weddingId: null, type: 'rsvp', push },
-        select: { id: true },
-      });
+    // O índice único da linha geral é parcial (weddingId nulo): o upsert do
+    // Prisma não serve. ON CONFLICT no índice parcial: dois aparelhos ligando
+    // ao mesmo tempo não esbarram no único (sugestão do Crivo; decisão 310(2)).
+    await tx.$executeRaw`
+      INSERT INTO notification_preferences (id, user_id, wedding_id, type, push, updated_at)
+      VALUES (${uuidV7()}::uuid, ${userId}::uuid, NULL, 'rsvp', ${push}, now())
+      ON CONFLICT (user_id, type) WHERE wedding_id IS NULL
+      DO UPDATE SET push = EXCLUDED.push, updated_at = now()`;
   }
 }
