@@ -217,6 +217,36 @@ describe('Meus casamentos e alertas (banco real; decisões 223 e 224)', () => {
       });
     });
 
+    it('RN02 (decisão 308(2)) - hoje e futuro primeiro, em ordem crescente; depois o passado, do mais recente; sem data no fim', async () => {
+      const planner = await juliana();
+      const dated = async (
+        eventDay: string | null,
+        status: 'published' | 'post_event' | 'expired' | 'draft',
+      ) => {
+        const { weddingId } = await coupleWedding({ plannerId: planner.userId });
+        await db.wedding.update({
+          where: { id: weddingId },
+          data: { status, eventDate: eventDay ? asDate(eventDay) : null },
+        });
+        return weddingId;
+      };
+      const expired = await dated(dayIn(-400), 'expired');
+      const future = await dated(dayIn(60), 'published');
+      const postEvent = await dated(dayIn(-10), 'post_event');
+      const noDate = await dated(null, 'draft');
+      const today = await dated(dayIn(0), 'published');
+
+      const { body } = await list(planner.cookie).expect(200);
+
+      expect((body.weddings as { weddingId: string }[]).map((row) => row.weddingId)).toEqual([
+        today,
+        future,
+        postEvent,
+        expired,
+        noDate,
+      ]);
+    });
+
     it('revisão C2-8 - ler o painel e o detalhe não é atividade do casamento', async () => {
       const planner = await juliana();
       const { weddingId } = await seedReferrerWedding({ db, referrerUserId: planner.userId });
