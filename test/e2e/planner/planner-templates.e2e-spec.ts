@@ -149,6 +149,17 @@ describe('Modelos do cerimonialista (banco real; decisões 223 e 224)', () => {
       { ...faq, content: { questions: [{ question: 'P?', answer: ' ' }] } },
       'content.questions.0.answer',
     ],
+    ['nome acima de 80', story({ name: 'a'.repeat(81) }), 'name'],
+    [
+      'pergunta acima de 200',
+      { ...faq, content: { questions: [{ question: 'a'.repeat(201), answer: 'R.' }] } },
+      'content.questions.0.question',
+    ],
+    [
+      'resposta acima de 1.000',
+      { ...faq, content: { questions: [{ question: 'P?', answer: 'a'.repeat(1001) }] } },
+      'content.questions.0.answer',
+    ],
     ['Textos sem seção', story({ sectionType: undefined }), 'sectionType'],
     ['seção num FAQ', { ...faq, sectionType: 'story' }, 'sectionType'],
     ['seção fora das três', story({ sectionType: 'gifts' }), 'sectionType'],
@@ -160,6 +171,21 @@ describe('Modelos do cerimonialista (banco real; decisões 223 e 224)', () => {
     const response = await create(juliana.cookie, body).expect(400);
 
     expect((response.body.errors as { path: string }[]).map((error) => error.path)).toContain(path);
+  });
+
+  it('RN04 - no limite: nome com 80, pergunta com 200 e resposta com 1.000 gravam', async () => {
+    const juliana = await planner();
+
+    const response = await create(juliana.cookie, {
+      ...faq,
+      name: 'a'.repeat(80),
+      content: { questions: [{ question: 'p'.repeat(200), answer: 'r'.repeat(1000) }] },
+    }).expect(201);
+
+    expect(response.body).toMatchObject({
+      name: 'a'.repeat(80),
+      content: { questions: [{ question: 'p'.repeat(200), answer: 'r'.repeat(1000) }] },
+    });
   });
 
   it('PATCH - o nome e o conteúdo mudam; o tipo não muda (400)', async () => {
