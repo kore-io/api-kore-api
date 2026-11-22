@@ -39,10 +39,22 @@ export function comparableName(name: string): string {
   return name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
-/** "+ 2 filhos", "+1", "+ 3": o "+", o número e o que vier depois, até o fim da linha. */
-const PLUS = /\+\s*(\d+)\b.*$/;
-/** Vírgula, " e " (sem diferenciar maiúsculas), "&" ou "/" separam as pessoas. */
-const SEPARATORS = /\s*,\s*|\s+e\s+|\s*&\s*|\s*\/\s*/i;
+/**
+ * "+ 2 filhos", "+1", "+ 3": o "+" e o número; o que vier depois sai junto
+ * (o corte é no índice do "+"). Linear por construção (CodeQL
+ * js/polynomial-redos, decisão 313): o `\s*` só começa num "+" e não disputa
+ * caractere com o `\d+`; sem o `.*$`, que com um "\r" solto no meio voltava a
+ * tentar a partir de cada "+".
+ */
+export const PLUS = /\+\s*(\d+)\b/;
+/**
+ * Vírgula, " e " (sem diferenciar maiúsculas), "&" ou "/" separam as pessoas.
+ * Linear por construção (decisão 313): nenhum `\s*` antes do separador (o
+ * espaço da esquerda fica no nome e sai no trim); o `\s+e` virou um `\s`
+ * só, encostado no "e". O espaço da direita continua consumido, para ", e Bia"
+ * dar "e Bia", como antes.
+ */
+export const SEPARATORS = /,\s*|\se\s+|&\s*|\/\s*/i;
 
 /**
  * Lê a lista colada (Importação RN10; decisão 184, item 2): uma linha por
@@ -62,10 +74,8 @@ export function parsePastedList({ text }: { text: string }): PastedList {
     if (!source) return;
     const line = index + 1;
     const warnings = new Set<PasteWarning>();
-    // Os espaços seguidos viram um só antes das regex (os nomes já saíam
-    // assim): com um espaço por vez, o SEPARATORS e o PLUS ficam lineares; um
-    // trecho longo de espaços no texto colado levava segundos (CodeQL
-    // js/polynomial-redos).
+    // Os espaços seguidos viram um só (os nomes já saíam assim). O SEPARATORS
+    // e o PLUS são lineares mesmo sem isto (decisão 313).
     const compact = source.replace(/\s+/g, ' ');
 
     const colon = compact.indexOf(':');
