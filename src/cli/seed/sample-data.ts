@@ -41,6 +41,8 @@ export interface SampleWedding {
   referral: 'created_by_planner' | 'referral_link' | null;
   /** A Juliana é colaboradora (Meus casamentos). */
   plannerCollaborates: boolean;
+  /** O modelo de aparência de que o casamento partiu (null: a aparência padrão). */
+  appearanceTemplate?: SampleAppearanceTemplateName | null;
 }
 
 export interface SampleInvitation {
@@ -165,6 +167,18 @@ export const SAMPLE_PLANNER_TEMPLATES = [
   },
 ] as const;
 
+/** Os modelos de aparência de exemplo, pelo nome. */
+export type SampleAppearanceTemplateName = Extract<
+  (typeof SAMPLE_PLANNER_TEMPLATES)[number],
+  { kind: 'appearance' }
+>['name'];
+
+/**
+ * Gabriela e Rafael e Isabela e André partem do "Padrão Prado Assessoria"
+ * (Dados de exemplo do Kore, linhas 144 e 145; decisão 312(2)).
+ */
+const PRADO_APPEARANCE_SLUGS: readonly string[] = ['gabriela-e-rafael', 'isabela-e-andre'];
+
 /** O vendedor (Vendas · Kore), cadastrado pela Admin Renata Lima. */
 export const SAMPLE_SELLER = {
   account: 'lucas',
@@ -254,6 +268,9 @@ export const SAMPLE_WEDDINGS: SampleWedding[] = [
     createdBy,
     referral: createdBy === 'planner' ? 'created_by_planner' : null,
     plannerCollaborates: true,
+    appearanceTemplate: PRADO_APPEARANCE_SLUGS.includes(slugOfCouple({ a, b }))
+      ? 'Padrão Prado Assessoria'
+      : null,
   })),
 ];
 

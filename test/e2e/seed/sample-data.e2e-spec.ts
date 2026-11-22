@@ -263,6 +263,39 @@ describe('Dados de exemplo do Kore (seed da Fase 0; banco real)', () => {
     });
   });
 
+  it('decisão 312(2) - Gabriela e Rafael e Isabela e André partem do Padrão Prado Assessoria; os outros ficam com a aparência padrão', async () => {
+    await run();
+    await run();
+    const appearanceOf = (slug: string) =>
+      db.wedding.findUniqueOrThrow({
+        where: { slug },
+        select: {
+          fontPairKey: true,
+          starterPaletteKey: true,
+          primaryColor: true,
+          accentColor: true,
+          backgroundMode: true,
+        },
+      });
+    const prado = {
+      fontPairKey: 'classico',
+      starterPaletteKey: 'salvia',
+      primaryColor: '#566C4B',
+      accentColor: '#C9A66B',
+      backgroundMode: 'light',
+    };
+
+    expect(await appearanceOf('gabriela-e-rafael')).toEqual(prado);
+    expect(await appearanceOf('isabela-e-andre')).toEqual(prado);
+    expect(await appearanceOf('beatriz-e-henrique')).toEqual({
+      fontPairKey: 'romantico',
+      starterPaletteKey: 'terracota',
+      primaryColor: '#A94F37',
+      accentColor: '#7A8B69',
+      backgroundMode: 'cream',
+    });
+  });
+
   it('um endereço de exemplo que é de um casamento de verdade não é sobrescrito', async () => {
     await run();
     const anaEMarcos = await db.wedding.findUniqueOrThrow({ where: { slug: 'ana-e-marcos' } });
