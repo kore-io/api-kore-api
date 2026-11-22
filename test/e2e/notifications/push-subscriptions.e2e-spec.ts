@@ -1,8 +1,17 @@
 import { INestApplication } from '@nestjs/common';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import request from 'supertest';
+import type {
+  PushResult,
+  PushTarget,
+} from '@/modules/notifications/application/ports/push-sender.port';
+import { PUSH_STORE } from '@/modules/notifications/application/ports/push-store.port';
+import { RsvpPush } from '@/modules/notifications/application/rsvp-push.use-case';
+import { AppConfigService } from '@/shared/config/app-config.service';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import { createTestApp } from '../support/harness/create-test-app';
+import { createTestWorker } from '../support/harness/create-test-worker';
+import { seedReferrer } from '../support/factories/referrers';
 import { openSession, signedInUser } from '../support/harness/sessions';
 import { seedWedding } from '../support/factories/weddings';
 
@@ -144,5 +153,89 @@ describe('Assinaturas de push (banco real)', () => {
       .set('Origin', APP_ORIGIN)
       .expect((response) => expect(response.status).toBeLessThan(300));
     expect(await db.pushSubscription.count({ where: { userId: ana.userId } })).toBe(0);
+  });
+  it('Notificações da cerimonialista RN06 e RN07 - o switch deste aparelho liga o push de Novas respostas dela pela preferência geral', async () => {
+    const juliana = await seedReferrer({ db, kind: 'planner', name: 'Juliana Prado' });
+    const cookie = await openSession({ app, userId: juliana.userId });
+    const { id: anaId } = await db.user.create({
+      data: { email: `ana.${randomUUID()}@kore.local`, name: 'Ana Beatriz' },
+    });
+    const { weddingId } = await seedWedding({
+      db,
+      ownerId: anaId,
+      collaboratorIds: [juliana.userId],
+    });
+    const at = new Date(Date.now() - 60_000);
+    await db.notification.create({
+      data: {
+        userId: juliana.userId,
+        weddingId,
+        type: 'rsvp',
+        groupKey: `rsvp:${weddingId}`,
+        payload: [
+          {
+            partyId: randomUUID(),
+            name: 'Família Moreira',
+            confirmed: 2,
+            declined: 0,
+            at: at.toISOString(),
+          },
+        ],
+        updatedAt: at,
+      },
+    });
+    const general = async () =>
+      (
+        (await http().get('/v1/me/notification-preferences').set('Cookie', cookie).expect(200))
+          .body as { items: { type: string; push: boolean }[] }
+      ).items.find((item) => item.type === 'rsvp')?.push;
+    const worker = await createTestWorker();
+    const sent: PushTarget[] = [];
+    const push = new RsvpPush(
+      worker.get(PUSH_STORE),
+      {
+        enabled: () => true,
+        send: ({ target }: { target: PushTarget }) => {
+          sent.push(target);
+          return Promise.resolve('sent' as PushResult);
+        },
+      },
+      worker.get(AppConfigService),
+    );
+    try {
+      const url = endpoint();
+      await subscribe(cookie, url).expect(201);
+      expect(await general()).toBe(true);
+      // Só Novas respostas tem push (RN06): as outras linhas gerais não nascem.
+      expect(
+        await db.notificationPreference.findMany({
+          where: { userId: juliana.userId, weddingId: null },
+          select: { type: true, push: true },
+        }),
+      ).toEqual([{ type: 'rsvp', push: true }]);
+      expect(await push.send({ userId: juliana.userId, weddingId, now: new Date() })).toEqual({
+        sent: 1,
+      });
+
+      // Sem a última assinatura, a geral volta a false e o push não sai.
+      await unsubscribe(cookie, url).expect(204);
+      expect(await general()).toBe(false);
+      expect(await push.send({ userId: juliana.userId, weddingId, now: new Date() })).toEqual({
+        sent: 0,
+      });
+      expect(sent).toHaveLength(1);
+    } finally {
+      await worker.close();
+    }
+  });
+
+  it('RN07 - quem não tem o perfil de cerimonialista não ganha a preferência geral', async () => {
+    const { ana } = await scenario();
+
+    await subscribe(ana.cookie, endpoint()).expect(201);
+
+    expect(
+      await db.notificationPreference.count({ where: { userId: ana.userId, weddingId: null } }),
+    ).toBe(0);
   });
 });
