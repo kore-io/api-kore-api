@@ -69,6 +69,7 @@ export class DeclineAccessInvitation {
         declinedBy: await this.declinedBy({ invitation, email: invitation.email }),
         partnerNames: [partner1 ?? '', partner2 ?? ''],
         inviterIsOwner: invitation.kind !== 'couple',
+        weddingId: invitation.weddingId,
       },
     });
   }

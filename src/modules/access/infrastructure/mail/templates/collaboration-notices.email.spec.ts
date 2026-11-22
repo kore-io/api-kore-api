@@ -45,7 +45,7 @@ describe('E-mails da RN09 de Notificações da cerimonialista (textos da Pena)',
         partnerNames: ['Fernanda', 'João'],
         weddingId: 'w1',
       },
-      url: 'http://app/cerimonialista/casamentos/w1',
+      url: 'http://app/cerimonialista?casamento=w1',
     });
 
     expect(email.subject).toBe('Fernanda e João aceitaram o convite');
@@ -53,7 +53,7 @@ describe('E-mails da RN09 de Notificações da cerimonialista (textos da Pena)',
       [
         'Olá, Juliana.',
         'Fernanda e João aceitaram o convite. O casal assumiu o casamento, e você continua colaborando no site e na lista.',
-        'Abrir o casamento: http://app/cerimonialista/casamentos/w1',
+        'Abrir o casamento: http://app/cerimonialista?casamento=w1',
         'Dúvidas? Escreva para suporte@kore.com.br.',
         'Você recebeu este e-mail porque criou este casamento no Kore.',
       ].join('\n\n'),

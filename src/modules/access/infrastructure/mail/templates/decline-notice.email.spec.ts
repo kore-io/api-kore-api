@@ -6,6 +6,7 @@ const base = {
   inviterName: 'Ana',
   partnerNames: ['Fernanda', 'João'] as [string, string],
   inviterIsOwner: true,
+  weddingId: '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b',
 };
 
 describe('E-mail 5 da Voz & Microcopy: aviso de convite recusado (RN11)', () => {

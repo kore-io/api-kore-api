@@ -676,7 +676,7 @@ describe('Convites de acesso: ler, aceitar e recusar (banco real; decisões 168 
       expect(await inbox({ to: anaEmail })).toHaveLength(1);
     });
 
-    it('RN11 - no convite do casal, o aviso usa o e-mail convidado', async () => {
+    it('RN11 e Cadastro e perfil do cerimonialista RN07 - no convite do casal, o aviso usa o e-mail convidado e leva ao detalhe do casamento', async () => {
       const { referrerUserId, weddingId } = await plannerWedding();
       const julianaEmail = (await db.user.findUniqueOrThrow({ where: { id: referrerUserId } }))
         .email;
@@ -691,8 +691,12 @@ describe('Convites de acesso: ler, aceitar e recusar (banco real; decisões 168 
 
       await decline(token).expect(204);
 
-      expect((await waitForInbox({ to: julianaEmail }))[0]?.Subject).toBe(
-        `${fernanda} recusou o convite`,
+      const [message] = await waitForInbox({ to: julianaEmail });
+      expect(message?.Subject).toBe(`${fernanda} recusou o convite`);
+      // Cadastro e perfil do cerimonialista RN07: o indicador vai ao detalhe do
+      // casamento na Área do cerimonialista, não à Seleção de perfil.
+      expect(await messageText({ id: message.ID })).toContain(
+        `Abrir o Kore: http://localhost:5173/cerimonialista?casamento=${weddingId}`,
       );
     });
 
