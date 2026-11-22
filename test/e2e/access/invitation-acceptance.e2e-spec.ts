@@ -473,6 +473,43 @@ describe('Convites de acesso: ler, aceitar e recusar (banco real; decisões 168 
       });
     });
 
+    it('Cadastro e perfil do cerimonialista RN10 - o nome que não passa no predicado: 200, o perfil mínimo nasce incompleto e o site não assina', async () => {
+      const { ana, weddingId } = await anaWedding();
+      const wedding = await db.wedding.update({
+        where: { id: weddingId },
+        data: { status: 'published', publishedAt: new Date(), eventDate: new Date('2027-03-20') },
+      });
+      const clara = await signedInUser({ app });
+      await db.user.update({ where: { id: clara.userId }, data: { name: null } });
+      const email = (await db.user.findUniqueOrThrow({ where: { id: clara.userId } })).email;
+      const { token } = await seedInvitation({
+        db,
+        weddingId,
+        kind: 'planner',
+        email,
+        invitedByUserId: ana.userId,
+      });
+
+      await accept(token, clara.cookie, { name: 'Clara www.clara.com' }).expect(200);
+
+      const referrer = await db.referrer.findUniqueOrThrow({
+        where: { userId: clara.userId },
+        include: { planner: true },
+      });
+      expect(referrer).toMatchObject({ kind: 'planner', status: 'active' });
+      expect(referrer.planner?.creditName).toBe('Clara www.clara.com');
+      const profile = await request(app.getHttpServer())
+        .get('/v1/me/planner')
+        .set('Cookie', clara.cookie)
+        .expect(200);
+      expect(profile.body.profileComplete).toBe(false);
+      const site = await request(app.getHttpServer())
+        .get(`/v1/sites/${wedding.slug ?? ''}`)
+        .set('Origin', 'http://localhost:5174')
+        .expect(200);
+      expect(site.body.plannerCredit).toBeNull();
+    });
+
     it('RN10 (decisão 211) - com 55 códigos do mesmo nome em uso, o aceite pega o próximo número; dois aceites juntos pegam números diferentes', async () => {
       // Um nome por rodada, para não somar os códigos das rodadas anteriores.
       const name = `Clara ${randomUUID().slice(0, 8)}`;

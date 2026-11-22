@@ -1,7 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+import { Client } from 'pg';
 import request from 'supertest';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import { createTestApp } from '../support/harness/create-test-app';
 import { seedReferrer } from '../support/factories/referrers';
 import { openSession, signedInUser } from '../support/harness/sessions';
@@ -18,13 +20,18 @@ const APP_ORIGIN = 'http://localhost:5173';
 describe('Novo casamento pela cerimonialista (banco real; decisões 223 e 224)', () => {
   let app: INestApplication;
   let db: BackofficePrismaService;
+  let owner: Client;
 
   beforeAll(async () => {
     app = await createTestApp();
     db = app.get(BackofficePrismaService);
+    // A segunda conexão do teste de concorrência (RN08).
+    owner = new Client({ connectionString: process.env.DATABASE_MIGRATION_URL });
+    await owner.connect();
   });
 
   afterAll(async () => {
+    await owner?.end();
     await app?.close();
   });
 
@@ -293,6 +300,50 @@ describe('Novo casamento pela cerimonialista (banco real; decisões 223 e 224)',
       await db.membership.create({ data: { weddingId, userId: fernanda.userId, role: 'owner' } });
       const refused = await patchSite(planner.cookie, weddingId, { slug: slug() }).expect(403);
       expect(refused.body).toMatchObject({ error: 'FIELD_NOT_ALLOWED', fields: ['slug'] });
+    });
+
+    it('RN08 - aceite e edição ao mesmo tempo, com duas conexões: o aceite que trava antes vence, e a gravação dela recebe 403 FIELD_NOT_ALLOWED', async () => {
+      const planner = await juliana();
+      const { weddingId } = (await create(planner.cookie, body()).expect(201)).body as {
+        weddingId: string;
+      };
+      const fernanda = await signedInUser({ app, name: 'Fernanda Alves' });
+
+      // A outra conexão faz o que a accept_access_invitation faz: trava o
+      // casamento e grava o dono; a gravação da data espera o lock.
+      await owner.query('BEGIN');
+      await owner.query('SELECT id FROM weddings WHERE id = $1 FOR UPDATE', [weddingId]);
+      await owner.query(
+        `INSERT INTO memberships (id, wedding_id, user_id, role) VALUES ($1, $2, $3, 'owner')`,
+        [uuidV7(), weddingId, fernanda.userId],
+      );
+      const saving = patchSite(planner.cookie, weddingId, { eventDate: '2027-05-08' }).then(
+        (response) => response,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      await owner.query('COMMIT');
+
+      const response = await saving;
+      expect(response.status).toBe(403);
+      expect(response.body).toMatchObject({ error: 'FIELD_NOT_ALLOWED', fields: ['eventDate'] });
+      expect((await db.wedding.findUniqueOrThrow({ where: { id: weddingId } })).eventDate).toEqual(
+        new Date('2027-03-20T00:00:00Z'),
+      );
+    });
+
+    it('RN04 - o limite de pedidos por conta: 10 por minuto; o 11º é 429 RATE_LIMITED', async () => {
+      const planner = await juliana();
+      // O limite roda antes da validação: pedidos inválidos também contam, e
+      // assim o teto de casamentos sem dono não entra na conta.
+      for (let attempt = 0; attempt < 10; attempt += 1)
+        await create(planner.cookie, {}).expect(400);
+
+      const response = await create(planner.cookie, body()).expect(429);
+
+      expect(response.body).toMatchObject({ error: 'RATE_LIMITED' });
+      // Por conta: outra cerimonialista segue criando.
+      const other = await juliana();
+      await create(other.cookie, body()).expect(201);
     });
 
     it('a cerimonialista que só colabora (casamento de outra origem) não muda, nem sem dono', async () => {
