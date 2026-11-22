@@ -10,6 +10,7 @@ import {
   type ObjectStorage,
 } from '@/shared/storage/application/object-storage.port';
 import { createTestApp } from '../support/harness/create-test-app';
+import { waitUntilBlockedBy } from '../support/harness/lock-wait';
 import { seedReferrer } from '../support/factories/referrers';
 import { openSession, signedInUser } from '../support/harness/sessions';
 import { seedReferrerWedding, seedWedding } from '../support/factories/weddings';
@@ -188,7 +189,7 @@ describe('Excluir este casamento (banco real; RN11)', () => {
       [uuidV7(), planner.weddingId, fernanda.userId],
     );
     const deletion = remove(planner.cookie, planner.weddingId).then((response) => response);
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await waitUntilBlockedBy({ holder: owner });
     await owner.query('COMMIT');
 
     const response = await deletion;
