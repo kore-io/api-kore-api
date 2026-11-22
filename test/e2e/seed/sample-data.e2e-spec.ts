@@ -38,6 +38,11 @@ describe('Dados de exemplo do Kore (seed da Fase 0; banco real)', () => {
       parties: await db.party.count({ where: { wedding: sampleWeddings } }),
       guests: await db.guest.count({ where: { wedding: sampleWeddings } }),
       tags: await db.tag.count({ where: { wedding: sampleWeddings } }),
+      plannerTemplates: await db.plannerTemplate.count({
+        where: {
+          planner: { referrer: { user: { email: { endsWith: `@${SAMPLE_EMAIL_DOMAIN}` } } } },
+        },
+      }),
       pendingInvitations: await db.accessInvitation.count({
         where: {
           wedding: sampleWeddings,
@@ -56,6 +61,7 @@ describe('Dados de exemplo do Kore (seed da Fase 0; banco real)', () => {
     expect(second).toEqual(first);
     expect(before.weddings).toBe(14);
     expect(before.pendingInvitations).toBe(5);
+    expect(before.plannerTemplates).toBe(3);
     expect(first.every(({ url }) => url.startsWith(`${appUrl}/convite/seed-`))).toBe(true);
   });
 
@@ -184,6 +190,42 @@ describe('Dados de exemplo do Kore (seed da Fase 0; banco real)', () => {
       planner: { organization: 'Prado Assessoria', weddingsCount: 12 },
       referrer: { kind: 'planner', referralCode: 'juliana-prado' },
     });
+  });
+
+  it('Modelos RN01 - os Modelos de Juliana Prado: um de cada aba, do mais novo para o mais antigo', async () => {
+    await run();
+    const juliana = await db.user.findUniqueOrThrow({
+      where: { email: `juliana.prado@${SAMPLE_EMAIL_DOMAIN}` },
+    });
+    const cookie = await openSession({ app, userId: juliana.id });
+
+    const { body } = await request(app.getHttpServer())
+      .get('/v1/me/planner-templates')
+      .set('Cookie', cookie)
+      .expect(200);
+
+    expect(body).toEqual([
+      expect.objectContaining({
+        kind: 'appearance',
+        name: 'Romântico · Sálvia · Creme',
+        createdAt: '2026-08-21T12:00:00.000Z',
+        content: expect.objectContaining({ fontPairKey: 'romantico', backgroundMode: 'cream' }),
+      }),
+      expect.objectContaining({
+        kind: 'faq',
+        name: 'FAQ: cerimônia ao ar livre',
+        createdAt: '2026-07-03T12:00:00.000Z',
+        content: { questions: expect.arrayContaining([expect.anything()]) },
+      }),
+      expect.objectContaining({
+        kind: 'section_content',
+        sectionType: 'story',
+        name: 'Nossa história: tom acolhedor',
+        createdAt: '2026-06-12T12:00:00.000Z',
+        locale: 'pt-BR',
+      }),
+    ]);
+    expect((body[1] as { content: { questions: unknown[] } }).content.questions).toHaveLength(3);
   });
 
   it('os convites do E2E abrem pela API: do casal pela cerimonialista, o link sem e-mail e o de cerimonialista pelo casal', async () => {

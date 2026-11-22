@@ -2,10 +2,12 @@ import {
   ownAccountEmail,
   SAMPLE_ACCOUNTS,
   SAMPLE_INVITATIONS,
+  SAMPLE_PLANNER_TEMPLATES,
   SAMPLE_WEDDINGS,
   sampleLifecycle,
   slugOfCouple,
 } from './sample-data';
+import { validateTemplateContent } from '@/modules/planner/application/template-content.validation';
 import { assertSeedAllowed } from './seed-sample-data';
 
 describe('Dados de exemplo do Kore (decisão 181)', () => {
@@ -34,6 +36,15 @@ describe('Dados de exemplo do Kore (decisão 181)', () => {
       12,
     );
   });
+
+  it.each(SAMPLE_PLANNER_TEMPLATES.map((template) => [template.name, template] as const))(
+    'Modelos RN04 - o modelo de exemplo "%s" passa na validação do tipo, sem mudar',
+    async (_, { kind, sectionType, content }) => {
+      const result = await validateTemplateContent({ kind, sectionType, content });
+
+      expect(result).toEqual({ ok: true, content });
+    },
+  );
 
   describe('as datas de vida dos casamentos de exemplo (sugestão do Crivo no DoD da F3)', () => {
     const now = new Date('2026-11-18T15:00:00Z');

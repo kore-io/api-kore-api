@@ -13,6 +13,7 @@ import {
   SAMPLE_EMAIL_DOMAIN,
   SAMPLE_INVITATIONS,
   SAMPLE_PLANNER,
+  SAMPLE_PLANNER_TEMPLATES,
   SAMPLE_SELLER,
   SAMPLE_WEDDINGS,
   sampleLifecycle,
@@ -253,7 +254,28 @@ async function upsertReferrers({
     },
     update: { kind: 'seller', referralCode: SAMPLE_SELLER.referralCode, status: 'active' },
   });
+  await upsertPlannerTemplates({ tx, referrerId: planner.id });
   return { planner: planner.id };
+}
+
+/** Os Modelos de Juliana Prado (Dados de exemplo), pela chave tipo e nome. */
+async function upsertPlannerTemplates({ tx, referrerId }: { tx: Tx; referrerId: string }) {
+  const { id: plannerId } = await tx.planner.findUniqueOrThrow({
+    where: { referrerId },
+    select: { id: true },
+  });
+  for (const { kind, sectionType, name, content, createdAt } of SAMPLE_PLANNER_TEMPLATES) {
+    const data = { sectionType, content: content as unknown as Prisma.InputJsonValue };
+    const existing = await tx.plannerTemplate.findFirst({
+      where: { plannerId, kind, name },
+      select: { id: true },
+    });
+    if (existing) await tx.plannerTemplate.update({ where: { id: existing.id }, data });
+    else
+      await tx.plannerTemplate.create({
+        data: { plannerId, kind, name, ...data, createdAt: new Date(createdAt) },
+      });
+  }
 }
 
 async function upsertWedding({
