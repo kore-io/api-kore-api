@@ -278,6 +278,17 @@ async function upsertPlannerTemplates({ tx, referrerId }: { tx: Tx; referrerId: 
   }
 }
 
+/** A aparência do modelo de que o casamento partiu, como o Começar de um modelo grava (decisão 312(2)). */
+function sampleAppearance({ wedding, now }: { wedding: SampleWedding; now: Date }) {
+  if (!wedding.appearanceTemplate) return {};
+  const template = SAMPLE_PLANNER_TEMPLATES.find(
+    ({ kind, name }) => kind === 'appearance' && name === wedding.appearanceTemplate,
+  );
+  if (template?.kind !== 'appearance')
+    throw new Error(`Modelo de aparência de exemplo não encontrado: ${wedding.appearanceTemplate}`);
+  return { ...template.content, appearanceSetAt: now };
+}
+
 async function upsertWedding({
   tx,
   wedding,
@@ -334,6 +345,7 @@ async function upsertWedding({
         : wedding.referral === 'referral_link'
           ? ('referral_link' as const)
           : ('direct' as const),
+    ...sampleAppearance({ wedding, now }),
     // Atividade agora: nenhum casamento de exemplo entra no expurgo (decisão 181).
     lastActivityAt: now,
     purgeNoticeSentAt: null,
