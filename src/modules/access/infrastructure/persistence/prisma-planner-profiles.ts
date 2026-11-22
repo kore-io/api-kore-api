@@ -125,6 +125,15 @@ export class PrismaPlannerProfiles implements PlannerProfiles {
     await db.organizationMember.createMany({
       data: { organizationId, userId, role: 'owner' },
     });
+    // Notificações da cerimonialista RN06 (decisão 310(2)): com um aparelho já
+    // inscrito no push (ligado como casal), a preferência geral de Novas
+    // respostas nasce com o push ligado, como o switch faria. Uma geral que já
+    // existe não muda.
+    await db.$executeRaw`
+      INSERT INTO notification_preferences (id, user_id, wedding_id, type, push, updated_at)
+      SELECT ${uuidV7({ now: now.getTime() })}::uuid, ${userId}::uuid, NULL, 'rsvp', true, now()
+      WHERE EXISTS (SELECT 1 FROM push_subscriptions WHERE user_id = ${userId}::uuid)
+      ON CONFLICT (user_id, type) WHERE wedding_id IS NULL DO NOTHING`;
     return { referrerId, referralCode };
   }
 

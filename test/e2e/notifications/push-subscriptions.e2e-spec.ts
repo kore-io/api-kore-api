@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { randomBytes, randomUUID } from 'node:crypto';
+import { Client } from 'pg';
 import request from 'supertest';
 import type {
   PushResult,
@@ -9,8 +10,10 @@ import { PUSH_STORE } from '@/modules/notifications/application/ports/push-store
 import { RsvpPush } from '@/modules/notifications/application/rsvp-push.use-case';
 import { AppConfigService } from '@/shared/config/app-config.service';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import { createTestApp } from '../support/harness/create-test-app';
 import { createTestWorker } from '../support/harness/create-test-worker';
+import { seedInvitation } from '../support/factories/invitations';
 import { seedReferrer } from '../support/factories/referrers';
 import { openSession, signedInUser } from '../support/harness/sessions';
 import { seedWedding } from '../support/factories/weddings';
@@ -237,5 +240,109 @@ describe('Assinaturas de push (banco real)', () => {
     expect(
       await db.notificationPreference.count({ where: { userId: ana.userId, weddingId: null } }),
     ).toBe(0);
+  });
+
+  describe('decisão 310(2) - a preferência geral de Novas respostas da cerimonialista', () => {
+    const general = (userId: string) =>
+      db.notificationPreference.findMany({
+        where: { userId, weddingId: null },
+        select: { type: true, push: true },
+      });
+
+    it('Notificações da cerimonialista RN06 - dois aparelhos ligando ao mesmo tempo (duas conexões): 201 e uma linha geral, sem 500', async () => {
+      const juliana = await seedReferrer({ db, kind: 'planner', name: 'Juliana Prado' });
+      const cookie = await openSession({ app, userId: juliana.userId });
+      // A outra conexão é o outro aparelho: grava a geral e segura a transação;
+      // este pedido não a vê e esbarra no único até ela terminar.
+      const other = new Client({ connectionString: process.env.DATABASE_MIGRATION_URL });
+      await other.connect();
+      try {
+        await other.query('BEGIN');
+        await other.query(
+          `INSERT INTO notification_preferences (id, user_id, wedding_id, type, push, updated_at)
+           VALUES ($1, $2, NULL, 'rsvp', true, now())`,
+          [uuidV7(), juliana.userId],
+        );
+        const pending = subscribe(cookie, endpoint()).then((response) => response);
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        await other.query('COMMIT');
+
+        expect((await pending).status).toBe(201);
+      } finally {
+        await other.end();
+      }
+      expect(await general(juliana.userId)).toEqual([{ type: 'rsvp', push: true }]);
+    });
+
+    it('Notificações da cerimonialista RN06 - quem já tem aparelho inscrito e cria o perfil de cerimonialista: a geral nasce com o push ligado', async () => {
+      const ana = await signedInUser({ app, name: `Ana ${randomUUID().slice(0, 8)}` });
+      await subscribe(ana.cookie, endpoint()).expect(201);
+      const bia = await signedInUser({ app, name: `Bia ${randomUUID().slice(0, 8)}` });
+      const signup = (cookie: string) =>
+        http()
+          .post('/v1/me/planner')
+          .set('Cookie', cookie)
+          .set('Origin', APP_ORIGIN)
+          .send({
+            creditName: 'Prado Assessoria',
+            phone: '(19) 3333-4444',
+            whatsapp: '(19) 99999-8888',
+            cities: ['Campinas (SP)'],
+            termsVersion: process.env.TERMS_VERSION,
+          })
+          .expect(201);
+
+      await signup(ana.cookie);
+      await signup(bia.cookie);
+
+      expect(await general(ana.userId)).toEqual([{ type: 'rsvp', push: true }]);
+      // Sem aparelho inscrito, nada nasce (vale o padrão, push desligado).
+      expect(await general(bia.userId)).toEqual([]);
+    });
+
+    it('Notificações da cerimonialista RN06 - o perfil mínimo do aceite do convite também: a geral nasce com o push ligado', async () => {
+      const owner = await signedInUser({ app, name: 'Ana Beatriz' });
+      const { weddingId } = await seedWedding({ db, ownerId: owner.userId });
+      const clara = await signedInUser({ app, name: `Clara ${randomUUID().slice(0, 8)}` });
+      await subscribe(clara.cookie, endpoint()).expect(201);
+      const { email } = await db.user.findUniqueOrThrow({ where: { id: clara.userId } });
+      const { token } = await seedInvitation({
+        db,
+        weddingId,
+        kind: 'planner',
+        email,
+        invitedByUserId: owner.userId,
+      });
+
+      await http()
+        .post(`/v1/access-invitations/${token}/accept`)
+        .set('Cookie', clara.cookie)
+        .set('Origin', APP_ORIGIN)
+        .send({})
+        .expect(200);
+
+      expect(await general(clara.userId)).toEqual([{ type: 'rsvp', push: true }]);
+    });
+
+    it('a geral que já existe não muda quando o perfil nasce', async () => {
+      const ana = await signedInUser({ app, name: `Ana ${randomUUID().slice(0, 8)}` });
+      await subscribe(ana.cookie, endpoint()).expect(201);
+      await db.notificationPreference.create({
+        data: { userId: ana.userId, weddingId: null, type: 'rsvp', push: false },
+      });
+
+      await http()
+        .post('/v1/me/planner')
+        .set('Cookie', ana.cookie)
+        .set('Origin', APP_ORIGIN)
+        .send({
+          creditName: 'Prado Assessoria',
+          cities: ['Campinas (SP)'],
+          termsVersion: process.env.TERMS_VERSION,
+        })
+        .expect(201);
+
+      expect(await general(ana.userId)).toEqual([{ type: 'rsvp', push: false }]);
+    });
   });
 });
