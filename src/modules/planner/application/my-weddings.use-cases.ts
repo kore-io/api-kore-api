@@ -136,7 +136,7 @@ export class ListMyWeddings {
     status?: MyWeddingFilter;
   }): Promise<MyWeddingsView> {
     await requirePlannerProfile({ profiles: this.profiles, userId });
-    const rows = (await this.reader.listCollaborations({ userId })).sort(compareWeddings);
+    const rows = (await this.reader.listCollaborations({ userId })).sort(compareWeddings({ now }));
 
     const candidates = rows.filter((row) => isInvitationsAlertCandidate({ row, now }));
     const counts = await this.reader.deliveryCounts({

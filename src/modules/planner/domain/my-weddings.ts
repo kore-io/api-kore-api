@@ -65,12 +65,33 @@ export function originOf({
   return 'couple_invite';
 }
 
-/** RN02: a data mais próxima primeiro; sem data, no fim, do mais novo para o mais antigo. */
-export function compareWeddings(a: CollaborationRow, b: CollaborationRow): number {
-  if (a.eventDate && b.eventDate) return a.eventDate.localeCompare(b.eventDate);
-  if (a.eventDate) return -1;
-  if (b.eventDate) return 1;
-  return b.createdAt.getTime() - a.createdAt.getTime();
+const today = ({ row, now }: { row: CollaborationRow; now: Date }) =>
+  localDate({ at: now, timezone: row.timezone });
+
+/**
+ * RN02 (decisão 308(2)): a proximidade de hoje, no fuso do casamento. Primeiro
+ * os de data hoje ou futura, em ordem crescente; depois os de data passada,
+ * do mais recente ao mais antigo; sem data no fim, do mais novo ao mais antigo
+ * (`createdAt`).
+ */
+export function compareWeddings({
+  now,
+}: {
+  now: Date;
+}): (a: CollaborationRow, b: CollaborationRow) => number {
+  const group = (row: CollaborationRow) => {
+    if (!row.eventDate) return 2;
+    return row.eventDate >= today({ row, now }) ? 0 : 1;
+  };
+  return (a, b) => {
+    const byGroup = group(a) - group(b);
+    if (byGroup !== 0) return byGroup;
+    if (a.eventDate && b.eventDate)
+      return group(a) === 0
+        ? a.eventDate.localeCompare(b.eventDate)
+        : b.eventDate.localeCompare(a.eventDate);
+    return b.createdAt.getTime() - a.createdAt.getTime();
+  };
 }
 
 /** RN03: na F6, só Ativos (todos menos pós-evento e expirado) e Aguardando o casal. */
@@ -83,9 +104,6 @@ export function summaryOf({ rows }: { rows: readonly CollaborationRow[] }): {
     awaitingCouple: rows.filter((row) => row.status === 'awaiting_couple').length,
   };
 }
-
-const today = ({ row, now }: { row: CollaborationRow; now: Date }) =>
-  localDate({ at: now, timezone: row.timezone });
 
 /**
  * RN05: publicado, prazo de resposta entre hoje e hoje + 7 dias no fuso do
