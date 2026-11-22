@@ -3,6 +3,8 @@ import {
   findDuplicateGuest,
   parsePastedList,
   pastedGuestCount,
+  PLUS,
+  SEPARATORS,
 } from './paste-list';
 
 const names = (text: string) =>
@@ -139,5 +141,52 @@ describe('Lista colada: tempo com o texto no limite (CodeQL js/polynomial-redos)
     expect(parsePastedList({ text: 'Ana    e   Marcos' }).groups[0]?.source).toBe(
       'Ana    e   Marcos',
     );
+  });
+});
+
+describe('Separadores e "+ N" lineares por construção, sobre o texto cru (decisão 313)', () => {
+  const N = 100_000;
+  /** Sem o compact da linha: o pior caso de cada regex sozinha (antes, ~30 s). */
+  const rawWorstCases: Record<string, string> = {
+    'um trecho de espaços sem separador': 'a' + ' '.repeat(N - 2) + 'b',
+    'um trecho de espaços antes de "e"': 'a' + ' '.repeat(N - 3) + 'ex',
+    'tabulação e espaço alternados': 'a' + ' \t'.repeat(N / 2 - 1) + 'b',
+    '" ," repetido': ' ,'.repeat(N / 2),
+    '" e" repetido': ' e'.repeat(N / 2),
+    '"+" e espaços repetidos, com um "\\r" no fim': '+ '.repeat(N / 2 - 1) + '\r',
+    '"+1 " repetido, com um "\\r" no fim': '+1 '.repeat(N / 3) + '\r',
+    '"+" seguido de espaços': '+' + ' '.repeat(N - 2) + 'x',
+  };
+
+  it.each(Object.entries(rawWorstCases))(
+    'RN10 - 100 mil caracteres crus com %s: o split e o "+ N" em menos de 200 ms',
+    (_label, text) => {
+      const started = performance.now();
+      text.split(SEPARATORS);
+      PLUS.exec(text);
+      expect(performance.now() - started).toBeLessThan(200);
+    },
+  );
+
+  it.each([
+    ['Ana, e Bia', ['Ana', 'e Bia']],
+    ['Ana & e Bia', ['Ana', 'e Bia']],
+    ['Ana e, Bia', ['Ana e', 'Bia']],
+    ['Ana E Bia / Caio & Duda', ['Ana', 'Bia', 'Caio', 'Duda']],
+    ['Ana,,Bia', ['Ana', 'Bia']],
+    ['Elisa e Eduardo', ['Elisa', 'Eduardo']],
+  ])('RN10 - "%s" separa como antes: %j', (text, guests) => {
+    expect(names(text)[0]?.guests).toEqual(guests);
+  });
+
+  it.each([
+    ['Ana + 2 filhos', 2],
+    ['Ana +1', 1],
+    ['Ana +12a + 3', 3],
+    ['Ana + 21', null],
+  ])('RN10 - "%s": o "+ N" de sempre', (text, unnamed) => {
+    const [group] = names(text);
+    expect(group?.guests.filter((guest) => guest === null)).toHaveLength(unnamed ?? 0);
+    expect(group?.warnings.includes('PLUS_OUT_OF_RANGE')).toBe(unnamed === null);
   });
 });
