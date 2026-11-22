@@ -253,18 +253,123 @@ describe('Envio das notificações da cerimonialista (worker)', () => {
       (await db.notificationDigestState.findUniqueOrThrow({ where: { userId: juliana.userId } }))
         .lastDigestDate,
     ).toEqual(new Date(`${now.toISOString().slice(0, 10)}T00:00:00Z`));
-    for (const weddingId of [collaborating.weddingId, referred.weddingId])
-      expect(
-        (
-          await db.notificationEmailState.findUniqueOrThrow({
-            where: { userId_weddingId: { userId: juliana.userId, weddingId } },
-          })
-        ).emailedThrough,
-      ).not.toBeNull();
+    // Um cursor por tipo (decisão 308(5)): a resposta anda o das respostas; a publicação, o dela.
+    const cursors = (weddingId: string) =>
+      db.notificationEmailState.findUniqueOrThrow({
+        where: { userId_weddingId: { userId: juliana.userId, weddingId } },
+        select: { emailedThrough: true, publishedEmailedThrough: true },
+      });
+    expect(await cursors(collaborating.weddingId)).toMatchObject({
+      emailedThrough: expect.any(Date),
+      publishedEmailedThrough: null,
+    });
+    expect(await cursors(referred.weddingId)).toMatchObject({
+      emailedThrough: null,
+      publishedEmailedThrough: expect.any(Date),
+    });
 
     // No mesmo dia, não sai outro.
     expect(await digest.send({ userId: juliana.userId, now })).toBe(false);
     expect(await inbox({ to: juliana.email })).toHaveLength(1);
+  });
+
+  /** Ana e Marcos com o site publicado em `publishedAt` e uma resposta em `answeredAt`, para ela. */
+  async function publishedAndAnswered({
+    userId,
+    publishedAt,
+    answeredAt,
+  }: {
+    userId: string;
+    publishedAt: Date;
+    answeredAt: Date;
+  }) {
+    const { id: anaId } = await db.user.create({
+      data: { email: `ana.${randomUUID()}@kore.local`, name: 'Ana Beatriz' },
+    });
+    const { weddingId } = await seedWedding({ db, ownerId: anaId, collaboratorIds: [userId] });
+    const party = await db.party.create({
+      data: {
+        weddingId,
+        name: 'Família Moreira',
+        linkToken: randomBytes(16).toString('base64url'),
+      },
+    });
+    await db.notification.create({
+      data: {
+        userId,
+        weddingId,
+        type: 'wedding_published',
+        groupKey: `wedding_published:${weddingId}`,
+        payload: [{ partnerNames: ['Ana', 'Marcos'] }],
+        createdAt: publishedAt,
+        updatedAt: publishedAt,
+      },
+    });
+    await db.notification.create({
+      data: {
+        userId,
+        weddingId,
+        type: 'rsvp',
+        groupKey: `rsvp:${weddingId}`,
+        payload: [
+          {
+            partyId: party.id,
+            name: 'Família Moreira',
+            confirmed: 2,
+            declined: 0,
+            at: answeredAt.toISOString(),
+          },
+        ],
+        createdAt: answeredAt,
+        updatedAt: answeredAt,
+      },
+    });
+    return { weddingId };
+  }
+
+  it('RN07 (decisão 308(5)) - com Novas respostas em "Na hora", o Site publicado ainda sai no Resumo', async () => {
+    const juliana = await planner();
+    await generalPreference(juliana.userId, 'rsvp', { email: 'immediate' });
+    // O site publicado às 10h; uma resposta às 15h, que sai na hora.
+    const { weddingId } = await publishedAndAnswered({
+      userId: juliana.userId,
+      publishedAt: new Date(Date.now() - 5 * 3_600_000),
+      answeredAt: new Date(Date.now() - 60_000),
+    });
+    expect(
+      await emails.send({ userId: juliana.userId, weddingId, mode: 'immediate', now: new Date() }),
+    ).toEqual({ kind: 'sent' });
+
+    expect(await digest.send({ userId: juliana.userId, now: evening(3) })).toBe(true);
+
+    const messages = await waitForInbox({ to: juliana.email, count: 2 });
+    const summary = messages.find((message) => message.Subject.startsWith('Resumo do dia'));
+    expect(summary?.Subject).toBe('Resumo do dia: novidades em 1 casamento');
+    const text = await textOf(summary!.ID);
+    expect(text).toContain('Site publicado');
+    // A resposta já foi na hora: não entra de novo no Resumo.
+    expect(text).not.toContain('1 grupo respondeu');
+  });
+
+  it('RN07 (decisão 308(5)) - a publicação no Resumo não passa por cima da resposta que espera o "Na hora"', async () => {
+    const juliana = await planner();
+    await generalPreference(juliana.userId, 'rsvp', { email: 'immediate' });
+    // A resposta às 9h ainda não foi por e-mail; o site foi publicado às 10h.
+    const { weddingId } = await publishedAndAnswered({
+      userId: juliana.userId,
+      publishedAt: new Date(Date.now() - 3_600_000),
+      answeredAt: new Date(Date.now() - 2 * 3_600_000),
+    });
+    expect(await digest.send({ userId: juliana.userId, now: evening(3) })).toBe(true);
+
+    expect(
+      await emails.send({ userId: juliana.userId, weddingId, mode: 'immediate', now: new Date() }),
+    ).toEqual({ kind: 'sent' });
+    const messages = await waitForInbox({ to: juliana.email, count: 2 });
+    expect(messages.map((message) => message.Subject).sort()).toEqual([
+      '1 grupo respondeu em Ana e Marcos',
+      'Resumo do dia: novidades em 1 casamento',
+    ]);
   });
 
   it('Casamento bloqueado RN06 - o casamento bloqueado fica fora do Resumo dela, e o cursor dele não anda', async () => {

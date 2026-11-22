@@ -73,11 +73,13 @@ export class PlannerDigest {
             groupCount: groups.length,
             published,
           });
-          const newest = Math.max(
-            groups.length ? newestAt({ groups }).getTime() : 0,
-            published && wedding.publishedAt ? wedding.publishedAt.getTime() : 0,
-          );
-          cursors.push({ weddingId: wedding.weddingId, emailedThrough: new Date(newest) });
+          cursors.push({
+            weddingId: wedding.weddingId,
+            ...(groups.length ? { emailedThrough: newestAt({ groups }) } : {}),
+            ...(published && wedding.publishedAt
+              ? { publishedEmailedThrough: wedding.publishedAt }
+              : {}),
+          });
         }
         if (blocks.length === 0) return null;
         await this.sender.send({

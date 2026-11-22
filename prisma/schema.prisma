@@ -1239,13 +1239,15 @@ model NotificationDigestState {
 // Estado do e-mail por pessoa e casamento (E-mail e push RN02; decisão 217(b)):
 // o cursor do que já foi mandado. Escrita só pelo worker.
 model NotificationEmailState {
-  userId          String    @map("user_id") @db.Uuid
-  weddingId       String    @map("wedding_id") @db.Uuid
-  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
-  emailedThrough  DateTime? @map("emailed_through") @db.Timestamptz(3)
-  lastImmediateAt DateTime? @map("last_immediate_at") @db.Timestamptz(3)
+  userId                  String    @map("user_id") @db.Uuid
+  weddingId               String    @map("wedding_id") @db.Uuid
+  updatedAt               DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  emailedThrough          DateTime? @map("emailed_through") @db.Timestamptz(3)
+  /// Até onde o `wedding_published` já foi no Resumo da cerimonialista (RN07; decisão 308(5)).
+  publishedEmailedThrough DateTime? @map("published_emailed_through") @db.Timestamptz(3)
+  lastImmediateAt         DateTime? @map("last_immediate_at") @db.Timestamptz(3)
   // No fuso do casamento.
-  lastDigestDate  DateTime? @map("last_digest_date") @db.Date
+  lastDigestDate          DateTime? @map("last_digest_date") @db.Date
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   wedding Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
