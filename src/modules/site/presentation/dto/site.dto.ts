@@ -218,6 +218,11 @@ export class SiteEditorResponse {
   /** Nulo sem cerimonialista colaboradora: o Switch não aparece (Assinatura RN05). */
   @ApiProperty({ type: SitePlannerCreditResponse, nullable: true })
   plannerCredit: SitePlannerCreditResponse | null;
+  /**
+   * A preferência do casamento, também sem colaboradora (Assinatura RN05): o
+   * aviso C7-6 do Convidar cerimonialista (decisão 277(A)).
+   */
+  showPlannerCredit: boolean;
 
   static from({ view }: { view: SiteEditorView }): SiteEditorResponse {
     return {

@@ -96,7 +96,10 @@ describe('Assinatura do cerimonialista no site (banco real; decisões 223 e 224)
     });
 
     expect(await creditOf(wedding.slug ?? '')).toBeNull();
-    expect((await editor(ana.cookie, weddingId).expect(200)).body.plannerCredit).toBeNull();
+    const view = (await editor(ana.cookie, weddingId).expect(200)).body;
+    expect(view.plannerCredit).toBeNull();
+    // Decisão 277(A): a preferência do casamento vem também sem colaboradora.
+    expect(view.showPlannerCredit).toBe(true);
   });
 
   it('RN02 - o vendedor colaborador não assina', async () => {
@@ -180,15 +183,22 @@ describe('Assinatura do cerimonialista no site (banco real; decisões 223 e 224)
     await patchSite(ana.cookie, weddingId, { showPlannerCredit: null }).expect(400);
   });
 
-  it('RN05 - o PATCH aceita o campo mesmo sem colaboradora (preferência do casamento)', async () => {
+  it('RN05 e decisão 277(A) - o PATCH aceita o campo mesmo sem colaboradora, e o Editor devolve a preferência', async () => {
     const ana = await signedInUser({ app, name: 'Ana Beatriz' });
     const { weddingId } = await seedWedding({ db, ownerId: ana.userId });
 
-    await patchSite(ana.cookie, weddingId, { showPlannerCredit: false }).expect(200);
+    const saved = await patchSite(ana.cookie, weddingId, { showPlannerCredit: false }).expect(200);
 
     expect(
       (await db.wedding.findUniqueOrThrow({ where: { id: weddingId } })).showPlannerCredit,
     ).toBe(false);
+    // Decisão 277(A): sem colaboradora, o Editor diz que a assinatura está
+    // oculta (o aviso C7-6 do Convidar cerimonialista não aparece).
+    expect(saved.body).toMatchObject({ plannerCredit: null, showPlannerCredit: false });
+    expect((await editor(ana.cookie, weddingId).expect(200)).body).toMatchObject({
+      plannerCredit: null,
+      showPlannerCredit: false,
+    });
   });
 
   it('RN06 - ocultada pelo Kore: nenhum site mostra, o Editor e o Meu perfil sabem, e o motivo não sai', async () => {

@@ -21093,6 +21093,10 @@
           },
           "status": {
             "type": "string"
+          },
+          "showPlannerCredit": {
+            "type": "boolean",
+            "description": "A preferência do casamento, também sem colaboradora (Assinatura RN05): o\naviso C7-6 do Convidar cerimonialista (decisão 277(A))."
           }
         },
         "required": [
@@ -21113,7 +21117,8 @@
           "publication",
           "songQuestion",
           "plannerCredit",
-          "status"
+          "status",
+          "showPlannerCredit"
         ]
       },
       "SiteFieldNotAllowedErrorBody": {
