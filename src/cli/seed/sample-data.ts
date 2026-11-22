@@ -100,8 +100,9 @@ export const SAMPLE_PLANNER = {
 
 /**
  * Os três modelos da Prado Assessoria, um de cada aba (Dados de exemplo do
- * Kore, Modelos de Juliana Prado; Modelos do cerimonialista RN01). Chave
- * natural: tipo e nome.
+ * Kore, Modelos de Juliana Prado; Modelos do cerimonialista RN01), e o
+ * "Padrão Prado Assessoria", o modelo de aparência de que partem Gabriela e
+ * Rafael e Isabela e André (decisão 312(2)). Chave natural: tipo e nome.
  */
 export const SAMPLE_PLANNER_TEMPLATES = [
   {
@@ -148,6 +149,19 @@ export const SAMPLE_PLANNER_TEMPLATES = [
       backgroundMode: 'cream',
     },
     createdAt: '2026-08-21T12:00:00Z',
+  },
+  {
+    kind: 'appearance',
+    sectionType: null,
+    name: 'Padrão Prado Assessoria',
+    content: {
+      fontPairKey: 'classico',
+      starterPaletteKey: 'salvia',
+      primaryColor: '#566C4B',
+      accentColor: '#C9A66B',
+      backgroundMode: 'light',
+    },
+    createdAt: '2026-09-01T12:00:00Z',
   },
 ] as const;
 

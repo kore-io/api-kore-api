@@ -61,7 +61,7 @@ describe('Dados de exemplo do Kore (seed da Fase 0; banco real)', () => {
     expect(second).toEqual(first);
     expect(before.weddings).toBe(14);
     expect(before.pendingInvitations).toBe(5);
-    expect(before.plannerTemplates).toBe(3);
+    expect(before.plannerTemplates).toBe(4);
     expect(first.every(({ url }) => url.startsWith(`${appUrl}/convite/seed-`))).toBe(true);
   });
 
@@ -192,7 +192,7 @@ describe('Dados de exemplo do Kore (seed da Fase 0; banco real)', () => {
     });
   });
 
-  it('Modelos RN01 - os Modelos de Juliana Prado: um de cada aba, do mais novo para o mais antigo', async () => {
+  it('Modelos RN01 e decisão 312(2) - os Modelos de Juliana Prado: um de cada aba e o Padrão Prado Assessoria, do mais novo para o mais antigo', async () => {
     await run();
     const juliana = await db.user.findUniqueOrThrow({
       where: { email: `juliana.prado@${SAMPLE_EMAIL_DOMAIN}` },
@@ -205,6 +205,18 @@ describe('Dados de exemplo do Kore (seed da Fase 0; banco real)', () => {
       .expect(200);
 
     expect(body).toEqual([
+      expect.objectContaining({
+        kind: 'appearance',
+        name: 'Padrão Prado Assessoria',
+        createdAt: '2026-09-01T12:00:00.000Z',
+        content: {
+          fontPairKey: 'classico',
+          starterPaletteKey: 'salvia',
+          primaryColor: '#566C4B',
+          accentColor: '#C9A66B',
+          backgroundMode: 'light',
+        },
+      }),
       expect.objectContaining({
         kind: 'appearance',
         name: 'Romântico · Sálvia · Creme',
@@ -225,7 +237,7 @@ describe('Dados de exemplo do Kore (seed da Fase 0; banco real)', () => {
         locale: 'pt-BR',
       }),
     ]);
-    expect((body[1] as { content: { questions: unknown[] } }).content.questions).toHaveLength(3);
+    expect((body[2] as { content: { questions: unknown[] } }).content.questions).toHaveLength(3);
   });
 
   it('os convites do E2E abrem pela API: do casal pela cerimonialista, o link sem e-mail e o de cerimonialista pelo casal', async () => {
