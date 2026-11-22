@@ -9,7 +9,7 @@ const notice = {
   status: 'awaiting_couple' as const,
   purgeDate: new Date('2026-12-14T15:00:00Z'),
 };
-const url = 'http://localhost:5173/perfis';
+const url = 'http://localhost:5173/cerimonialista?casamento=0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b';
 
 describe('E-mail 6 da Voz & Microcopy: aviso de exclusão em 30 dias (RN13)', () => {
   it('aguardando o casal: assunto, a data e o botão', () => {

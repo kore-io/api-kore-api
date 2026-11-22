@@ -66,6 +66,7 @@ describe('DeclineAccessInvitation (POST /v1/access-invitations/{token}/decline)'
         declinedBy: 'Marcos',
         partnerNames: ['Ana', 'Marcos'],
         inviterIsOwner: true,
+        weddingId: 'w1',
       },
     ]);
   });

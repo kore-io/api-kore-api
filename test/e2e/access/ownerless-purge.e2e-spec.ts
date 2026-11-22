@@ -14,7 +14,7 @@ import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.ser
 import { createTestApp } from '../support/harness/create-test-app';
 import { createTestWorker } from '../support/harness/create-test-worker';
 import { seedInvitation } from '../support/factories/invitations';
-import { waitForInbox } from '../support/harness/mailpit';
+import { messageText, waitForInbox } from '../support/harness/mailpit';
 import { seedReferrer } from '../support/factories/referrers';
 import { openSession } from '../support/harness/sessions';
 import { seedReferrerWedding, seedWedding } from '../support/factories/weddings';
@@ -55,7 +55,7 @@ describe('Expurgo do casamento sem dono (RN13 de Convites; decisões 136 e 180; 
     return { weddingId, referrerUserId: userId, creator };
   }
 
-  it('decisão 180 - 30 dias antes da data do expurgo, avisa o indicador (e-mail 6) e registra no log', async () => {
+  it('decisão 180 e Novo casamento RN10 - 30 dias antes da data do expurgo, avisa o indicador (e-mail 6, com o detalhe do casamento) e registra no log', async () => {
     const lastActivityAt = new Date('2021-01-10T12:00:00Z');
     const { weddingId, creator } = await ownerlessWedding({ lastActivityAt });
     const now = new Date(new Date('2021-07-10T12:00:00Z').getTime() - 30 * day);
@@ -67,6 +67,11 @@ describe('Expurgo do casamento sem dono (RN13 de Convites; decisões 136 e 180; 
     expect(wedding.status).toBe('awaiting_couple');
     const [message] = await waitForInbox({ to: creator.email });
     expect(message?.Subject).toBe('O casamento de Fernanda e João será excluído em 30 dias');
+    // Novo casamento pelo cerimonialista RN10: Abrir o casamento leva ao detalhe
+    // na Área do cerimonialista.
+    expect(await messageText({ id: message.ID })).toContain(
+      `Abrir o casamento: http://localhost:5173/cerimonialista?casamento=${weddingId}`,
+    );
     await db.applicationLog.findFirstOrThrow({
       where: { action: 'wedding.purge_notice_sent', weddingId },
     });

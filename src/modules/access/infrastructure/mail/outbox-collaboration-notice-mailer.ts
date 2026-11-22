@@ -6,6 +6,7 @@ import type {
   CoupleAcceptedNotice,
   PlannerLeftNotice,
 } from '@/modules/access/application/ports/collaboration-notice-mailer.port';
+import { plannerWeddingPath } from './planner-wedding-path';
 import { coupleAcceptedEmail, plannerLeftEmail } from './templates/collaboration-notices.email';
 
 /**
@@ -14,8 +15,6 @@ import { coupleAcceptedEmail, plannerLeftEmail } from './templates/collaboration
  * cerimonialista.
  */
 const COUPLE_COLLABORATORS_PATH = '/app/colaboradores';
-const plannerWeddingPath = (weddingId: string) =>
-  `/cerimonialista/casamentos/${encodeURIComponent(weddingId)}`;
 
 @Injectable()
 export class OutboxCollaborationNoticeMailer implements CollaborationNoticeMailer {

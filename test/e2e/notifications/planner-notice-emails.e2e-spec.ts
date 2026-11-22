@@ -192,7 +192,7 @@ describe('E-mails da RN09 de Notificações da cerimonialista (banco real e Mail
     const text = await textOf(message.ID);
     expect(text).toContain('Olá, Juliana.');
     expect(text).toContain(
-      `Abrir o casamento: http://localhost:5173/cerimonialista/casamentos/${weddingId}`,
+      `Abrir o casamento: http://localhost:5173/cerimonialista?casamento=${weddingId}`,
     );
     expect(text).toContain('Você recebeu este e-mail porque criou este casamento no Kore.');
   });
