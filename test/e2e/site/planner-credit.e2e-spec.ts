@@ -96,7 +96,10 @@ describe('Assinatura do cerimonialista no site (banco real; decisões 223 e 224)
     });
 
     expect(await creditOf(wedding.slug ?? '')).toBeNull();
-    expect((await editor(ana.cookie, weddingId).expect(200)).body.plannerCredit).toBeNull();
+    const view = (await editor(ana.cookie, weddingId).expect(200)).body;
+    expect(view.plannerCredit).toBeNull();
+    // Decisão 277(A): a preferência do casamento vem também sem colaboradora.
+    expect(view.showPlannerCredit).toBe(true);
   });
 
   it('RN02 - o vendedor colaborador não assina', async () => {
@@ -180,15 +183,22 @@ describe('Assinatura do cerimonialista no site (banco real; decisões 223 e 224)
     await patchSite(ana.cookie, weddingId, { showPlannerCredit: null }).expect(400);
   });
 
-  it('RN05 - o PATCH aceita o campo mesmo sem colaboradora (preferência do casamento)', async () => {
+  it('RN05 e decisão 277(A) - o PATCH aceita o campo mesmo sem colaboradora, e o Editor devolve a preferência', async () => {
     const ana = await signedInUser({ app, name: 'Ana Beatriz' });
     const { weddingId } = await seedWedding({ db, ownerId: ana.userId });
 
-    await patchSite(ana.cookie, weddingId, { showPlannerCredit: false }).expect(200);
+    const saved = await patchSite(ana.cookie, weddingId, { showPlannerCredit: false }).expect(200);
 
     expect(
       (await db.wedding.findUniqueOrThrow({ where: { id: weddingId } })).showPlannerCredit,
     ).toBe(false);
+    // Decisão 277(A): sem colaboradora, o Editor diz que a assinatura está
+    // oculta (o aviso C7-6 do Convidar cerimonialista não aparece).
+    expect(saved.body).toMatchObject({ plannerCredit: null, showPlannerCredit: false });
+    expect((await editor(ana.cookie, weddingId).expect(200)).body).toMatchObject({
+      plannerCredit: null,
+      showPlannerCredit: false,
+    });
   });
 
   it('RN06 - ocultada pelo Kore: nenhum site mostra, o Editor e o Meu perfil sabem, e o motivo não sai', async () => {
@@ -293,6 +303,52 @@ describe('Assinatura do cerimonialista no site (banco real; decisões 223 e 224)
         editorName: expected,
       });
     }
+  });
+
+  it('RN03 e RN09 de Cadastro - o nome muda junto nas quatro leituras quando ela salva Meu perfil', async () => {
+    const w = await publishedWedding();
+    const { token } = await seedInvitation({
+      db,
+      weddingId: w.weddingId,
+      kind: 'couple',
+      email: null,
+      invitedByUserId: w.ana.userId,
+    });
+    const preview = (
+      await http()
+        .post(`/v1/weddings/${w.weddingId}/site-previews`)
+        .set('Cookie', w.ana.cookie)
+        .set('Origin', APP_ORIGIN)
+        .send({ mode: 'visitor' })
+        .expect(201)
+    ).body as { url: string };
+    const exchanged = await http()
+      .post(`/v1/sites/${w.slug}/preview-session`)
+      .set('Origin', SITE_ORIGIN)
+      .send({ token: new URL(preview.url).searchParams.get('previa') })
+      .expect(200);
+    const previewCookie = String(exchanged.headers['set-cookie']).split(';')[0];
+
+    await http()
+      .patch('/v1/me/planner')
+      .set('Cookie', w.julianaCookie)
+      .set('Origin', APP_ORIGIN)
+      // A colaboradora do teste nunca aceitou os Termos: o Meu perfil os pede (RN10).
+      .send({ creditName: 'Prado Eventos', termsVersion: process.env.TERMS_VERSION })
+      .expect(200);
+
+    expect({
+      publicName: (await creditOf(w.slug))?.name,
+      previewName: (await site(w.slug, previewCookie).expect(200)).body.plannerCredit?.name,
+      invitationName: (await http().get(`/v1/access-invitations/${token}`).expect(200)).body
+        .plannerCredit?.name,
+      editorName: (await editor(w.ana.cookie, w.weddingId).expect(200)).body.plannerCredit?.name,
+    }).toEqual({
+      publicName: 'Prado Eventos',
+      previewName: 'Prado Eventos',
+      invitationName: 'Prado Eventos',
+      editorName: 'Prado Eventos',
+    });
   });
 
   it('segurança - o kore_app não chama as funções com um id qualquer; as da sessão só respondem no casamento da transação, com vínculo', async () => {

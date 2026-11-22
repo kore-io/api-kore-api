@@ -48,6 +48,12 @@ export interface SiteEditorView extends Omit<
     hiddenByKore: boolean;
     canChange: boolean;
   } | null;
+  /**
+   * A preferência do casamento (Assinatura RN05), também sem colaboradora: o
+   * aviso C7-6 do Convidar cerimonialista só aparece com a assinatura não
+   * oculta (decisão 277(A)).
+   */
+  showPlannerCredit: boolean;
   /** A pergunta de música (Música RN01), com o texto padrão quando vazio. */
   songQuestion: { enabled: boolean; text: string };
   eventDate: string | null;
@@ -134,6 +140,7 @@ export class SiteEditorViews {
         enabled: site.songQuestion.enabled,
         text: site.songQuestion.text ?? DEFAULT_SONG_QUESTION,
       },
+      showPlannerCredit,
       plannerCredit: collaborator && {
         name: collaborator.name,
         showPlannerCredit,
