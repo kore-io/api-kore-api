@@ -108,6 +108,39 @@ describe('Envio das notificações da cerimonialista (worker)', () => {
     data: { email?: 'off' | 'immediate' | 'daily'; push?: boolean },
   ) => db.notificationPreference.create({ data: { userId, weddingId: null, type, ...data } });
 
+  /** Um aparelho inscrito para a pessoa e o RsvpPush com um envio que só registra. */
+  async function subscribedPush(userId: string) {
+    const session = await db.session.create({
+      data: {
+        userId,
+        tokenHash: randomBytes(32).toString('hex'),
+        expiresAt: new Date(Date.now() + DAY_MS),
+        lastSeenAt: new Date(),
+        authenticatedAt: new Date(),
+        authMethod: 'email',
+      },
+    });
+    await db.pushSubscription.create({
+      data: {
+        userId,
+        sessionId: session.id,
+        endpoint: `https://fcm.googleapis.com/fcm/send/${randomBytes(12).toString('hex')}`,
+        p256dh: 'p',
+        auth: 'a',
+      },
+    });
+    const calls: { target: PushTarget; payload: Record<string, unknown> }[] = [];
+    const sender = {
+      enabled: () => true,
+      send: ({ target, payload }: { target: PushTarget; payload: string }) => {
+        calls.push({ target, payload: JSON.parse(payload) as Record<string, unknown> });
+        return Promise.resolve('sent' as PushResult);
+      },
+    };
+    const push = new RsvpPush(worker.get(PUSH_STORE), sender, worker.get(AppConfigService));
+    return { calls, push };
+  }
+
   it('RN07 - na hora, pela preferência geral: o texto dela, sem o nome do grupo', async () => {
     const juliana = await planner();
     const { weddingId } = await collaboration(juliana);
@@ -141,7 +174,7 @@ describe('Envio das notificações da cerimonialista (worker)', () => {
     ).toEqual({ kind: 'skipped' });
   });
 
-  it('D18 - removida antes do envio: o que estava na fila é descartado; o vendedor não recebe', async () => {
+  it('D18 e RN07 - removida antes do envio: o e-mail e o push da fila são descartados; o vendedor não recebe', async () => {
     const juliana = await planner();
     const { weddingId } = await collaboration(juliana);
     await generalPreference(juliana.userId, 'rsvp', { email: 'immediate', push: true });
@@ -154,6 +187,12 @@ describe('Envio das notificações da cerimonialista (worker)', () => {
       await emails.send({ userId: juliana.userId, weddingId, mode: 'immediate', now: new Date() }),
     ).toEqual({ kind: 'skipped' });
     expect(await inbox({ to: juliana.email })).toEqual([]);
+    // O push da fila também é descartado (RN07): a mesma reconferência do vínculo.
+    const { calls, push } = await subscribedPush(juliana.userId);
+    expect(await push.send({ userId: juliana.userId, weddingId, now: new Date() })).toEqual({
+      sent: 0,
+    });
+    expect(calls).toEqual([]);
 
     const lucas = await seedReferrer({ db, kind: 'seller', name: 'Lucas Andrade' });
     const seller = await collaboration({ userId: lucas.userId });
@@ -172,39 +211,9 @@ describe('Envio das notificações da cerimonialista (worker)', () => {
     const juliana = await planner();
     const { weddingId } = await collaboration(juliana);
     await generalPreference(juliana.userId, 'rsvp', { push: true });
-    const session = await db.session.create({
-      data: {
-        userId: juliana.userId,
-        tokenHash: randomBytes(32).toString('hex'),
-        expiresAt: new Date(Date.now() + DAY_MS),
-        lastSeenAt: new Date(),
-        authenticatedAt: new Date(),
-        authMethod: 'email',
-      },
-    });
-    await db.pushSubscription.create({
-      data: {
-        userId: juliana.userId,
-        sessionId: session.id,
-        endpoint: `https://fcm.googleapis.com/fcm/send/${randomBytes(12).toString('hex')}`,
-        p256dh: 'p',
-        auth: 'a',
-      },
-    });
-    const calls: { target: PushTarget; payload: Record<string, unknown> }[] = [];
-    const sender = {
-      enabled: () => true,
-      send: ({ target, payload }: { target: PushTarget; payload: string }) => {
-        calls.push({ target, payload: JSON.parse(payload) as Record<string, unknown> });
-        return Promise.resolve('sent' as PushResult);
-      },
-    };
+    const { calls, push } = await subscribedPush(juliana.userId);
 
-    await new RsvpPush(worker.get(PUSH_STORE), sender, worker.get(AppConfigService)).send({
-      userId: juliana.userId,
-      weddingId,
-      now: new Date(),
-    });
+    await push.send({ userId: juliana.userId, weddingId, now: new Date() });
 
     expect(calls.map((call) => call.payload)).toEqual([
       {

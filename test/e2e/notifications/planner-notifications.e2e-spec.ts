@@ -4,6 +4,7 @@ import { Client } from 'pg';
 import request from 'supertest';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import { createTestApp } from '../support/harness/create-test-app';
+import { seedInvitation } from '../support/factories/invitations';
 import { publishByPayment } from '../support/factories/payments';
 import { seedReferrer } from '../support/factories/referrers';
 import { openSession, signedInUser } from '../support/harness/sessions';
@@ -37,6 +38,15 @@ describe('Notificações da cerimonialista (banco real; decisões 223 e 224)', (
   const day = (offset: number) => new Date(Date.now() + offset * DAY_MS).toISOString().slice(0, 10);
   const central = (cookie: string, query: Record<string, string> = { scope: 'planner' }) =>
     http().get('/v1/me/notifications').query(query).set('Cookie', cookie);
+
+  const removeMembership = (cookie: string, weddingId: string, membershipId: string) =>
+    http()
+      .delete(`/v1/weddings/${weddingId}/memberships/${membershipId}`)
+      .set('Cookie', cookie)
+      .set('Origin', APP_ORIGIN)
+      .expect(204);
+  const activeMembership = (weddingId: string, userId: string) =>
+    db.membership.findFirstOrThrow({ where: { weddingId, userId, removedAt: null } });
 
   /** Ana e Marcos, com Juliana (cerimonialista) colaboradora e indicadora. */
   async function scenario({ publish = true }: { publish?: boolean } = {}) {
@@ -264,6 +274,122 @@ describe('Notificações da cerimonialista (banco real; decisões 223 e 224)', (
     ).toBe(0);
   });
 
+  it('RN04 - remover, convidar de novo e remover outra vez: duas notificações, uma por vínculo', async () => {
+    const { ana, juliana, julianaCookie, weddingId } = await scenario();
+    const first = await activeMembership(weddingId, juliana.userId);
+    await removeMembership(ana.cookie, weddingId, first.id);
+
+    // O dono convida de novo e ela aceita pelo link: um vínculo novo.
+    const { email } = await db.user.findUniqueOrThrow({ where: { id: juliana.userId } });
+    const { token } = await seedInvitation({
+      db,
+      weddingId,
+      kind: 'planner',
+      email,
+      invitedByUserId: ana.userId,
+    });
+    await http()
+      .post(`/v1/access-invitations/${token}/accept`)
+      .set('Cookie', julianaCookie)
+      .set('Origin', APP_ORIGIN)
+      .send({})
+      .expect(200);
+    const second = await activeMembership(weddingId, juliana.userId);
+    expect(second.id).not.toBe(first.id);
+    await removeMembership(ana.cookie, weddingId, second.id);
+
+    const rows = await db.notification.findMany({
+      where: { userId: juliana.userId, weddingId, type: 'membership_removed' },
+      select: { groupKey: true },
+    });
+    expect(rows.map((row) => row.groupKey).sort()).toEqual(
+      [`membership_removed:${first.id}`, `membership_removed:${second.id}`].sort(),
+    );
+    const { body } = await central(julianaCookie).expect(200);
+    expect((body.items as { type: string }[]).map((item) => item.type)).toEqual([
+      'membership_removed',
+      'membership_removed',
+    ]);
+  });
+
+  it('RN05 e RN10 - quem saiu não vê nem marca: o contador, o 404 ao abrir e o UPDATE em SQL sem linhas', async () => {
+    const { ana, juliana, julianaCookie, weddingId, slug } = await scenario();
+    await respond({ ana, weddingId, slug });
+    const old = await db.notification.findFirstOrThrow({
+      where: { userId: juliana.userId, weddingId, type: 'rsvp' },
+    });
+    const membership = await activeMembership(weddingId, juliana.userId);
+    await removeMembership(ana.cookie, weddingId, membership.id);
+
+    const unread = await http()
+      .get('/v1/me/notifications/unread-count')
+      .query({ scope: 'planner' })
+      .set('Cookie', julianaCookie)
+      .expect(200);
+    // Só a "Colaboração encerrada"; a resposta antiga não conta.
+    expect(unread.body).toEqual({ unreadCount: 1 });
+    await http()
+      .post(`/v1/me/notifications/${old.id}/read`)
+      .set('Cookie', julianaCookie)
+      .set('Origin', APP_ORIGIN)
+      .expect(404);
+
+    const api = new Client({ connectionString: process.env.DATABASE_URL });
+    await api.connect();
+    try {
+      await api.query('BEGIN');
+      await api.query(`SELECT set_config('app.user_id', $1, true)`, [juliana.userId]);
+      const { rowCount } = await api.query(
+        'UPDATE notifications SET read_at = now() WHERE id = $1',
+        [old.id],
+      );
+      expect(rowCount).toBe(0);
+    } finally {
+      await api.query('ROLLBACK');
+      await api.end();
+    }
+    expect((await db.notification.findUniqueOrThrow({ where: { id: old.id } })).readAt).toBeNull();
+  });
+
+  it('RN05 - notificações de outra assessoria: a central dela com scope=planner não traz o casamento de Paula', async () => {
+    const { ana, julianaCookie, weddingId, slug } = await scenario();
+    await respond({ ana, weddingId, slug });
+    // Paula, de outra assessoria, colabora em Bia e Caio, com uma resposta não lida.
+    const paula = await seedReferrer({ db, kind: 'planner', name: 'Paula Souza' });
+    const { id: biaId } = await db.user.create({
+      data: { email: `bia.${randomUUID()}@kore.local`, name: 'Bia Lima' },
+    });
+    const other = await seedWedding({ db, ownerId: biaId, collaboratorIds: [paula.userId] });
+    const foreign = await db.notification.create({
+      data: {
+        userId: paula.userId,
+        weddingId: other.weddingId,
+        type: 'rsvp',
+        groupKey: `rsvp:${other.weddingId}`,
+        payload: [],
+      },
+    });
+
+    const { body } = await central(julianaCookie).expect(200);
+    expect((body.items as { weddingId: string }[]).map((item) => item.weddingId)).toEqual([
+      weddingId,
+    ]);
+    const unread = await http()
+      .get('/v1/me/notifications/unread-count')
+      .query({ scope: 'planner' })
+      .set('Cookie', julianaCookie)
+      .expect(200);
+    expect(unread.body).toEqual({ unreadCount: 1 });
+    await http()
+      .post(`/v1/me/notifications/${foreign.id}/read`)
+      .set('Cookie', julianaCookie)
+      .set('Origin', APP_ORIGIN)
+      .expect(404);
+    expect(
+      (await db.notification.findUniqueOrThrow({ where: { id: foreign.id } })).readAt,
+    ).toBeNull();
+  });
+
   it('RN05 - o escopo: sem o casamento de que ela é dona; ler todas não marca as do casal; sem perfil, 403', async () => {
     const { ana, juliana, julianaCookie, weddingId, slug } = await scenario();
     await respond({ ana, weddingId, slug });
@@ -363,6 +489,23 @@ describe('Notificações da cerimonialista (banco real; decisões 223 e 224)', (
       .set('Origin', APP_ORIGIN)
       .send({ weddingId: null, type: 'rsvp', email: 'off' })
       .expect(400);
+  });
+
+  it('RN03 - uma vez por casamento: a função de aviso chamada duas vezes deixa uma linha', async () => {
+    const { juliana, weddingId } = await scenario();
+
+    const first = await db.$queryRaw<{ recipients: string[] }[]>`
+      SELECT notify_wedding_published_for(${weddingId}::uuid, ${[randomUUID()]}::uuid[]) AS recipients`;
+    const second = await db.$queryRaw<{ recipients: string[] }[]>`
+      SELECT notify_wedding_published_for(${weddingId}::uuid, ${[randomUUID()]}::uuid[]) AS recipients`;
+
+    expect(first[0].recipients).toEqual([juliana.userId]);
+    expect(second[0].recipients).toEqual([]);
+    expect(
+      await db.notification.count({
+        where: { userId: juliana.userId, weddingId, type: 'wedding_published' },
+      }),
+    ).toBe(1);
   });
 
   it('RN10 - as policies por tipo, no SQL com o kore_api: quem saiu não vê o rsvp, vê o membership_removed', async () => {
