@@ -98,6 +98,59 @@ export const SAMPLE_PLANNER = {
   cities: ['Campinas (SP)', 'Valinhos (SP)', 'Vinhedo (SP)'],
 } as const;
 
+/**
+ * Os três modelos da Prado Assessoria, um de cada aba (Dados de exemplo do
+ * Kore, Modelos de Juliana Prado; Modelos do cerimonialista RN01). Chave
+ * natural: tipo e nome.
+ */
+export const SAMPLE_PLANNER_TEMPLATES = [
+  {
+    kind: 'section_content',
+    sectionType: 'story',
+    name: 'Nossa história: tom acolhedor',
+    content: {
+      text: 'Tudo começou com um café e uma conversa que não acabava mais. Hoje, {casal} querem dividir com quem amam o dia em que dizem sim. Que bom ter vocês com a gente.',
+    },
+    createdAt: '2026-06-12T12:00:00Z',
+  },
+  {
+    kind: 'faq',
+    sectionType: null,
+    name: 'FAQ: cerimônia ao ar livre',
+    content: {
+      questions: [
+        {
+          question: 'E se chover?',
+          answer:
+            'Temos uma área coberta ao lado do jardim, e avisamos todos os grupos pelo WhatsApp.',
+        },
+        {
+          question: 'Qual é o traje?',
+          answer: 'Passeio completo. Sugerimos sapatos baixos por causa do gramado.',
+        },
+        {
+          question: 'Tem estacionamento?',
+          answer: 'Sim, com manobrista no local, sem custo para os convidados.',
+        },
+      ],
+    },
+    createdAt: '2026-07-03T12:00:00Z',
+  },
+  {
+    kind: 'appearance',
+    sectionType: null,
+    name: 'Romântico · Sálvia · Creme',
+    content: {
+      fontPairKey: 'romantico',
+      starterPaletteKey: 'salvia',
+      primaryColor: '#566C4B',
+      accentColor: '#C9A66B',
+      backgroundMode: 'cream',
+    },
+    createdAt: '2026-08-21T12:00:00Z',
+  },
+] as const;
+
 /** O vendedor (Vendas · Kore), cadastrado pela Admin Renata Lima. */
 export const SAMPLE_SELLER = {
   account: 'lucas',
