@@ -12,9 +12,11 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
+import { ADMIN_LOG_ACTOR_ROLES } from '@/modules/backoffice/application/ports/admin-insights.reader.port';
 import type {
   AdminAlertRow,
   AdminLogRow,
+  AdminLogActorRole,
   AdminOverview,
   AdminSearchResult,
 } from '@/modules/backoffice/application/ports/admin-insights.reader.port';
@@ -126,6 +128,17 @@ export class AdminLogsQuery extends PageQuery {
   to?: Date;
 }
 
+/** Quem agiu: o nome e o papel (a coluna "Quem (nome e papel)"; decisão 316(11)(c)). */
+class AdminLogActorResponse {
+  @ApiProperty({ type: String, nullable: true }) name: string | null;
+  /**
+   * O staff (`admin`, `support`), o papel no casamento da linha (`owner`,
+   * `collaborator`) ou, sem vínculo, o do indicador (`planner`, `seller`);
+   * nulo se nada disso. O app escolhe o rótulo.
+   */
+  @ApiProperty({ enum: ADMIN_LOG_ACTOR_ROLES, nullable: true }) role: AdminLogActorRole | null;
+}
+
 class AdminLogRowResponse {
   @ApiProperty({ format: 'uuid' }) id: string;
   @ApiProperty({ format: 'date-time' }) createdAt: string;
@@ -140,6 +153,11 @@ class AdminLogRowResponse {
   @ApiProperty({ type: Object, nullable: true }) data: unknown;
   /** O hash do IP, curto; nunca o IP. */
   @ApiProperty({ type: String, nullable: true }) ipHashShort: string | null;
+  /** Nulo no sistema e no convidado (sem `actorUserId`). */
+  @ApiProperty({ type: AdminLogActorResponse, nullable: true }) actor: AdminLogActorResponse | null;
+  /** "Ana & Marcos", para a coluna Casamento; nulo sem casamento ou depois do expurgo. */
+  @ApiProperty({ type: String, nullable: true, example: 'Ana & Marcos' }) coupleNames:
+    string | null;
 }
 
 export class AdminLogsResponse {

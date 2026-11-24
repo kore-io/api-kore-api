@@ -29278,6 +29278,32 @@
           "referrers"
         ]
       },
+      "AdminLogActorResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "nullable": true,
+            "description": "O staff (`admin`, `support`), o papel no casamento da linha (`owner`,\n`collaborator`) ou, sem vínculo, o do indicador (`planner`, `seller`);\nnulo se nada disso. O app escolhe o rótulo.",
+            "enum": [
+              "admin",
+              "support",
+              "owner",
+              "collaborator",
+              "planner",
+              "seller"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "role"
+        ]
+      },
       "AdminLogRowResponse": {
         "type": "object",
         "properties": {
@@ -29328,6 +29354,22 @@
             "nullable": true,
             "description": "O hash do IP, curto; nunca o IP."
           },
+          "actor": {
+            "nullable": true,
+            "description": "Nulo no sistema e no convidado (sem `actorUserId`).",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AdminLogActorResponse"
+              }
+            ]
+          },
+          "coupleNames": {
+            "type": "string",
+            "nullable": true,
+            "description": "\"Ana & Marcos\", para a coluna Casamento; nulo sem casamento ou depois do expurgo.",
+            "example": "Ana & Marcos"
+          },
           "action": {
             "type": "string"
           }
@@ -29343,6 +29385,8 @@
           "entityId",
           "data",
           "ipHashShort",
+          "actor",
+          "coupleNames",
           "action"
         ]
       },
