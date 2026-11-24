@@ -5,6 +5,7 @@ import {
   IsArray,
   IsIn,
   IsNotEmpty,
+  IsObject,
   IsOptional,
   IsString,
   Matches,
@@ -50,6 +51,7 @@ class FaqTemplate {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(L.faqItems)
+  @IsObject({ each: true })
   @ValidateNested({ each: true })
   @Type(() => FaqQuestion)
   questions: FaqQuestion[];

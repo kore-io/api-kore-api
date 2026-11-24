@@ -6,6 +6,7 @@ import {
   IsArray,
   IsInt,
   IsNotEmpty,
+  IsObject,
   IsString,
   Max,
   MaxLength,
@@ -85,6 +86,7 @@ export class PasteImportBody {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(IMPORT_GUESTS_MAX)
+  @IsObject({ each: true })
   @ValidateNested({ each: true })
   @Type(() => PastedGroupBody)
   groups: PastedGroupBody[];

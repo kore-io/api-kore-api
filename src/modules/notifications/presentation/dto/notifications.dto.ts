@@ -1,7 +1,9 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  IsDefined,
   IsIn,
+  IsObject,
   IsOptional,
   IsString,
   IsUUID,
@@ -262,6 +264,8 @@ class PushKeysBody {
 export class PushSubscriptionBody {
   @IsString() @MaxLength(1000) endpoint: string;
 
+  @IsDefined()
+  @IsObject()
   @ValidateNested()
   @Type(() => PushKeysBody)
   keys: PushKeysBody;
