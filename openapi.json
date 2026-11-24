@@ -15605,6 +15605,11 @@
             "nullable": true,
             "example": "2027-03-20"
           },
+          "timezone": {
+            "type": "string",
+            "description": "O fuso IANA do casamento: as datas com hora e o \"hoje\" das faixas e da\ncobrança (decisões 263(2) e 316(6)).",
+            "example": "America/Sao_Paulo"
+          },
           "lifecycle": {
             "description": "As faixas e o selo da Topbar (Data de saída do ar RN06; decisão 231).",
             "allOf": [
@@ -15630,6 +15635,7 @@
         "required": [
           "role",
           "eventDate",
+          "timezone",
           "lifecycle",
           "weddingId",
           "weddingName",

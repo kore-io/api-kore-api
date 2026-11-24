@@ -13,6 +13,7 @@ import {
   type InvitationPartner,
 } from '@/modules/access/domain/invitations/invitation-acceptance';
 import { profilesOf } from '@/modules/access/domain/profiles/profiles';
+import { DEFAULT_TIMEZONE } from '@/shared/kernel/time/local-date';
 import { liveWeddingField } from './live-wedding-field';
 
 /**
@@ -62,6 +63,7 @@ export class PrismaProfileDirectory implements ProfileDirectory {
               eventDate: true,
               city: true,
               state: true,
+              timezone: true,
               status: true,
               endDate: true,
               graceUntil: true,
@@ -91,6 +93,8 @@ export class PrismaProfileDirectory implements ProfileDirectory {
       eventDate: wedding.eventDate,
       city: liveWeddingField({ value: wedding.city, field: 'city' }),
       state: liveWeddingField({ value: wedding.state, field: 'state' }),
+      // Só o expurgado fica sem fuso (chk_weddings_tombstone), e ele não entra aqui.
+      timezone: wedding.timezone ?? DEFAULT_TIMEZONE,
       lifecycle: {
         status: wedding.status,
         blocked: wedding.blockedAt !== null,
