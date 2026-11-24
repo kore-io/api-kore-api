@@ -300,6 +300,26 @@ describe('Publicar e pagar (Publicar e pagar RN01 a RN12; banco real)', () => {
     expect(JSON.stringify(response.body)).not.toContain('111.111.111-11');
   });
 
+  it('RN02 - sem o payer, nulo ou em lista: 400 em payer, sem Payment (decisão 319)', async () => {
+    const { ana, weddingId } = await scenario();
+    for (const payer of [
+      undefined,
+      null,
+      [],
+      [{ name: 'Ana', taxId: CPF }],
+      [{ payerId: randomUUID() }],
+      'Ana',
+    ]) {
+      const response = await pay({ cookie: ana.cookie, weddingId, overrides: { payer } }).expect(
+        400,
+      );
+      expect(response.body.errors).toEqual(
+        expect.arrayContaining([expect.objectContaining({ path: 'payer' })]),
+      );
+    }
+    expect(await db.payment.count({ where: { weddingId } })).toBe(0);
+  });
+
   it('RN02 (B2-13) - o CPF não fica guardado inteiro: nem no pagamento, nem no cliente, nem no log, nem no evento', async () => {
     const { ana, weddingId } = await scenario();
     const created = await pay({ cookie: ana.cookie, weddingId }).expect(201);
