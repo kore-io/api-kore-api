@@ -22,6 +22,7 @@ import {
 import { toHttpError as toAccessHttpError } from '@/modules/access/presentation/errors/access-http-errors';
 import { CurrentSession } from '@/modules/access/presentation/http/decorators/current-session.decorator';
 import {
+  CENTER_ONLY_TYPES,
   type CenterNotificationType,
   EMAIL_PREFERENCE_TYPES,
   NOTIFICATION_TYPES,
@@ -81,9 +82,13 @@ function scopeOf({
   return { planner: false, weddingId: weddingId ?? '' };
 }
 
-/** O e-mail fixo em "Sempre" não tem seletor (decisão 236). */
+/**
+ * O e-mail fixo em "Sempre" não tem seletor (decisão 236), nem o tipo que só
+ * aparece na central (decisão 317(c)).
+ */
 function toPreference(row: PreferenceRow): PreferenceResponse {
-  return { ...row, emailEditable: row.email !== 'always' };
+  const centerOnly = (CENTER_ONLY_TYPES as readonly string[]).includes(row.type);
+  return { ...row, emailEditable: row.email !== 'always' && !centerOnly };
 }
 
 function toHttpError(error: unknown): unknown {

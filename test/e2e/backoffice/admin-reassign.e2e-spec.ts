@@ -113,6 +113,78 @@ describe('Backoffice: reatribuir o indicador (Backoffice - acesso RN07; banco re
     });
   });
 
+  it('decisão 317 (d) e (e) - o novo indicador vê o casal na lista; o antigo, não, mas o aviso dele fica na central, no sino, no read-all e no filtro Comissão', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const juliana = await planner('Juliana Prado');
+    const fabiana = await planner('Fabiana Soares');
+    const { weddingId } = await draftWedding(juliana.referrerId);
+    const julianaCookie = await openSession({ app, userId: juliana.userId });
+    const fabianaCookie = await openSession({ app, userId: fabiana.userId });
+    const http = () => request(app.getHttpServer());
+    const referred = async (cookie: string) =>
+      (
+        (await http().get('/v1/me/referrer/weddings').set('Cookie', cookie).expect(200)).body as {
+          partnerNames: string[];
+        }[]
+      ).length;
+    const before = {
+      juliana: await referred(julianaCookie),
+      fabiana: await referred(fabianaCookie),
+    };
+
+    await put(admin.cookie, weddingId, { referrerId: fabiana.referrerId, reason }).expect(200);
+
+    // (d) Link de indicação RN03 e RN04: o admin_reassigned entra na lista da nova, sai da antiga.
+    expect(await referred(fabianaCookie)).toBe(before.fabiana + 1);
+    expect(await referred(julianaCookie)).toBe(before.juliana - 1);
+
+    // (e) O lost continua com a antiga, que já não indica o casamento.
+    const central = (cookie: string, query: Record<string, string> = {}) =>
+      http()
+        .get('/v1/me/notifications')
+        .query({ scope: 'planner', ...query })
+        .set('Cookie', cookie)
+        .expect(200);
+    const mine = (body: { items: { weddingId: string; type: string; payload: unknown }[] }) =>
+      body.items.filter((item) => item.weddingId === weddingId);
+    expect(mine((await central(julianaCookie)).body)).toEqual([
+      expect.objectContaining({
+        type: 'referrer_reassigned',
+        payload: [{ partnerNames: ['Ana', 'Marcos'], direction: 'lost' }],
+        readAt: null,
+      }),
+    ]);
+    // (a) O filtro Comissão agrupa o commission e o referrer_reassigned, nas duas direções.
+    expect(mine((await central(julianaCookie, { type: 'commission' })).body)).toHaveLength(1);
+    expect(mine((await central(fabianaCookie, { type: 'commission' })).body)).toEqual([
+      expect.objectContaining({
+        type: 'referrer_reassigned',
+        payload: [{ partnerNames: ['Ana', 'Marcos'], direction: 'gained' }],
+      }),
+    ]);
+    const unread = async () =>
+      (
+        await http()
+          .get('/v1/me/notifications/unread-count')
+          .query({ scope: 'planner' })
+          .set('Cookie', julianaCookie)
+          .expect(200)
+      ).body.unreadCount as number;
+    expect(await unread()).toBeGreaterThanOrEqual(1);
+    await http()
+      .post('/v1/me/notifications/read-all')
+      .query({ scope: 'planner' })
+      .set('Cookie', julianaCookie)
+      .set('Origin', ORIGIN)
+      .expect(204);
+    expect(await unread()).toBe(0);
+    expect(
+      await db.notification.findFirstOrThrow({
+        where: { userId: juliana.userId, weddingId, type: 'referrer_reassigned' },
+      }),
+    ).toMatchObject({ readAt: expect.any(Date) });
+  });
+
   it('RN07 - depois da publicação paga: 409 ALREADY_PAID com a data; com pagamento pendente: 409 PAYMENT_PENDING', async () => {
     const admin = await staffUser({ app, role: 'admin' });
     const juliana = await planner('Juliana Prado');

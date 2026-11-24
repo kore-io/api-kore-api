@@ -78,11 +78,12 @@ describe('Link de indicação: os casais do link (banco real; RN03 a RN05)', () 
     await seedReferrerWedding({ db, referrerUserId: juliana.userId }); // created_by_planner
     const clara = await planner('Clara Dias');
     await viaLink({ referrerId: clara.referrerId, createdAt: new Date() }); // link de outra
-    await viaLink({
+    // Decisão 317(d): o reatribuído pelo Admin a ela entra (o novo indicador vê o casal).
+    const reassigned = await viaLink({
       referrerId: juliana.referrerId,
-      createdAt: new Date(),
+      createdAt: new Date('2026-11-10T00:00:00Z'),
       source: 'admin_reassigned',
-    }); // reatribuído (F3)
+    });
     const purged = await viaLink({ referrerId: juliana.referrerId, createdAt: new Date() });
     await db.wedding.update({
       where: { id: purged },
@@ -92,6 +93,14 @@ describe('Link de indicação: os casais do link (banco real; RN03 a RN05)', () 
     const response = await list(juliana.cookie).expect(200);
 
     expect(response.body).toEqual([
+      {
+        weddingId: null,
+        partnerNames: ['Ana', 'Marcos'],
+        status: 'draft',
+        createdAt: '2026-11-10T00:00:00.000Z',
+        clickable: false,
+        commission: null,
+      },
       {
         weddingId: newer,
         partnerNames: ['Ana', 'Marcos'],
@@ -112,6 +121,7 @@ describe('Link de indicação: os casais do link (banco real; RN03 a RN05)', () 
     ]);
     // Nada além de nomes e status sai: sem endereço, data, cidade nem contato.
     expect(JSON.stringify(response.body)).not.toContain(older);
+    expect(JSON.stringify(response.body)).not.toContain(reassigned);
   });
 
   it('decisão 224(3) - sem o perfil de cerimonialista: 403 PROFILE_NOT_OWNED', async () => {

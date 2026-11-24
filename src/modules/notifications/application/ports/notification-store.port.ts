@@ -31,6 +31,21 @@ export type PlannerNotificationType = (typeof PLANNER_NOTIFICATION_TYPES)[number
  */
 export const PLANNER_CENTER_TYPES = [...PLANNER_NOTIFICATION_TYPES, 'referrer_reassigned'] as const;
 
+/**
+ * O filtro Comissão da central da cerimonialista agrupa a comissão e a
+ * reatribuição (decisão 317(a)): indicar e ganhar comissão são a mesma coisa
+ * para ela. Os outros filtros são o próprio tipo.
+ */
+export const PLANNER_FILTER_GROUPS: Partial<Record<string, readonly string[]>> = {
+  commission: ['commission', 'referrer_reassigned'],
+};
+
+/**
+ * Os tipos que só aparecem na central, sem e-mail nem push (decisão 317(c)):
+ * uma linha própria nas Configurações › Notificações, com os dois desabilitados.
+ */
+export const CENTER_ONLY_TYPES = ['referrer_reassigned'] as const;
+
 /** Todo tipo que alguma central mostra (a do casal e a da cerimonialista). */
 export const CENTER_NOTIFICATION_TYPES = [...PLANNER_CENTER_TYPES, 'billing'] as const;
 export type CenterNotificationType = (typeof CENTER_NOTIFICATION_TYPES)[number];
