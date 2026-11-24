@@ -15707,6 +15707,25 @@
             "type": "string",
             "example": "Ana & Marcos"
           },
+          "partnerNames": {
+            "description": "Os primeiros nomes, como na central: a faixa diz \"Ana e Marcos\" (decisão 316(12)).",
+            "example": [
+              "Ana",
+              "Marcos"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "lifecycle": {
+            "description": "O ciclo de vida do casal visto, com o bloqueio: as faixas e as travas da\nárea, como no vínculo (decisão 316(12)).",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MeLifecycleResponse"
+              }
+            ]
+          },
           "startedAt": {
             "type": "string",
             "format": "date-time"
@@ -15720,6 +15739,8 @@
         "required": [
           "weddingId",
           "coupleNames",
+          "partnerNames",
+          "lifecycle",
           "startedAt",
           "expiresAt"
         ]

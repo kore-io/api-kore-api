@@ -1,7 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
+import type { WeddingLifecycle } from '@/modules/access/application/ports/profile-directory.port';
 import type { SupportSessionStore } from '@/modules/access/application/ports/support-session.store.port';
+import {
+  WEDDING_LIFECYCLE_SELECT,
+  weddingLifecycle,
+} from '@/modules/access/infrastructure/persistence/wedding-lifecycle';
 import type {
   SupportEndReason,
   SupportSessionRecord,
@@ -145,13 +150,22 @@ export class PrismaSupportSessionStore implements SupportSessionStore {
     return user.platformRole;
   }
 
-  async coupleNames({ weddingId }: { weddingId: string }): Promise<string> {
-    const partners = await this.db.partner.findMany({
-      where: { weddingId },
-      orderBy: { slot: 'asc' },
-      select: { displayName: true },
+  async coupleWedding({
+    weddingId,
+  }: {
+    weddingId: string;
+  }): Promise<{ partnerNames: [string, string]; lifecycle: WeddingLifecycle } | null> {
+    const wedding = await this.db.wedding.findUnique({
+      where: { id: weddingId },
+      select: {
+        ...WEDDING_LIFECYCLE_SELECT,
+        partners: { orderBy: { slot: 'asc' }, select: { slot: true, displayName: true } },
+      },
     });
-    return partners.map((partner) => firstName(partner.displayName)).join(' & ');
+    if (!wedding) return null;
+    const name = (slot: number) =>
+      firstName(wedding.partners.find((partner) => partner.slot === slot)?.displayName);
+    return { partnerNames: [name(1), name(2)], lifecycle: weddingLifecycle({ wedding }) };
   }
 
   private async close({

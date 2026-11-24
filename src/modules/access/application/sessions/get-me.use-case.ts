@@ -10,6 +10,7 @@ import {
   PROFILE_DIRECTORY,
   type AccountOverview,
   type ProfileDirectory,
+  type WeddingLifecycle,
 } from '@/modules/access/application/ports/profile-directory.port';
 import {
   IDENTITY_DIRECTORY,
@@ -40,6 +41,10 @@ export interface Me extends AccountOverview {
   supportSession: {
     weddingId: string;
     coupleNames: string;
+    /** Os primeiros nomes, como na central: a faixa diz "Ana e Marcos" (decisão 316(12)). */
+    partnerNames: [string, string];
+    /** O ciclo de vida do casal visto, com o bloqueio: as faixas e as travas (316(12)). */
+    lifecycle: WeddingLifecycle;
     startedAt: Date;
     expiresAt: Date;
   } | null;
@@ -71,6 +76,10 @@ export class GetMe {
     const support = session.supportSessionId
       ? await this.support.find({ id: session.supportSessionId })
       : null;
+    const seen =
+      support && !support.endedAt
+        ? await this.support.coupleWedding({ weddingId: support.weddingId })
+        : null;
     return {
       user,
       ...overview,
@@ -88,10 +97,12 @@ export class GetMe {
       plannerSignupEnabled: this.config.get({ key: 'PLANNER_SIGNUP_ENABLED' }),
       identities: providers.map((provider) => ({ provider })),
       supportSession:
-        support && !support.endedAt
+        support && !support.endedAt && seen
           ? {
               weddingId: support.weddingId,
-              coupleNames: await this.support.coupleNames({ weddingId: support.weddingId }),
+              coupleNames: seen.partnerNames.filter(Boolean).join(' & '),
+              partnerNames: seen.partnerNames,
+              lifecycle: seen.lifecycle,
               startedAt: support.startedAt,
               expiresAt: supportSessionExpiresAt({ session: support }),
             }
