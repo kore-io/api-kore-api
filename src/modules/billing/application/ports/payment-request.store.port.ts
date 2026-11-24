@@ -64,6 +64,12 @@ export interface PaymentRequestStore {
   /** O pendente; o índice único do pendente vira PaymentPendingError. */
   insertPending({ payment }: { payment: NewPendingPayment }): Promise<void>;
   byId(input: { weddingId: string; paymentId: string }): Promise<OwnedPayment | null>;
+  /** O pagador do último pagamento com esse hash: o nome, a versão do hash e os 4 últimos. */
+  payerByHash(input: { weddingId: string; payerTaxIdHash: string }): Promise<{
+    name: string;
+    taxIdHashVersion: number;
+    taxIdLast4: string;
+  } | null>;
   /** RN03, passo 3: false quando o pagamento já não estava pendente sem id do gateway. */
   recordCharge(input: {
     paymentId: string;
@@ -93,6 +99,21 @@ export const PAYMENT_REQUEST_STORE = Symbol('PaymentRequestStore');
 /** O cliente do gateway por pagador (B2-11), pela conexão do backoffice (RN20). */
 export interface GatewayCustomers {
   find(input: {
+    weddingId: string;
+    gateway: 'local' | 'asaas';
+    payerTaxIdHash: string;
+  }): Promise<string | null>;
+  /**
+   * O cliente pelo id do Kore (o `payerId`), só deste casamento e deste
+   * gateway (Publicar e pagar RN02 e RN03; decisão 316(3)).
+   */
+  byId(input: {
+    id: string;
+    weddingId: string;
+    gateway: 'local' | 'asaas';
+  }): Promise<{ payerTaxIdHash: string } | null>;
+  /** O id do Kore do cliente do pagador (o `payer.payerId` do GET …/billing). */
+  idOf(input: {
     weddingId: string;
     gateway: 'local' | 'asaas';
     payerTaxIdHash: string;

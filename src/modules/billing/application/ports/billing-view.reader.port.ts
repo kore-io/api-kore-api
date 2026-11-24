@@ -45,7 +45,8 @@ export interface BillingPaymentRow {
 export interface BillingMoneyView {
   pendingPayment: BillingPendingPayment | null;
   payments: BillingPaymentRow[];
-  lastPayer: { name: string; taxIdLast4: string } | null;
+  /** O hash fica no servidor: serve só para achar o cliente do gateway (decisão 316(3)). */
+  lastPayer: { name: string; taxIdLast4: string; taxIdHash: string } | null;
 }
 
 export interface BillingViewReader {

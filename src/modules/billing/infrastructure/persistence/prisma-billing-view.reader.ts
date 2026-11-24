@@ -91,7 +91,7 @@ export class PrismaBillingViewReader implements BillingViewReader {
       db.payment.findFirst({
         where: { weddingId },
         orderBy: { createdAt: 'desc' },
-        select: { payerName: true, payerTaxIdLast4: true },
+        select: { payerName: true, payerTaxIdLast4: true, payerTaxIdHash: true },
       }),
     ]);
     return {
@@ -112,7 +112,9 @@ export class PrismaBillingViewReader implements BillingViewReader {
         periodStart: day(payment.periodStart) ?? '',
         periodEnd: day(payment.periodEnd) ?? '',
       })),
-      lastPayer: last ? { name: last.payerName, taxIdLast4: last.payerTaxIdLast4 } : null,
+      lastPayer: last
+        ? { name: last.payerName, taxIdLast4: last.payerTaxIdLast4, taxIdHash: last.payerTaxIdHash }
+        : null,
     };
   }
 }
