@@ -10,6 +10,11 @@ export interface MembershipSummary {
   city: string;
   state: string;
   /**
+   * O fuso IANA do casamento, para as datas com hora e o "hoje" das faixas
+   * (decisões 263(2) e 316(6)).
+   */
+  timezone: string;
+  /**
    * O ciclo de vida do casamento (Data de saída do ar RN06; decisão 231): de
    * onde saem as faixas e o selo da Topbar. Datas em AAAA-MM-DD.
    */

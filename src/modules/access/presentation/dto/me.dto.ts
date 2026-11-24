@@ -42,6 +42,11 @@ class MeMembershipResponse {
   @ApiProperty({ type: String, nullable: true, example: '2027-03-20' }) eventDate: string | null;
   city: string;
   state: string;
+  /**
+   * O fuso IANA do casamento: as datas com hora e o "hoje" das faixas e da
+   * cobrança (decisões 263(2) e 316(6)).
+   */
+  @ApiProperty({ example: 'America/Sao_Paulo' }) timezone: string;
   /** As faixas e o selo da Topbar (Data de saída do ar RN06; decisão 231). */
   @ApiProperty({ type: MeLifecycleResponse }) lifecycle: MeLifecycleResponse;
 }

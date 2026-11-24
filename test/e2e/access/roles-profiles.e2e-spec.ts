@@ -50,7 +50,11 @@ describe('Papéis e perfis: /me, perfil ativo e colaboradores (banco real; decis
     const own = await seedWedding({ db, ownerId: userId });
     await db.wedding.update({
       where: { id: own.weddingId },
-      data: { eventDate: new Date('2027-03-20T00:00:00Z'), city: 'Valinhos' },
+      data: {
+        eventDate: new Date('2027-03-20T00:00:00Z'),
+        city: 'Valinhos',
+        timezone: 'America/Manaus',
+      },
     });
     const ana = await signedInUser({ app });
     const client = await seedWedding({ db, ownerId: ana.userId, collaboratorIds: [userId] });
@@ -78,6 +82,7 @@ describe('Papéis e perfis: /me, perfil ativo e colaboradores (banco real; decis
           eventDate: '2027-03-20',
           city: 'Valinhos',
           state: 'SP',
+          timezone: 'America/Manaus',
           lifecycle: {
             status: 'draft',
             blocked: false,
@@ -95,6 +100,7 @@ describe('Papéis e perfis: /me, perfil ativo e colaboradores (banco real; decis
           eventDate: null,
           city: 'Campinas',
           state: 'SP',
+          timezone: 'America/Sao_Paulo',
           lifecycle: {
             status: 'draft',
             blocked: false,
