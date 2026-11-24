@@ -29,6 +29,39 @@ export class PrismaGatewayCustomers implements GatewayCustomers {
     return customer?.gatewayCustomerId ?? null;
   }
 
+  byId({
+    id,
+    weddingId,
+    gateway,
+  }: {
+    id: string;
+    weddingId: string;
+    gateway: 'local' | 'asaas';
+  }): Promise<{ payerTaxIdHash: string } | null> {
+    return this.db.gatewayCustomer.findFirst({
+      where: { id, weddingId, gateway },
+      select: { payerTaxIdHash: true },
+    });
+  }
+
+  async idOf({
+    weddingId,
+    gateway,
+    payerTaxIdHash,
+  }: {
+    weddingId: string;
+    gateway: 'local' | 'asaas';
+    payerTaxIdHash: string;
+  }): Promise<string | null> {
+    const customer = await this.db.gatewayCustomer.findUnique({
+      where: {
+        weddingId_gateway_payerTaxIdHash: { weddingId, gateway, payerTaxIdHash },
+      },
+      select: { id: true },
+    });
+    return customer?.id ?? null;
+  }
+
   /** Dois pedidos ao mesmo tempo: fica o primeiro cliente gravado. */
   async save(input: {
     weddingId: string;

@@ -133,6 +133,27 @@ export class PrismaPaymentRequestStore implements PaymentRequestStore {
     });
   }
 
+  async payerByHash({
+    weddingId,
+    payerTaxIdHash,
+  }: {
+    weddingId: string;
+    payerTaxIdHash: string;
+  }): Promise<{ name: string; taxIdHashVersion: number; taxIdLast4: string } | null> {
+    const payment = await this.tenant.client().payment.findFirst({
+      where: { weddingId, payerTaxIdHash },
+      orderBy: { createdAt: 'desc' },
+      select: { payerName: true, payerTaxIdHashVersion: true, payerTaxIdLast4: true },
+    });
+    return payment
+      ? {
+          name: payment.payerName,
+          taxIdHashVersion: payment.payerTaxIdHashVersion,
+          taxIdLast4: payment.payerTaxIdLast4,
+        }
+      : null;
+  }
+
   async recordCharge(input: {
     paymentId: string;
     gatewayPaymentId: string;

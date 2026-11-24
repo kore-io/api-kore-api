@@ -53,6 +53,14 @@ export class IdempotencyKeyReusedErrorBody {
   @ApiProperty() message: string;
 }
 
+/** O `payer.payerId` não é um pagador deste casamento (decisão 316(3)): o app pede o CPF. */
+export class PayerNotFoundErrorBody {
+  static readonly status = 422;
+  @ApiProperty({ enum: [422] }) statusCode: 422;
+  @ApiProperty({ enum: ['PAYER_NOT_FOUND'] }) error: 'PAYER_NOT_FOUND';
+  @ApiProperty() message: string;
+}
+
 /** Sem Idempotency-Key, ou fora do formato UUID (B2-10). */
 export class IdempotencyKeyRequiredErrorBody {
   static readonly status = 400;

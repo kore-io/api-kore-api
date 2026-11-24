@@ -43,6 +43,7 @@ import {
   GatewayUnavailableErrorBody,
   IdempotencyKeyRequiredErrorBody,
   IdempotencyKeyReusedErrorBody,
+  PayerNotFoundErrorBody,
   InstallmentsOutOfRangeErrorBody,
   PaymentAlreadyPaidErrorBody,
   PaymentDisputedErrorBody,
@@ -192,6 +193,7 @@ export class PaymentsController {
     PriceChangedErrorBody,
     EndDateOutOfRangeErrorBody,
     IdempotencyKeyReusedErrorBody,
+    PayerNotFoundErrorBody,
     GatewayUnavailableErrorBody,
     NotPublishedErrorBody,
     WeddingBlockedErrorBody,
@@ -219,7 +221,10 @@ export class PaymentsController {
         endDate: body.endDate,
         method: body.method,
         installments: body.installments,
-        payer: body.payer,
+        // A validação garante uma das formas: o payerId sozinho, ou o nome e o CPF.
+        payer: body.payer.payerId
+          ? { payerId: body.payer.payerId }
+          : { name: body.payer.name ?? '', taxId: body.payer.taxId ?? '' },
         cardToken: body.cardToken ?? null,
         replacesPaymentId: body.replacesPaymentId ?? null,
         priceVersion: body.priceVersion,

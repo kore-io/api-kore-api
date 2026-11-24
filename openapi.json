@@ -10328,6 +10328,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/IdempotencyKeyReusedErrorBody"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PayerNotFoundErrorBody"
                     }
                   ]
                 }
@@ -25686,6 +25689,31 @@
           "message"
         ]
       },
+      "PayerNotFoundErrorBody": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "enum": [
+              422
+            ]
+          },
+          "error": {
+            "type": "string",
+            "enum": [
+              "PAYER_NOT_FOUND"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
       "GatewayUnavailableErrorBody": {
         "type": "object",
         "properties": {
@@ -25716,16 +25744,16 @@
           "paymentId"
         ]
       },
-      "PayerBody": {
+      "NewPayerBody": {
         "type": "object",
         "properties": {
           "name": {
             "type": "string",
             "description": "Nome completo de quem paga (pode ser outra pessoa).",
+            "example": "Ana Beatriz Moreira",
             "minLength": 2,
             "maxLength": 200,
-            "pattern": "\\S",
-            "example": "Ana Beatriz Moreira"
+            "pattern": "\\S"
           },
           "taxId": {
             "type": "string",
@@ -25737,6 +25765,36 @@
           "name",
           "taxId"
         ]
+      },
+      "PreviousPayerBody": {
+        "type": "object",
+        "properties": {
+          "payerId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "payerId"
+        ]
+      },
+      "PayerBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 200,
+            "pattern": "\\S"
+          },
+          "taxId": {
+            "type": "string"
+          },
+          "payerId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
       },
       "CreatePaymentBody": {
         "type": "object",
@@ -25767,7 +25825,20 @@
             "example": 2
           },
           "payer": {
-            "$ref": "#/components/schemas/PayerBody"
+            "description": "O nome e o CPF, ou o pagador anterior pelo `payerId` (decisão 316(3)).",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/NewPayerBody"
+              },
+              {
+                "$ref": "#/components/schemas/PreviousPayerBody"
+              }
+            ],
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PayerBody"
+              }
+            ]
           },
           "cardToken": {
             "type": "string",
@@ -26020,11 +26091,18 @@
           "taxIdLast4": {
             "type": "string",
             "example": "4821"
+          },
+          "payerId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Para pagar de novo sem o CPF, em `payer.payerId` do POST …/payments\n(decisão 316(3)). Nulo quando o pagador não tem cliente no gateway atual:\no app pede o CPF.",
+            "format": "uuid"
           }
         },
         "required": [
           "name",
-          "taxIdLast4"
+          "taxIdLast4",
+          "payerId"
         ]
       },
       "BillingResponse": {

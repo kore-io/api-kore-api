@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsIn,
@@ -12,6 +12,7 @@ import {
   Min,
   MinLength,
   ValidateBy,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 import { OptionalNotNull } from '@/shared/http/optional-not-null';
@@ -32,23 +33,62 @@ function IsCpf(): PropertyDecorator {
   });
 }
 
-export class PayerBody {
+/** O `payerId` vem sozinho: com ele, o nome e o CPF não entram (decisão 316(3)). */
+function IsAlonePayerId(): PropertyDecorator {
+  return ValidateBy({
+    name: 'isAlonePayerId',
+    validator: {
+      validate: (_value: unknown, args) => {
+        const payer = args?.object as { name?: unknown; taxId?: unknown };
+        return payer.name === undefined && payer.taxId === undefined;
+      },
+      defaultMessage: () => 'payerId must be sent without name and taxId',
+    },
+  });
+}
+
+/** Quem paga, pela primeira vez ou com outro CPF (Publicar e pagar RN02). */
+export class NewPayerBody {
   /** Nome completo de quem paga (pode ser outra pessoa). */
-  @ApiProperty({ example: 'Ana Beatriz Moreira' })
+  @ApiProperty({ example: 'Ana Beatriz Moreira', minLength: 2, maxLength: 200, pattern: '\\S' })
+  name: string;
+  /** CPF de quem paga: vai só ao gateway; o Kore guarda o HMAC e os 4 últimos (RN02). */
+  @ApiProperty({ example: '529.982.247-25' }) taxId: string;
+}
+
+/**
+ * O pagador anterior, sem o CPF (RN02 e RN03; decisão 316(3)): o `payer.payerId`
+ * do GET …/billing. O Kore usa o nome e o cliente do gateway que já tem.
+ */
+export class PreviousPayerBody {
+  @ApiProperty({ format: 'uuid' }) payerId: string;
+}
+
+/**
+ * A validação das duas formas de `payer` (o OpenAPI as mostra em `oneOf`):
+ * sem `payerId`, o nome e o CPF são obrigatórios; com ele, não entram.
+ */
+export class PayerBody {
+  @ValidateIf((payer: PayerBody) => payer.payerId === undefined)
   @IsString()
   @Matches(/\S/)
   @MinLength(2)
   @MaxLength(200)
-  name: string;
+  name?: string;
 
-  /** CPF de quem paga: vai só ao gateway; o Kore guarda o HMAC e os 4 últimos (RN02). */
-  @ApiProperty({ example: '529.982.247-25' })
+  @ValidateIf((payer: PayerBody) => payer.payerId === undefined)
   @IsString()
   @IsCpf()
-  taxId: string;
+  taxId?: string;
+
+  @OptionalNotNull()
+  @IsUUID()
+  @IsAlonePayerId()
+  payerId?: string;
 }
 
 /** POST …/payments (Publicar e pagar RN03). */
+@ApiExtraModels(NewPayerBody, PreviousPayerBody)
 export class CreatePaymentBody {
   /** A publicação ou a extensão (Data de saída do ar RN04: adiar e renovar). */
   @ApiProperty({ enum: ['publication', 'extension'] })
@@ -70,7 +110,10 @@ export class CreatePaymentBody {
   @Max(12)
   installments: number;
 
-  @ApiProperty({ type: PayerBody })
+  /** O nome e o CPF, ou o pagador anterior pelo `payerId` (decisão 316(3)). */
+  @ApiProperty({
+    oneOf: [{ $ref: getSchemaPath(NewPayerBody) }, { $ref: getSchemaPath(PreviousPayerBody) }],
+  })
   @ValidateNested()
   @Type(() => PayerBody)
   payer: PayerBody;
@@ -184,6 +227,12 @@ export class BillingPaymentDto {
 export class PayerDto {
   @ApiProperty() name: string;
   @ApiProperty({ example: '4821' }) taxIdLast4: string;
+  /**
+   * Para pagar de novo sem o CPF, em `payer.payerId` do POST …/payments
+   * (decisão 316(3)). Nulo quando o pagador não tem cliente no gateway atual:
+   * o app pede o CPF.
+   */
+  @ApiProperty({ type: String, format: 'uuid', nullable: true }) payerId: string | null;
 }
 
 /**

@@ -27,6 +27,7 @@ import {
   RefundWindowClosedError,
   PaymentGatewayUnavailableError,
   PaymentPendingError,
+  PreviousPayerNotFoundError,
   PriceChangedError,
   RefundInProgressError,
   ConfirmNameMismatchError,
@@ -164,6 +165,12 @@ export function toHttpError(error: unknown): unknown {
       statusCode: 409,
       error: 'PRICE_CHANGED',
       message: 'The price changed. Fetch the quote again.',
+    });
+  if (error instanceof PreviousPayerNotFoundError)
+    return new UnprocessableEntityException({
+      statusCode: 422,
+      error: 'PAYER_NOT_FOUND',
+      message: 'The previous payer is not on this wedding. Send the name and the CPF.',
     });
   if (error instanceof IdempotencyKeyReusedError)
     return new UnprocessableEntityException({

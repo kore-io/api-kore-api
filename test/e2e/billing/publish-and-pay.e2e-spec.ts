@@ -676,6 +676,130 @@ describe('Publicar e pagar (Publicar e pagar RN01 a RN12; banco real)', () => {
     expect(response.body).toMatchObject({ error: 'ACTION_NOT_ALLOWED' });
   });
 
+  describe('RN02 e RN03 (decisão 316(3)) - o pagador anterior, sem o CPF inteiro', () => {
+    /** Ana paga no cartão e o banco recusa: fica o pagador e o cliente no gateway. */
+    async function refusedOnce() {
+      const context = await scenario();
+      await pay({
+        cookie: context.ana.cookie,
+        weddingId: context.weddingId,
+        cardToken: 'tok_local_0002',
+      }).expect(201);
+      const { payer } = (await billing(context.ana.cookie, context.weddingId)).body as {
+        payer: { name: string; taxIdLast4: string; payerId: string | null };
+      };
+      return { ...context, payer };
+    }
+
+    it('RN02 - o GET …/billing traz o payerId do último pagador, sem o hash', async () => {
+      const { ana, weddingId, payer } = await refusedOnce();
+      const customer = await db.gatewayCustomer.findFirstOrThrow({ where: { weddingId } });
+      expect(payer).toEqual({
+        name: 'Ana Beatriz Moreira',
+        taxIdLast4: '4725',
+        payerId: customer.id,
+      });
+      const body = JSON.stringify((await billing(ana.cookie, weddingId)).body);
+      expect(body).not.toContain(customer.payerTaxIdHash);
+      expect(body).not.toContain(customer.gatewayCustomerId);
+    });
+
+    it('RN03 - pagar de novo pelo payerId reusa o cliente e o pagador, sem o CPF no pedido', async () => {
+      const { ana, weddingId, payer } = await refusedOnce();
+      const first = await db.payment.findFirstOrThrow({ where: { weddingId } });
+
+      const again = await pay({
+        cookie: ana.cookie,
+        weddingId,
+        overrides: { payer: { payerId: payer.payerId } },
+      }).expect(201);
+
+      expect(again.body).toMatchObject({ status: 'pending', method: 'card' });
+      const second = await db.payment.findUniqueOrThrow({ where: { id: again.body.paymentId } });
+      expect(second).toMatchObject({
+        payerName: 'Ana Beatriz Moreira',
+        payerTaxIdHash: first.payerTaxIdHash,
+        payerTaxIdHashVersion: first.payerTaxIdHashVersion,
+        payerTaxIdLast4: '4725',
+      });
+      expect(await db.gatewayCustomer.count({ where: { weddingId } })).toBe(1);
+      const [{ customers }] = await db.$queryRawUnsafe<{ customers: number }[]>(
+        `SELECT count(DISTINCT ch.customer_id)::int AS customers FROM local_gateway.charges ch
+         WHERE ch.external_reference = ANY($1::text[])`,
+        [first.id, second.id],
+      );
+      expect(customers).toBe(1);
+    });
+
+    it('RN03 - o payerId de outro casamento, ou que não existe: 422 PAYER_NOT_FOUND, sem Payment', async () => {
+      const { payer } = await refusedOnce();
+      const { ana, weddingId } = await scenario();
+      for (const payerId of [payer.payerId, randomUUID()]) {
+        const response = await pay({
+          cookie: ana.cookie,
+          weddingId,
+          overrides: { payer: { payerId } },
+        }).expect(422);
+        expect(response.body).toMatchObject({ error: 'PAYER_NOT_FOUND' });
+      }
+      expect(await db.payment.count({ where: { weddingId } })).toBe(0);
+    });
+
+    it('RN03 - o payerId vem sozinho: com o nome ou o CPF junto, 400', async () => {
+      const { ana, weddingId, payer } = await refusedOnce();
+      const response = await pay({
+        cookie: ana.cookie,
+        weddingId,
+        overrides: { payer: { payerId: payer.payerId, taxId: CPF } },
+      }).expect(400);
+      expect(response.body.errors).toEqual(
+        expect.arrayContaining([expect.objectContaining({ path: 'payer.payerId' })]),
+      );
+      await pay({
+        cookie: ana.cookie,
+        weddingId,
+        overrides: { payer: {} },
+      }).expect(400);
+    });
+
+    it('RN01 - a colaboradora não paga pelo payerId: ACTION_NOT_ALLOWED antes da consulta', async () => {
+      const { juliana, weddingId, payer } = await refusedOnce();
+      const response = await request(app.getHttpServer())
+        .post(`/v1/weddings/${weddingId}/payments`)
+        .set('Cookie', juliana.cookie)
+        .set('Origin', ORIGIN)
+        .set('Idempotency-Key', randomUUID())
+        .send({
+          kind: 'publication',
+          endDate,
+          method: 'pix',
+          installments: 1,
+          payer: { payerId: payer.payerId },
+          priceVersion: '2026-11',
+          expectedTotalCents: 1000,
+        })
+        .expect(403);
+      expect(response.body).toMatchObject({ error: 'ACTION_NOT_ALLOWED' });
+    });
+
+    it('B2-10 - a mesma chave com o CPF e depois com o payerId do mesmo pagador é o mesmo pedido', async () => {
+      const { ana, weddingId } = await scenario();
+      const key = randomUUID();
+      const withCpf = await pay({ cookie: ana.cookie, weddingId, method: 'pix', key }).expect(201);
+      const { payer } = (await billing(ana.cookie, weddingId)).body as {
+        payer: { payerId: string };
+      };
+      const withId = await pay({
+        cookie: ana.cookie,
+        weddingId,
+        method: 'pix',
+        key,
+        overrides: { payer: { payerId: payer.payerId } },
+      }).expect(201);
+      expect(withId.body.paymentId).toBe(withCpf.body.paymentId);
+    });
+  });
+
   it('RN20 - o dono vê os pagamentos aplicados; os não aplicados não vêm', async () => {
     const { ana, weddingId } = await scenario();
     const created = await pay({ cookie: ana.cookie, weddingId }).expect(201);

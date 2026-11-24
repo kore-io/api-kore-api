@@ -7,8 +7,29 @@ import {
   type BillingMoneyView,
   type BillingViewReader,
 } from '@/modules/billing/application/ports/billing-view.reader.port';
+import {
+  GATEWAY_CUSTOMERS,
+  type GatewayCustomers,
+} from '@/modules/billing/application/ports/payment-request.store.port';
+import {
+  PAYMENT_GATEWAY,
+  type PaymentGateway,
+} from '@/modules/billing/application/ports/payment-gateway.port';
 
-export type BillingView = BillingLifecycle & { money: BillingMoneyView | null };
+/**
+ * O último pagador, para o "Ana Beatriz Moreira · CPF final 4821" (RN02). O
+ * `payerId` é o cliente dele no gateway atual: o app paga de novo sem o CPF
+ * (RN03; decisão 316(3)); nulo, o app pede o CPF.
+ */
+export interface BillingLastPayer {
+  name: string;
+  taxIdLast4: string;
+  payerId: string | null;
+}
+
+export type BillingView = BillingLifecycle & {
+  money: (Omit<BillingMoneyView, 'lastPayer'> & { lastPayer: BillingLastPayer | null }) | null;
+};
 
 /**
  * GET …/billing (Publicar e pagar, Contrato de API): o status e as datas para
@@ -21,6 +42,8 @@ export class GetBilling {
   constructor(
     private readonly authorization: WeddingAuthorization,
     @Inject(BILLING_VIEW_READER) private readonly reader: BillingViewReader,
+    @Inject(GATEWAY_CUSTOMERS) private readonly customers: GatewayCustomers,
+    @Inject(PAYMENT_GATEWAY) private readonly gateway: PaymentGateway,
   ) {}
 
   async execute({
@@ -36,6 +59,24 @@ export class GetBilling {
     const lifecycle = await this.reader.lifecycle({ weddingId });
     if (!lifecycle) throw new WeddingNotFoundError();
     const owner = await this.authorization.can({ userId, weddingId, action: 'manage_billing' });
-    return { ...lifecycle, money: owner ? await this.reader.money({ weddingId, now }) : null };
+    if (!owner) return { ...lifecycle, money: null };
+    const { lastPayer, ...money } = await this.reader.money({ weddingId, now });
+    return {
+      ...lifecycle,
+      money: {
+        ...money,
+        lastPayer: lastPayer
+          ? {
+              name: lastPayer.name,
+              taxIdLast4: lastPayer.taxIdLast4,
+              payerId: await this.customers.idOf({
+                weddingId,
+                gateway: this.gateway.name,
+                payerTaxIdHash: lastPayer.taxIdHash,
+              }),
+            }
+          : null,
+      },
+    };
   }
 }

@@ -52,6 +52,14 @@ export class PriceChangedError extends Error {
   override name = 'PriceChangedError';
 }
 
+/**
+ * O pagador anterior (`payer.payerId`) não é um cliente deste casamento no
+ * gateway atual: o app pede o nome e o CPF (422 PAYER_NOT_FOUND; decisão 316(3)).
+ */
+export class PreviousPayerNotFoundError extends Error {
+  override name = 'PreviousPayerNotFoundError';
+}
+
 /** A mesma Idempotency-Key com outro corpo (Publicar e pagar RN03; B2-10). */
 export class IdempotencyKeyReusedError extends Error {
   override name = 'IdempotencyKeyReusedError';

@@ -16,6 +16,7 @@ import {
   PaymentAlreadyPaidError,
   PaymentGatewayUnavailableError,
   PaymentPendingError,
+  PreviousPayerNotFoundError,
   PriceChangedError,
   RefundInProgressError,
 } from '@/modules/billing/domain/billing.errors';
@@ -55,7 +56,11 @@ export interface CreatePaymentInput {
   endDate: string;
   method: PaymentMethodForPrice;
   installments: number;
-  payer: { name: string; taxId: string };
+  /**
+   * Quem paga (RN02): o nome e o CPF, ou o pagador anterior pelo `payerId`
+   * (o cliente dele no gateway; RN03 e decisão 316(3)), sem o CPF.
+   */
+  payer: { name: string; taxId: string } | { payerId: string };
   cardToken: string | null;
   /** O pendente que este pedido troca (RN07; B2-4). */
   replacesPaymentId: string | null;
@@ -107,8 +112,9 @@ export class CreatePayment {
   ) {}
 
   async execute(input: CreatePaymentInput): Promise<PaymentCreated> {
-    const digest = this.taxIds.digest({ taxId: input.payer.taxId });
-    const requestHash = requestHashOf({ input, payerTaxIdHash: digest.hash });
+    const payer = await this.resolvePayer({ input });
+    const { digest } = payer;
+    const requestHash = requestHashOf({ input, payer });
     if (input.replacesPaymentId)
       await this.replacePending({ input, replacesPaymentId: input.replacesPaymentId });
 
@@ -116,14 +122,14 @@ export class CreatePayment {
     const payment = await this.scope.run({
       userId: input.userId,
       weddingId: input.weddingId,
-      work: () => this.recordPending({ input, digest, requestHash }),
+      work: () => this.recordPending({ input, payerName: payer.name, digest, requestHash }),
     });
     if (payment.gatewayPaymentId || payment.status !== 'pending') return created(payment);
 
     // Passo 2, fora de transação (RN19).
     let charge: ChargeResult;
     try {
-      charge = await this.charge({ input, paymentId: payment.id, payerTaxIdHash: digest.hash });
+      charge = await this.charge({ input, payer, paymentId: payment.id });
     } catch (error) {
       // O Payment pendente sem id do gateway fica para a reconciliação (RN11).
       if (error instanceof GatewayUnavailableError)
@@ -168,12 +174,58 @@ export class CreatePayment {
     });
   }
 
+  /**
+   * Quem paga, já com o hash. O pagador anterior vem do cliente do gateway
+   * deste casamento (RN03; decisão 316(3)): o nome, a versão do hash e os 4
+   * últimos saem do último pagamento dele. Só o dono chega à consulta.
+   */
+  private async resolvePayer({ input }: { input: CreatePaymentInput }): Promise<ResolvedPayer> {
+    const { payer } = input;
+    if ('taxId' in payer)
+      return {
+        name: payer.name.trim(),
+        taxId: payer.taxId,
+        digest: this.taxIds.digest({ taxId: payer.taxId }),
+      };
+    const { userId, weddingId } = input;
+    return this.scope.run({
+      userId,
+      weddingId,
+      work: async () => {
+        await this.authorization.require({ userId, weddingId, action: 'manage_billing' });
+        const customer = await this.customers.byId({
+          id: payer.payerId,
+          weddingId,
+          gateway: this.gateway.name,
+        });
+        const previous = customer
+          ? await this.payments.payerByHash({
+              weddingId,
+              payerTaxIdHash: customer.payerTaxIdHash,
+            })
+          : null;
+        if (!customer || !previous) throw new PreviousPayerNotFoundError();
+        return {
+          name: previous.name,
+          taxId: null,
+          digest: {
+            hash: customer.payerTaxIdHash,
+            version: previous.taxIdHashVersion,
+            last4: previous.taxIdLast4,
+          },
+        };
+      },
+    });
+  }
+
   private async recordPending({
     input,
+    payerName,
     digest,
     requestHash,
   }: {
     input: CreatePaymentInput;
+    payerName: string;
     digest: { hash: string; version: number; last4: string };
     requestHash: string;
   }): Promise<OwnedPayment> {
@@ -249,7 +301,7 @@ export class CreatePayment {
         installmentInterestCents: lines.installmentInterestCents,
         amountCents: lines.totalCents,
         gateway: this.gateway.name,
-        payerName: input.payer.name.trim(),
+        payerName,
         payerTaxIdHash: digest.hash,
         payerTaxIdHashVersion: digest.version,
         payerTaxIdLast4: digest.last4,
@@ -335,23 +387,26 @@ export class CreatePayment {
   /** Passo 2: o cliente do pagador (B2-11) e a cobrança, com a referência do Kore. */
   private async charge({
     input,
+    payer,
     paymentId,
-    payerTaxIdHash,
   }: {
     input: CreatePaymentInput;
+    payer: ResolvedPayer;
     paymentId: string;
-    payerTaxIdHash: string;
   }): Promise<ChargeResult> {
     const gateway = this.gateway.name;
+    const payerTaxIdHash = payer.digest.hash;
     let customerId = await this.customers.find({
       weddingId: input.weddingId,
       gateway,
       payerTaxIdHash,
     });
     if (!customerId) {
+      // O pagador anterior já tem cliente (resolvePayer): sem CPF, nada a criar.
+      if (payer.taxId === null) throw new PreviousPayerNotFoundError();
       const created = await this.gateway.createCustomer({
-        name: input.payer.name.trim(),
-        taxId: input.payer.taxId,
+        name: payer.name,
+        taxId: payer.taxId,
       });
       customerId = await this.customers.save({
         weddingId: input.weddingId,
@@ -387,6 +442,13 @@ export class CreatePayment {
   }
 }
 
+/** Quem paga, depois de resolvido: o CPF em claro só quando veio no pedido. */
+interface ResolvedPayer {
+  name: string;
+  taxId: string | null;
+  digest: { hash: string; version: number; last4: string };
+}
+
 function created(payment: OwnedPayment): PaymentCreated {
   return {
     paymentId: payment.id,
@@ -402,22 +464,24 @@ function created(payment: OwnedPayment): PaymentCreated {
 
 /**
  * O hash do corpo do pedido (B2-10), sem o CPF em claro (vai o HMAC) e sem o
- * token do cartão (o token é de uso único; a nova tentativa traz outro).
+ * token do cartão (o token é de uso único; a nova tentativa traz outro). O
+ * pagador anterior por `payerId` entra com o nome e o hash dele, como se
+ * viesse com o CPF: a mesma chave serve às duas formas.
  */
 export function requestHashOf({
   input,
-  payerTaxIdHash,
+  payer,
 }: {
   input: CreatePaymentInput;
-  payerTaxIdHash: string;
+  payer: { name: string; digest: { hash: string } };
 }): string {
   const canonical = JSON.stringify([
     input.kind,
     input.endDate,
     input.method,
     input.installments,
-    input.payer.name.trim(),
-    payerTaxIdHash,
+    payer.name,
+    payer.digest.hash,
     input.priceVersion,
     input.expectedTotalCents,
     // Só quando troca: o hash dos pedidos sem troca continua o mesmo.
