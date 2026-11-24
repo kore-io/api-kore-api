@@ -318,6 +318,85 @@ describe('Backoffice: visão geral, busca, log e alertas (Backoffice - acesso RN
     expect(withPeriod.body.total).toBe(2);
   });
 
+  it('RN11 (decisão 316(11)(c)) - cada linha traz o nome e o papel de quem agiu e o casal', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const support = await staffUser({ app, role: 'support', name: 'Bruno Tavares' });
+    const ana = await signedInUser({ app, name: 'Ana Beatriz Moreira' });
+    const juliana = await seedReferrer({ db, kind: 'planner', name: 'Juliana Prado' });
+    const { weddingId } = await seedWedding({
+      db,
+      ownerId: ana.userId,
+      collaboratorIds: [juliana.userId],
+    });
+    const at = (seconds: number) => new Date(Date.now() - seconds * 1000);
+    await db.applicationLog.createMany({
+      data: [
+        {
+          action: 'wedding.blocked',
+          actorKind: 'admin',
+          actorUserId: support.userId,
+          weddingId,
+          createdAt: at(5),
+        },
+        {
+          action: 'guest.created',
+          actorKind: 'user',
+          actorUserId: ana.userId,
+          weddingId,
+          createdAt: at(4),
+        },
+        {
+          action: 'guest.updated',
+          actorKind: 'user',
+          actorUserId: juliana.userId,
+          weddingId,
+          createdAt: at(3),
+        },
+        // Sem casamento: o papel é o do indicador.
+        {
+          action: 'pix_key.changed',
+          actorKind: 'user',
+          actorUserId: juliana.userId,
+          createdAt: at(2),
+        },
+        { action: 'wedding.expired', actorKind: 'system', weddingId, createdAt: at(1) },
+      ],
+    });
+
+    const byWedding = await get(admin.cookie, '/logs', { weddingId }).expect(200);
+    const rows = (
+      byWedding.body.items as { action: string; actor: unknown; coupleNames: string | null }[]
+    ).map(({ action, actor, coupleNames }) => ({ action, actor, coupleNames }));
+    expect(rows).toEqual([
+      { action: 'wedding.expired', actor: null, coupleNames: 'Ana & Marcos' },
+      {
+        action: 'guest.updated',
+        actor: { name: 'Juliana Prado', role: 'collaborator' },
+        coupleNames: 'Ana & Marcos',
+      },
+      {
+        action: 'guest.created',
+        actor: { name: 'Ana Beatriz Moreira', role: 'owner' },
+        coupleNames: 'Ana & Marcos',
+      },
+      {
+        action: 'wedding.blocked',
+        actor: { name: 'Bruno Tavares', role: 'support' },
+        coupleNames: 'Ana & Marcos',
+      },
+    ]);
+    const byUser = await get(admin.cookie, '/logs', {
+      userId: juliana.userId,
+      action: 'pix_key.changed',
+    }).expect(200);
+    expect(byUser.body.items).toEqual([
+      expect.objectContaining({
+        actor: { name: 'Juliana Prado', role: 'planner' },
+        coupleNames: null,
+      }),
+    ]);
+  });
+
   it('RN02 e RN11 (decisões 69 e 275) - o suporte não lê dinheiro no log: sem as ações de Cobrança, Repasses, chave Pix e Configurações, e sem centavos em nenhum nível do JSON', async () => {
     const admin = await staffUser({ app, role: 'admin' });
     const support = await staffUser({ app, role: 'support' });

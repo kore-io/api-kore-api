@@ -5,6 +5,7 @@ import { uuidV7 } from '@/shared/kernel/ids/uuid-v7';
 import type {
   AdminAlertRow,
   AdminInsightsReader,
+  AdminLogActorRole,
   AdminLogQuery,
   AdminLogRow,
   AdminOverview,
@@ -198,6 +199,7 @@ export class PrismaAdminInsightsReader implements AdminInsightsReader {
         take: LOG_PAGE_SIZE,
       }),
     ]);
+    const actors = await this.logActors({ rows });
     return {
       items: rows.map((row) => ({
         id: row.id,
@@ -211,10 +213,80 @@ export class PrismaAdminInsightsReader implements AdminInsightsReader {
         entityId: row.entityId,
         data: row.data,
         ipHashShort: row.ipHash ? row.ipHash.slice(0, IP_HASH_SHORT) : null,
+        actor: actors.actorOf(row),
+        coupleNames: row.weddingId ? actors.coupleOf(row.weddingId) : null,
       })),
       page: query.page,
       pageSize: LOG_PAGE_SIZE,
       total,
+    };
+  }
+
+  /**
+   * Os nomes e papéis de quem agiu e os casais da página do Log, em 4 leituras
+   * (sem uma consulta por linha; decisão 316(11)(c)).
+   */
+  private async logActors({
+    rows,
+  }: {
+    rows: { actorKind: string; actorUserId: string | null; weddingId: string | null }[];
+  }) {
+    const userIds = [...new Set(rows.flatMap((row) => (row.actorUserId ? [row.actorUserId] : [])))];
+    const weddingIds = [...new Set(rows.flatMap((row) => (row.weddingId ? [row.weddingId] : [])))];
+    const [users, memberships, referrers, partners] = await Promise.all([
+      this.db.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, name: true, platformRole: true },
+      }),
+      this.db.membership.findMany({
+        where: { userId: { in: userIds }, weddingId: { in: weddingIds } },
+        orderBy: { createdAt: 'desc' },
+        select: { userId: true, weddingId: true, role: true },
+      }),
+      this.db.referrer.findMany({
+        where: { userId: { in: userIds } },
+        select: { userId: true, kind: true },
+      }),
+      this.db.partner.findMany({
+        where: { weddingId: { in: weddingIds } },
+        orderBy: { slot: 'asc' },
+        select: { weddingId: true, displayName: true },
+      }),
+    ]);
+    const userOf = new Map(users.map((user) => [user.id, user] as const));
+    // O vínculo mais recente da pessoa no casamento, mesmo se removido depois.
+    const membershipRole = new Map<string, 'owner' | 'collaborator'>();
+    for (const membership of memberships) {
+      const key = `${membership.userId}:${membership.weddingId}`;
+      if (!membershipRole.has(key)) membershipRole.set(key, membership.role);
+    }
+    const referrerKind = new Map(referrers.map((referrer) => [referrer.userId, referrer.kind]));
+    const couple = new Map<string, string[]>();
+    for (const partner of partners)
+      couple.set(partner.weddingId, [
+        ...(couple.get(partner.weddingId) ?? []),
+        firstName(partner.displayName),
+      ]);
+    return {
+      actorOf: (row: {
+        actorKind: string;
+        actorUserId: string | null;
+        weddingId: string | null;
+      }): AdminLogRow['actor'] => {
+        if (!row.actorUserId) return null;
+        const user = userOf.get(row.actorUserId);
+        const staffRole =
+          row.actorKind === 'admin' && user && user.platformRole !== 'none'
+            ? user.platformRole
+            : null;
+        const role: AdminLogActorRole | null =
+          staffRole ??
+          (row.weddingId ? membershipRole.get(`${row.actorUserId}:${row.weddingId}`) : null) ??
+          referrerKind.get(row.actorUserId) ??
+          null;
+        return { name: user?.name ?? null, role };
+      },
+      coupleOf: (weddingId: string) => couple.get(weddingId)?.join(' & ') ?? null,
     };
   }
 

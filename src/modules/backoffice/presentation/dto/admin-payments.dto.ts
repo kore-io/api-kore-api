@@ -3,10 +3,10 @@ import { Transform, Type } from 'class-transformer';
 import { IsDate, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import {
   ADMIN_PAYMENT_STATUSES,
-  type AdminPaymentDetail,
   type AdminPaymentRow,
   type AdminPaymentStatus,
 } from '@/modules/backoffice/application/ports/admin-payments.reader.port';
+import type { AdminPaymentDetailView } from '@/modules/backoffice/application/admin-payments.use-cases';
 import type { Page } from '@/modules/backoffice/application/ports/admin-weddings.reader.port';
 import {
   REFUND_RECEIPT_CONTENT_TYPES,
@@ -178,8 +178,15 @@ export class AdminPaymentDetailResponse extends AdminPaymentRowResponse {
   commission: AdminPaymentCommissionResponse | null;
   @ApiProperty({ type: AdminPaymentRefundResponse }) refund: AdminPaymentRefundResponse;
   @ApiProperty({ type: AdminPaymentDisputeResponse }) dispute: AdminPaymentDisputeResponse;
+  /**
+   * Passou do prazo de estorno do gateway (Pix: 90 dias; cartão: nunca, até o
+   * Asaas confirmar): o Dialog do Reembolsar avisa antes que o estorno vai
+   * falhar (RN05; decisão 316(11)(e)). A resposta do Reembolsar segue trazendo
+   * o mesmo booleano (259(2)).
+   */
+  pastGatewayWindow: boolean;
 
-  static fromDetail({ detail }: { detail: AdminPaymentDetail }): AdminPaymentDetailResponse {
+  static fromDetail({ detail }: { detail: AdminPaymentDetailView }): AdminPaymentDetailResponse {
     return {
       ...detail,
       createdAt: detail.createdAt.toISOString(),

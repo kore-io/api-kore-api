@@ -66,7 +66,26 @@ export interface AdminLogRow {
   entityId: string | null;
   data: unknown;
   ipHashShort: string | null;
+  /**
+   * Quem agiu, para a coluna "Quem (nome e papel)" (decisão 316(11)(c)); nulo
+   * no sistema e no convidado. O papel: do staff (`admin`, `support`), no
+   * casamento da linha (`owner`, `collaborator`) ou, sem vínculo, o do
+   * indicador (`planner`, `seller`).
+   */
+  actor: { name: string | null; role: AdminLogActorRole | null } | null;
+  /** O casal da linha ("Ana & Marcos"), para a coluna Casamento; nulo sem casamento. */
+  coupleNames: string | null;
 }
+
+export const ADMIN_LOG_ACTOR_ROLES = [
+  'admin',
+  'support',
+  'owner',
+  'collaborator',
+  'planner',
+  'seller',
+] as const;
+export type AdminLogActorRole = (typeof ADMIN_LOG_ACTOR_ROLES)[number];
 
 export interface AdminAlertRow {
   id: string;
