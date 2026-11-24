@@ -23524,6 +23524,85 @@
           "declined"
         ]
       },
+      "CoupleEntryResponse": {
+        "type": "object",
+        "properties": {
+          "partnerNames": {
+            "description": "Os primeiros nomes do casal; o app junta.",
+            "example": [
+              "Ana",
+              "Marcos"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "partnerNames"
+        ]
+      },
+      "CommissionEntryResponse": {
+        "type": "object",
+        "properties": {
+          "commissionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amountCents": {
+            "type": "number",
+            "example": 6742
+          },
+          "partnerNames": {
+            "example": [
+              "Ana",
+              "Marcos"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "at": {
+            "type": "string",
+            "description": "Quando a comissão ficou disponível.",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "commissionId",
+          "amountCents",
+          "partnerNames",
+          "at"
+        ]
+      },
+      "ReferrerReassignedEntryResponse": {
+        "type": "object",
+        "properties": {
+          "partnerNames": {
+            "example": [
+              "Ana",
+              "Marcos"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "direction": {
+            "enum": [
+              "lost",
+              "gained"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "partnerNames",
+          "direction"
+        ]
+      },
       "BillingEntryResponse": {
         "type": "object",
         "properties": {
@@ -23585,7 +23664,7 @@
           },
           "endDate": {
             "type": "string",
-            "description": "A data de saída do ar paga, AAAA-MM-DD (só no payment_confirmed)."
+            "description": "A data de saída do ar, AAAA-MM-DD: a paga no payment_confirmed e a nova na\ncourtesy (a Cortesia do Admin; Backoffice - cobrança RN06)."
           },
           "amountCents": {
             "type": "number",
@@ -23643,11 +23722,20 @@
           },
           "payload": {
             "type": "array",
-            "description": "rsvp: por grupo, sem restrição, música nem nome de convidado (Central RN04).\nwedding_published e membership_removed: [{ partnerNames }] (revisão C8-3).\nreferrer_reassigned: [{ partnerNames, direction }], `lost` ao indicador\nantigo e `gained` ao novo, sem o nome do outro (Backoffice - acesso RN07).\nbilling: um item por pagamento, com o valor só no detalhe (RN13).",
+            "description": "O formato de cada item depende do `type` (decisões 275 e 316(13)):\n- rsvp: `NotificationEntryResponse`, por grupo, sem restrição, música nem\n  nome de convidado (Central RN04);\n- wedding_published e membership_removed: `CoupleEntryResponse` (C8-3);\n- commission: `CommissionEntryResponse` (Comissões do indicador RN09);\n- referrer_reassigned: `ReferrerReassignedEntryResponse` (Backoffice - acesso RN07);\n- billing: `BillingEntryResponse`, um item por aviso, com o valor só no\n  detalhe (Publicar e pagar RN13).",
             "items": {
               "oneOf": [
                 {
                   "$ref": "#/components/schemas/NotificationEntryResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/CoupleEntryResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/CommissionEntryResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/ReferrerReassignedEntryResponse"
                 },
                 {
                   "$ref": "#/components/schemas/BillingEntryResponse"
