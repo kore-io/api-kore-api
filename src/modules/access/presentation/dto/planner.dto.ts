@@ -3,8 +3,9 @@ import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
-  IsIn,
   IsISO8601,
+  IsIn,
+  IsObject,
   IsOptional,
   IsString,
   Length,
@@ -151,6 +152,7 @@ export class CreatePlannerWeddingBody {
   /** A Aparência do passo 2 (RN03), com o guarda-corpo do contraste. */
   @ApiProperty({ type: UpdateSiteAppearanceBody, required: false })
   @IsOptional()
+  @IsObject()
   @ValidateNested()
   @Type(() => UpdateSiteAppearanceBody)
   appearance?: UpdateSiteAppearanceBody;

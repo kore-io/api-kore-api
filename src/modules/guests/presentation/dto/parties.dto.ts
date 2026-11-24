@@ -8,6 +8,7 @@ import {
   IsIn,
   IsInt,
   IsNotEmpty,
+  IsObject,
   IsOptional,
   IsString,
   IsUUID,
@@ -78,6 +79,7 @@ export class CreatePartyBody {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(GUESTS_PER_PARTY_MAX)
+  @IsObject({ each: true })
   @ValidateNested({ each: true })
   @Type(() => CreatePartyGuestBody)
   guests: CreatePartyGuestBody[];
@@ -170,6 +172,7 @@ export class UpdatePartyBody {
   @OptionalNotNull()
   @IsArray()
   @ArrayMaxSize(GUESTS_PER_PARTY_MAX)
+  @IsObject({ each: true })
   @ValidateNested({ each: true })
   @Type(() => UpdatePartyGuestBody)
   guests?: UpdatePartyGuestBody[];

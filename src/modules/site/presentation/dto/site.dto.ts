@@ -6,8 +6,8 @@ import {
   IsArray,
   IsBoolean,
   IsEmail,
-  IsIn,
   IsISO8601,
+  IsIn,
   IsNotEmpty,
   IsObject,
   IsOptional,
@@ -53,6 +53,7 @@ export class UpdateSiteBody {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(2)
+  @IsObject({ each: true })
   @ValidateNested({ each: true })
   @Type(() => SitePartnerBody)
   partners?: SitePartnerBody[];

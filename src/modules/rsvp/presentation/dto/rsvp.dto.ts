@@ -5,6 +5,7 @@ import {
   IsArray,
   IsIn,
   IsInt,
+  IsObject,
   IsOptional,
   IsString,
   IsUUID,
@@ -53,6 +54,7 @@ export class PutRsvpBody {
   /** Todos os convidados com nome do grupo; a vaga pode faltar. */
   @IsArray()
   @ArrayMaxSize(100)
+  @IsObject({ each: true })
   @ValidateNested({ each: true })
   @Type(() => RsvpAnswerBody)
   guests: RsvpAnswerBody[];

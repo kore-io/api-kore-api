@@ -4,6 +4,7 @@ import {
   IsArray,
   IsISO8601,
   IsNotEmpty,
+  IsObject,
   IsString,
   IsUUID,
   Matches,
@@ -46,6 +47,7 @@ class Venue {
 class CeremonyContent {
   @IsArray()
   @ArrayMaxSize(L.venues)
+  @IsObject({ each: true })
   @ValidateNested({ each: true })
   @Type(() => Venue)
   venues: Venue[];
@@ -68,6 +70,7 @@ class FaqItem {
 class FaqContent {
   @IsArray()
   @ArrayMaxSize(L.faqItems)
+  @IsObject({ each: true })
   @ValidateNested({ each: true })
   @Type(() => FaqItem)
   items: FaqItem[];

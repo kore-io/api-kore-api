@@ -2,8 +2,9 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { UpdateSiteAppearanceBody } from '@/modules/site/presentation/dto/site-appearance.dto';
 import {
-  IsIn,
   IsISO8601,
+  IsIn,
+  IsObject,
   IsOptional,
   IsString,
   IsUUID,
@@ -77,6 +78,7 @@ export class CreateWeddingBody {
    */
   @ApiProperty({ type: UpdateSiteAppearanceBody, required: false })
   @IsOptional()
+  @IsObject()
   @ValidateNested()
   @Type(() => UpdateSiteAppearanceBody)
   appearance?: UpdateSiteAppearanceBody;
