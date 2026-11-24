@@ -26810,6 +26810,10 @@
           "payerTaxIdLast4": {
             "type": "string"
           },
+          "pastGatewayWindow": {
+            "type": "boolean",
+            "description": "Passou do prazo de estorno do gateway (Pix: 90 dias; cartão: nunca, até o\nAsaas confirmar): o Dialog do Reembolsar avisa antes que o estorno vai\nfalhar (RN05; decisão 316(11)(e)). A resposta do Reembolsar segue trazendo\no mesmo booleano (259(2))."
+          },
           "amountCents": {
             "type": "number"
           },
@@ -26849,6 +26853,7 @@
           "pixDiscountCents",
           "installmentInterestCents",
           "payerTaxIdLast4",
+          "pastGatewayWindow",
           "amountCents",
           "applied"
         ]

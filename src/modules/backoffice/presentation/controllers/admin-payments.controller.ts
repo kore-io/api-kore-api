@@ -139,7 +139,7 @@ export class AdminPaymentsController {
   async detail(@Param('id', paymentIdPipe) paymentId: string): Promise<AdminPaymentDetailResponse> {
     try {
       return AdminPaymentDetailResponse.fromDetail({
-        detail: await this.payments.detail({ paymentId }),
+        detail: await this.payments.detail({ paymentId, now: new Date() }),
       });
     } catch (error) {
       throw toHttpError(error);

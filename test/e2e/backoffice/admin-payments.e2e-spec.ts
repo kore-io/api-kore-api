@@ -76,6 +76,24 @@ describe('Backoffice: Cobrança (Backoffice - cobrança RN02 a RN07 e RN11; banc
     return { ana, weddingId, paymentId };
   }
 
+  /** Como o `paid`, pelo Pix (o prazo de estorno do gateway de 90 dias é do Pix). */
+  async function paidByPix({ paidDaysAgo }: { paidDaysAgo: number }) {
+    const ana = await signedInUser({ app });
+    const { weddingId } = await seedWedding({ db, ownerId: ana.userId });
+    await db.wedding.update({ where: { id: weddingId }, data: { eventDate: day(eventDate) } });
+    const created = expectStatus(
+      await payForPublication({ app, cookie: ana.cookie, weddingId, endDate, method: 'pix' }),
+      201,
+    );
+    const paymentId = created.body.paymentId as string;
+    expectStatus(await devPaymentEvent({ app, paymentId, event: 'confirm' }), 200);
+    await db.payment.update({
+      where: { id: paymentId },
+      data: { paidAt: new Date(Date.now() - paidDaysAgo * DAY_MS) },
+    });
+    return { weddingId, paymentId };
+  }
+
   it('RN05 - o Admin reembolsa a qualquer momento: integral, o site volta a rascunho, o motivo no log e o estorno pelo job', async () => {
     const admin = await staffUser({ app, role: 'admin' });
     const support = await staffUser({ app, role: 'support' });
@@ -291,6 +309,29 @@ describe('Backoffice: Cobrança (Backoffice - cobrança RN02 a RN07 e RN11; banc
     await upload({ contentType: 'application/pdf', sizeBytes: 12 * 1024 * 1024 }).expect(400);
     await upload({ contentType: 'image/gif', sizeBytes: 100 }).expect(400);
     await upload({ contentType: 'application/pdf', sizeBytes: 100 }).expect(201);
+  });
+
+  it('RN05 (decisão 316(11)(e)) - o detalhe avisa antes: Pix pago há mais de 90 dias passa do prazo do gateway; o cartão, não', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const card = await paid({ paidDaysAgo: 120 });
+    expect(
+      (await get(admin.cookie, `/payments/${card.paymentId}`).expect(200)).body.pastGatewayWindow,
+    ).toBe(false);
+
+    const pix = await paidByPix({ paidDaysAgo: 91 });
+    expect(
+      (await get(admin.cookie, `/payments/${pix.paymentId}`).expect(200)).body.pastGatewayWindow,
+    ).toBe(true);
+    // A resposta do Reembolsar traz o mesmo booleano (decisão 259(2)).
+    const refunded = await post(admin.cookie, `/payments/${pix.paymentId}/refund`, {
+      reason: 'Casal pediu pelo suporte.',
+    }).expect(202);
+    expect(refunded.body.pastGatewayWindow).toBe(true);
+
+    const recent = await paidByPix({ paidDaysAgo: 89 });
+    expect(
+      (await get(admin.cookie, `/payments/${recent.paymentId}`).expect(200)).body.pastGatewayWindow,
+    ).toBe(false);
   });
 
   it('RN05 - em contestação, o Reembolsar é recusado', async () => {
