@@ -30,7 +30,7 @@ function getMe({ plannerSignupEnabled = false }: { plannerSignupEnabled?: boolea
   const identities = { providers: jest.fn().mockResolvedValue(['email', 'google']) };
   const support = {
     find: jest.fn(),
-    coupleNames: jest.fn(),
+    coupleWedding: jest.fn(),
   } as unknown as SupportSessionStore;
   return new GetMe(users, profiles, config, identities, support);
 }

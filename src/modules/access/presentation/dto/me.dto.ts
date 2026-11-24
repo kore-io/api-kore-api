@@ -71,6 +71,13 @@ class MeIdentityResponse {
 class MeSupportSessionResponse {
   @ApiProperty({ format: 'uuid' }) weddingId: string;
   @ApiProperty({ example: 'Ana & Marcos' }) coupleNames: string;
+  /** Os primeiros nomes, como na central: a faixa diz "Ana e Marcos" (decisão 316(12)). */
+  @ApiProperty({ type: [String], example: ['Ana', 'Marcos'] }) partnerNames: [string, string];
+  /**
+   * O ciclo de vida do casal visto, com o bloqueio: as faixas e as travas da
+   * área, como no vínculo (decisão 316(12)).
+   */
+  @ApiProperty({ type: MeLifecycleResponse }) lifecycle: MeLifecycleResponse;
   @ApiProperty({ format: 'date-time' }) startedAt: string;
   /** Sem nova requisição, a sessão acaba aqui (30 minutos sem uso ou o teto de 2 horas). */
   @ApiProperty({ format: 'date-time' }) expiresAt: string;

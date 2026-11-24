@@ -78,6 +78,16 @@ describe('Backoffice: Ver como o casal (Backoffice - acesso RN08; banco real)', 
     expect(me.body.supportSession).toEqual({
       weddingId,
       coupleNames: 'Ana & Marcos',
+      partnerNames: ['Ana', 'Marcos'],
+      lifecycle: {
+        status: 'published',
+        blocked: false,
+        endDate,
+        graceUntil: null,
+        expiredAt: null,
+        paidThrough: endDate,
+        deletionScheduledFor: null,
+      },
       startedAt: expect.any(String),
       expiresAt: expect.any(String),
     });
@@ -86,6 +96,12 @@ describe('Backoffice: Ver como o casal (Backoffice - acesso RN08; banco real)', 
       .set('Cookie', support.cookie)
       .expect(200);
     expect(JSON.stringify(parties.body)).toContain('Família Moreira');
+
+    // Decisão 316(12): o casal bloqueado durante a sessão aparece no lifecycle da faixa.
+    await db.wedding.update({ where: { id: weddingId }, data: { blockedAt: new Date() } });
+    const blocked = await http().get('/v1/me').set('Cookie', support.cookie).expect(200);
+    expect(blocked.body.supportSession.lifecycle).toMatchObject({ blocked: true });
+    await db.wedding.update({ where: { id: weddingId }, data: { blockedAt: null } });
     await db.applicationLog.findFirstOrThrow({
       where: { action: 'support_session.started', supportSessionId },
     });

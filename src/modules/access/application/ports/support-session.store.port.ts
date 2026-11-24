@@ -1,3 +1,4 @@
+import type { WeddingLifecycle } from '@/modules/access/application/ports/profile-directory.port';
 import type {
   SupportEndReason,
   SupportSessionRecord,
@@ -37,8 +38,14 @@ export interface SupportSessionStore {
   }): Promise<void>;
   /** O papel do staff, relido a cada requisição da sessão de suporte (RN01; conta ativa). */
   staffRoleOf(input: { userId: string }): Promise<'admin' | 'support' | null>;
-  /** "Ana & Marcos" para a faixa (o GET /v1/me). */
-  coupleNames(input: { weddingId: string }): Promise<string>;
+  /**
+   * O casal visto, para a faixa e as travas do Ver como o casal (o GET /v1/me;
+   * Backoffice - acesso RN08 e decisão 316(12)); nulo sem o casamento.
+   */
+  coupleWedding(input: { weddingId: string }): Promise<{
+    partnerNames: [string, string];
+    lifecycle: WeddingLifecycle;
+  } | null>;
 }
 
 export const SUPPORT_SESSION_STORE = Symbol('SupportSessionStore');

@@ -18,17 +18,19 @@ export interface MembershipSummary {
    * O ciclo de vida do casamento (Data de saída do ar RN06; decisão 231): de
    * onde saem as faixas e o selo da Topbar. Datas em AAAA-MM-DD.
    */
-  lifecycle: {
-    status: string;
-    /** Casamento bloqueado (Casamento bloqueado RN07): a faixa do bloqueio. */
-    blocked: boolean;
-    endDate: string | null;
-    graceUntil: string | null;
-    expiredAt: string | null;
-    /** Até onde está pago: a faixa do caso B fora de Pagamentos (decisões 293(5) e 296(2)). */
-    paidThrough: string | null;
-    deletionScheduledFor: string | null;
-  };
+  lifecycle: WeddingLifecycle;
+}
+
+export interface WeddingLifecycle {
+  status: string;
+  /** Casamento bloqueado (Casamento bloqueado RN07): a faixa do bloqueio. */
+  blocked: boolean;
+  endDate: string | null;
+  graceUntil: string | null;
+  expiredAt: string | null;
+  /** Até onde está pago: a faixa do caso B fora de Pagamentos (decisões 293(5) e 296(2)). */
+  paidThrough: string | null;
+  deletionScheduledFor: string | null;
 }
 
 export interface AccountOverview {
