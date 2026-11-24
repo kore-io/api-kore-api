@@ -67,6 +67,33 @@ class NotificationEntryResponse {
   @ApiProperty({ format: 'date-time' }) at: string;
 }
 
+/** wedding_published e membership_removed (revisão C8-3): só o casal. */
+export class CoupleEntryResponse {
+  /** Os primeiros nomes do casal; o app junta. */
+  @ApiProperty({ type: [String], example: ['Ana', 'Marcos'] }) partnerNames: [string, string];
+}
+
+/**
+ * commission (Comissões do indicador RN09): "R$ 67,42 de comissão de Ana e
+ * Marcos disponível para repasse"; o app monta o texto (decisões 275 e 316(13)).
+ */
+export class CommissionEntryResponse {
+  @ApiProperty({ format: 'uuid' }) commissionId: string;
+  @ApiProperty({ example: 6742 }) amountCents: number;
+  @ApiProperty({ type: [String], example: ['Ana', 'Marcos'] }) partnerNames: [string, string];
+  /** Quando a comissão ficou disponível. */
+  @ApiProperty({ format: 'date-time' }) at: string;
+}
+
+/**
+ * referrer_reassigned (Backoffice - acesso RN07; decisão 80): `lost` ao
+ * indicador antigo e `gained` ao novo, sem o nome do outro.
+ */
+export class ReferrerReassignedEntryResponse {
+  @ApiProperty({ type: [String], example: ['Ana', 'Marcos'] }) partnerNames: [string, string];
+  @ApiProperty({ enum: ['lost', 'gained'] }) direction: 'lost' | 'gained';
+}
+
 /** O item da cobrança (Publicar e pagar RN13): o app monta o título e o detalhe. */
 export class BillingEntryResponse {
   /** O pagamento confirmado (Publicar e pagar RN13) ou o reembolso concluído (Pagamentos e arrependimento RN07). */
@@ -109,7 +136,10 @@ export class BillingEntryResponse {
     string | null;
   /** purge_soon (Retenção e expurgo RN02): o dia em que os dados são apagados, AAAA-MM-DD. */
   @ApiProperty({ required: false, example: '2027-08-22' }) purgeAt?: string;
-  /** A data de saída do ar paga, AAAA-MM-DD (só no payment_confirmed). */
+  /**
+   * A data de saída do ar, AAAA-MM-DD: a paga no payment_confirmed e a nova na
+   * courtesy (a Cortesia do Admin; Backoffice - cobrança RN06).
+   */
   @ApiProperty({ required: false }) endDate?: string;
   @ApiProperty({ required: false, example: 33710 }) amountCents?: number;
   @ApiProperty({ required: false, enum: ['pix', 'card'] }) method?: 'pix' | 'card';
@@ -119,7 +149,13 @@ export class BillingEntryResponse {
   @ApiProperty({ format: 'date-time' }) at: string;
 }
 
-@ApiExtraModels(NotificationEntryResponse, BillingEntryResponse)
+@ApiExtraModels(
+  NotificationEntryResponse,
+  CoupleEntryResponse,
+  CommissionEntryResponse,
+  ReferrerReassignedEntryResponse,
+  BillingEntryResponse,
+)
 export class NotificationResponse {
   id: string;
   @ApiProperty({ enum: CENTER_NOTIFICATION_TYPES }) type: CenterNotificationType;
@@ -130,22 +166,34 @@ export class NotificationResponse {
   /** Grupos distintos (1: "Família Moreira respondeu o convite"; mais: "{n} grupos responderam"). */
   count: number;
   /**
-   * rsvp: por grupo, sem restrição, música nem nome de convidado (Central RN04).
-   * wedding_published e membership_removed: [{ partnerNames }] (revisão C8-3).
-   * referrer_reassigned: [{ partnerNames, direction }], `lost` ao indicador
-   * antigo e `gained` ao novo, sem o nome do outro (Backoffice - acesso RN07).
-   * billing: um item por pagamento, com o valor só no detalhe (RN13).
+   * O formato de cada item depende do `type` (decisões 275 e 316(13)):
+   * - rsvp: `NotificationEntryResponse`, por grupo, sem restrição, música nem
+   *   nome de convidado (Central RN04);
+   * - wedding_published e membership_removed: `CoupleEntryResponse` (C8-3);
+   * - commission: `CommissionEntryResponse` (Comissões do indicador RN09);
+   * - referrer_reassigned: `ReferrerReassignedEntryResponse` (Backoffice - acesso RN07);
+   * - billing: `BillingEntryResponse`, um item por aviso, com o valor só no
+   *   detalhe (Publicar e pagar RN13).
    */
   @ApiProperty({
     type: 'array',
     items: {
       oneOf: [
         { $ref: getSchemaPath(NotificationEntryResponse) },
+        { $ref: getSchemaPath(CoupleEntryResponse) },
+        { $ref: getSchemaPath(CommissionEntryResponse) },
+        { $ref: getSchemaPath(ReferrerReassignedEntryResponse) },
         { $ref: getSchemaPath(BillingEntryResponse) },
       ],
     },
   })
-  payload: (NotificationEntryResponse | BillingEntryResponse)[];
+  payload: (
+    | NotificationEntryResponse
+    | CoupleEntryResponse
+    | CommissionEntryResponse
+    | ReferrerReassignedEntryResponse
+    | BillingEntryResponse
+  )[];
   @ApiProperty({ type: String, format: 'date-time', nullable: true }) readAt: string | null;
   @ApiProperty({ format: 'date-time' }) updatedAt: string;
 }

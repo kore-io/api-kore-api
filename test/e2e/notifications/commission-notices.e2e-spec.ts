@@ -110,11 +110,14 @@ describe('Comissão disponível: central, push e e-mail (Comissões RN09; decis�
         type: 'commission',
         weddingId: juliana.weddingId,
         partnerNames: ['Ana', 'Marcos'],
+        // Os campos do CommissionEntryResponse do contrato, nem mais nem menos (decisão 316(13)).
         payload: [
-          expect.objectContaining({
+          {
             commissionId: juliana.commission.id,
             amountCents: juliana.commission.amountCents,
-          }),
+            partnerNames: ['Ana', 'Marcos'],
+            at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+          },
         ],
       }),
     ]);
