@@ -6,6 +6,7 @@ import {
   type CenterNotificationType,
   NOTIFICATION_TYPES,
   PLANNER_CENTER_TYPES,
+  PLANNER_FILTER_GROUPS,
   PLANNER_NOTIFICATION_TYPES,
   type EmailFrequency,
   type NotificationRow,
@@ -227,7 +228,13 @@ export class PrismaNotificationStore implements NotificationStore {
   }): Promise<NotificationRow[]> {
     const where = await this.plannerWhere({ userId });
     const rows = await this.tenant.client().notification.findMany({
-      where: { ...where, ...(type ? { type } : {}), ...afterCursor(after) },
+      where: {
+        ...where,
+        ...(type
+          ? { type: { in: (PLANNER_FILTER_GROUPS[type] ?? [type]) as CenterNotificationType[] } }
+          : {}),
+        ...afterCursor(after),
+      },
       orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
       take: limit,
       select: NOTIFICATION_SELECT,

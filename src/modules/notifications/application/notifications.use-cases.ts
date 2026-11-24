@@ -10,6 +10,7 @@ import {
   EMAIL_PREFERENCE_TYPES,
   NOTIFICATION_STORE,
   NOTIFICATION_TYPES,
+  CENTER_ONLY_TYPES,
   PLANNER_NOTIFICATION_TYPES,
   type EmailFrequency,
   type NotificationRow,
@@ -201,9 +202,18 @@ export class NotificationPreferences {
       (await this.store.generalPreferences({ userId })).map((row) => [row.type, row]),
     );
     return {
-      items: PLANNER_NOTIFICATION_TYPES.map(
-        (type) => saved.get(type) ?? { type, ...DEFAULT_PREFERENCE },
-      ),
+      items: [
+        ...PLANNER_NOTIFICATION_TYPES.map(
+          (type) => saved.get(type) ?? { type, ...DEFAULT_PREFERENCE },
+        ),
+        // Só a central (decisão 317(c)): a linha própria, sem e-mail nem push.
+        ...CENTER_ONLY_TYPES.map((type) => ({
+          type,
+          inApp: true,
+          email: 'off' as const,
+          push: false,
+        })),
+      ],
       push: {
         subscribed: await this.store.hasPushSubscription({ sessionId }),
         vapidPublicKey: this.config.get({ key: 'VAPID_PUBLIC_KEY' }) ?? null,
