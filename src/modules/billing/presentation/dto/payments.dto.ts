@@ -2,8 +2,10 @@ import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsIn,
+  IsDefined,
   IsInt,
   IsISO8601,
+  IsObject,
   IsString,
   IsUUID,
   Matches,
@@ -114,6 +116,9 @@ export class CreatePaymentBody {
   @ApiProperty({
     oneOf: [{ $ref: getSchemaPath(NewPayerBody) }, { $ref: getSchemaPath(PreviousPayerBody) }],
   })
+  // Ausente, nulo ou em lista: 400 (o @ValidateNested sozinho deixava passar e dava 500).
+  @IsDefined()
+  @IsObject()
   @ValidateNested()
   @Type(() => PayerBody)
   payer: PayerBody;
