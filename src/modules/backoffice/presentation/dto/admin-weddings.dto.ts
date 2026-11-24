@@ -150,6 +150,25 @@ class AdminPersonResponse {
   /** A troca do e-mail pelo staff trava chave Pix e remoção de membros até aqui (decisão 253(2)). */
   @ApiProperty({ type: String, format: 'date-time', nullable: true })
   accessChangeLockedUntil: string | null;
+  /** Desde quando tem acesso: a data do vínculo, o "desde" das Pessoas com acesso (316(11)(f)). */
+  @ApiProperty({ format: 'date-time' }) since: string;
+  /**
+   * Até quando uma nova troca do e-mail desta pessoa é só do Admin (a 2ª em 7
+   * dias; RN09 e decisão 253(1)): o suporte vê o botão desabilitado com a causa.
+   */
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  accessEmailAdminOnlyUntil: string | null;
+}
+
+/** O Dialog da troca do e-mail de acesso (Backoffice - acesso RN09; decisão 316(11)(b)). */
+class AdminAccessEmailChangeResponse {
+  /** Há pagamento: o Dialog pede os 4 últimos do CPF de quem pagou (a 3ª conferência). */
+  payerCheck: boolean;
+  /**
+   * As 3 conferências erradas em 24 h travam a troca até aqui (para qualquer
+   * papel; o Admin libera); nulo sem a trava.
+   */
+  @ApiProperty({ type: String, format: 'date-time', nullable: true }) lockedUntil: string | null;
 }
 
 class AdminPendingPaymentResponse {
@@ -188,6 +207,8 @@ export class AdminWeddingGeneralResponse {
   @ApiProperty({ type: Number, nullable: true, required: false }) rsvpPercent?: number | null;
   @ApiProperty({ format: 'date-time' }) createdAt: string;
   @ApiProperty({ type: [AdminPersonResponse], required: false }) people?: AdminPersonResponse[];
+  @ApiProperty({ type: AdminAccessEmailChangeResponse, required: false })
+  accessEmailChange?: AdminAccessEmailChangeResponse;
   /** Publicação · Saída do ar · Carência até · Expurgo previsto. */
   @ApiProperty({ type: String, format: 'date-time', nullable: true, required: false })
   publishedAt?: string | null;
@@ -236,7 +257,13 @@ export class AdminWeddingGeneralResponse {
       people: wedding.people.map((person) => ({
         ...person,
         accessChangeLockedUntil: person.accessChangeLockedUntil?.toISOString() ?? null,
+        since: person.since.toISOString(),
+        accessEmailAdminOnlyUntil: person.accessEmailAdminOnlyUntil?.toISOString() ?? null,
       })),
+      accessEmailChange: {
+        payerCheck: wedding.accessEmailChange.payerCheck,
+        lockedUntil: wedding.accessEmailChange.lockedUntil?.toISOString() ?? null,
+      },
       publishedAt: wedding.publishedAt?.toISOString() ?? null,
       endDate: wedding.endDate,
       graceUntil: wedding.graceUntil,

@@ -69,7 +69,20 @@ export interface AdminWeddingGeneral extends AdminWeddingRow {
      * staff trocar o e-mail de acesso (decisão 253(2)); nulo fora das 48 h.
      */
     accessChangeLockedUntil: Date | null;
+    /** Desde quando tem acesso ao casamento: a data do vínculo (Pessoas com acesso; 316(11)(f)). */
+    since: Date;
+    /**
+     * Até quando uma nova troca do e-mail desta pessoa é só do Admin (a 2ª em
+     * 7 dias; Backoffice - acesso RN09 e decisão 253(1)); nula fora da janela.
+     */
+    accessEmailAdminOnlyUntil: Date | null;
   }[];
+  /**
+   * O Dialog da troca do e-mail de acesso (RN09; decisão 316(11)(b)): se pede
+   * os 4 últimos do CPF de quem pagou e até quando as 3 conferências erradas
+   * travam a troca.
+   */
+  accessEmailChange: { payerCheck: boolean; lockedUntil: Date | null };
   publishedAt: Date | null;
   graceUntil: string | null;
   purgeAt: string | null;

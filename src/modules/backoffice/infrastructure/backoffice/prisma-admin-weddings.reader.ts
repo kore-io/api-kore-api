@@ -3,6 +3,11 @@ import type { Prisma } from '@/generated/prisma/client';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import { RECENT_ACCESS_CHANGE_MS } from '@/modules/access/domain/members/recent-access-change';
 import type { StaffRole } from '@/modules/backoffice/domain/staff';
+import {
+  failedChecksLockedUntil,
+  repeatChangeAdminOnlyUntil,
+} from '@/modules/backoffice/domain/access-email-change';
+import { recentFailedChecks } from './prisma-access-email-changes';
 import type {
   AdminReferrer,
   AdminWeddingFilter,
@@ -157,6 +162,7 @@ export class PrismaAdminWeddingsReader implements AdminWeddingsReader {
           orderBy: { createdAt: 'asc' },
           select: {
             role: true,
+            createdAt: true,
             user: { select: { id: true, name: true, email: true, accessEmailChangedAt: true } },
           },
         },
@@ -181,6 +187,11 @@ export class PrismaAdminWeddingsReader implements AdminWeddingsReader {
             select: { id: true, method: true, amountCents: true, createdAt: true },
           })
         : null;
+    // O Dialog da troca do e-mail (RN09): a mesma conta da troca (316(11)(b)).
+    const [paid, failures] = await Promise.all([
+      this.db.payment.count({ where: { weddingId, paidAt: { not: null } } }),
+      recentFailedChecks({ db: this.db, weddingId, now }),
+    ]);
     let block: AdminWeddingGeneral['block'] = null;
     if (wedding.blockedAt) {
       const [blockedBy, log] = await Promise.all([
@@ -206,7 +217,7 @@ export class PrismaAdminWeddingsReader implements AdminWeddingsReader {
     return {
       ...toRow(wedding),
       createdAt: wedding.createdAt,
-      people: wedding.memberships.map(({ role: membershipRole, user }) => {
+      people: wedding.memberships.map(({ role: membershipRole, createdAt: since, user }) => {
         const until = user.accessEmailChangedAt
           ? new Date(user.accessEmailChangedAt.getTime() + RECENT_ACCESS_CHANGE_MS)
           : null;
@@ -216,8 +227,17 @@ export class PrismaAdminWeddingsReader implements AdminWeddingsReader {
           email: user.email,
           role: membershipRole,
           accessChangeLockedUntil: until && until > now ? until : null,
+          since,
+          accessEmailAdminOnlyUntil: repeatChangeAdminOnlyUntil({
+            changedAt: user.accessEmailChangedAt,
+            now,
+          }),
         };
       }),
+      accessEmailChange: {
+        payerCheck: paid > 0,
+        lockedUntil: failedChecksLockedUntil({ failures }),
+      },
       publishedAt: wedding.publishedAt,
       graceUntil: day(wedding.graceUntil),
       purgeAt: day(wedding.purgeAt),

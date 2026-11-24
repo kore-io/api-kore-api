@@ -11,6 +11,29 @@ export const UNLOCK_INTERVAL_MS = 24 * 60 * 60_000;
 /** A 2ª troca no mesmo User nesta janela é só do Admin. */
 export const REPEAT_CHANGE_WINDOW_MS = 7 * 24 * 60 * 60_000;
 
+/**
+ * A trava das conferências erradas (decisão 253(1)): com 3 na janela, até 24 h
+ * depois da primeira delas; nula sem a trava.
+ */
+export function failedChecksLockedUntil({ failures }: { failures: Date[] }): Date | null {
+  return failures.length >= WEDDING_FAILED_CHECKS_LIMIT
+    ? new Date(failures[0].getTime() + FAILED_CHECKS_WINDOW_MS)
+    : null;
+}
+
+/** Até quando a 2ª troca no mesmo User é só do Admin; nula fora dos 7 dias. */
+export function repeatChangeAdminOnlyUntil({
+  changedAt,
+  now,
+}: {
+  changedAt: Date | null;
+  now: Date;
+}): Date | null {
+  if (!changedAt) return null;
+  const until = new Date(changedAt.getTime() + REPEAT_CHANGE_WINDOW_MS);
+  return until > now ? until : null;
+}
+
 const BRASILIA = 'America/Sao_Paulo';
 
 /** O começo do dia de Brasília de `now` e o do dia seguinte (o `retryAt` do 429). */

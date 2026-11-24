@@ -10,12 +10,13 @@ import type {
 } from '@/modules/backoffice/application/ports/access-email-changes.port';
 import {
   FAILED_CHECKS_WINDOW_MS,
-  REPEAT_CHANGE_WINDOW_MS,
   STAFF_DAILY_ATTEMPTS,
   UNLOCK_INTERVAL_MS,
   WEDDING_FAILED_CHECKS_LIMIT,
   brasiliaDay,
+  failedChecksLockedUntil,
   normalizeLast4,
+  repeatChangeAdminOnlyUntil,
 } from '@/modules/backoffice/domain/access-email-change';
 import { maskEmail } from '@/shared/kernel/text/mask-email';
 import type { StaffMember } from '@/modules/backoffice/domain/staff';
@@ -25,6 +26,40 @@ export const ACCESS_EMAIL_CHECKS_FAILED_ACTION = 'user.access_email_checks_faile
 export const ACCESS_EMAIL_UNLOCKED_ACTION = 'admin.access_email_unlocked';
 
 type Tx = Prisma.TransactionClient;
+type LogReader = Pick<Tx, 'applicationLog'>;
+
+/**
+ * As conferências erradas das últimas 24 h, depois da última liberação, da mais
+ * antiga (decisão 253(1)). A troca e o detalhe do casamento no Admin contam igual.
+ */
+export async function recentFailedChecks({
+  db,
+  weddingId,
+  now,
+}: {
+  db: LogReader;
+  weddingId: string;
+  now: Date;
+}): Promise<Date[]> {
+  const windowStart = new Date(now.getTime() - FAILED_CHECKS_WINDOW_MS);
+  const lastUnlock = await lastUnlockAt({ db, weddingId });
+  const since = lastUnlock && lastUnlock > windowStart ? lastUnlock : windowStart;
+  const rows = await db.applicationLog.findMany({
+    where: { weddingId, action: ACCESS_EMAIL_CHECKS_FAILED_ACTION, createdAt: { gt: since } },
+    orderBy: { createdAt: 'asc' },
+    select: { createdAt: true },
+  });
+  return rows.map((row) => row.createdAt);
+}
+
+async function lastUnlockAt({ db, weddingId }: { db: LogReader; weddingId: string }) {
+  const row = await db.applicationLog.findFirst({
+    where: { weddingId, action: ACCESS_EMAIL_UNLOCKED_ACTION },
+    orderBy: { createdAt: 'desc' },
+    select: { createdAt: true },
+  });
+  return row?.createdAt ?? null;
+}
 
 /** Pela conexão do backoffice (decisão 180(5)). */
 @Injectable()
@@ -68,16 +103,12 @@ export class PrismaAccessEmailChanges implements AccessEmailChanges {
         return { result: 'not_allowed' };
 
       // 3 conferências erradas em 24 h travam o casamento (para qualquer papel).
-      const failures = await this.recentFailures({ tx, weddingId, now });
-      if (failures.length >= WEDDING_FAILED_CHECKS_LIMIT)
-        return {
-          result: 'locked',
-          availableAt: new Date(failures[0].getTime() + FAILED_CHECKS_WINDOW_MS),
-        };
+      const failures = await recentFailedChecks({ db: tx, weddingId, now });
+      const lockedUntil = failedChecksLockedUntil({ failures });
+      if (lockedUntil) return { result: 'locked', availableAt: lockedUntil };
 
       const repeat =
-        owner.user.accessEmailChangedAt !== null &&
-        now.getTime() - owner.user.accessEmailChangedAt.getTime() < REPEAT_CHANGE_WINDOW_MS;
+        repeatChangeAdminOnlyUntil({ changedAt: owner.user.accessEmailChangedAt, now }) !== null;
       if (repeat && staff.role !== 'admin') return { result: 'admin_only' };
 
       // Os 4 dígitos de quem pagou, conferidos aqui; o staff nunca os vê.
@@ -174,13 +205,13 @@ export class PrismaAccessEmailChanges implements AccessEmailChanges {
         SELECT id::text FROM weddings
         WHERE id = ${weddingId}::uuid AND status <> 'purged' FOR UPDATE`;
       if (!wedding) return { result: 'not_found' };
-      const lastUnlock = await this.lastUnlockAt({ tx, weddingId });
+      const lastUnlock = await lastUnlockAt({ db: tx, weddingId });
       if (lastUnlock && now.getTime() - lastUnlock.getTime() < UNLOCK_INTERVAL_MS)
         return {
           result: 'too_soon',
           availableAt: new Date(lastUnlock.getTime() + UNLOCK_INTERVAL_MS),
         };
-      const failures = await this.recentFailures({ tx, weddingId, now });
+      const failures = await recentFailedChecks({ db: tx, weddingId, now });
       if (failures.length < WEDDING_FAILED_CHECKS_LIMIT) return { result: 'not_locked' };
       await this.log({
         tx,
@@ -202,36 +233,6 @@ export class PrismaAccessEmailChanges implements AccessEmailChanges {
       });
       return { result: 'unlocked' };
     });
-  }
-
-  /** As conferências erradas das últimas 24 h, depois da última liberação, da mais antiga. */
-  private async recentFailures({
-    tx,
-    weddingId,
-    now,
-  }: {
-    tx: Tx;
-    weddingId: string;
-    now: Date;
-  }): Promise<Date[]> {
-    const windowStart = new Date(now.getTime() - FAILED_CHECKS_WINDOW_MS);
-    const lastUnlock = await this.lastUnlockAt({ tx, weddingId });
-    const since = lastUnlock && lastUnlock > windowStart ? lastUnlock : windowStart;
-    const rows = await tx.applicationLog.findMany({
-      where: { weddingId, action: ACCESS_EMAIL_CHECKS_FAILED_ACTION, createdAt: { gt: since } },
-      orderBy: { createdAt: 'asc' },
-      select: { createdAt: true },
-    });
-    return rows.map((row) => row.createdAt);
-  }
-
-  private async lastUnlockAt({ tx, weddingId }: { tx: Tx; weddingId: string }) {
-    const row = await tx.applicationLog.findFirst({
-      where: { weddingId, action: ACCESS_EMAIL_UNLOCKED_ACTION },
-      orderBy: { createdAt: 'desc' },
-      select: { createdAt: true },
-    });
-    return row?.createdAt ?? null;
   }
 
   private async log({

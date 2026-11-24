@@ -58,6 +58,19 @@ describe('Backoffice: trocar o e-mail de acesso (Backoffice - acesso RN09; decis
       .set('Origin', ORIGIN)
       .send({ reason: 'Casal confirmou os dados por telefone.' });
   const newEmail = () => `ana.nova.${randomUUID()}@gmail.com`;
+  type Person = {
+    userId: string;
+    since: string;
+    accessChangeLockedUntil: string | null;
+    accessEmailAdminOnlyUntil: string | null;
+  };
+  /** O geral do detalhe: as Pessoas com acesso e o estado do Dialog (316(11)(b) e (f)). */
+  const general = async (cookie: string, weddingId: string) =>
+    (await http().get(`/v1/admin/weddings/${weddingId}`).set('Cookie', cookie).expect(200)).body
+      .general as {
+      people: Person[];
+      accessEmailChange: { payerCheck: boolean; lockedUntil: string | null };
+    };
 
   /** Ana publicou e pagou com o CPF que termina em 4725; Juliana colabora. */
   async function paidWedding() {
@@ -144,6 +157,20 @@ describe('Backoffice: trocar o e-mail de acesso (Backoffice - acesso RN09; decis
     const ana = await signedInUser({ app });
     const { weddingId } = await seedWedding({ db, ownerId: ana.userId });
     const target = newEmail();
+    // Decisão 316(11)(b) e (f): o Dialog sabe antes que não há 3ª conferência, e a
+    // pessoa traz o "desde" (a data do vínculo).
+    const before = await general(support.cookie, weddingId);
+    expect(before.accessEmailChange).toEqual({ payerCheck: false, lockedUntil: null });
+    const membership = await db.membership.findFirstOrThrow({
+      where: { weddingId, userId: ana.userId },
+    });
+    expect(before.people).toEqual([
+      expect.objectContaining({
+        userId: ana.userId,
+        since: membership.createdAt.toISOString(),
+        accessEmailAdminOnlyUntil: null,
+      }),
+    ]);
 
     expect(
       (
@@ -222,6 +249,11 @@ describe('Backoffice: trocar o e-mail de acesso (Backoffice - acesso RN09; decis
     await db.alert.findFirstOrThrow({
       where: { type: 'access_email_locked', entityId: weddingId, status: 'open' },
     });
+    // Decisão 316(11)(b): o detalhe mostra a trava antes do pedido, com a mesma data.
+    expect((await general(support.cookie, weddingId)).accessEmailChange).toEqual({
+      payerCheck: true,
+      lockedUntil: locked.body.availableAt,
+    });
 
     expect((await unlock(support.cookie, weddingId).expect(403)).body.error).toBe(
       'ACTION_NOT_ALLOWED',
@@ -230,6 +262,7 @@ describe('Backoffice: trocar o e-mail de acesso (Backoffice - acesso RN09; decis
     await db.alert.findFirstOrThrow({
       where: { type: 'access_email_unlocked', entityId: weddingId },
     });
+    expect((await general(admin.cookie, weddingId)).accessEmailChange.lockedUntil).toBeNull();
     expect((await unlock(admin.cookie, weddingId).expect(409)).body.error).toBe('UNLOCK_TOO_SOON');
     // A liberação não pula a conferência: com os dígitos certos, a troca vale.
     await change(admin.cookie, weddingId, {
@@ -391,17 +424,17 @@ describe('Backoffice: trocar o e-mail de acesso (Backoffice - acesso RN09; decis
     expect(alerts).toHaveLength(1);
     expect(alerts[0].data).toMatchObject({ byRole: 'admin', repeatWithin7Days: true });
 
-    const general = await http()
-      .get(`/v1/admin/weddings/${weddingId}`)
-      .set('Cookie', admin.cookie)
-      .expect(200);
-    const person = (
-      general.body.general.people as { userId: string; accessChangeLockedUntil: string | null }[]
-    ).find((item) => item.userId === ana.userId);
+    const { people } = await general(admin.cookie, weddingId);
+    const person = people.find((item) => item.userId === ana.userId);
     const changedAt = (await db.user.findUniqueOrThrow({ where: { id: ana.userId } }))
       .accessEmailChangedAt!;
     expect(person?.accessChangeLockedUntil).toBe(
       new Date(changedAt.getTime() + 48 * HOUR_MS).toISOString(),
     );
+    // Decisão 316(11)(b): a 2ª troca em 7 dias é só do Admin, até aqui; a colaboradora, nada.
+    expect(person?.accessEmailAdminOnlyUntil).toBe(
+      new Date(changedAt.getTime() + 7 * 24 * HOUR_MS).toISOString(),
+    );
+    expect(people.find((item) => item.userId !== ana.userId)?.accessEmailAdminOnlyUntil).toBeNull();
   });
 });
