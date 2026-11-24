@@ -41,6 +41,7 @@ import {
   type AdminWeddingDetail,
   type AdminWeddingTab,
 } from '@/modules/backoffice/application/admin-weddings.use-cases';
+import { AdminLogActorResponse } from './admin-log-actor.dto';
 
 class PageQuery {
   /** A página, a partir de 1. */
@@ -322,6 +323,8 @@ class AdminWeddingLogEntryResponse {
   @ApiProperty({ type: Object, nullable: true }) data: unknown;
   /** O hash do IP, curto; nunca o IP. */
   @ApiProperty({ type: String, nullable: true }) ipHashShort: string | null;
+  /** Quem agiu, como no Log da aplicação; nulo no sistema e no convidado (decisão 320(2)). */
+  @ApiProperty({ type: AdminLogActorResponse, nullable: true }) actor: AdminLogActorResponse | null;
 }
 
 class AdminWeddingLogResponse {

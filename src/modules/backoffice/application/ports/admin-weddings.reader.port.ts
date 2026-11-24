@@ -1,3 +1,4 @@
+import type { AdminLogRow } from './admin-insights.reader.port';
 import type { StaffRole } from '@/modules/backoffice/domain/staff';
 
 /** Os status do filtro da lista (RN05; decisão 251(3)): o Bloqueado vale por cima do status. */
@@ -143,6 +144,8 @@ export interface AdminWeddingLogEntry {
   data: unknown;
   /** O hash do IP, curto (RN06). */
   ipHashShort: string | null;
+  /** Quem agiu, como no Log da aplicação (decisões 316(11)(c) e 320(2)). */
+  actor: AdminLogRow['actor'];
 }
 
 export interface Page<T> {

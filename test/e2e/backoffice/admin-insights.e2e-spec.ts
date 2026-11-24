@@ -385,6 +385,13 @@ describe('Backoffice: visão geral, busca, log e alertas (Backoffice - acesso RN
         coupleNames: 'Ana & Marcos',
       },
     ]);
+    // Decisão 320(2): a aba Log do detalhe do casamento traz o mesmo actor.
+    const tab = await get(admin.cookie, `/weddings/${weddingId}`, { tab: 'log' }).expect(200);
+    const tabRows = (tab.body.log.items as { action: string; actor: unknown }[])
+      .filter((item) => !item.action.startsWith('admin.'))
+      .map(({ action, actor }) => ({ action, actor }));
+    expect(tabRows).toEqual(rows.map(({ action, actor }) => ({ action, actor })));
+
     const byUser = await get(admin.cookie, '/logs', {
       userId: juliana.userId,
       action: 'pix_key.changed',

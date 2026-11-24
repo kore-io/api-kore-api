@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@/generated/prisma/client';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
+import { loadLogActors } from './log-actors';
 import { RECENT_ACCESS_CHANGE_MS } from '@/modules/access/domain/members/recent-access-change';
 import type { StaffRole } from '@/modules/backoffice/domain/staff';
 import {
@@ -338,6 +339,7 @@ export class PrismaAdminWeddingsReader implements AdminWeddingsReader {
         take: LOG_PAGE_SIZE,
       }),
     ]);
+    const actors = await loadLogActors({ db: this.db, rows });
     return {
       items: rows.map((row) => ({
         id: row.id,
@@ -349,6 +351,7 @@ export class PrismaAdminWeddingsReader implements AdminWeddingsReader {
         entityId: row.entityId,
         data: row.data,
         ipHashShort: row.ipHash ? row.ipHash.slice(0, IP_HASH_SHORT) : null,
+        actor: actors.actorOf(row),
       })),
       page,
       pageSize: LOG_PAGE_SIZE,
