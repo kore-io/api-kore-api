@@ -28044,6 +28044,17 @@
             "description": "A troca do e-mail pelo staff trava chave Pix e remoção de membros até aqui (decisão 253(2)).",
             "format": "date-time"
           },
+          "since": {
+            "type": "string",
+            "description": "Desde quando tem acesso: a data do vínculo, o \"desde\" das Pessoas com acesso (316(11)(f)).",
+            "format": "date-time"
+          },
+          "accessEmailAdminOnlyUntil": {
+            "type": "string",
+            "nullable": true,
+            "description": "Até quando uma nova troca do e-mail desta pessoa é só do Admin (a 2ª em 7\ndias; RN09 e decisão 253(1)): o suporte vê o botão desabilitado com a causa.",
+            "format": "date-time"
+          },
           "email": {
             "type": "string"
           }
@@ -28053,7 +28064,28 @@
           "name",
           "role",
           "accessChangeLockedUntil",
+          "since",
+          "accessEmailAdminOnlyUntil",
           "email"
+        ]
+      },
+      "AdminAccessEmailChangeResponse": {
+        "type": "object",
+        "properties": {
+          "lockedUntil": {
+            "type": "string",
+            "nullable": true,
+            "description": "As 3 conferências erradas em 24 h travam a troca até aqui (para qualquer\npapel; o Admin libera); nulo sem a trava.",
+            "format": "date-time"
+          },
+          "payerCheck": {
+            "type": "boolean",
+            "description": "Há pagamento: o Dialog pede os 4 últimos do CPF de quem pagou (a 3ª conferência)."
+          }
+        },
+        "required": [
+          "lockedUntil",
+          "payerCheck"
         ]
       },
       "AdminPendingPaymentResponse": {
@@ -28195,6 +28227,9 @@
             "items": {
               "$ref": "#/components/schemas/AdminPersonResponse"
             }
+          },
+          "accessEmailChange": {
+            "$ref": "#/components/schemas/AdminAccessEmailChangeResponse"
           },
           "publishedAt": {
             "type": "string",
