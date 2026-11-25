@@ -182,7 +182,9 @@ export class ListMyWeddings {
             ? true
             : status === 'awaiting_payment'
               ? awaiting.has(row.weddingId)
-              : row.status === status,
+              : // O Rascunho deixa de fora os aguardando pagamento, que têm o
+                // filtro próprio (decisões 316(15) e 338(11)).
+                row.status === status && !(status === 'draft' && awaiting.has(row.weddingId)),
         )
         .map((row) => itemOf({ row, userId, awaitingPayment: awaiting.has(row.weddingId) })),
     };

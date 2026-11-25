@@ -174,6 +174,41 @@ describe('Comissões: a leitura da indicadora (Comissões RN07, RN08 e RN10; ban
     });
   });
 
+  it('RN08 (decisões 316(15) e 338(11)) - Meus casamentos: o filtro Rascunho deixa de fora o aguardando pagamento', async () => {
+    const juliana = await planner();
+    const { ana, weddingId: awaitingId } = await referred(juliana);
+    const { weddingId: draftId } = await referred(juliana);
+    expectStatus(
+      await payForPublication({
+        app,
+        cookie: ana.cookie,
+        weddingId: awaitingId,
+        endDate,
+        method: 'pix',
+      }),
+      201,
+    );
+    const ids = async (status: string) =>
+      (
+        (
+          await http()
+            .get('/v1/me/weddings')
+            .query({ status })
+            .set('Cookie', juliana.cookie)
+            .expect(200)
+        ).body.weddings as { weddingId: string; status: string }[]
+      ).map((item) => item.weddingId);
+    expect(await ids('draft')).toEqual([draftId]);
+    expect(await ids('awaiting_payment')).toEqual([awaitingId]);
+    // Os dois seguem com o status draft na lista sem filtro.
+    const all = await http().get('/v1/me/weddings').set('Cookie', juliana.cookie).expect(200);
+    expect(
+      (all.body.weddings as { weddingId: string; status: string }[])
+        .filter((item) => [awaitingId, draftId].includes(item.weddingId))
+        .map((item) => item.status),
+    ).toEqual(['draft', 'draft']);
+  });
+
   it('RN08 - Meus casamentos: Aguardando pagamento e Comissão disponível no Resumo; o item marcado', async () => {
     const juliana = await planner();
     const { ana, weddingId } = await referred(juliana);
