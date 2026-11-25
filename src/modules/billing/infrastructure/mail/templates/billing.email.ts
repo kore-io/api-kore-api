@@ -181,7 +181,10 @@ export function endDateSoonEmail({
   });
 }
 
-/** No 1º e no 5º dia depois da data de saída do ar (RN03; textos da Pena). */
+/**
+ * No 1º e no 5º dia depois da data de saída do ar (RN03; textos da Pena), com
+ * a saudação (decisões 318(11) e 342(1)).
+ */
 export function graceEmail({ notice, url }: { notice: GraceNotice; url: string }): EmailMessage {
   const until = formatShortDay(notice.graceUntil);
   return message({
@@ -189,6 +192,7 @@ export function graceEmail({ notice, url }: { notice: GraceNotice; url: string }
     subject: `O site sai do ar depois de ${until}`,
     preheader: 'A data de saída do ar passou.',
     blocks: [
+      { kind: 'paragraph', text: `Olá, ${notice.firstName}.` },
       {
         kind: 'paragraph',
         text: `A data de saída do ar passou, e o site fica no ar só até ${until} Depois, os convidados não conseguem mais abrir o site.`,
@@ -204,7 +208,8 @@ export function graceEmail({ notice, url }: { notice: GraceNotice; url: string }
  * o paidThrough depois do expiredAt: voltar ao ar sem custo, sem o prazo de
  * renovar e sem valor de pagamento. Sem mês pago à frente e sem data possível
  * para renovar (renewUntil nulo), a versão sem renovação (decisões 318(9) e
- * (11) e 338(2)): Exportar os convidados, como no aviso de expurgo.
+ * (11) e 338(2)): Exportar os convidados, como no aviso de expurgo. As três
+ * versões abrem com a saudação (decisões 318(11) e 342(1)).
  */
 export function siteExpiredEmail({
   notice,
@@ -222,6 +227,7 @@ export function siteExpiredEmail({
       subject: 'O site saiu do ar',
       preheader: `Vocês já pagaram até ${paid} Voltem o site ao ar, sem custo.`,
       blocks: [
+        { kind: 'paragraph', text: `Olá, ${notice.firstName}.` },
         {
           kind: 'paragraph',
           text: `O site de vocês saiu do ar em ${formatShortDay(notice.expiredAt)}, mas vocês já pagaram até ${paid} Voltem o site ao ar, sem custo. Os dados continuam guardados.`,
@@ -257,6 +263,7 @@ export function siteExpiredEmail({
     subject: 'O site saiu do ar',
     preheader: 'Renovem para os convidados voltarem a vê-lo.',
     blocks: [
+      { kind: 'paragraph', text: `Olá, ${notice.firstName}.` },
       {
         kind: 'paragraph',
         text: `O site de vocês saiu do ar em ${formatShortDay(notice.expiredAt)} Os dados continuam guardados, e vocês podem renovar até ${formatDay(notice.renewUntil)}.`,

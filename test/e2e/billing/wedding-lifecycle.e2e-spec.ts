@@ -122,7 +122,7 @@ describe('Carência, expirado e avisos (Data de saída do ar RN01 a RN03; banco 
     expect(email.Subject).toBe(subject);
   });
 
-  it('RN01 e RN02 - no dia seguinte à endDate entra na carência até endDate + 7, com o aviso do 1º dia', async () => {
+  it('RN01, RN02 e decisão 342(1) - no dia seguinte à endDate entra na carência até endDate + 7, com o aviso do 1º dia e a saudação', async () => {
     const { ana, weddingId } = await published();
     expect(await run(weddingId, addDays({ day: endDate, days: 1 }))).toMatchObject({ grace: 1 });
     const grace = await wedding(weddingId);
@@ -134,7 +134,8 @@ describe('Carência, expirado e avisos (Data de saída do ar RN01 a RN03; banco 
     expect((await notices(weddingId)).map((row) => row.notice)).toContain('grace_day_1');
     // O e-mail do 1º dia sai pela fila (RN03).
     const graceSubject = `O site sai do ar depois de ${formatShortDay(addDays({ day: endDate, days: 7 }))}`;
-    await waitForInbox({ to: ana.email, subject: graceSubject });
+    const [graceMail] = await waitForInbox({ to: ana.email, subject: graceSubject });
+    expect(await messageText({ id: graceMail.ID })).toMatch(/^Olá, Ana\./);
 
     await run(weddingId, addDays({ day: endDate, days: 5 }));
     expect((await notices(weddingId)).map((row) => row.notice)).toContain('grace_day_5');
@@ -142,7 +143,7 @@ describe('Carência, expirado e avisos (Data de saída do ar RN01 a RN03; banco 
     await waitForInbox({ to: ana.email, subject: graceSubject, count: 2 });
   });
 
-  it('RN01, RN02 e RN08 - expira em graceUntil + 1, com o expurgo 6 meses depois, e o site responde 410', async () => {
+  it('RN01, RN02, RN08 e decisão 342(1) - expira em graceUntil + 1, com o expurgo 6 meses depois, e o site responde 410', async () => {
     const { ana, weddingId, slug } = await published();
     await run(weddingId, addDays({ day: endDate, days: 1 }));
     expect(await run(weddingId, addDays({ day: endDate, days: 8 }))).toMatchObject({ expired: 1 });
@@ -157,8 +158,10 @@ describe('Carência, expirado e avisos (Data de saída do ar RN01 a RN03; banco 
       1,
     );
     const [mail] = await waitForInbox({ to: ana.email, subject: 'O site saiu do ar' });
-    // Versão A (o paidThrough não passa do expiredAt): Renovar.
-    expect(await messageText({ id: mail.ID })).toContain('Renovar: ');
+    // Versão A (o paidThrough não passa do expiredAt): a saudação e Renovar.
+    const expiredText = await messageText({ id: mail.ID });
+    expect(expiredText).toMatch(/^Olá, Ana\./);
+    expect(expiredText).toContain('Renovar: ');
     const items = await billingItems(weddingId);
     expect(items.at(-1)?.payload).toEqual([
       expect.objectContaining({
@@ -175,7 +178,7 @@ describe('Carência, expirado e avisos (Data de saída do ar RN01 a RN03; banco 
       .expect(410);
   });
 
-  it('RN03 e decisão 293(7) - quem antecipou e expirou com mês pago à frente recebe a versão B: voltar ao ar sem custo (central e e-mail)', async () => {
+  it('RN03, decisões 293(7) e 342(1) - quem antecipou e expirou com mês pago à frente recebe a versão B: voltar ao ar sem custo (central e e-mail, com a saudação)', async () => {
     const { ana, weddingId } = await published();
     // Antecipou a data para endDate − 10 e manteve o paidThrough em endDate.
     const earlier = addDays({ day: endDate, days: -10 });
@@ -195,6 +198,7 @@ describe('Carência, expirado e avisos (Data de saída do ar RN01 a RN03; banco 
     ]);
     const [mail] = await waitForInbox({ to: ana.email, subject: 'O site saiu do ar' });
     const text = await messageText({ id: mail.ID });
+    expect(text).toMatch(/^Olá, Ana\./);
     expect(text).toContain(
       `O site de vocês saiu do ar em ${formatShortDay(expiredAt)}, mas vocês já pagaram até ${formatShortDay(endDate)} Voltem o site ao ar, sem custo. Os dados continuam guardados.`,
     );

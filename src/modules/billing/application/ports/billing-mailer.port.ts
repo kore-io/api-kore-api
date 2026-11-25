@@ -35,6 +35,8 @@ export interface EndDateSoonNotice {
 
 export interface GraceNotice {
   to: string;
+  /** A saudação (decisões 318(11) e 342(1)). */
+  firstName: string;
   /** O último dia no ar, AAAA-MM-DD. */
   graceUntil: string;
   partnerNames: [string, string];
@@ -42,7 +44,7 @@ export interface GraceNotice {
 
 export interface SiteExpiredNotice {
   to: string;
-  /** A saudação da versão sem renovação (decisão 318(11)). */
+  /** A saudação das três versões (decisões 318(11) e 342(1)). */
   firstName: string;
   /** AAAA-MM-DD. */
   expiredAt: string;
