@@ -10,6 +10,8 @@ export interface DueNotice {
   expiredAt: string | null;
   /** AAAA-MM-DD: até onde está pago (a versão B do aviso de expirado; decisão 293(7)). */
   paidThrough: string | null;
+  /** AAAA-MM-DD: o dia em que os dados são apagados (Retenção e expurgo RN02; decisão 336(3)). */
+  purgeAt: string | null;
   eventDate: string | null;
   timezone: string | null;
   /** Dias até a endDate, no fuso do casamento (só no aviso de antes). */

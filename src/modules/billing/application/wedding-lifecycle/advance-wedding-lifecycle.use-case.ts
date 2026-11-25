@@ -142,9 +142,11 @@ function paidAheadOf(due: DueNotice): string | null {
  * O item da central (RN03): o app monta o texto da Pena com as datas ("O site
  * fica no ar até 14 de fev., daqui a 7 dias…", "…só até 21 de fev", "O site
  * saiu do ar…", e na versão B "…Vocês já pagaram até 14 de fev.: voltem o
- * site ao ar, sem custo", pelo paidThrough); sem valor de pagamento.
+ * site ao ar, sem custo", pelo paidThrough); sem valor de pagamento. O
+ * expirado leva o purgeAt ("Os dados ficam guardados até…", decisão 336(3));
+ * nulo quando o casamento não tem.
  */
-function payloadOf({
+export function payloadOf({
   due,
   renewUntil,
   paidAhead,
@@ -169,6 +171,13 @@ function payloadOf({
         at,
       };
     case 'expired':
-      return { kind: 'expired', expiredAt: due.expiredAt, renewUntil, paidThrough: paidAhead, at };
+      return {
+        kind: 'expired',
+        expiredAt: due.expiredAt,
+        renewUntil,
+        paidThrough: paidAhead,
+        purgeAt: due.purgeAt,
+        at,
+      };
   }
 }
