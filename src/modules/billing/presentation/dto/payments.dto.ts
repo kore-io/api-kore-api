@@ -200,7 +200,13 @@ export class PaymentCreatedResponse {
 export class PendingPaymentDto {
   @ApiProperty({ format: 'uuid' }) paymentId: string;
   @ApiProperty({ enum: ['publication', 'extension'] }) kind: 'publication' | 'extension';
+  /** A forma do pendente: o Publicar volta com ela escolhida (decisão 324). */
   @ApiProperty({ enum: ['pix', 'card'] }) method: 'pix' | 'card';
+  /**
+   * A data de saída do ar pedida (o `endDate` do POST …/payments): o Publicar
+   * volta com ela preenchida (decisão 324(3)).
+   */
+  @ApiProperty({ example: '2027-02-14' }) endDate: string;
   @ApiProperty() amountCents: number;
   @ApiProperty({ type: String, format: 'date-time', nullable: true }) dueAt: string | null;
   @ApiProperty({ type: String, nullable: true }) pixCopyPaste: string | null;
