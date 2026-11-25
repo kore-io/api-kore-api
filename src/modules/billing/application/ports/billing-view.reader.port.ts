@@ -16,6 +16,8 @@ export interface BillingPendingPayment {
   paymentId: string;
   kind: 'publication' | 'extension';
   method: 'pix' | 'card';
+  /** A data de saída do ar pedida (o `endDate` do POST), AAAA-MM-DD (decisão 324(3)). */
+  endDate: string;
   amountCents: number;
   dueAt: Date | null;
   pixCopyPaste: string | null;

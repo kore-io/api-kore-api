@@ -26080,11 +26080,17 @@
             "type": "string"
           },
           "method": {
+            "description": "A forma do pendente: o Publicar volta com ela escolhida (decisão 324).",
             "enum": [
               "pix",
               "card"
             ],
             "type": "string"
+          },
+          "endDate": {
+            "type": "string",
+            "description": "A data de saída do ar pedida (o `endDate` do POST …/payments): o Publicar\nvolta com ela preenchida (decisão 324(3)).",
+            "example": "2027-02-14"
           },
           "amountCents": {
             "type": "number"
@@ -26103,6 +26109,7 @@
           "paymentId",
           "kind",
           "method",
+          "endDate",
           "amountCents",
           "dueAt",
           "pixCopyPaste"

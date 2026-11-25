@@ -229,6 +229,7 @@ describe('Publicar e pagar (Publicar e pagar RN01 a RN12; banco real)', () => {
       pendingPayment: {
         paymentId: created.body.paymentId,
         method: 'pix',
+        endDate,
         pixCopyPaste: (created.body.pix as { copyPaste: string }).copyPaste,
       },
       payments: [],
@@ -246,6 +247,24 @@ describe('Publicar e pagar (Publicar e pagar RN01 a RN12; banco real)', () => {
       publicationSource: null,
       awaitingPayment: true,
     });
+  });
+
+  it('RN07 (decisão 324(3)) - o pendente no GET …/billing traz a data de saída do ar pedida e a forma, para o Publicar voltar preenchido', async () => {
+    const { ana, weddingId } = await scenario();
+    const created = await pay({ cookie: ana.cookie, weddingId }).expect(201);
+
+    const owner = await billing(ana.cookie, weddingId);
+    expect(owner.body.pendingPayment).toEqual({
+      paymentId: created.body.paymentId,
+      kind: 'publication',
+      method: 'card',
+      endDate,
+      amountCents: created.body.amountCents,
+      dueAt: null,
+      pixCopyPaste: null,
+    });
+    // O casamento ainda não tem data: a do pendente é a pedida, não a gravada.
+    expect(owner.body.endDate).toBeNull();
   });
 
   it('RN03 (B2-10) - a mesma chave e o mesmo corpo devolvem o mesmo pagamento; outro corpo, 422', async () => {
