@@ -1,11 +1,15 @@
 import type { PaymentsCsvRow } from '@/modules/backoffice/domain/payments-csv';
 import type { Page } from './admin-weddings.reader.port';
 
-/** Os status do filtro da Cobrança (RN03): "Falhou" é o "Não aprovado" do casal. */
+/**
+ * Os status do filtro da Cobrança (RN03): "Falhou" é o "Não aprovado" do casal;
+ * com o Cancelado (decisões 318(4) e 338(22)).
+ */
 export const ADMIN_PAYMENT_STATUSES = [
   'pending',
   'paid',
   'failed',
+  'canceled',
   'refund_requested',
   'refunded',
   'disputed',

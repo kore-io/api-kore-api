@@ -10697,6 +10697,7 @@
                 "pending",
                 "paid",
                 "failed",
+                "canceled",
                 "refund_requested",
                 "refunded",
                 "disputed"
