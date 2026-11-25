@@ -42,9 +42,14 @@ export interface GraceNotice {
 
 export interface SiteExpiredNotice {
   to: string;
+  /** A saudação da versão sem renovação (decisão 318(11)). */
+  firstName: string;
   /** AAAA-MM-DD. */
   expiredAt: string;
-  /** Até quando dá para renovar (12 meses depois do casamento); nulo sem data. */
+  /**
+   * Até quando dá para renovar (12 meses depois do casamento); nulo sem data
+   * possível dentro do limite (o expirado sem renovação, decisão 338(2)).
+   */
   renewUntil: string | null;
   /**
    * A versão B (decisão 293(7)): o paidThrough, AAAA-MM-DD, quando é depois do
@@ -52,6 +57,8 @@ export interface SiteExpiredNotice {
    * sem custo); nulo na versão A (renovar).
    */
   paidAhead: string | null;
+  /** AAAA-MM-DD: o dia em que os dados são apagados (Retenção e expurgo RN02). */
+  purgeAt: string | null;
   partnerNames: [string, string];
 }
 
