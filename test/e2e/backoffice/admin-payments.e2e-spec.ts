@@ -195,6 +195,51 @@ describe('Backoffice: Cobrança (Backoffice - cobrança RN02 a RN07 e RN11; banc
     );
   });
 
+  it('RN03 (decisões 318(4) e 338(22)) - o filtro Cancelado traz o pagamento cancelado, e os outros status não', async () => {
+    const admin = await staffUser({ app, role: 'admin' });
+    const since = new Date(Date.now() - 1000).toISOString();
+    // O Pix de extensão aberto que a cortesia cancela (B10-5): um cancelado de verdade.
+    const { ana, weddingId } = await paid();
+    const pix = await payForExtension({
+      app,
+      cookie: ana.cookie,
+      weddingId,
+      endDate: addMonths({ day: endDate, months: 3 }),
+      method: 'pix',
+    });
+    expectStatus(pix, 201);
+    const paymentId = pix.body.paymentId as string;
+    await post(admin.cookie, `/weddings/${weddingId}/courtesy`, {
+      months: 1,
+      reason: 'Compensação do bloqueio.',
+    }).expect(200);
+    await until(
+      () => db.payment.findUniqueOrThrow({ where: { id: paymentId } }),
+      (payment) => payment.status === 'canceled',
+    );
+    const period = { from: since, to: new Date(Date.now() + 1000).toISOString() };
+    const ids = async (status: string) => {
+      const items: { id: string; status: string }[] = [];
+      for (let page = 1; page <= 20; page++) {
+        const body = (
+          await get(admin.cookie, '/payments', { ...period, status, page: String(page) }).expect(
+            200,
+          )
+        ).body as { items: { id: string; status: string }[]; pageSize: number };
+        items.push(...body.items);
+        if (body.items.length < body.pageSize) break;
+      }
+      return items;
+    };
+    const canceled = await ids('canceled');
+    expect(canceled.find((item) => item.id === paymentId)).toMatchObject({ status: 'canceled' });
+    expect(canceled.every((item) => item.status === 'canceled')).toBe(true);
+    expect((await ids('paid')).map((item) => item.id)).not.toContain(paymentId);
+    expect(
+      (await get(admin.cookie, '/payments', { status: 'cancelled' }).expect(400)).body.error,
+    ).toBeDefined();
+  });
+
   it('RN04 - o detalhe: a taxa, o líquido, os juros, a comissão com o percentual, o indicador, o id do gateway, o prazo da contestação e as tentativas do estorno; a aba Cobrança com a comissão', async () => {
     const admin = await staffUser({ app, role: 'admin' });
     const seeded = await seedReferrer({ db, kind: 'planner', name: 'Juliana Prado' });
