@@ -128,21 +128,22 @@ describe('Os avisos de saída do ar (Data de saída do ar RN03; textos da Pena)'
     expect(email.text).not.toContain('daqui a');
   });
 
-  it('RN03 - 1º e 5º dia: o último dia no ar, sem a palavra carência', () => {
+  it('RN03 e decisão 342(1) - 1º e 5º dia: a saudação, o último dia no ar, sem a palavra carência', () => {
     const email = graceEmail({
       notice: { to: 'ana@kore.local', firstName: 'Ana', graceUntil: '2027-02-21', partnerNames },
       url,
     });
     expect(email.subject).toBe('O site sai do ar depois de 21 de fev.');
     expect(email.html).toContain('A data de saída do ar passou.');
-    expect(email.text).toContain(
+    expect(email.text.split('\n\n').slice(0, 3)).toEqual([
+      'Olá, Ana.',
       'A data de saída do ar passou, e o site fica no ar só até 21 de fev. Depois, os convidados não conseguem mais abrir o site.',
-    );
-    expect(email.text).toContain(`Adiar a data: ${url}`);
+      `Adiar a data: ${url}`,
+    ]);
     expect(email.text.toLowerCase()).not.toContain('carência');
   });
 
-  it('RN03 - expirado: desde quando e até quando renovar, com Renovar', () => {
+  it('RN03 e decisão 342(1) - expirado (versão A): a saudação, desde quando e até quando renovar, com Renovar', () => {
     const email = siteExpiredEmail({
       notice: {
         to: 'ana@kore.local',
@@ -158,14 +159,15 @@ describe('Os avisos de saída do ar (Data de saída do ar RN03; textos da Pena)'
     });
     expect(email.subject).toBe('O site saiu do ar');
     expect(email.html).toContain('Renovem para os convidados voltarem a vê-lo.');
-    expect(email.text).toContain(
+    expect(email.text.split('\n\n').slice(0, 3)).toEqual([
+      'Olá, Ana.',
       'O site de vocês saiu do ar em 22 de fev. Os dados continuam guardados, e vocês podem renovar até 14 de nov. de 2027.',
-    );
-    expect(email.text).toContain(`Renovar: ${url}`);
+      `Renovar: ${url}`,
+    ]);
     expect(email.text).not.toMatch(/R\$/);
   });
 
-  it('RN03 e decisão 293(7) - expirado com mês pago à frente (versão B): voltar ao ar sem custo, com Voltar ao ar', () => {
+  it('RN03, decisões 293(7) e 342(1) - expirado com mês pago à frente (versão B): a saudação, voltar ao ar sem custo, com Voltar ao ar', () => {
     const email = siteExpiredEmail({
       notice: {
         to: 'ana@kore.local',
@@ -181,10 +183,11 @@ describe('Os avisos de saída do ar (Data de saída do ar RN03; textos da Pena)'
     });
     expect(email.subject).toBe('O site saiu do ar');
     expect(email.html).toContain('Vocês já pagaram até 14 de fev. Voltem o site ao ar, sem custo.');
-    expect(email.text).toContain(
+    expect(email.text.split('\n\n').slice(0, 3)).toEqual([
+      'Olá, Ana.',
       'O site de vocês saiu do ar em 18 de jan., mas vocês já pagaram até 14 de fev. Voltem o site ao ar, sem custo. Os dados continuam guardados.',
-    );
-    expect(email.text).toContain(`Voltar ao ar: ${url}`);
+      `Voltar ao ar: ${url}`,
+    ]);
     expect(email.text).not.toContain('Renov');
     expect(email.text).not.toContain('podem renovar');
     expect(email.text).not.toMatch(/R\$/);
