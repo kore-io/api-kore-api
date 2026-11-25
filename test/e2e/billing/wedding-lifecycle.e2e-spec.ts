@@ -6,7 +6,10 @@ import { Prisma } from '@/generated/prisma/client';
 import { AdvanceWeddingLifecycle } from '@/modules/billing/application/wedding-lifecycle/advance-wedding-lifecycle.use-case';
 import { PurgeRetainedWeddings } from '@/modules/billing/application/wedding-lifecycle/purge-retained-weddings.use-case';
 import { addDays, addMonths } from '@/modules/billing/domain/payments/pricing';
-import { formatShortDay } from '@/modules/billing/infrastructure/mail/templates/billing.email';
+import {
+  formatDay,
+  formatShortDay,
+} from '@/modules/billing/infrastructure/mail/templates/billing.email';
 import { BackofficePrismaService } from '@/shared/database/backoffice-prisma.service';
 import { localDate } from '@/shared/kernel/time/local-date';
 import { createTestApp } from '../support/harness/create-test-app';
@@ -248,6 +251,43 @@ describe('Carência, expirado e avisos (Data de saída do ar RN01 a RN03; banco 
     ]);
     const [mail] = await waitForInbox({ to: ana.email, subject: 'O site saiu do ar' });
     expect(await messageText({ id: mail.ID })).toContain('Renovar: ');
+  });
+
+  it('RN03 e decisão 338(2) - expirado depois do limite de 12 meses: sem renovação, com o renewUntil nulo e o e-mail com Exportar os convidados', async () => {
+    const { ana, weddingId } = await published();
+    // O limite de 12 meses depois do casamento é a própria endDate: ao expirar, já passou.
+    await db.wedding.update({
+      where: { id: weddingId },
+      data: { eventDate: day(addMonths({ day: endDate, months: -12 })) },
+    });
+    await run(weddingId, addDays({ day: endDate, days: 1 }));
+    const expiredAt = addDays({ day: endDate, days: 8 });
+    expect(await run(weddingId, expiredAt)).toMatchObject({ expired: 1 });
+    const purgeAt = addMonths({ day: expiredAt, months: 6 });
+    const items = await billingItems(weddingId);
+    expect(items.at(-1)?.payload).toEqual([
+      expect.objectContaining({
+        kind: 'expired',
+        expiredAt,
+        renewUntil: null,
+        paidThrough: null,
+        purgeAt,
+      }),
+    ]);
+    const [mail] = await waitForInbox({
+      to: ana.email,
+      subject: 'O site saiu do ar e não pode mais ser renovado',
+    });
+    const text = await messageText({ id: mail.ID });
+    expect(text).toContain('Olá, Ana.');
+    expect(text).toContain(
+      `O site de vocês saiu do ar em ${formatShortDay(expiredAt)} Ele chegou ao prazo máximo, 12 meses depois do casamento, e não pode mais ser renovado.`,
+    );
+    expect(text).toContain(
+      `Os convidados, as respostas e o site ficam guardados até ${formatDay(purgeAt)}. Para guardar a lista, exportem os convidados.`,
+    );
+    expect(text).toMatch(/Exportar os convidados: http\S+\/app\/convidados\/exportar/);
+    expect(text).not.toContain('Renovar');
   });
 
   it('decisão 336(3) - a central da dona traz o purgeAt no item do expirado; o item gravado antes do campo volta sem ele', async () => {

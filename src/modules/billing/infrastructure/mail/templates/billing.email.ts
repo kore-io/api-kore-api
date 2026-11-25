@@ -202,14 +202,18 @@ export function graceEmail({ notice, url }: { notice: GraceNotice; url: string }
 /**
  * Quando o site expira (RN03; textos da Pena). Versão B (decisão 293(7)), com
  * o paidThrough depois do expiredAt: voltar ao ar sem custo, sem o prazo de
- * renovar e sem valor de pagamento.
+ * renovar e sem valor de pagamento. Sem mês pago à frente e sem data possível
+ * para renovar (renewUntil nulo), a versão sem renovação (decisões 318(9) e
+ * (11) e 338(2)): Exportar os convidados, como no aviso de expurgo.
  */
 export function siteExpiredEmail({
   notice,
   url,
+  exportUrl,
 }: {
   notice: SiteExpiredNotice;
   url: string;
+  exportUrl: string;
 }): EmailMessage {
   if (notice.paidAhead) {
     const paid = formatShortDay(notice.paidAhead);
@@ -227,9 +231,27 @@ export function siteExpiredEmail({
       footer: OWNER_FOOTER(notice.partnerNames),
     });
   }
-  const renew = notice.renewUntil
-    ? `, e vocês podem renovar até ${formatDay(notice.renewUntil)}`
-    : '';
+  if (!notice.renewUntil) {
+    // Sem o purgeAt (não acontece no expirado: a passagem grava os dois), sem a data.
+    const kept = notice.purgeAt
+      ? `Os convidados, as respostas e o site ficam guardados até ${formatDay(notice.purgeAt)}. `
+      : '';
+    return message({
+      to: notice.to,
+      subject: 'O site saiu do ar e não pode mais ser renovado',
+      preheader: 'Exportem os convidados antes de os dados serem apagados.',
+      blocks: [
+        { kind: 'paragraph', text: `Olá, ${notice.firstName}.` },
+        {
+          kind: 'paragraph',
+          text: `O site de vocês saiu do ar em ${formatShortDay(notice.expiredAt)} Ele chegou ao prazo máximo, 12 meses depois do casamento, e não pode mais ser renovado.`,
+        },
+        { kind: 'paragraph', text: `${kept}Para guardar a lista, exportem os convidados.` },
+        { kind: 'button', text: 'Exportar os convidados', href: exportUrl },
+      ],
+      footer: OWNER_FOOTER(notice.partnerNames),
+    });
+  }
   return message({
     to: notice.to,
     subject: 'O site saiu do ar',
@@ -237,7 +259,7 @@ export function siteExpiredEmail({
     blocks: [
       {
         kind: 'paragraph',
-        text: `O site de vocês saiu do ar em ${formatShortDay(notice.expiredAt)} Os dados continuam guardados${renew}.`,
+        text: `O site de vocês saiu do ar em ${formatShortDay(notice.expiredAt)} Os dados continuam guardados, e vocês podem renovar até ${formatDay(notice.renewUntil)}.`,
       },
       { kind: 'button', text: 'Renovar', href: url },
     ],

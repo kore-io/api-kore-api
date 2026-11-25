@@ -80,7 +80,11 @@ export class OutboxBillingMailer implements BillingMailer {
 
   async siteExpired({ notice }: { notice: SiteExpiredNotice }): Promise<void> {
     await this.outbox.enqueue({
-      message: siteExpiredEmail({ notice, url: this.billingUrl() }),
+      message: siteExpiredEmail({
+        notice,
+        url: this.billingUrl(),
+        exportUrl: new URL(EXPORT_PATH, this.appUrl).toString(),
+      }),
       priority: 'default',
     });
   }

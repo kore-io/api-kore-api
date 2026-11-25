@@ -1,7 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { BackofficeTransaction } from '@/shared/database/backoffice-transaction';
 import { endDateRange } from '@/modules/site/domain/publication';
-import { CURRENT_PRICE_TABLE } from '@/modules/billing/domain/payments/pricing';
+import { addDays, CURRENT_PRICE_TABLE } from '@/modules/billing/domain/payments/pricing';
+import { localDate } from '@/shared/kernel/time/local-date';
 import {
   BILLING_MAILER,
   type BillingMailer,
@@ -75,9 +76,7 @@ export class AdvanceWeddingLifecycle {
       if (!recorded) return false;
       const recipients = await this.ledger.billingRecipients({ weddingId: due.weddingId });
       const partnerNames = await this.ledger.partnerNames({ weddingId: due.weddingId });
-      const renewUntil =
-        endDateRange({ eventDate: due.eventDate, timezone: due.timezone ?? 'America/Sao_Paulo' })
-          ?.max ?? null;
+      const renewUntil = renewUntilOf({ due, now });
       const paidAhead = paidAheadOf(due);
       await this.ledger.notifyEndDateNotice({
         weddingId: due.weddingId,
@@ -114,9 +113,11 @@ export class AdvanceWeddingLifecycle {
               return this.mailer.siteExpired({
                 notice: {
                   to: recipient.email,
+                  firstName: recipient.firstName,
                   expiredAt: due.expiredAt ?? due.endDate,
                   renewUntil,
                   paidAhead,
+                  purgeAt: due.purgeAt,
                   partnerNames,
                 },
               });
@@ -126,6 +127,22 @@ export class AdvanceWeddingLifecycle {
       return true;
     });
   }
+}
+
+/**
+ * Até quando dá para renovar (Data de saída do ar RN04): o limite de 12 meses
+ * depois do casamento, se ainda houver data possível, isto é, se ele não for
+ * antes da mínima (o maior entre o dia seguinte ao casamento e amanhã, no fuso
+ * do casamento; decisão 335(2)). Nulo é o expirado sem renovação (RN03;
+ * decisões 318(9) e 338(2)), e também sem a data do casamento.
+ */
+export function renewUntilOf({ due, now }: { due: DueNotice; now: Date }): string | null {
+  const timezone = due.timezone ?? 'America/Sao_Paulo';
+  const range = endDateRange({ eventDate: due.eventDate, timezone });
+  if (!range) return null;
+  const tomorrow = addDays({ day: localDate({ at: now, timezone }), days: 1 });
+  const min = tomorrow > range.min ? tomorrow : range.min;
+  return range.max >= min ? range.max : null;
 }
 
 /**

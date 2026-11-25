@@ -23670,6 +23670,7 @@
           "renewUntil": {
             "type": "string",
             "nullable": true,
+            "description": "Expirado: até quando dá para renovar (12 meses depois do casamento); nulo\nsem data possível dentro do limite, o expirado sem renovação (Data de saída\ndo ar RN03; decisão 338(2)).",
             "example": "2027-11-14"
           },
           "paidThrough": {

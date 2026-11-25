@@ -127,6 +127,11 @@ export class BillingEntryResponse {
   @ApiProperty({ required: false, example: '2027-02-21' }) graceUntil?: string;
   /** Expirado: desde quando e até quando dá para renovar. */
   @ApiProperty({ required: false, example: '2027-02-22' }) expiredAt?: string;
+  /**
+   * Expirado: até quando dá para renovar (12 meses depois do casamento); nulo
+   * sem data possível dentro do limite, o expirado sem renovação (Data de saída
+   * do ar RN03; decisão 338(2)).
+   */
   @ApiProperty({ required: false, nullable: true, example: '2027-11-14' }) renewUntil?:
     string | null;
   /**

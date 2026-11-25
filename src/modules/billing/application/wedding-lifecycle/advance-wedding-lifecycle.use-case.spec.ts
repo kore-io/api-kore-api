@@ -1,5 +1,5 @@
 import type { DueNotice } from '@/modules/billing/application/ports/wedding-lifecycle.port';
-import { payloadOf } from './advance-wedding-lifecycle.use-case';
+import { payloadOf, renewUntilOf } from './advance-wedding-lifecycle.use-case';
 
 const now = new Date('2027-02-22T15:00:00Z');
 const expired: DueNotice = {
@@ -48,5 +48,29 @@ describe('payloadOf (Data de saída do ar RN03)', () => {
     });
     expect(soon).not.toHaveProperty('purgeAt');
     expect(grace).not.toHaveProperty('purgeAt');
+  });
+});
+
+describe('renewUntilOf (Data de saída do ar RN03 e RN04; decisão 338(2))', () => {
+  it('RN04 - com data possível, o limite de 12 meses depois do casamento', () => {
+    expect(renewUntilOf({ due: expired, now })).toBe('2027-11-14');
+  });
+
+  it('RN04 - o limite igual a amanhã ainda é data possível', () => {
+    expect(renewUntilOf({ due: expired, now: new Date('2027-11-13T15:00:00Z') })).toBe(
+      '2027-11-14',
+    );
+  });
+
+  it('RN03 e decisão 338(2) - o limite antes de amanhã (no fuso do casamento): nulo, o expirado sem renovação', () => {
+    expect(renewUntilOf({ due: expired, now: new Date('2027-11-14T15:00:00Z') })).toBeNull();
+    // 23h de 13/11 em São Paulo já é 14/11 em UTC: no fuso, amanhã ainda é 14/11.
+    expect(renewUntilOf({ due: expired, now: new Date('2027-11-14T02:00:00Z') })).toBe(
+      '2027-11-14',
+    );
+  });
+
+  it('RN04 - sem a data do casamento, nulo', () => {
+    expect(renewUntilOf({ due: { ...expired, eventDate: null }, now })).toBeNull();
   });
 });
