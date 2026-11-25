@@ -5,8 +5,10 @@ import {
   BILLING_VIEW_READER,
   type BillingLifecycle,
   type BillingMoneyView,
+  type BillingPaymentRow,
   type BillingViewReader,
 } from '@/modules/billing/application/ports/billing-view.reader.port';
+import { refundEndDate } from '@/modules/billing/domain/refunds/refund-end-date';
 import {
   GATEWAY_CUSTOMERS,
   type GatewayCustomers,
@@ -27,8 +29,21 @@ export interface BillingLastPayer {
   payerId: string | null;
 }
 
+/**
+ * O pagamento da lista com a data de volta da extensão (RN03; decisão 327(2)):
+ * a `previousEndDate` gravada fica no servidor, o app recebe a regra aplicada.
+ */
+export type BillingPayment = Omit<BillingPaymentRow, 'previousEndDate'> & {
+  refundEndDate: string | null;
+};
+
 export type BillingView = BillingLifecycle & {
-  money: (Omit<BillingMoneyView, 'lastPayer'> & { lastPayer: BillingLastPayer | null }) | null;
+  money:
+    | (Omit<BillingMoneyView, 'lastPayer' | 'payments'> & {
+        payments: BillingPayment[];
+        lastPayer: BillingLastPayer | null;
+      })
+    | null;
 };
 
 /**
@@ -60,11 +75,20 @@ export class GetBilling {
     if (!lifecycle) throw new WeddingNotFoundError();
     const owner = await this.authorization.can({ userId, weddingId, action: 'manage_billing' });
     if (!owner) return { ...lifecycle, money: null };
-    const { lastPayer, ...money } = await this.reader.money({ weddingId, now });
+    const { lastPayer, payments, ...money } = await this.reader.money({ weddingId, now });
     return {
       ...lifecycle,
       money: {
         ...money,
+        payments: payments.map(({ previousEndDate, ...payment }) => ({
+          ...payment,
+          refundEndDate: refundEndDate({
+            kind: payment.kind,
+            refundable: payment.refundableUntil !== null,
+            endDate: lifecycle.endDate,
+            previousEndDate,
+          }),
+        })),
         lastPayer: lastPayer
           ? {
               name: lastPayer.name,

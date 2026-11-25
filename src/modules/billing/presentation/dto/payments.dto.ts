@@ -233,6 +233,15 @@ export class BillingPaymentDto {
   /** O prazo da defesa, só em contestação (Pagamentos e arrependimento RN06). */
   @ApiProperty({ type: String, nullable: true, example: '2026-09-10' })
   disputeDeadline: string | null;
+  /**
+   * Só na extensão desistível (com `refundableUntil`): a data de saída do ar
+   * para onde a `endDate` volta se ela for desistida, AAAA-MM-DD, já com a
+   * regra da RN03 (`min(endDate atual, a data anterior gravada na
+   * confirmação)`; decisão 327(2)). Nulo na publicação e no que não é
+   * desistível.
+   */
+  @ApiProperty({ type: String, nullable: true, example: '2027-02-14' })
+  refundEndDate: string | null;
 }
 
 export class PayerDto {
