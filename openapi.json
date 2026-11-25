@@ -28408,6 +28408,32 @@
           "total"
         ]
       },
+      "AdminLogActorResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "nullable": true,
+            "description": "O staff (`admin`, `support`), o papel no casamento da linha (`owner`,\n`collaborator`) ou, sem vínculo, o do indicador (`planner`, `seller`);\nnulo se nada disso. O app escolhe o rótulo.",
+            "enum": [
+              "admin",
+              "support",
+              "owner",
+              "collaborator",
+              "planner",
+              "seller"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "role"
+        ]
+      },
       "AdminWeddingLogEntryResponse": {
         "type": "object",
         "properties": {
@@ -28450,6 +28476,16 @@
             "nullable": true,
             "description": "O hash do IP, curto; nunca o IP."
           },
+          "actor": {
+            "nullable": true,
+            "description": "Quem agiu, como no Log da aplicação; nulo no sistema e no convidado (decisão 320(2)).",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AdminLogActorResponse"
+              }
+            ]
+          },
           "action": {
             "type": "string"
           }
@@ -28463,6 +28499,7 @@
           "entityId",
           "data",
           "ipHashShort",
+          "actor",
           "action"
         ]
       },
@@ -29332,32 +29369,6 @@
         "required": [
           "weddings",
           "referrers"
-        ]
-      },
-      "AdminLogActorResponse": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "nullable": true
-          },
-          "role": {
-            "nullable": true,
-            "description": "O staff (`admin`, `support`), o papel no casamento da linha (`owner`,\n`collaborator`) ou, sem vínculo, o do indicador (`planner`, `seller`);\nnulo se nada disso. O app escolhe o rótulo.",
-            "enum": [
-              "admin",
-              "support",
-              "owner",
-              "collaborator",
-              "planner",
-              "seller"
-            ],
-            "type": "string"
-          }
-        },
-        "required": [
-          "name",
-          "role"
         ]
       },
       "AdminLogRowResponse": {

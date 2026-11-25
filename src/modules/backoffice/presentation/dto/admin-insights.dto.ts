@@ -12,16 +12,15 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
-import { ADMIN_LOG_ACTOR_ROLES } from '@/modules/backoffice/application/ports/admin-insights.reader.port';
 import type {
   AdminAlertRow,
   AdminLogRow,
-  AdminLogActorRole,
   AdminOverview,
   AdminSearchResult,
 } from '@/modules/backoffice/application/ports/admin-insights.reader.port';
 import type { Page } from '@/modules/backoffice/application/ports/admin-weddings.reader.port';
 import { ALERT_TYPES } from '@/modules/backoffice/application/admin-insights.use-cases';
+import { AdminLogActorResponse } from './admin-log-actor.dto';
 import { AdminWeddingRowResponse } from './admin-weddings.dto';
 
 class MonthPointResponse {
@@ -126,17 +125,6 @@ export class AdminLogsQuery extends PageQuery {
   @Type(() => Date)
   @IsDate()
   to?: Date;
-}
-
-/** Quem agiu: o nome e o papel (a coluna "Quem (nome e papel)"; decisão 316(11)(c)). */
-class AdminLogActorResponse {
-  @ApiProperty({ type: String, nullable: true }) name: string | null;
-  /**
-   * O staff (`admin`, `support`), o papel no casamento da linha (`owner`,
-   * `collaborator`) ou, sem vínculo, o do indicador (`planner`, `seller`);
-   * nulo se nada disso. O app escolhe o rótulo.
-   */
-  @ApiProperty({ enum: ADMIN_LOG_ACTOR_ROLES, nullable: true }) role: AdminLogActorRole | null;
 }
 
 class AdminLogRowResponse {
