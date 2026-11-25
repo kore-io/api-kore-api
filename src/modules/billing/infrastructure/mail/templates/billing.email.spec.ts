@@ -130,7 +130,7 @@ describe('Os avisos de saída do ar (Data de saída do ar RN03; textos da Pena)'
 
   it('RN03 - 1º e 5º dia: o último dia no ar, sem a palavra carência', () => {
     const email = graceEmail({
-      notice: { to: 'ana@kore.local', graceUntil: '2027-02-21', partnerNames },
+      notice: { to: 'ana@kore.local', firstName: 'Ana', graceUntil: '2027-02-21', partnerNames },
       url,
     });
     expect(email.subject).toBe('O site sai do ar depois de 21 de fev.');

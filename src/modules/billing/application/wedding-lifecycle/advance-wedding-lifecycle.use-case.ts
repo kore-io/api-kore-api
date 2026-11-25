@@ -105,6 +105,7 @@ export class AdvanceWeddingLifecycle {
               return this.mailer.graceStarted({
                 notice: {
                   to: recipient.email,
+                  firstName: recipient.firstName,
                   graceUntil: due.graceUntil ?? due.endDate,
                   partnerNames,
                 },
