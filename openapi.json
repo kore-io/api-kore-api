@@ -26181,6 +26181,12 @@
             "nullable": true,
             "description": "O prazo da defesa, só em contestação (Pagamentos e arrependimento RN06).",
             "example": "2026-09-10"
+          },
+          "refundEndDate": {
+            "type": "string",
+            "nullable": true,
+            "description": "Só na extensão desistível (com `refundableUntil`): a data de saída do ar\npara onde a `endDate` volta se ela for desistida, AAAA-MM-DD, já com a\nregra da RN03 (`min(endDate atual, a data anterior gravada na\nconfirmação)`; decisão 327(2)). Nulo na publicação e no que não é\ndesistível.",
+            "example": "2027-02-14"
           }
         },
         "required": [
@@ -26195,7 +26201,8 @@
           "status",
           "paidAt",
           "refundableUntil",
-          "disputeDeadline"
+          "disputeDeadline",
+          "refundEndDate"
         ]
       },
       "PayerDto": {

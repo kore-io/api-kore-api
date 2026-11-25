@@ -441,6 +441,66 @@ describe('Pagamentos e arrependimento (RN02 a RN08; banco real)', () => {
     expect((await wedding(other.weddingId)).endDate).toEqual(day(courtesyEnd));
   });
 
+  it('RN03 (decisão 327(2)) - o GET …/billing traz a data de volta da extensão desistível: a da cortesia, a antecipada, e nula fora do prazo, na publicação e depois do pedido', async () => {
+    const { ana, weddingId, paymentId } = await published();
+    const courtesyEnd = addMonths({ day: endDate, months: 1 });
+    await db.courtesyExtension.create({
+      data: {
+        weddingId,
+        months: 1,
+        reason: 'Cortesia de teste',
+        previousEndDate: day(endDate),
+        newEndDate: day(courtesyEnd),
+        periodStart: day(endDate),
+        periodEnd: day(courtesyEnd),
+      },
+    });
+    await db.wedding.update({
+      where: { id: weddingId },
+      data: { endDate: day(courtesyEnd), paidThrough: day(courtesyEnd) },
+    });
+    const extensionId = await seedExtension({
+      weddingId,
+      ownerId: ana.userId,
+      periodStart: courtesyEnd,
+      periodEnd: addMonths({ day: courtesyEnd, months: 3 }),
+    });
+    const listed = async () => {
+      const billing = await request(app.getHttpServer())
+        .get(`/v1/weddings/${weddingId}/billing`)
+        .set('Cookie', ana.cookie)
+        .expect(200);
+      const byId = new Map(
+        (billing.body.payments as { id: string; refundEndDate: string | null }[]).map((row) => [
+          row.id,
+          row.refundEndDate,
+        ]),
+      );
+      return { extension: byId.get(extensionId), publication: byId.get(paymentId) };
+    };
+
+    // Com a cortesia antes, volta ao fim da cortesia; a publicação não tem data de volta.
+    expect(await listed()).toEqual({ extension: courtesyEnd, publication: null });
+
+    // Fora do prazo de 7 dias (RN02): nula.
+    await db.payment.update({
+      where: { id: extensionId },
+      data: { paidAt: new Date(Date.now() - 9 * DAY) },
+    });
+    expect((await listed()).extension).toBeNull();
+    await db.payment.update({ where: { id: extensionId }, data: { paidAt: new Date() } });
+
+    // O casal antecipou depois de pagar: a menor, a data atual.
+    const earlier = addMonths({ day: endDate, months: -1 });
+    await db.wedding.update({ where: { id: weddingId }, data: { endDate: day(earlier) } });
+    expect((await listed()).extension).toBe(earlier);
+
+    // O pedido leva a endDate à data mostrada, e a extensão deixa de ser desistível.
+    expectStatus(await refund(ana.cookie, weddingId, extensionId), 202);
+    expect((await wedding(weddingId)).endDate).toEqual(day(earlier));
+    expect((await listed()).extension).toBeNull();
+  });
+
   it('RN06 (decisão 273(8)) - a contestação perdida com o estorno já pedido abre o dispute_lost', async () => {
     const { ana, weddingId, paymentId } = await published();
     expectStatus(await refund(ana.cookie, weddingId, paymentId), 202);

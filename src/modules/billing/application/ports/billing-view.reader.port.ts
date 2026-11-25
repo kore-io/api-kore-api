@@ -41,6 +41,8 @@ export interface BillingPaymentRow {
   refundableUntil: Date | null;
   /** O prazo da defesa na contestação (RN06), AAAA-MM-DD; só no `disputed`. */
   disputeDeadline: string | null;
+  /** A `endDate` gravada na confirmação da extensão (RN03), AAAA-MM-DD; nula na publicação. */
+  previousEndDate: string | null;
 }
 
 /** Só o dono (RLS de payments): o pendente, os pagamentos aplicados e o último pagador. */

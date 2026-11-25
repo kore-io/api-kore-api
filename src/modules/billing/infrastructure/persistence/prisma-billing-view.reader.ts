@@ -87,6 +87,7 @@ export class PrismaBillingViewReader implements BillingViewReader {
           status: true,
           paidAt: true,
           disputeDeadline: true,
+          previousEndDate: true,
         },
       }),
       db.payment.findFirst({
@@ -113,6 +114,7 @@ export class PrismaBillingViewReader implements BillingViewReader {
         disputeDeadline: payment.status === 'disputed' ? day(payment.disputeDeadline) : null,
         periodStart: day(payment.periodStart) ?? '',
         periodEnd: day(payment.periodEnd) ?? '',
+        previousEndDate: day(payment.previousEndDate),
       })),
       lastPayer: last
         ? { name: last.payerName, taxIdLast4: last.payerTaxIdLast4, taxIdHash: last.payerTaxIdHash }
