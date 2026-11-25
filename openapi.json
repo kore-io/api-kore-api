@@ -23680,7 +23680,8 @@
           },
           "purgeAt": {
             "type": "string",
-            "description": "purge_soon (Retenção e expurgo RN02): o dia em que os dados são apagados, AAAA-MM-DD.",
+            "nullable": true,
+            "description": "O dia em que os dados são apagados, AAAA-MM-DD (Retenção e expurgo RN02):\nno purge_soon e no expired (\"Os dados ficam guardados até…\", decisão\n336(3)). No expired, nulo quando o casamento não tem e ausente nas\nnotificações gravadas antes do campo.",
             "example": "2027-08-22"
           },
           "endDate": {

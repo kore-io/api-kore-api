@@ -136,8 +136,13 @@ export class BillingEntryResponse {
    */
   @ApiProperty({ required: false, nullable: true, example: '2027-02-14' }) paidThrough?:
     string | null;
-  /** purge_soon (Retenção e expurgo RN02): o dia em que os dados são apagados, AAAA-MM-DD. */
-  @ApiProperty({ required: false, example: '2027-08-22' }) purgeAt?: string;
+  /**
+   * O dia em que os dados são apagados, AAAA-MM-DD (Retenção e expurgo RN02):
+   * no purge_soon e no expired ("Os dados ficam guardados até…", decisão
+   * 336(3)). No expired, nulo quando o casamento não tem e ausente nas
+   * notificações gravadas antes do campo.
+   */
+  @ApiProperty({ required: false, nullable: true, example: '2027-08-22' }) purgeAt?: string | null;
   /**
    * A data de saída do ar, AAAA-MM-DD: a paga no payment_confirmed e a nova na
    * courtesy (a Cortesia do Admin; Backoffice - cobrança RN06).

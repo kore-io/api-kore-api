@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
+import { Prisma } from '@/generated/prisma/client';
 import { AdvanceWeddingLifecycle } from '@/modules/billing/application/wedding-lifecycle/advance-wedding-lifecycle.use-case';
 import { PurgeRetainedWeddings } from '@/modules/billing/application/wedding-lifecycle/purge-retained-weddings.use-case';
 import { addDays, addMonths } from '@/modules/billing/domain/payments/pricing';
@@ -162,6 +163,7 @@ describe('Carência, expirado e avisos (Data de saída do ar RN01 a RN03; banco 
         expiredAt,
         renewUntil: addMonths({ day: eventDate, months: 12 }),
         paidThrough: null,
+        purgeAt: addMonths({ day: expiredAt, months: 6 }),
       }),
     ]);
     await request(app.getHttpServer())
@@ -211,6 +213,9 @@ describe('Carência, expirado e avisos (Data de saída do ar RN01 a RN03; banco 
       paidThrough: day(endDate),
       purgeAt: day(purgeAt),
     });
+    // Decisão 336(3): o item do expirado leva a mesma data do expurgo.
+    const items = await billingItems(weddingId);
+    expect(items.at(-1)?.payload).toEqual([expect.objectContaining({ kind: 'expired', purgeAt })]);
 
     const retain = (at: string) => retention.execute({ now: noonInSaoPaulo(at), weddingId });
     // Pela data antiga (expiredAt + 6 meses) o aviso já sairia; pela nova, não.
@@ -234,10 +239,45 @@ describe('Carência, expirado e avisos (Data de saída do ar RN01 a RN03; banco 
     });
     const items = await billingItems(weddingId);
     expect(items.at(-1)?.payload).toEqual([
-      expect.objectContaining({ kind: 'expired', expiredAt: endDate, paidThrough: null }),
+      expect.objectContaining({
+        kind: 'expired',
+        expiredAt: endDate,
+        paidThrough: null,
+        purgeAt: addMonths({ day: endDate, months: 6 }),
+      }),
     ]);
     const [mail] = await waitForInbox({ to: ana.email, subject: 'O site saiu do ar' });
     expect(await messageText({ id: mail.ID })).toContain('Renovar: ');
+  });
+
+  it('decisão 336(3) - a central da dona traz o purgeAt no item do expirado; o item gravado antes do campo volta sem ele', async () => {
+    const { ana, weddingId } = await published();
+    await run(weddingId, addDays({ day: endDate, days: 1 }));
+    const expiredAt = addDays({ day: endDate, days: 8 });
+    await run(weddingId, expiredAt);
+    const purgeAt = addMonths({ day: expiredAt, months: 6 });
+    const central = async () => {
+      const { body } = await request(app.getHttpServer())
+        .get('/v1/me/notifications')
+        .set('Cookie', ana.cookie)
+        .query({ weddingId, type: 'billing' })
+        .expect(200);
+      const items = body.items as { payload: Record<string, unknown>[] }[];
+      return items.flatMap((item) => item.payload).find((entry) => entry.kind === 'expired');
+    };
+    expect(await central()).toMatchObject({ kind: 'expired', expiredAt, purgeAt });
+
+    // A notificação gravada antes deste PR não tem o campo: a API devolve como está.
+    const stored = (await billingItems(weddingId)).at(-1)!;
+    const legacy = (stored.payload as Prisma.JsonObject[]).map((entry) => {
+      const { purgeAt, ...rest } = entry;
+      expect(purgeAt).toBeDefined();
+      return rest;
+    });
+    await db.notification.update({ where: { id: stored.id }, data: { payload: legacy } });
+    const entry = await central();
+    expect(entry).toMatchObject({ kind: 'expired', expiredAt });
+    expect(entry).not.toHaveProperty('purgeAt');
   });
 
   it('RN01 e RN02 (B4-7) - a data de expirar não depende da hora da rotina: parada, expira com a data derivada', async () => {
