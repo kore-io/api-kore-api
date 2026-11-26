@@ -225,7 +225,9 @@ export class BillingPaymentDto {
   @ApiProperty({ type: String, format: 'date-time', nullable: true }) paidAt: string | null;
   /**
    * O último instante para desistir, no fuso do casamento (Pagamentos e
-   * arrependimento RN02); nulo fora do prazo ou fora de `paid`. O app mostra
+   * arrependimento RN02); nulo fora do prazo, fora de `paid` e no que o
+   * Desistir recusa (a extensão que não é a última, ou com cortesia concedida
+   * depois; RN03, decisão 345(1)). O app mostra
    * o dia: "Vocês podem desistir até 17 de ago.".
    */
   @ApiProperty({ type: String, format: 'date-time', nullable: true })

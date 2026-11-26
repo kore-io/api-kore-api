@@ -45,15 +45,26 @@ export class PrismaBillingViewReader implements BillingViewReader {
 
   async money({ weddingId, now }: { weddingId: string; now: Date }): Promise<BillingMoneyView> {
     const db = this.tenant.client();
-    // O fim do prazo de desistir, no fuso do casamento (o mesmo cálculo da
-    // request_payment_refund): só nos pagos e dentro dele.
+    // O fim do prazo de desistir, no fuso do casamento: o mesmo cálculo e o
+    // mesmo recorte da request_payment_refund e da trava do Excluir
+    // (PrismaWeddingDeletionStore.moneyLocks): só nos pagos, dentro do prazo,
+    // na publicação ou na última extensão, sem cortesia concedida depois
+    // (Pagamentos e arrependimento RN03; decisão 345(1)). A cortesia vem pela
+    // wedding_courtesy_from: o kore_app não lê courtesy_extensions.
     const windows = await db.$queryRaw<{ id: string; until: Date }[]>`
       SELECT p.id, (((p.paid_at AT TIME ZONE COALESCE(w.timezone, 'America/Sao_Paulo'))::date
                      + 8)::timestamp AT TIME ZONE COALESCE(w.timezone, 'America/Sao_Paulo'))
                    - interval '1 millisecond' AS until
       FROM payments p JOIN weddings w ON w.id = p.wedding_id
       WHERE p.wedding_id = ${weddingId}::uuid AND p.status = 'paid'
-        AND p.applied_at IS NOT NULL AND p.paid_at IS NOT NULL`;
+        AND p.applied_at IS NOT NULL AND p.paid_at IS NOT NULL
+        AND (p.kind = 'publication' OR (
+          NOT EXISTS (
+            SELECT 1 FROM payments e
+            WHERE e.wedding_id = p.wedding_id AND e.kind = 'extension' AND e.id <> p.id
+              AND e.applied_at IS NOT NULL AND e.status IN ('paid', 'disputed')
+              AND e.period_start > p.period_start)
+          AND NOT wedding_courtesy_from(p.wedding_id, p.period_end)))`;
     const refundable = new Map(
       windows.filter((row) => row.until > now).map((row) => [row.id, row.until]),
     );

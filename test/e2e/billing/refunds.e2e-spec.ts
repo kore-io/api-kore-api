@@ -296,6 +296,60 @@ describe('Pagamentos e arrependimento (RN02 a RN08; banco real)', () => {
     expect(courtesy.body).toMatchObject({ error: 'REFUND_NOT_LAST_EXTENSION' });
   });
 
+  it('RN03 (decisão 345(1)) - o GET …/billing só traz o refundableUntil no que o Desistir aceita: a extensão paga há menos de 7 dias com cortesia depois fica nula, e a publicação segue', async () => {
+    const { ana, weddingId, paymentId } = await published();
+    const extensionEnd = addMonths({ day: endDate, months: 3 });
+    const extensionId = await seedExtension({
+      weddingId,
+      ownerId: ana.userId,
+      periodStart: endDate,
+      periodEnd: extensionEnd,
+      paidAt: new Date(Date.now() - 2 * DAY),
+    });
+    const listed = async () => {
+      const billing = await request(app.getHttpServer())
+        .get(`/v1/weddings/${weddingId}/billing`)
+        .set('Cookie', ana.cookie)
+        .expect(200);
+      const byId = new Map(
+        (
+          billing.body.payments as {
+            id: string;
+            refundableUntil: string | null;
+            refundEndDate: string | null;
+          }[]
+        ).map((row) => [row.id, row]),
+      );
+      return { extension: byId.get(extensionId), publication: byId.get(paymentId) };
+    };
+
+    // Antes da cortesia, a extensão é a última e está no prazo.
+    const before = await listed();
+    expect(before.extension?.refundableUntil).not.toBeNull();
+    expect(before.publication?.refundableUntil).not.toBeNull();
+
+    // O Admin concede a cortesia depois da extensão.
+    const courtesyEnd = addMonths({ day: extensionEnd, months: 1 });
+    await db.courtesyExtension.create({
+      data: {
+        weddingId,
+        months: 1,
+        reason: 'Cortesia de teste',
+        previousEndDate: day(extensionEnd),
+        newEndDate: day(courtesyEnd),
+        periodStart: day(extensionEnd),
+        periodEnd: day(courtesyEnd),
+      },
+    });
+    const after = await listed();
+    expect(after.extension).toMatchObject({ refundableUntil: null, refundEndDate: null });
+    expect(after.publication?.refundableUntil).toBe(before.publication?.refundableUntil);
+
+    // O mesmo recorte do Desistir: a extensão recusa.
+    const refused = expectStatus(await refund(ana.cookie, weddingId, extensionId), 409);
+    expect(refused.body).toMatchObject({ error: 'REFUND_NOT_LAST_EXTENSION' });
+  });
+
   it('RN03 - desistir da publicação cancela o Pix de extensão em aberto', async () => {
     const { ana, weddingId, paymentId } = await published();
     const pix = expectStatus(
