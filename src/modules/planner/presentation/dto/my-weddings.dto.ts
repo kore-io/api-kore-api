@@ -107,6 +107,12 @@ export class MyWeddingDetailResponse extends MyWeddingItemResponse {
   @ApiProperty({ type: String, nullable: true }) slug: string | null;
   @ApiProperty({ type: MyWeddingStatsResponse }) stats: MyWeddingStatsResponse;
   hasOwner: boolean;
+  /**
+   * Bloqueado pelo suporte (Casamento bloqueado RN04; decisão 344): Reenviar,
+   * Convidar outro e-mail, Cancelar convite e Excluir casamento ficam
+   * desabilitados; o Sair deste casamento continua (RN03).
+   */
+  blocked: boolean;
   /** O vínculo ativo de quem lê (decisão 261(1)). */
   @ApiProperty({ format: 'uuid' }) myMembershipId: string;
   /** O fuso IANA do casamento, para o "Enviado em" (decisão 263). */
@@ -139,6 +145,7 @@ export class MyWeddingDetailResponse extends MyWeddingItemResponse {
       slug: detail.slug,
       stats: detail.stats,
       hasOwner: detail.hasOwner,
+      blocked: detail.blocked,
       myMembershipId: detail.myMembershipId,
       timezone: detail.timezone,
       canEditIdentity: detail.canEditIdentity,

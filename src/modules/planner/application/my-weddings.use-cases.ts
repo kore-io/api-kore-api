@@ -79,6 +79,8 @@ export interface MyWeddingDetail extends MyWeddingItem {
   slug: string | null;
   stats: { guestsTotal: number; confirmed: number; declined: number; pending: number };
   hasOwner: boolean;
+  /** Bloqueado pelo suporte: os botões de escrita do detalhe ficam desabilitados (decisão 344). */
+  blocked: boolean;
   canEditIdentity: boolean;
   /** O vínculo ativo de quem lê, para o "Sair do casamento" (decisão 261(1)). */
   myMembershipId: string;
@@ -239,6 +241,7 @@ export class GetMyWedding {
         pending: detail.stats.pending,
       },
       hasOwner: detail.hasOwner,
+      blocked: detail.blocked,
       myMembershipId: detail.myMembershipId,
       timezone: detail.timezone,
       canEditIdentity: await this.authorization.canManageSiteIdentity({ userId, weddingId }),

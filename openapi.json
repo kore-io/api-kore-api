@@ -24449,6 +24449,10 @@
           "hasOwner": {
             "type": "boolean"
           },
+          "blocked": {
+            "type": "boolean",
+            "description": "Bloqueado pelo suporte (Casamento bloqueado RN04; decisão 344): Reenviar,\nConvidar outro e-mail, Cancelar convite e Excluir casamento ficam\ndesabilitados; o Sair deste casamento continua (RN03)."
+          },
           "canEditIdentity": {
             "type": "boolean",
             "description": "A data, a UF e o endereço (Novo casamento RN08)."
@@ -24485,6 +24489,7 @@
           "timezone",
           "coupleInvitations",
           "hasOwner",
+          "blocked",
           "canEditIdentity",
           "weddingId",
           "city",
