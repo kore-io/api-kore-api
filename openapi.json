@@ -24862,6 +24862,14 @@
             "type": "string",
             "format": "uuid"
           },
+          "coupleNames": {
+            "type": "string",
+            "nullable": true,
+            "example": "Ana & Marcos"
+          },
+          "weddingPurged": {
+            "type": "boolean"
+          },
           "amountCents": {
             "type": "number",
             "example": -6742
@@ -24893,6 +24901,8 @@
         "required": [
           "kind",
           "adjustmentId",
+          "coupleNames",
+          "weddingPurged",
           "amountCents",
           "reason",
           "createdAt",

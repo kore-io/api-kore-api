@@ -311,6 +311,8 @@ describe('Comissões: a leitura da indicadora (Comissões RN07, RN08 e RN10; ban
       {
         kind: 'adjustment',
         adjustmentId: adjustment.id,
+        coupleNames: null,
+        weddingPurged: false,
         amountCents: -1_000,
         reason: 'manual',
         createdAt: adjustment.createdAt.toISOString(),
@@ -426,5 +428,66 @@ describe('Comissões: a leitura da indicadora (Comissões RN07, RN08 e RN10; ban
       .set('Cookie', juliana.cookie)
       .expect(200);
     expect(reassigned.body.items[0].referralSource).toBe('admin_reassigned');
+  });
+
+  it('RN07 (decisão 347(2)) - a linha do ajuste mostra o casamento; nulo no manual e, depois do expurgo, a lápide', async () => {
+    const juliana = await planner();
+    const { ana, weddingId, referrerId } = await referred(juliana);
+    const { paymentId } = await publishByPayment({ app, cookie: ana.cookie, weddingId, endDate });
+    const commission = await db.commission.findUniqueOrThrow({ where: { paymentId } });
+    const refund = await db.commissionAdjustment.create({
+      data: {
+        id: uuidV7(),
+        referrerId,
+        commissionId: commission.id,
+        amountCents: -commission.amountCents,
+        reason: 'refund',
+      },
+    });
+    const manual = await db.commissionAdjustment.create({
+      data: { id: uuidV7(), referrerId, amountCents: -1_000, reason: 'manual', note: 'Teste' },
+    });
+    const adjustmentsOf = async () => {
+      const list = await http()
+        .get('/v1/me/referrer/commissions')
+        .set('Cookie', juliana.cookie)
+        .expect(200);
+      return new Map(
+        (
+          list.body.items as {
+            kind: string;
+            adjustmentId?: string;
+            coupleNames: string | null;
+            weddingPurged: boolean;
+          }[]
+        )
+          .filter((item) => item.kind === 'adjustment')
+          .map((item) => [
+            item.adjustmentId,
+            { coupleNames: item.coupleNames, weddingPurged: item.weddingPurged },
+          ]),
+      );
+    };
+    expect(await adjustmentsOf()).toEqual(
+      new Map([
+        [manual.id, { coupleNames: null, weddingPurged: false }],
+        [refund.id, { coupleNames: 'Ana & Marcos', weddingPurged: false }],
+      ]),
+    );
+
+    await db.wedding.update({
+      where: { id: weddingId },
+      data: {
+        status: 'purged',
+        purgedAt: new Date(),
+        endDate: null,
+        paidThrough: null,
+        publicationSource: null,
+      },
+    });
+    expect((await adjustmentsOf()).get(refund.id)).toEqual({
+      coupleNames: null,
+      weddingPurged: true,
+    });
   });
 });

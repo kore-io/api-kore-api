@@ -1,6 +1,7 @@
 import {
   availableAdjustmentsCents,
   commissionBalances,
+  commissionPaymentLines,
   commissionsByWedding,
   type CommissionRow,
 } from './commissions';
@@ -73,6 +74,7 @@ describe('Os saldos e a soma por casamento (Comissões do indicador RN02, RN07 e
         {
           id: 'a',
           reason: 'manual',
+          commissionId: null,
           createdAt: new Date(),
           amountCents: -1_000,
           payoutId: null,
@@ -81,6 +83,7 @@ describe('Os saldos e a soma por casamento (Comissões do indicador RN02, RN07 e
         {
           id: 'a',
           reason: 'manual',
+          commissionId: null,
           createdAt: new Date(),
           amountCents: -500,
           payoutId: 'p1',
@@ -97,6 +100,7 @@ describe('Os saldos e a soma por casamento (Comissões do indicador RN02, RN07 e
         {
           id: 'a',
           reason: 'manual',
+          commissionId: null,
           createdAt: new Date(),
           amountCents: -1_000,
           payoutId: 'p0',
@@ -105,6 +109,7 @@ describe('Os saldos e a soma por casamento (Comissões do indicador RN02, RN07 e
         {
           id: 'a',
           reason: 'manual',
+          commissionId: null,
           createdAt: new Date(),
           amountCents: -500,
           payoutId: 'p1',
@@ -132,7 +137,7 @@ describe('Os saldos e a soma por casamento (Comissões do indicador RN02, RN07 e
   });
 
   it('RN02 (decisão 346(2)) - o ajuste da legenda do Disponível: só os sem repasse', () => {
-    const adjustment = { id: 'a', reason: 'manual', createdAt: new Date() };
+    const adjustment = { id: 'a', reason: 'manual', createdAt: new Date(), commissionId: null };
     expect(
       availableAdjustmentsCents([
         { ...adjustment, amountCents: -5_002, payoutId: null, payoutStatus: null },
@@ -141,5 +146,33 @@ describe('Os saldos e a soma por casamento (Comissões do indicador RN02, RN07 e
       ]),
     ).toBe(-5_002);
     expect(availableAdjustmentsCents([])).toBe(0);
+  });
+
+  it('RN07 (decisão 347(2)) - o ajuste leva a comissão que ajustou; o manual, nenhuma', () => {
+    const adjustment = {
+      reason: 'refund',
+      createdAt: new Date('2026-09-01T12:00:00Z'),
+      amountCents: -6_742,
+      payoutId: null,
+      payoutStatus: null,
+    };
+    const lines = commissionPaymentLines({
+      rows: [row({ id: 'c1' })],
+      adjustments: [
+        { ...adjustment, id: 'x1', commissionId: 'c1' },
+        { ...adjustment, id: 'x2', reason: 'manual', commissionId: null },
+      ],
+    });
+    const byId = new Map(
+      lines.flatMap((line) =>
+        line.kind === 'adjustment' ? [[line.adjustment.id, line.commission?.id ?? null]] : [],
+      ),
+    );
+    expect(byId).toEqual(
+      new Map([
+        ['x1', 'c1'],
+        ['x2', null],
+      ]),
+    );
   });
 });

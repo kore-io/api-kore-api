@@ -100,6 +100,14 @@ class CommissionLineResponse {
 class AdjustmentLineResponse {
   @ApiProperty({ enum: ['adjustment'] }) kind: 'adjustment';
   @ApiProperty({ format: 'uuid' }) adjustmentId: string;
+  /**
+   * O casamento da comissão ajustada: "Ana & Marcos"; nulo no ajuste manual do
+   * Admin (o app mostra "—") e depois do expurgo (decisão 347(2)).
+   */
+  @ApiProperty({ type: String, nullable: true, example: 'Ana & Marcos' })
+  coupleNames: string | null;
+  /** O casamento foi expurgado: o app mostra "Casamento apagado" (320(3)); false no ajuste manual. */
+  @ApiProperty() weddingPurged: boolean;
   @ApiProperty({ example: -6742 }) amountCents: number;
   /** refund · chargeback (o estorno da comissão já paga) · manual (o do Admin). */
   @ApiProperty({ enum: ['refund', 'chargeback', 'manual'] }) reason: string;
@@ -166,6 +174,8 @@ function paymentLine(line: CommissionPaymentLine): CommissionLineResponse | Adju
     return {
       kind: 'adjustment',
       adjustmentId: line.adjustment.id,
+      coupleNames: line.commission ? commissionCoupleNames(line.commission.partnerNames) : null,
+      weddingPurged: line.commission?.weddingPurged ?? false,
       amountCents: line.adjustment.amountCents,
       reason: line.adjustment.reason,
       createdAt: line.adjustment.createdAt.toISOString(),
