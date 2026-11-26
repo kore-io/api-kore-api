@@ -409,6 +409,28 @@ describe('Meus casamentos e alertas (banco real; decisões 223 e 224)', () => {
       expect(body.timezone).toBe('America/Manaus');
     });
 
+    it('Casamento bloqueado RN04 (decisão 344) - o detalhe traz o blocked; a lista segue com o status de sempre', async () => {
+      const planner = await juliana();
+      const { weddingId } = await coupleWedding({ plannerId: planner.userId });
+
+      const before = (await detail(planner.cookie, weddingId).expect(200)).body as {
+        blocked: boolean;
+        status: string;
+      };
+      expect(before.blocked).toBe(false);
+
+      await db.wedding.update({ where: { id: weddingId }, data: { blockedAt: new Date() } });
+
+      const { body } = await detail(planner.cookie, weddingId).expect(200);
+      expect(body).toMatchObject({ weddingId, blocked: true, status: before.status });
+      const { weddings } = (await list(planner.cookie).expect(200)).body as {
+        weddings: { weddingId: string }[];
+      };
+      const listed = weddings.find((item) => item.weddingId === weddingId);
+      expect(listed).toMatchObject({ status: before.status });
+      expect(listed).not.toHaveProperty('blocked');
+    });
+
     it('RN09 - depois do aceite do casal, o detalhe vem com dono e sem o link', async () => {
       const planner = await juliana();
       const { weddingId } = await seedReferrerWedding({ db, referrerUserId: planner.userId });
