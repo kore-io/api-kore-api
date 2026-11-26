@@ -19,6 +19,7 @@ const commission = (overrides: Partial<CommissionRow>): CommissionRow => ({
   partnerNames: ['Ana', 'Marcos'],
   clickable: true,
   paymentKind: 'publication',
+  referralSource: 'referral_link',
   baseAmountCents: 33_710,
   amountCents: 6_742,
   ratePercent: 20,
@@ -41,6 +42,7 @@ function useCase({
     {
       list: jest.fn().mockResolvedValue(commissions),
       adjustments: jest.fn().mockResolvedValue([]),
+      paidPayouts: jest.fn().mockResolvedValue(0),
     },
   );
 }

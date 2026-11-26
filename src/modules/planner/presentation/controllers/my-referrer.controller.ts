@@ -60,12 +60,14 @@ export class MyReferrerController {
   async referrer(@CurrentSession() session: AuthenticatedSession): Promise<MyReferrerResponse> {
     try {
       const referrer = await this.getReferrer.execute({ userId: session.userId });
-      const { balances } = await this.commissions.execute({ userId: session.userId });
+      const {
+        balances: { availableCents, pendingCents, receivedCents, inPayoutCents },
+      } = await this.commissions.execute({ userId: session.userId });
       // Os dados para receber, mascarados (Repasse, Contrato; decisão 244(2)).
       const payout = await this.payoutData.summary();
       return {
         ...referrer,
-        balances,
+        balances: { availableCents, pendingCents, receivedCents, inPayoutCents },
         taxIdMasked: payout?.taxIdMasked ?? null,
         pixKeyMasked: payout?.pixKeyMasked ?? null,
         payoutDataComplete: payout?.payoutDataComplete ?? false,

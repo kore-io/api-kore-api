@@ -26,6 +26,7 @@ export class PrismaReferrerCommissionsReader implements ReferrerCommissionsReade
         created_at: Date;
         payout_id: string | null;
         block_reason: CommissionRow['blockReason'];
+        referral_source: CommissionRow['referralSource'];
       }[]
     >`SELECT * FROM referrer_commissions()`;
     return rows.map((row) => ({
@@ -35,6 +36,7 @@ export class PrismaReferrerCommissionsReader implements ReferrerCommissionsReade
       partnerNames: row.wedding_purged ? null : [row.partner1_name ?? '', row.partner2_name ?? ''],
       clickable: row.clickable,
       paymentKind: row.payment_kind,
+      referralSource: row.referral_source,
       baseAmountCents: row.base_amount_cents,
       amountCents: row.amount_cents,
       ratePercent: row.rate_percent,
@@ -63,5 +65,10 @@ export class PrismaReferrerCommissionsReader implements ReferrerCommissionsReade
       ...adjustment,
       payoutStatus: payout?.status ?? null,
     }));
+  }
+
+  /** Os repasses pagos da própria pessoa indicadora ("em 3 repasses"; RLS por referrerId). */
+  paidPayouts(): Promise<number> {
+    return this.tenant.client().payout.count({ where: { status: 'paid' } });
   }
 }

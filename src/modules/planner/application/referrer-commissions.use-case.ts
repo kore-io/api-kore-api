@@ -4,6 +4,7 @@ import {
   type PlannerProfiles,
 } from '@/modules/access/application/ports/planner-profiles.port';
 import {
+  availableAdjustmentsCents,
   commissionBalances,
   commissionPaymentLines,
   commissionsByWedding,
@@ -22,8 +23,16 @@ export const COMMISSIONS_PAGE_SIZE = 50;
 
 export type CommissionsTab = 'payment' | 'wedding';
 
+/** Os saldos e as legendas deles (decisão 346(2)). */
+export type ReferrerCommissionsBalances = CommissionBalances & {
+  /** "já com o ajuste de −R$ 50,02": a soma dos ajustes que estão no Disponível. */
+  adjustmentsCents: number;
+  /** "em 3 repasses": os repasses pagos. */
+  paidPayouts: number;
+};
+
 export type ReferrerCommissionsView = {
-  balances: CommissionBalances;
+  balances: ReferrerCommissionsBalances;
   page: number;
   pageSize: number;
   total: number;
@@ -58,7 +67,11 @@ export class ListReferrerCommissions {
     await requirePlannerProfile({ profiles: this.profiles, userId });
     const rows = await this.reader.list();
     const adjustments = await this.reader.adjustments();
-    const balances = commissionBalances(rows, adjustments);
+    const balances = {
+      ...commissionBalances(rows, adjustments),
+      adjustmentsCents: availableAdjustmentsCents(adjustments),
+      paidPayouts: await this.reader.paidPayouts(),
+    };
     const slice = <T>(all: T[]) => ({
       page,
       pageSize: COMMISSIONS_PAGE_SIZE,

@@ -1,3 +1,10 @@
+export type ReferralSource =
+  | 'created_by_planner'
+  | 'created_by_seller'
+  | 'referral_link'
+  | 'invited_before_payment'
+  | 'admin_reassigned';
+
 /** Uma comissão como a indicadora a lê (Comissões do indicador RN07 e RN10). */
 export interface CommissionRow {
   id: string;
@@ -6,6 +13,8 @@ export interface CommissionRow {
   partnerNames: [string, string] | null;
   clickable: boolean;
   paymentKind: 'publication' | 'extension';
+  /** Como o casamento ficou atribuído (a coluna Origem de Por casamento; decisão 346(1)). */
+  referralSource: ReferralSource | null;
   baseAmountCents: number;
   amountCents: number;
   ratePercent: number;
@@ -78,15 +87,27 @@ export interface WeddingCommissions {
   weddingPurged: boolean;
   partnerNames: [string, string] | null;
   clickable: boolean;
+  /** A Origem (decisão 346(1)). */
+  referralSource: ReferralSource | null;
+  /** Pagamentos: quantos pagamentos geraram as comissões que entram na soma. */
+  paymentsCount: number;
   availableCents: number;
   pendingCents: number;
+  /** Já recebido: as comissões pagas. */
+  receivedCents: number;
+  /** Total: aguardando, disponível (também a que está em repasse) e paga, como no Link de indicação (RN08). */
+  totalCents: number;
   /** As datas de liberação das que aguardam ("Libera em 09/09" · "libera em 02/10 e em 10/10"). */
   releaseDates: Date[];
 }
 
+/** Os estados que entram nas somas por casal (RN08): Estornada, Bloqueada e Retida ficam fora. */
+const COUNTED: readonly CommissionRow['status'][] = ['pending', 'available', 'paid'];
+
 /**
- * A aba Por casamento (RN07): a soma por casal; Estornada, Bloqueada e Retida
- * não entram (RN08, a mesma regra da coluna do Link de indicação).
+ * A aba Por casamento (RN07; decisão 346(1)): a soma por casal; Estornada,
+ * Bloqueada e Retida não entram (RN08, a mesma regra da coluna do Link de
+ * indicação). O casal só com elas fica na lista, com zero.
  */
 export function commissionsByWedding(rows: readonly CommissionRow[]): WeddingCommissions[] {
   const byWedding = new Map<string, WeddingCommissions>();
@@ -99,11 +120,19 @@ export function commissionsByWedding(rows: readonly CommissionRow[]): WeddingCom
           weddingPurged: row.weddingPurged,
           partnerNames: row.partnerNames,
           clickable: row.clickable,
+          referralSource: row.referralSource,
+          paymentsCount: 0,
           availableCents: 0,
           pendingCents: 0,
+          receivedCents: 0,
+          totalCents: 0,
           releaseDates: [],
         })
         .get(row.weddingId)!;
+    if (!COUNTED.includes(row.status)) continue;
+    entry.paymentsCount += 1;
+    entry.totalCents += row.amountCents;
+    if (row.status === 'paid') entry.receivedCents += row.amountCents;
     if (row.status === 'available' && row.payoutId === null)
       entry.availableCents += row.amountCents;
     if (row.status === 'pending') {
@@ -114,6 +143,16 @@ export function commissionsByWedding(rows: readonly CommissionRow[]): WeddingCom
   for (const entry of byWedding.values())
     entry.releaseDates.sort((left, right) => left.getTime() - right.getTime());
   return [...byWedding.values()];
+}
+
+/**
+ * A soma dos ajustes que já estão no Disponível, os sem repasse ("já com o
+ * ajuste de −R$ 50,02"; decisão 346(2)); o de um repasse sai daqui junto com ele.
+ */
+export function availableAdjustmentsCents(adjustments: readonly AdjustmentRow[]): number {
+  return adjustments
+    .filter((adjustment) => adjustment.payoutId === null)
+    .reduce((total, adjustment) => total + adjustment.amountCents, 0);
 }
 
 /** "Ana & Marcos": os primeiros nomes do casal; nulo no casamento apagado (RN07; B5-8). */

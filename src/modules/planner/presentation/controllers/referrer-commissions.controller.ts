@@ -24,6 +24,13 @@ import {
 const STATUSES = ['pending', 'available', 'paid', 'reversed', 'blocked', 'held'] as const;
 const BLOCK_REASONS = ['self_referral', 'referrer_blocked', 'admin', 'wedding_blocked'] as const;
 const PAYOUT_STATUSES = ['requested', 'held', 'processing', 'paid', 'rejected'] as const;
+const REFERRAL_SOURCES = [
+  'created_by_planner',
+  'created_by_seller',
+  'referral_link',
+  'invited_before_payment',
+  'admin_reassigned',
+] as const;
 
 /** A aba e a página (Contrato de API: `view=payment|wedding&page=`). */
 export class ReferrerCommissionsQuery {
@@ -50,6 +57,13 @@ class CommissionBalancesResponse {
   @ApiProperty({ example: 0 }) receivedCents: number;
   /** "(R$ 158,04 em repasse)". */
   @ApiProperty({ example: 0 }) inPayoutCents: number;
+  /**
+   * "já com o ajuste de −R$ 50,02" no Disponível: a soma dos ajustes sem
+   * repasse, os que já estão no `availableCents`; zero sem ajuste (decisão 346(2)).
+   */
+  @ApiProperty({ example: -5002 }) adjustmentsCents: number;
+  /** "em 3 repasses" no Já recebido: quantos repasses já foram pagos (decisão 346(2)). */
+  @ApiProperty({ example: 3 }) paidPayouts: number;
 }
 
 /** Uma comissão, na aba Por pagamento (RN07). */
@@ -102,8 +116,23 @@ class WeddingCommissionsResponse {
   coupleNames: string | null;
   @ApiProperty() weddingPurged: boolean;
   @ApiProperty() clickable: boolean;
+  /**
+   * A coluna Origem: como o casamento está atribuído hoje (o `referral_source`
+   * do casamento; decisão 346(1)). Nulo sem atribuição.
+   */
+  @ApiProperty({ enum: REFERRAL_SOURCES, nullable: true, example: 'referral_link' })
+  referralSource: (typeof REFERRAL_SOURCES)[number] | null;
+  /** A coluna Pagamentos ("1 pagamento"): os pagamentos cujas comissões entram na soma (RN08). */
+  @ApiProperty({ example: 2 }) paymentsCount: number;
   @ApiProperty({ example: 6742 }) availableCents: number;
   @ApiProperty({ example: 1740 }) pendingCents: number;
+  /** Já recebido: as comissões pagas deste casal. */
+  @ApiProperty({ example: 0 }) receivedCents: number;
+  /**
+   * Total: aguardando, disponível (também a que está em repasse) e paga; sem
+   * Estornada, Bloqueada e Retida, como a coluna do Link de indicação (RN08).
+   */
+  @ApiProperty({ example: 8482 }) totalCents: number;
   /** "Libera em 09/09" · "libera em 02/10 e em 10/10"; vazio, "nada a liberar agora". */
   @ApiProperty({ type: [String], format: 'date-time' }) releaseDates: string[];
 }
@@ -168,8 +197,12 @@ function weddingLine(row: WeddingCommissions): WeddingCommissionsResponse {
     coupleNames: commissionCoupleNames(row.partnerNames),
     weddingPurged: row.weddingPurged,
     clickable: row.clickable,
+    referralSource: row.referralSource,
+    paymentsCount: row.paymentsCount,
     availableCents: row.availableCents,
     pendingCents: row.pendingCents,
+    receivedCents: row.receivedCents,
+    totalCents: row.totalCents,
     releaseDates: row.releaseDates.map((date) => date.toISOString()),
   };
 }
