@@ -45,6 +45,8 @@ export interface AdjustmentRow {
   reason: string;
   createdAt: Date;
   amountCents: number;
+  /** A comissão ajustada; nulo no ajuste manual do Admin. */
+  commissionId: string | null;
   payoutId: string | null;
   /** O estado do repasse em que o ajuste entrou; nulo sem repasse. */
   payoutStatus: 'requested' | 'held' | 'processing' | 'paid' | 'rejected' | null;
@@ -165,9 +167,18 @@ export function commissionCoupleNames(partnerNames: [string, string] | null): st
 /** Uma linha da aba Por pagamento: a comissão ou o ajuste (em vermelho, sem selo; RN07). */
 export type CommissionPaymentLine =
   | { kind: 'commission'; at: Date; commission: CommissionRow }
-  | { kind: 'adjustment'; at: Date; adjustment: AdjustmentRow };
+  | {
+      kind: 'adjustment';
+      at: Date;
+      adjustment: AdjustmentRow;
+      /** A comissão ajustada (o casamento da linha); nula no ajuste manual (decisão 347(2)). */
+      commission: CommissionRow | null;
+    };
 
-/** A aba Por pagamento: as comissões e os ajustes juntos, o mais novo primeiro. */
+/**
+ * A aba Por pagamento: as comissões e os ajustes juntos, o mais novo primeiro;
+ * o ajuste leva a comissão que ajustou, para a linha mostrar o casamento (347(2)).
+ */
 export function commissionPaymentLines({
   rows,
   adjustments,
@@ -175,6 +186,7 @@ export function commissionPaymentLines({
   rows: readonly CommissionRow[];
   adjustments: readonly AdjustmentRow[];
 }): CommissionPaymentLine[] {
+  const byId = new Map(rows.map((row) => [row.id, row]));
   return [
     ...rows.map((commission) => ({
       kind: 'commission' as const,
@@ -185,6 +197,7 @@ export function commissionPaymentLines({
       kind: 'adjustment' as const,
       at: adjustment.createdAt,
       adjustment,
+      commission: adjustment.commissionId ? (byId.get(adjustment.commissionId) ?? null) : null,
     })),
   ].sort((left, right) => right.at.getTime() - left.at.getTime());
 }

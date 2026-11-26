@@ -73,6 +73,7 @@ describe('Os saldos e a soma por casamento (Comissões do indicador RN02, RN07 e
         {
           id: 'a',
           reason: 'manual',
+          commissionId: null,
           createdAt: new Date(),
           amountCents: -1_000,
           payoutId: null,
@@ -81,6 +82,7 @@ describe('Os saldos e a soma por casamento (Comissões do indicador RN02, RN07 e
         {
           id: 'a',
           reason: 'manual',
+          commissionId: null,
           createdAt: new Date(),
           amountCents: -500,
           payoutId: 'p1',
@@ -97,6 +99,7 @@ describe('Os saldos e a soma por casamento (Comissões do indicador RN02, RN07 e
         {
           id: 'a',
           reason: 'manual',
+          commissionId: null,
           createdAt: new Date(),
           amountCents: -1_000,
           payoutId: 'p0',
@@ -105,6 +108,7 @@ describe('Os saldos e a soma por casamento (Comissões do indicador RN02, RN07 e
         {
           id: 'a',
           reason: 'manual',
+          commissionId: null,
           createdAt: new Date(),
           amountCents: -500,
           payoutId: 'p1',
@@ -132,7 +136,7 @@ describe('Os saldos e a soma por casamento (Comissões do indicador RN02, RN07 e
   });
 
   it('RN02 (decisão 346(2)) - o ajuste da legenda do Disponível: só os sem repasse', () => {
-    const adjustment = { id: 'a', reason: 'manual', createdAt: new Date() };
+    const adjustment = { id: 'a', reason: 'manual', createdAt: new Date(), commissionId: null };
     expect(
       availableAdjustmentsCents([
         { ...adjustment, amountCents: -5_002, payoutId: null, payoutStatus: null },

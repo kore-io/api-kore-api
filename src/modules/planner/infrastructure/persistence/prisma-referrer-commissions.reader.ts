@@ -56,6 +56,7 @@ export class PrismaReferrerCommissionsReader implements ReferrerCommissionsReade
         reason: true,
         createdAt: true,
         amountCents: true,
+        commissionId: true,
         payoutId: true,
         payout: { select: { status: true } },
       },

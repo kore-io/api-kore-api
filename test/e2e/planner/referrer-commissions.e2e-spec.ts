@@ -311,6 +311,8 @@ describe('Comissões: a leitura da indicadora (Comissões RN07, RN08 e RN10; ban
       {
         kind: 'adjustment',
         adjustmentId: adjustment.id,
+        coupleNames: null,
+        weddingPurged: false,
         amountCents: -1_000,
         reason: 'manual',
         createdAt: adjustment.createdAt.toISOString(),
