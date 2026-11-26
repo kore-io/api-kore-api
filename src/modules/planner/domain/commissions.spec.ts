@@ -1,4 +1,9 @@
-import { commissionBalances, commissionsByWedding, type CommissionRow } from './commissions';
+import {
+  availableAdjustmentsCents,
+  commissionBalances,
+  commissionsByWedding,
+  type CommissionRow,
+} from './commissions';
 
 const row = (overrides: Partial<CommissionRow>): CommissionRow => ({
   id: 'c1',
@@ -111,5 +116,30 @@ describe('Os saldos e a soma por casamento (Comissões do indicador RN02, RN07 e
       receivedCents: base.receivedCents - 1_000,
       inPayoutCents: base.inPayoutCents - 500,
     });
+  });
+
+  it('RN07 e RN08 (decisão 346(1)) - por casamento: a origem, os pagamentos, o já recebido e o total, sem Estornada, Bloqueada e Retida', () => {
+    const [first, second] = commissionsByWedding(rows);
+    expect(first).toMatchObject({
+      referralSource: 'referral_link',
+      paymentsCount: 5,
+      receivedCents: 5_000,
+      totalCents: 6_742 + 1_740 + 1_000 + 5_000 + 3_000,
+    });
+    expect(second).toMatchObject({ paymentsCount: 1, receivedCents: 0, totalCents: 500 });
+    const [onlyReversed] = commissionsByWedding([row({ status: 'reversed' })]);
+    expect(onlyReversed).toMatchObject({ paymentsCount: 0, totalCents: 0 });
+  });
+
+  it('RN02 (decisão 346(2)) - o ajuste da legenda do Disponível: só os sem repasse', () => {
+    const adjustment = { id: 'a', reason: 'manual', createdAt: new Date() };
+    expect(
+      availableAdjustmentsCents([
+        { ...adjustment, amountCents: -5_002, payoutId: null, payoutStatus: null },
+        { ...adjustment, amountCents: -1_000, payoutId: 'p1', payoutStatus: 'paid' },
+        { ...adjustment, amountCents: -500, payoutId: 'p2', payoutStatus: 'requested' },
+      ]),
+    ).toBe(-5_002);
+    expect(availableAdjustmentsCents([])).toBe(0);
   });
 });

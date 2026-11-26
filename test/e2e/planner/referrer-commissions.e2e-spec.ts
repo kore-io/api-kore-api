@@ -81,6 +81,8 @@ describe('Comissões: a leitura da indicadora (Comissões RN07, RN08 e RN10; ban
       pendingCents: commission.amountCents,
       receivedCents: 0,
       inPayoutCents: 0,
+      adjustmentsCents: 0,
+      paidPayouts: 0,
     });
     // Contrato de API (decisão 275): view=payment por padrão, paginado.
     expect(before.body).toMatchObject({ view: 'payment', page: 1, pageSize: 50, total: 1 });
@@ -116,14 +118,21 @@ describe('Comissões: a leitura da indicadora (Comissões RN07, RN08 e RN10; ban
         coupleNames: 'Ana & Marcos',
         weddingPurged: false,
         clickable: true,
+        referralSource: 'referral_link',
+        paymentsCount: 1,
         pendingCents: commission.amountCents,
         availableCents: 0,
+        receivedCents: 0,
+        totalCents: commission.amountCents,
         releaseDates: [commission.availableAt.toISOString()],
       },
     ]);
-    // O resumo da indicadora traz o percentual e os mesmos saldos.
+    // O resumo da indicadora traz o percentual e os mesmos saldos, sem as legendas (346(2)).
     const me = await http().get('/v1/me/referrer').set('Cookie', juliana.cookie).expect(200);
-    expect(me.body).toMatchObject({ ratePercent: 20, balances: before.body.balances });
+    const { adjustmentsCents, paidPayouts, ...saldos } = before.body.balances;
+    expect([adjustmentsCents, paidPayouts]).toEqual([0, 0]);
+    expect(me.body).toMatchObject({ ratePercent: 20 });
+    expect(me.body.balances).toEqual(saldos);
 
     await worker.get(ReleaseCommissions).execute({
       now: new Date(commission.availableAt.getTime() + 60_000),
@@ -325,5 +334,97 @@ describe('Comissões: a leitura da indicadora (Comissões RN07, RN08 e RN10; ban
       .query({ view: 'other' })
       .set('Cookie', juliana.cookie)
       .expect(400);
+  });
+
+  it('RN02, RN07 e RN08 (decisão 346) - por casamento, a origem, os pagamentos, o já recebido e o total; nos saldos, o ajuste do Disponível e os repasses pagos', async () => {
+    const juliana = await planner();
+    const { ana, weddingId, referrerId } = await referred(juliana);
+    const { paymentId } = await publishByPayment({ app, cookie: ana.cookie, weddingId, endDate });
+    const key = await db.referrerPixKey.create({
+      data: {
+        id: uuidV7(),
+        referrerId,
+        keyType: 'email',
+        keyEncrypted: 'cifrado',
+        keyHash: `hash-${uuidV7()}`,
+        keyMasked: 'jul***@prado.com.br',
+        status: 'active',
+        confirmedAt: new Date(),
+        activeFrom: new Date(),
+      },
+    });
+    const payout = (status: 'paid' | 'requested') =>
+      db.payout.create({
+        data: {
+          id: uuidV7(),
+          referrerId,
+          amountCents: 5_000,
+          status,
+          pixKeyId: key.id,
+          pixKeyMasked: key.keyMasked,
+          externalRef: `payout-${uuidV7()}`,
+          idempotencyKey: uuidV7(),
+          requestedAt: new Date(),
+          paidAt: status === 'paid' ? new Date() : null,
+        },
+      });
+    const paidPayout = await payout('paid');
+    await payout('paid');
+    const openPayout = await payout('requested');
+    // A comissão da publicação foi paga num repasse.
+    const paid = await db.commission.update({
+      where: { paymentId },
+      data: { status: 'paid', paidAt: new Date(), payoutId: paidPayout.id },
+    });
+    await db.commissionAdjustment.createMany({
+      data: [
+        { id: uuidV7(), referrerId, amountCents: -5_002, reason: 'manual', note: 'Teste' },
+        {
+          id: uuidV7(),
+          referrerId,
+          amountCents: -700,
+          reason: 'manual',
+          note: 'Teste',
+          payoutId: openPayout.id,
+        },
+      ],
+    });
+
+    const byWedding = await http()
+      .get('/v1/me/referrer/commissions')
+      .query({ view: 'wedding' })
+      .set('Cookie', juliana.cookie)
+      .expect(200);
+    expect(byWedding.body.balances).toMatchObject({
+      receivedCents: paid.amountCents,
+      adjustmentsCents: -5_002,
+      paidPayouts: 2,
+    });
+    expect(byWedding.body.items).toEqual([
+      expect.objectContaining({
+        weddingId,
+        referralSource: 'referral_link',
+        paymentsCount: 1,
+        availableCents: 0,
+        pendingCents: 0,
+        receivedCents: paid.amountCents,
+        totalCents: paid.amountCents,
+        releaseDates: [],
+      }),
+    ]);
+    // Sem percentual novo (315(1)): só o ratePercent que já existia na aba Por pagamento.
+    expect(JSON.stringify(byWedding.body)).not.toMatch(/percent/i);
+
+    // A origem acompanha o casamento: reatribuído pelo Admin, vem admin_reassigned.
+    await db.wedding.update({
+      where: { id: weddingId },
+      data: { referralSource: 'admin_reassigned' },
+    });
+    const reassigned = await http()
+      .get('/v1/me/referrer/commissions')
+      .query({ view: 'wedding' })
+      .set('Cookie', juliana.cookie)
+      .expect(200);
+    expect(reassigned.body.items[0].referralSource).toBe('admin_reassigned');
   });
 });
