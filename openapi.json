@@ -26181,7 +26181,7 @@
           "refundableUntil": {
             "type": "string",
             "nullable": true,
-            "description": "O último instante para desistir, no fuso do casamento (Pagamentos e\narrependimento RN02); nulo fora do prazo ou fora de `paid`. O app mostra\no dia: \"Vocês podem desistir até 17 de ago.\".",
+            "description": "O último instante para desistir, no fuso do casamento (Pagamentos e\narrependimento RN02); nulo fora do prazo, fora de `paid` e no que o\nDesistir recusa (a extensão que não é a última, ou com cortesia concedida\ndepois; RN03, decisão 345(1)). O app mostra\no dia: \"Vocês podem desistir até 17 de ago.\".",
             "format": "date-time"
           },
           "disputeDeadline": {
