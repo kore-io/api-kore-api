@@ -16,6 +16,8 @@ export interface CollaborationDetail extends CollaborationRow {
   myMembershipId: string;
   slug: string | null;
   hasOwner: boolean;
+  /** Bloqueado pelo suporte (o `blocked_at`; Casamento bloqueado RN04, decisão 344). */
+  blocked: boolean;
   pendingCoupleInvitations: PendingCoupleInvitation[];
 }
 

@@ -35,6 +35,7 @@ const detail = (extra: Partial<CollaborationDetail> = {}): CollaborationDetail =
   stats: { guestsTotal: 0, confirmed: 0, declined: 0, pending: 0, rsvpPercent: 0 },
   slug: 'fernanda-e-joao',
   hasOwner: false,
+  blocked: false,
   pendingCoupleInvitations: [link],
   ...extra,
 });

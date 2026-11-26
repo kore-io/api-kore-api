@@ -136,7 +136,7 @@ export class PrismaPlannerWeddingsReader implements PlannerWeddingsReader {
         removedAt: null,
         wedding: { status: { not: 'purged' } },
       },
-      select: { id: true, wedding: { select: WEDDING_SELECT } },
+      select: { id: true, wedding: { select: { ...WEDDING_SELECT, blockedAt: true } } },
     });
     if (!membership) return null;
     const owners = await tx.membership.count({
@@ -165,6 +165,7 @@ export class PrismaPlannerWeddingsReader implements PlannerWeddingsReader {
       ...toRow(membership.wedding),
       slug: membership.wedding.slug,
       hasOwner: owners > 0,
+      blocked: membership.wedding.blockedAt !== null,
       pendingCoupleInvitations: invitations,
       myMembershipId: membership.id,
     };
