@@ -7,6 +7,7 @@ const row = (overrides: Partial<CommissionRow>): CommissionRow => ({
   partnerNames: ['Ana', 'Marcos'],
   clickable: true,
   paymentKind: 'publication',
+  referralSource: 'referral_link',
   baseAmountCents: 33_710,
   amountCents: 6_742,
   ratePercent: 20,

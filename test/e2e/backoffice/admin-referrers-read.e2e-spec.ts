@@ -271,7 +271,12 @@ describe('Backoffice: lista e detalhe das cerimonialistas (Backoffice - cobranç
       .set('Cookie', cookie)
       .set('Origin', ORIGIN)
       .expect(200);
-    expect(mine.body.balances).toEqual(row.balances);
+    // Os mesmos saldos; o app traz também as legendas (decisão 346(2)).
+    expect(mine.body.balances).toEqual({
+      ...row.balances,
+      adjustmentsCents: expect.any(Number),
+      paidPayouts: 1,
+    });
   });
 
   it('RN01 e decisão 69 - o suporte lê a lista com os saldos, sem a tag e sem o filtro do repasse', async () => {
