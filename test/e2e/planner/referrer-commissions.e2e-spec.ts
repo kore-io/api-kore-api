@@ -338,10 +338,8 @@ describe('Comissões: a leitura da indicadora (Comissões RN07, RN08 e RN10; ban
       .expect(400);
   });
 
-  it('RN02, RN07 e RN08 (decisão 346) - por casamento, a origem, os pagamentos, o já recebido e o total; nos saldos, o ajuste do Disponível e os repasses pagos', async () => {
-    const juliana = await planner();
-    const { ana, weddingId, referrerId } = await referred(juliana);
-    const { paymentId } = await publishByPayment({ app, cookie: ana.cookie, weddingId, endDate });
+  /** Os repasses da indicadora, com a chave Pix ativa que eles levam. */
+  async function payoutsOf(referrerId: string) {
     const key = await db.referrerPixKey.create({
       data: {
         id: uuidV7(),
@@ -355,7 +353,7 @@ describe('Comissões: a leitura da indicadora (Comissões RN07, RN08 e RN10; ban
         activeFrom: new Date(),
       },
     });
-    const payout = (status: 'paid' | 'requested') =>
+    return (status: 'paid' | 'requested') =>
       db.payout.create({
         data: {
           id: uuidV7(),
@@ -370,6 +368,13 @@ describe('Comissões: a leitura da indicadora (Comissões RN07, RN08 e RN10; ban
           paidAt: status === 'paid' ? new Date() : null,
         },
       });
+  }
+
+  it('RN02, RN07 e RN08 (decisão 346) - por casamento, a origem, os pagamentos, o já recebido e o total; nos saldos, o ajuste do Disponível e os repasses pagos', async () => {
+    const juliana = await planner();
+    const { ana, weddingId, referrerId } = await referred(juliana);
+    const { paymentId } = await publishByPayment({ app, cookie: ana.cookie, weddingId, endDate });
+    const payout = await payoutsOf(referrerId);
     const paidPayout = await payout('paid');
     await payout('paid');
     const openPayout = await payout('requested');
@@ -489,5 +494,52 @@ describe('Comissões: a leitura da indicadora (Comissões RN07, RN08 e RN10; ban
       coupleNames: null,
       weddingPurged: true,
     });
+  });
+
+  it('RN02 e RN07 (decisão 350(12)) - por casamento, o Disponível, o Já recebido e o Total levam os ajustes do casal, como o topo; o manual fica só no topo', async () => {
+    const juliana = await planner();
+    const { ana, weddingId, referrerId } = await referred(juliana);
+    const { paymentId } = await publishByPayment({ app, cookie: ana.cookie, weddingId, endDate });
+    const payout = await payoutsOf(referrerId);
+    const paidPayout = await payout('paid');
+    const openPayout = await payout('requested');
+    const paid = await db.commission.update({
+      where: { paymentId },
+      data: { status: 'paid', paidAt: new Date(), payoutId: paidPayout.id },
+    });
+    const refund = { referrerId, commissionId: paid.id, reason: 'refund' as const };
+    await db.commissionAdjustment.createMany({
+      data: [
+        // Sem repasse: no Disponível.
+        { ...refund, id: uuidV7(), amountCents: -1_000 },
+        // Num repasse aberto: o "em repasse" do topo, fora do Disponível e do Já recebido.
+        { ...refund, id: uuidV7(), amountCents: -300, payoutId: openPayout.id },
+        // Num repasse pago: no Já recebido.
+        { ...refund, id: uuidV7(), amountCents: -2_000, payoutId: paidPayout.id },
+        // O manual, sem casamento: só no topo.
+        { id: uuidV7(), referrerId, amountCents: -7_000, reason: 'manual', note: 'Teste' },
+      ],
+    });
+
+    const byWedding = await http()
+      .get('/v1/me/referrer/commissions')
+      .query({ view: 'wedding' })
+      .set('Cookie', juliana.cookie)
+      .expect(200);
+    expect(byWedding.body.balances).toMatchObject({
+      availableCents: -1_000 - 7_000,
+      receivedCents: paid.amountCents - 2_000,
+      inPayoutCents: -300,
+    });
+    expect(byWedding.body.items).toEqual([
+      expect.objectContaining({
+        weddingId,
+        paymentsCount: 1,
+        availableCents: -1_000,
+        pendingCents: 0,
+        receivedCents: paid.amountCents - 2_000,
+        totalCents: paid.amountCents - 1_000 - 300 - 2_000,
+      }),
+    ]);
   });
 });
