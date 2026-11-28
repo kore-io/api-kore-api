@@ -93,11 +93,15 @@ export interface WeddingCommissions {
   referralSource: ReferralSource | null;
   /** Pagamentos: quantos pagamentos geraram as comissões que entram na soma. */
   paymentsCount: number;
-  availableCents: number;
   pendingCents: number;
-  /** Já recebido: as comissões pagas. */
+  /** Disponível: a available fora de repasse e os ajustes do casal sem repasse (decisão 350(12)). */
+  availableCents: number;
+  /** Já recebido: as comissões pagas e os ajustes do casal num repasse pago (RN02; decisão 350(12)). */
   receivedCents: number;
-  /** Total: aguardando, disponível (também a que está em repasse) e paga, como no Link de indicação (RN08). */
+  /**
+   * Total: aguardando, disponível (também a que está em repasse) e paga, como no
+   * Link de indicação (RN08), e todos os ajustes do casal (decisão 350(12)).
+   */
   totalCents: number;
   /** As datas de liberação das que aguardam ("Libera em 09/09" · "libera em 02/10 e em 10/10"). */
   releaseDates: Date[];
@@ -109,9 +113,19 @@ const COUNTED: readonly CommissionRow['status'][] = ['pending', 'available', 'pa
 /**
  * A aba Por casamento (RN07; decisão 346(1)): a soma por casal; Estornada,
  * Bloqueada e Retida não entram (RN08, a mesma regra da coluna do Link de
- * indicação). O casal só com elas fica na lista, com zero.
+ * indicação). O casal só com elas fica na lista, com zero. Os ajustes do
+ * casamento entram como no topo (RN02), recortados pelo casal (decisão
+ * 350(12)): o sem repasse no Disponível, o de um repasse pago no Já recebido,
+ * o de um repasse ainda não pago em nenhum dos dois; todos no Total. O ajuste
+ * manual, sem comissão, fica só no topo.
  */
-export function commissionsByWedding(rows: readonly CommissionRow[]): WeddingCommissions[] {
+export function commissionsByWedding({
+  rows,
+  adjustments = [],
+}: {
+  rows: readonly CommissionRow[];
+  adjustments?: readonly AdjustmentRow[];
+}): WeddingCommissions[] {
   const byWedding = new Map<string, WeddingCommissions>();
   for (const row of rows) {
     const entry =
@@ -141,6 +155,15 @@ export function commissionsByWedding(rows: readonly CommissionRow[]): WeddingCom
       entry.pendingCents += row.amountCents;
       entry.releaseDates.push(row.availableAt);
     }
+  }
+  const weddingOf = new Map(rows.map((row) => [row.id, row.weddingId]));
+  for (const adjustment of adjustments) {
+    const weddingId = adjustment.commissionId ? weddingOf.get(adjustment.commissionId) : undefined;
+    const entry = weddingId ? byWedding.get(weddingId) : undefined;
+    if (!entry) continue;
+    entry.totalCents += adjustment.amountCents;
+    if (adjustment.payoutId === null) entry.availableCents += adjustment.amountCents;
+    else if (adjustment.payoutStatus === 'paid') entry.receivedCents += adjustment.amountCents;
   }
   for (const entry of byWedding.values())
     entry.releaseDates.sort((left, right) => left.getTime() - right.getTime());

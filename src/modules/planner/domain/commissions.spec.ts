@@ -59,7 +59,7 @@ describe('Os saldos e a soma por casamento (Comissões do indicador RN02, RN07 e
   });
 
   it('RN07 e RN08 - por casamento: a soma e as datas de liberação em ordem', () => {
-    const [first, second] = commissionsByWedding(rows);
+    const [first, second] = commissionsByWedding({ rows });
     expect(first).toMatchObject({ weddingId: 'w1', availableCents: 6_742, pendingCents: 2_740 });
     expect(first.releaseDates.map((date) => date.toISOString().slice(0, 10))).toEqual([
       '2026-10-02',
@@ -124,7 +124,7 @@ describe('Os saldos e a soma por casamento (Comissões do indicador RN02, RN07 e
   });
 
   it('RN07 e RN08 (decisão 346(1)) - por casamento: a origem, os pagamentos, o já recebido e o total, sem Estornada, Bloqueada e Retida', () => {
-    const [first, second] = commissionsByWedding(rows);
+    const [first, second] = commissionsByWedding({ rows });
     expect(first).toMatchObject({
       referralSource: 'referral_link',
       paymentsCount: 5,
@@ -132,8 +132,71 @@ describe('Os saldos e a soma por casamento (Comissões do indicador RN02, RN07 e
       totalCents: 6_742 + 1_740 + 1_000 + 5_000 + 3_000,
     });
     expect(second).toMatchObject({ paymentsCount: 1, receivedCents: 0, totalCents: 500 });
-    const [onlyReversed] = commissionsByWedding([row({ status: 'reversed' })]);
+    const [onlyReversed] = commissionsByWedding({ rows: [row({ status: 'reversed' })] });
     expect(onlyReversed).toMatchObject({ paymentsCount: 0, totalCents: 0 });
+  });
+
+  it('RN02 e RN07 (decisão 350(12)) - por casamento: os ajustes do casal entram como no topo; o manual fica só no topo', () => {
+    const adjustment = { reason: 'refund', createdAt: new Date('2026-09-01T12:00:00Z') };
+    const weddingRows = [
+      row({ id: 'c1', status: 'paid', amountCents: 5_000, payoutId: 'p0' }),
+      row({ id: 'c2', weddingId: 'w2', status: 'available', amountCents: 500 }),
+    ];
+    const [first, second] = commissionsByWedding({
+      rows: weddingRows,
+      adjustments: [
+        // Sem repasse: no Disponível e no Total.
+        {
+          ...adjustment,
+          id: 'x1',
+          commissionId: 'c1',
+          amountCents: -1_000,
+          payoutId: null,
+          payoutStatus: null,
+        },
+        // Num repasse aberto: só no Total (é o "em repasse" do topo).
+        {
+          ...adjustment,
+          id: 'x2',
+          commissionId: 'c1',
+          amountCents: -300,
+          payoutId: 'p1',
+          payoutStatus: 'requested',
+        },
+        // Num repasse pago: no Já recebido e no Total.
+        {
+          ...adjustment,
+          id: 'x3',
+          commissionId: 'c1',
+          amountCents: -2_000,
+          payoutId: 'p2',
+          payoutStatus: 'paid',
+        },
+        // O manual, sem casamento: em nenhum casal.
+        {
+          ...adjustment,
+          id: 'x4',
+          reason: 'manual',
+          commissionId: null,
+          amountCents: -7_000,
+          payoutId: null,
+          payoutStatus: null,
+        },
+      ],
+    });
+    expect(first).toMatchObject({
+      weddingId: 'w1',
+      paymentsCount: 1,
+      availableCents: -1_000,
+      receivedCents: 5_000 - 2_000,
+      totalCents: 5_000 - 1_000 - 300 - 2_000,
+    });
+    expect(second).toMatchObject({
+      weddingId: 'w2',
+      availableCents: 500,
+      receivedCents: 0,
+      totalCents: 500,
+    });
   });
 
   it('RN02 (decisão 346(2)) - o ajuste da legenda do Disponível: só os sem repasse', () => {

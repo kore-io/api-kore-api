@@ -132,13 +132,16 @@ class WeddingCommissionsResponse {
   referralSource: (typeof REFERRAL_SOURCES)[number] | null;
   /** A coluna Pagamentos ("1 pagamento"): os pagamentos cujas comissões entram na soma (RN08). */
   @ApiProperty({ example: 2 }) paymentsCount: number;
+  /** Disponível: a disponível fora de repasse e os ajustes deste casal sem repasse (decisão 350(12)). */
   @ApiProperty({ example: 6742 }) availableCents: number;
   @ApiProperty({ example: 1740 }) pendingCents: number;
-  /** Já recebido: as comissões pagas deste casal. */
+  /** Já recebido: as comissões pagas e os ajustes deste casal num repasse já pago (RN02; decisão 350(12)). */
   @ApiProperty({ example: 0 }) receivedCents: number;
   /**
    * Total: aguardando, disponível (também a que está em repasse) e paga; sem
-   * Estornada, Bloqueada e Retida, como a coluna do Link de indicação (RN08).
+   * Estornada, Bloqueada e Retida, como a coluna do Link de indicação (RN08);
+   * mais todos os ajustes deste casal (decisão 350(12)). O ajuste manual, sem
+   * casamento, fica só nos saldos do topo.
    */
   @ApiProperty({ example: 8482 }) totalCents: number;
   /** "Libera em 09/09" · "libera em 02/10 e em 10/10"; vazio, "nada a liberar agora". */
