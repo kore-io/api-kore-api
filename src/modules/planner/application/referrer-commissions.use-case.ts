@@ -78,7 +78,8 @@ export class ListReferrerCommissions {
       total: all.length,
       items: all.slice((page - 1) * COMMISSIONS_PAGE_SIZE, page * COMMISSIONS_PAGE_SIZE),
     });
-    if (view === 'wedding') return { balances, view, ...slice(commissionsByWedding(rows)) };
+    if (view === 'wedding')
+      return { balances, view, ...slice(commissionsByWedding({ rows, adjustments })) };
     return { balances, view, ...slice(commissionPaymentLines({ rows, adjustments })) };
   }
 }
